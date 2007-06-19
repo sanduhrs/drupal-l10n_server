@@ -1,0 +1,679 @@
+<?php
+// $Id$
+/**
+ * @file
+ *   A community web interface for Drupal project translation.
+ */
+
+/**
+ * Implementation of hook_help().
+ */
+function l10n_community_help($section) {
+  switch ($section) {
+    case 'translations':
+      return "<p>". t('All languages and their translation status. Click on the language to help on the translation.') .'</p>';
+    case 'translations/translate_projects':
+      return '<p>'. t('All projects host by this site and their translation status. If you are a member of %language translation team, click on the project to translate it. If you are not but want to be, subscribe now!', array("%language" => $_GET["language"])) .'</p>';
+  }
+  if (preg_match("|translations/translate/.*/.*|", $section)) {
+    $language = arg(2);
+    $project = arg(3);
+    global $_l10n_community_permission, $_l10n_community_special_icons;
+    drupal_set_title(t("Translate %project to %language", array("%project" => $project, "%language" => $language)));
+    // Permissions: alert user if they can or cannot translate and colaborate
+    if ($_l10n_community_permission == 0) {
+      drupal_set_message(t("You are not a member of translation team for %language, so cannot make any translation or suggestions.",
+      array("%language" => $language)));
+    }
+    if ($_l10n_community_permission == 1) {
+      drupal_set_message(t("You are a member of translation team for %language. You can suggest translations.",
+      array("%language" => $language)));
+    }
+    if ($_l10n_community_permission == 2) {
+      drupal_set_message(t("You can accept suggestions and define the official translation for all strings."));
+    }
+    // Special Icons messages
+    $path = base_path() . drupal_get_path("module", "l10n_community") ."/img";
+    if (!empty($_l10n_community_special_icons["newline"])) {
+      drupal_set_message("<img src='". $path ."/si_information.png' alt='information'/> <img src='". $path ."/si_newline.png' alt='newline'/> ".
+        t("represents a line break. Start a new line in the equivalent position in the translation."));
+    }
+    if (!empty($_l10n_community_special_icons["variable"])) {
+      drupal_set_message("<img src='". $path ."/si_information.png' alt='information'/> ".
+        t("Variables, starting with !,@ or % (like %example, !example or @example) such not be translated."));
+    }
+    $output = "<p>". t("Members of %language translation team can suggest translations.
+      Maintainers can accept them as the real translation.
+      If you are not a member, subscribe now!", array("%language" => $language)) ."</p>";
+    return $output;
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function l10n_community_menu($may_cache) {
+  $items = array();
+  if (!$may_cache) {
+    $items[] = array(
+      "title"               => t("Translation Status"),
+      "description"         => t("All languages and their translation status."),
+      "path"                => "translations",
+      "access"              => TRUE,
+      "callback"            => "l10n_community_status_language",
+    );
+    $items[] = array(
+      "title"               => t("Translate"),
+      "description"         => t("Import existing PO files."),
+      "path"                => "translations/import",
+      "access"              => TRUE,
+      "callback"            => "drupal_get_form",
+      "callback arguments"  => array("l10n_community_import_form", arg(2), arg(3)),
+      "type"                => MENU_CALLBACK
+    );
+    $items[] = array(
+      "title"               => t("Translate"),
+      "description"         => t("All languages and their translation status."),
+      "path"                => "translations/translate",
+      "access"              => TRUE,
+      "callback"            => "drupal_get_form",
+      "callback arguments"  => array("l10n_community_translate", arg(2), arg(3), (!empty($_SESSION["translate_filter"]) ? $_SESSION["translate_filter"] : "all")),
+      "type"                => MENU_CALLBACK
+    );
+    $items[] = array(
+      "title"               => t("Translate projects"),
+      "description"         => t("All projects and their translation status."),
+      "path"                => "translations/translate_projects",
+      "access"              => TRUE,
+      "callback"            => "l10n_community_status_project",
+      "callback arguments"  => !empty($_GET["language"]) ? $_GET["language"] : NULL,
+      "type"                => MENU_CALLBACK
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_node_info().
+ */
+function l10n_community_node_info() {
+  return array(
+    "l10n_team" => array(
+      "name"        => t('Translation Team'),
+      "module"      => "l10n_community",
+      "description" => t('Community around project translations.'),
+    )
+  );
+}
+
+/**
+ * Implementation of hook_access().
+ */
+function l10n_community_access($op, $node) {
+  global $user;
+  if ($op == "view") { // users can always see the translation team page
+    return TRUE;
+  }
+  if (user_access("administer localization server")) { // but only few can delete/edit
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_delete().
+ */
+function l10n_community_delete(&$node) {
+  db_query("DELETE FROM {l10n_server_team} WHERE nid = %d;", $node->nid);
+}
+
+/**
+ * Implementation of hook_form().
+ */
+function l10n_community_form(&$node) {
+  $form = array();
+  // create a list of languages that has no translation team
+  $teams = db_query("SELECT locale FROM {l10n_server_team};");
+  if ($languages = locale_supported_languages(FALSE, TRUE)) {
+      while ($team = db_fetch_object($teams)) {
+        if ($languages["name"][$team->locale]) {
+          unset($languages["name"][$team->locale]);
+        }
+      }
+  }
+  unset($languages["name"]["en"]); // english is the drupal default language
+  $form["title"] = array(
+    "#type"           => "textfield",
+    "#title"          => t("Name"),
+    "#description"    => t("The team name."),
+    "#default_value"  => isset($node->title) ? $node->title : "",
+    "#weight"         => -5,
+    "#required"       => TRUE);
+  if (!empty($node->locale_team)) { // there are some languages that has no translation team
+    $form["locale_team"] = array(
+      "#type"           => "item",
+      "#title"          => t("Language"),
+      "#description"    => t("The language managed by this team."),
+      "#value"          => $node->locale,
+      "#weight"         => -5,
+      "#required"       => TRUE);
+  }
+  else {
+    $form["locale_team"] = array(
+      "#type"           => "select",
+      "#title"          => t("Language"),
+      "#description"    => t("The language managed by this team."),
+      "#options"        => $languages["name"],
+      "#weight"         => -5,
+      "#required"       => TRUE);
+  }
+  $form["body"] = array(
+    "#type"             => "textarea",
+    "#title"            => t("Instructions"),
+    "#default_value"    => isset($node->body) ? $node->body : "",
+    "#rows"             => 5,
+    "#description"      => t("Instructions to people get into this team"));
+  $form["format"] = isset($node->format) ? filter_form($node->format) : filter_form();
+  return $form;
+}
+
+/**
+ * Get user permission to translate
+ *
+ * @param $language
+ *  string, the language code, ie "en", "pt-br", "de"
+ * @param $user
+ *  object, the user object
+ * @return
+ *  number, 0 = not allowed, 1 = allowed to suggest, 2 = allowed to translate
+ */
+function l10n_community_get_permission($language, $user = NULL) {
+  if (empty($language)) {
+    return 0;
+  }
+  if (empty($user)) {
+    global $user;
+  }
+  if ($user->uid == 1) { // user 1 has always the permission
+    return 2;
+  }
+  $permission = 0;
+  if ($locale = db_result(db_query("SELECT nid FROM {l10n_server_team} WHERE locale = '%s';", $language))) {
+    // user shuold be the language translation team member or maintainer
+    if (!empty($user->og_groups) and !empty($user->og_groups[$locale])) {
+      $permission = !empty($user->og_groups[$locale]["is_admin"]) ? 2 : $user->og_groups[$locale]["is_active"];
+    }
+  }
+  return $permission;
+}
+
+/**
+ * Implementation of hook_insert().
+ */
+function l10n_community_insert(&$node) {
+  db_query("INSERT INTO {l10n_server_team} (nid, locale) VALUES (%d, '%s');", $node->nid, $node->locale_team);
+}
+
+/**
+ * Implemenation of hook_load().
+ */
+function l10n_community_load(&$node) {
+  return db_fetch_object(db_query("SELECT locale AS locale_team FROM {l10n_server_team} WHERE nid = %d", $node->nid));
+}
+
+/**
+ * Implemenation of hook_form_alter().
+ */
+function l10n_community_form_alter($form_id, &$form) {
+  // all languages have a translation team, you can create another one
+  if ($form_id == "l10n_team_node_form" && empty($form["locale_team"]["#value"]) && empty($form["locale_team"]["#options"])) {
+    drupal_set_message(t("There is no language that doesn't have a team. You cannot create another team."), "error");
+    $form["submit"]["#disabled"] = TRUE; // disable the submit button
+  }
+}
+
+/**
+ * User interface for the translation import screen.
+ */
+function l10n_community_import_form($project) {
+  require_once(drupal_get_path("module", "l10n_server") ."/localeplus.inc");
+  $form = _locale_admin_import();
+  $form["import"]["saver"] = array(
+    "#type"         => "hidden",
+    "#value"        => "l10n_community_import_saver"
+  );
+  $form["import"]["project"] = array(
+    "#description"  => t("This translates which project?"),
+    "#options"      => $project,
+    "#title"        => t("Project"),
+    "#type"         => "select",
+    "#weight"       => -1
+  );
+  return $form;
+}
+
+/**
+ * Process the locale import form submission.
+ */
+function l10n_community_import_form_submit($form_id, &$form) {
+  global $_l10n_community_project;
+  $_l10n_community_project = $form["project"];
+  require_once drupal_get_path("module", "l10n_server") ."/localeplus.inc";
+  return _localeplus_admin_import_submit($form_id, $form);
+}
+
+/**
+ * Imports a string into the database
+ *
+ * @param $op
+ *   Operation to perform: "db-store", "db-report", "mem-store" or "mem-report"
+ * @param $value
+ *   Details of the string stored
+ * @param $mode
+ *   Should existing translations be replaced ("overwrite" or "keep")
+ * @param $lang
+ *   Language to store the string in
+ * @see _locale_import_one_string
+ */
+function l10n_community_import_saver($op, $value = NULL, $lang = NULL, $mode = NULL) {
+  static $additions = 0;
+  static $updates = 0;
+  static $headerdone = FALSE;
+  static $strings = array();
+  switch ($op) {
+    case "mem-report":              // Return stored strings
+      return $strings;
+    case "mem-store":               // Store string in memory (only supports single strings)
+      $strings[$value["msgid"]] = $value["msgstr"];
+      return;
+    case "db-report":               // Called at end of import to inform the user
+      return array($headerdone, $additions, $updates);
+    case "db-store":                // Store the string we got in the database
+      if ($value["msgid"] == "") {  // We got header information
+        $headerdone = TRUE;
+        return;
+      }
+      $comments     = _locale_import_shorten_comments($value["#"]);
+      global $user, $_l10n_community_project;
+      $official     = l10n_community_get_permission($lang, $user);
+      $string       = explode("\0", $value["msgid"], 2);
+      $translations = (is_array($value["msgstr"])) ? $value["msgstr"] : array($value["msgstr"]);
+      while (list($str) = each($string)) {
+        if ($sid = db_result(db_query("SELECT sid FROM {l10n_server_source} WHERE source = '%s' AND project= '%s' AND ptid = %d;",
+            $string[$str], $_l10n_community_project, $str))) {
+          $strings = l10n_community_target_save($sid, $translations[$str], $lang, $user->uid, time(), $official, $str);
+        }
+      }
+      return $strings;
+  }
+}
+
+/**
+ * Filter strings from special characters
+ *
+ * Special Icons are icons placed on strings to reinforce some
+ * special characters found on original string, like newline,
+ * or variables, and it gives some hints about how
+ * they should be dealed with.
+ *
+ * @param $string
+ *  string, a text without special icons
+ * @return
+ *  string, a text with special icons
+ */
+function l10n_community_special_icons($string) {
+  global $_l10n_community_special_icons;
+  $path = base_path() . drupal_get_path("module", "l10n_community");
+  if (preg_match("|\n|", $string)) {
+    $string = preg_replace("|\n|", "<img src='". $path ."/img/si_newline.png' alt='newline'/><br/>", $string);
+    $_l10n_community_special_icons["newline"] = TRUE;
+  }
+  if (preg_match("|\\\\n|", $string)) {
+    $string = preg_replace("|\\\\n|", "<img src='". $path ."/img/si_newline.png' alt='newline'/><br/>", $string);
+    $_l10n_community_special_icons["newline"] = TRUE;
+  }
+  if (preg_match("|%[^\s]+|", $string)) {
+    $string = preg_replace("|(%[^\s]+)|", "<b><em>$1</em></b>", $string);
+    $_l10n_community_special_icons["variable"] = TRUE;
+  }
+  if (preg_match("|![^\s]+|", $string)) {
+    $string = preg_replace("|(![^\s]+)|", "<b><em>$1</em></b>", $string);
+    $_l10n_community_special_icons["variable"] = TRUE;
+  }
+  if (preg_match("|@[^\s]+|", $string)) {
+    $string = preg_replace("|(@[^\s]+)|", "<b><em>$1</em></b>", $string);
+    $_l10n_community_special_icons["variable"] = TRUE;
+  }
+  return $string;
+}
+
+/**
+ * Show the translation status of all languages.
+ *
+ * @return
+ *  string, a HTML code with all languages and their translation status
+ */
+function l10n_community_status_language() {
+  $output = "";
+  if ($languages = locale_supported_languages(FALSE, TRUE)) {
+    if (!$num_source = db_result(db_query("SELECT COUNT(sid) FROM {l10n_server_source};"))) {
+      return t("No strings to translate.");
+    }
+    $output .= t("Total strings: %total", array("%total" => $num_source)) ."<br/>";
+    while (list($locale, $language) = each($languages["name"])) {
+      if ($locale == "en") {
+        continue;
+      }
+      $display_name = "$language ($locale)";
+      $output .= "<h2>". l($display_name, "translations/translate_projects", NULL, "language=". $locale)  ."</h2>";
+      $num_suggested = l10n_server_get_strings($locale, "suggested", TRUE);
+      $num_translated = l10n_server_get_strings($locale, "translated", TRUE);
+      $percent_translated = round(($num_translated / $num_source) * 100, 2);
+      $percent_translated = round($num_translated / $num_source * 100, 2);
+      $percent_suggested = round($num_suggested / $num_source * 100, 2);
+      $percent_untranslated = 100 - $percent_translated - $percent_suggested;
+      $path = base_path() . drupal_get_path("module", "l10n_community");
+      $output .= t("Progress: %complete complete.", array(
+        "%complete" => $percent_translated ."%")) ."<br/>";
+      $output .= t("Strings: Translated %translated, Need review %review, Untranslated %untranslated", array(
+        "%translated" => $num_translated,
+        "%review" => $num_suggested,
+        "%untranslated" => ($num_source - $num_translated - $num_suggested))) ."<br/>";
+      if ($percent_translated > 0) {
+        $output .= "<img src='". $path ."/img/translated.png' width='". $percent_translated ."%' height='10px'
+          alt='". $percent_translated ."% ". t("translated") ."'/>";
+      }
+      if ($num_suggested > 0) {
+        $output .= "<img src='". $path ."/img/suggest.png' width='". $percent_suggested ."%' height='10px'
+          alt='". $percent_suggested ."% ". t("with suggestion") ."'/>";
+      }
+      if ($percent_untranslated > 0) {
+        $output .= "<img src='". $path ."/img/untranslated.png' width='". $percent_untranslated ."%' height='10px'
+          alt='". $percent_untranslated ."% ". t("untranslated") ."'/>";
+      }
+    }
+  }
+  return $output;
+}
+
+/**
+ * Show the translation status of all projects from a given language.
+ *
+ * @param $language
+ *  string, the language code, ie "en", "pt-br", "de"
+ * @return
+ *  string, a HTML code with all modules and their translation status
+ */
+function l10n_community_status_project($language = NULL) {
+  if (empty($language)) {
+    return t("No language selected.");
+  }
+  if ($projects = l10n_server_get_modules(10)) { // get the modules
+    $output = theme("pager", NULL, 10, 0);
+    while (list($project_code, $project) = each($projects)) {
+      $num_source = db_result(db_query("SELECT COUNT(ts.sid) FROM {l10n_server_source} ts WHERE project = '%s';", $project_code));
+      if (!empty($num_source)) {
+        $num_suggested = l10n_server_get_strings($language, "suggested", TRUE, $project_code);
+        $num_translated = l10n_server_get_strings($language, "translated", TRUE, $project_code);
+        $output .= "<h2>". $project["project"] ."</h2>";
+        $output .= l(t("translate"), "translations/translate/". $language ."/" . $project_code);
+        $output .= "<br/>";
+        $percent_translated = round($num_translated / $num_source * 100, 2);
+        $percent_suggested = round($num_suggested / $num_source * 100, 2);
+        $percent_untranslated = 100 - $percent_translated - $percent_suggested;
+        $path = base_path() . drupal_get_path("module", "l10n_community");
+      $output .= t("Progress: %complete complete.", array(
+        "%complete" => $percent_translated ."%")) ."<br/>";
+      $output .= t("Strings: Total: %total, Translated %translated, Need review %review, Untranslated %untranslated", array(
+        "%total" => $num_source,
+        "%translated" => $num_translated,
+        "%review" => $num_suggested,
+        "%untranslated" => ($num_source - $num_translated - $num_suggested))) ."<br/>";
+        if ($percent_translated > 0) {
+          $output .= "<img src='". $path ."/img/translated.png' width='". $percent_translated ."%' height='10px'
+            alt='". $percent_translated ."% ". t("translated") ."'/>";
+        }
+        if ($num_suggested > 0) {
+          $output .= "<img src='". $path ."/img/suggest.png' width='". $percent_suggested ."%' height='10px'
+            alt='". $percent_suggested ."% ". t("with suggestion") ."'/>";
+        }
+        if ($percent_untranslated > 0) {
+          $output .= "<img src='". $path ."/img/untranslated.png' width='". $percent_untranslated ."%' height='10px'
+            alt='". $percent_untranslated ."% ". t("untranslated") ."'/>";
+        }
+      }
+      $select_project[$project_code] = $project["project"];
+    }
+    $output .= theme("pager", NULL, 10, 0);
+    global $user;
+    $permission = l10n_community_get_permission($language, $user);
+    if (!empty($permission)) {
+      $output .= drupal_get_form("l10n_community_import_form", $select_project);
+    }
+  }
+  return $output;
+}
+
+/**
+ * Save translated strings into database
+ *
+ * @param $sid
+ *   Number, the original string ID
+ * @param $translated
+ *   String, the translated string
+ * @param $locale
+ *   String, the language code, ie "en", "pt-br", "de"
+ * @param $uid
+ *   Number, user ID
+ * @param $update_date
+ *   Number, the current time
+ * @param $official
+ *   Number, 1 if the user is permited to suggest and 2 if the user
+ *   is a language translation team maintainer
+ * @param $plural
+ *   Numbe, if the current string is a plural form
+ */
+function l10n_community_target_save($sid, $translated, $locale, $uid, $update_date, $official, $plural) {
+  if (db_result(db_query("SELECT sid FROM {l10n_server_target}
+      WHERE sid = %d AND locale = '%s' AND uid = %d;", $sid, $locale, $uid))) {
+    if ($official == 2) {
+      db_query("UPDATE {l10n_server_target} SET official = 0
+        WHERE sid = %d AND locale = '%s' AND official = 1;", $sid, $locale);
+    }
+    db_query("UPDATE {l10n_server_target} SET translated = '%s', update_date = %d, official = %d
+      WHERE sid = %d AND locale = '%s' AND uid = %d;",
+      $translated, time(), $official - 1, $sid, $locale, $uid);
+    return array(0, 1);
+  }
+  $sql_args = array();
+  array_push($sql_args,
+    $sid,
+    $translated,
+    $locale,
+    $uid,
+    $official - 1, // permission = 1 to suggest, permission = 2 to translate
+    time());
+    db_query("INSERT INTO {l10n_server_target} (sid, translated, locale, uid, official, update_date)
+      VALUES (%d, '%s', '%s', %d, %d, %d)", $sql_args);
+  return array(1, 0);
+}
+
+/**
+ * Show the Web Translation interface.
+ *
+ * @param $language
+ *  string, the language code, ie "en", "pt-br", "de"
+ * @param $project
+ *  string, the project name
+ * @param $filter
+ *  string, the filter used: "all", "untranslated" or "translated"
+ * @return
+ *  array, all form fields
+ */
+function l10n_community_translate($language = NULL, $project = NULL, $filter = "all") {
+  $form = $limit = array();
+  if (empty($language) or empty($project)) {
+    drupal_set_message(t("You should choose a language and a project to translate."), "error");
+    return $form;
+  }
+  global $user, $_l10n_community_permission;
+  $total = $current_sid = 0;
+  $_l10n_community_permission = l10n_community_get_permission($language);
+  if ($strings = l10n_server_get_strings($language, $filter, NULL, $project, NULL, 10)) {
+    while (list(, $string) = each($strings)) {
+      if (isset($string["sid"]) and $current_sid != $string["sid"]) {
+        $total++;
+        $internal = 0;
+        $current_sid = $string["sid"];
+        $form[$total]["sid"] = array(
+          "#type"           => "hidden",
+          "#value"          => $string["sid"]
+        );
+        $java_string[] = $string["source"];
+        $java_target[] = $total;
+        $form[$total]["source"] = array(
+          "#type"           => "item",
+          "#title"          => $total ." — <img src='". base_path() . drupal_get_path("module", "l10n_community") ."/img/edit-copy.png' alt='copy' id='copy_button_". count($java_string) ."'/> " . t("Original string"),
+          "#value"          => l10n_community_special_icons(check_plain($string["source"])),
+          "#attributes"     => array("class" => "source")
+        );
+        $form[$total]["plural"] = array(
+          "#type"           => "value",
+          "#value"          => $string["plural"]
+        );
+        if (!empty($string["translated"])) {
+          if (empty($string["official"])) {
+            $java_string[] = $string["translated"];
+            $java_target[] = $total;
+            $form[$total]["suggestion"][1] = array(
+              "#type"           => "item",
+              "#title"          => "<img src='". base_path() . drupal_get_path("module", "l10n_community") ."/img/edit-copy.png' alt='copy' id='copy_button_". count($java_string) ."'/> ". t("Suggestion"),
+              "#value"          => l10n_community_special_icons(check_plain($string["translated"])),
+              "#description"    => t("Posted by !user on !date.", array(
+                "!user" => $string["uid"],
+                "!date" => format_date($string["update_date"],
+                "small", "Y-m-d H:i O"))),
+              "#attributes"     => array("class" => "l10n-community-suggestion")
+            );
+          }
+          else {
+            $java_string[] = $string["translated"];
+            $java_target[] = $total;
+            $form[$total]["current"] = array(
+              "#type"           => "item",
+              "#title"          => "<img src='". base_path() . drupal_get_path("module", "l10n_community") ."/img/edit-copy.png' alt='copy' id='copy_button_". count($java_string) ."'/> ". t("Current translation"),
+              "#value"          => l10n_community_special_icons(check_plain($string["translated"])),
+              "#description"    => t("Posted by !user on !date.", array(
+                "!user" => $string["uid"],
+                "!date" => format_date($string["update_date"],
+                "small", "Y-m-d H:i O")))
+            );
+          }
+        }
+        if (!empty($_l10n_community_permission)) {
+          $form[$total]["new_suggestion"] = array(
+            "#type"           => "textarea",
+            "#title"          => t("New Suggestion"),
+            "#default_value"  => "",
+            "#rows"           => 1,
+            "#id"             => "new_suggestion". $total
+          );
+        }
+      }
+      else {
+        $internal++;
+        if (!empty($string["translated"])) {
+          $java_string[] = $string["translated"];
+          $java_target[] = $total;
+          $form[$total]["suggestion"][$internal] = array(
+            "#type"           => "item",
+            "#title"          => "<img src='". base_path() . drupal_get_path("module", "l10n_community") ."/img/edit-copy.png' alt='copy' id='copy_button_". count($java_string) ."'/> " . t("Suggestion"),
+            "#value"          => l10n_community_special_icons(check_plain($string["translated"])),
+            "#description"    => t("Posted by !user on !date.", array(
+              "!user" => $string["uid"],
+              "!date" => format_date($string["update_date"],
+              "small", "Y-m-d H:i O"))),
+            "#attributes"     => array("class" => "suggestion")
+          );
+        }
+      }
+    }
+  }
+  drupal_add_js(array("translate" => $java_string), "setting");
+  drupal_add_js(array("translate_target " => $java_target), "setting");
+  $form["language"] = array(
+    "#type"           => "hidden",
+    "#value"          => $language
+  );
+  $form["project"] = array(
+    "#type"           => "hidden",
+    "#value"          => $project
+  );
+  $form["pager1"] = array("#value" => theme("pager", NULL, 10, 0));
+  $form["filter"] = array(
+    "#type"           => "select",
+    "#title"          => t("Filter"),
+    "#options"        => array(
+      "all"           => t("All strings"),
+      "translated"    => t("Translated"),
+      "suggested"     => t("Need revision"),
+      "untranslated"  => t("Untranslated")),
+    "#default_value"  => $filter
+  );
+  $form["submit"] = array(
+    "#type"             => "submit",
+    "#value"            => t("Submit")
+  );
+  $form["#tree"]      = TRUE;
+  return $form;
+}
+
+/**
+ * Implemenation of hook_submit().
+ *
+ * Save translation
+ */
+function l10n_community_translate_submit($form_id, &$form) {
+  global $user, $_l10n_community_permission;
+  $_SESSION["translate_filter"] = $form["filter"];
+  if ($_l10n_community_permission > 0) {
+    $sql = $sql_args = array();
+    while (list($i) = each($form)) {
+      if (is_array($form[$i]) and !empty($form[$i]["new_suggestion"])) {
+        l10n_community_target_save($form[$i]["sid"], $form[$i]["new_suggestion"], $form["language"],
+          $user->uid, time(), $_l10n_community_permission, $form[$i]["plural"]);
+      }
+    }
+  }
+}
+
+/**
+ * Format the web translation interface
+ *
+ * @ingroup themeable
+ */
+function theme_l10n_community_translate($form) {
+  drupal_add_css(drupal_get_path("module", "l10n_community") ."/l10n_community.css");
+  drupal_add_js(drupal_get_path("module", "l10n_community") ."/l10n_community.js");
+  $output = '<div id="l10n-community-result">'. drupal_render($form["filter"]);
+  $output .= drupal_render($form["pager1"]) ."</div>";
+  foreach (element_children($form) as $index) {
+    if (!is_numeric($index)) {
+      continue;
+    }
+    $output .= drupal_render($form[$index]["source"]);
+    if (!empty($form[$index]["current"])) {
+      $output .= drupal_render($form[$index]["current"]);
+    }
+    if (!empty($form[$index]["suggestion"]) and is_array($form[$index]["suggestion"])) {
+      foreach (element_children($form[$index]["suggestion"]) as $index2) {
+        $output .= drupal_render($form[$index]["suggestion"][$index2]);
+      }
+    }
+    if (!empty($form[$index]["new_suggestion"])) {
+      $output .= drupal_render($form[$index]["new_suggestion"]);
+    }
+  }
+  $output .= drupal_render($form);
+  return $output;
+}

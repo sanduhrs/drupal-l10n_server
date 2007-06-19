@@ -1,0 +1,9 @@
+TODO:
+  - Interact with Project module: translation status on project page
+  - Interact with Project module: translation errors on project page
+  - Increase the scanner performance
+  - Consider multiple Drupal versions (Now only scans Drupal 5 projects)
+  - PO files exporter
+  - Review all strings
+  - Create a javascript for enhance web translation (partially done)
+  - IMPORTANT: Remove strings that the project doesnt have anymore

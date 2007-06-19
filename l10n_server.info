@@ -1,0 +1,4 @@
+; $Id$
+name = "Localization server"
+description = Extracts translatable strings from project files.
+dependencies = locale

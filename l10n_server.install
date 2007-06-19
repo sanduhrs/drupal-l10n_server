@@ -1,0 +1,90 @@
+<?php
+// $Id$
+/**
+ * @file
+ *   Localization server installation, update and uninstallation.
+*/
+
+/**
+ * Implementation of hook_install().
+ */
+function l10n_server_install() {
+  $table_config = "";
+  $serial = "SERIAL";
+  switch ($GLOBALS["db_type"]) {
+    case "mysql":
+    case "mysqli":
+      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
+    case "pgsql":
+      db_query("CREATE TABLE {l10n_server_source} (
+        sid           $serial       PRIMARY KEY,
+        source        TEXT          NOT NULL,
+        project       VARCHAR(50)   NOT NULL,
+        ptid          INTEGER
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_server_target} (
+        sid           INTEGER       NOT NULL,
+        translated    TEXT          NOT NULL,
+        locale        VARCHAR(12)   NOT NULL,
+        uid           INTEGER       NOT NULL,
+        update_date   INTEGER,
+        official      BOOLEAN,
+        plural        SMALLINT
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_server_team} (
+          nid           INTEGER       NOT NULL,
+          locale        VARCHAR(12)   NOT NULL
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_server_projects} (
+        code          VARCHAR(50)   PRIMARY KEY,
+        project       VARCHAR(255)  NOT NULL,
+        file          VARCHAR(255),
+        path          VARCHAR(255)
+        ) $table_config;");
+      db_query("CREATE INDEX {l10n_server_source}_project      ON {l10n_server_source} (project);");
+      db_query("ALTER TABLE {l10n_server_target} ADD FOREIGN KEY (sid) REFERENCES {l10n_server_source}(sid);");
+      db_query("CREATE INDEX {l10n_server_target}_locale       ON {l10n_server_target} (locale);");
+      db_query("CREATE INDEX {l10n_server_target}_update_date  ON {l10n_server_target} (update_date);");
+      db_query("CREATE INDEX {l10n_server_team}_nid            ON {l10n_server_team}   (nid);");
+      break;
+  }
+}
+
+function l10n_server_uninstall() {
+  variable_del("l10n_server_cron");
+  variable_del("l10n_server_limit");
+  variable_del("l10n_server_loption");
+  db_query("DROP TABLE {l10n_server_source}");
+  db_query("DROP TABLE {l10n_server_target}");
+  db_query("DROP TABLE {l10n_server_team}");
+  db_query("DROP TABLE {l10n_server_projects}");
+}
+
+function l10n_server_update_1() {
+  $updates = array();
+  $table_config = "";
+  $serial = "SERIAL";
+  switch ($GLOBALS["db_type"]) {
+    case "mysql":
+    case "mysqli":
+      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
+    case "pgsql":
+      $updates[] = update_sql("CREATE TABLE {l10n_server_projects} (
+        code          VARCHAR(50)   PRIMARY KEY,
+        project       VARCHAR(255)  NOT NULL,
+        file          VARCHAR(255),
+        path          VARCHAR(255)
+        ) $table_config;");
+  }
+  if ($projects = variable_get("l10n_server_projects", NULL)) {
+    while (list($code, $project) = each($projects)) {
+      $updates[] = update_sql("INSERT INTO {l10n_server_projects} (code, project, file, path)
+        VALUES ('". $code ."', '". $project["name"] ."', '". $project["download"]["title"] ."', '". $project["download"]["href"] ."');");
+    }
+  }
+  variable_del("l10n_server_projects");
+  variable_del("l10n_server_last");
+  return $updates;
+}

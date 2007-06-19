@@ -1,0 +1,14 @@
+/* $Id$ */
+#l10n-community-result {
+  text-align: center;
+}
+#l10n-community-result div {
+  display: inline;
+}
+#l10n-community-result label {
+  display: inline;
+}
+
+.l10n-community-suggestion {
+  background: #369;
+}
