@@ -1,4 +1,5 @@
-TODO:
+$Id$
+
   - Interact with Project module: translation status on project page
   - Interact with Project module: translation errors on project page
   - Increase the scanner performance
