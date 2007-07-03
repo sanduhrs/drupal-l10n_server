@@ -2,13 +2,39 @@
 #l10n-community-result {
   text-align: center;
 }
-#l10n-community-result div {
-  display: inline;
-}
 #l10n-community-result label {
   display: inline;
 }
-
 .l10n-community-suggestion {
-  background: #369;
+  background-color: #369;
 }
+
+.l10n-community-marker {
+  font-weight: bold;
+}
+
+.l10n-community-progress {
+  height: 1em;
+  border: 1px solid #cdcdcd;
+  padding: 2px;
+  margin: 6px;
+  width: 200px;
+  background-color: #f5f5f5;
+}
+.l10n-community-progress-translated {
+  background-color: #69b123;
+  height: 1em;
+  float: left;
+}
+.l10n-community-progress-untranslated {
+  background-color: #b93131;
+  height: 1em;
+  float: left;
+}
+.l10n-community-progress-suggested {
+  background-color: #6a4970;
+  height: 1em;
+  float: left;
+}
+
+
