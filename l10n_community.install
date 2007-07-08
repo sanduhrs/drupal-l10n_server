@@ -1,0 +1,33 @@
+<?php
+// $Id$
+/**
+ * @file
+ *   Localization community installation, update and uninstallation.
+*/
+
+/**
+ * Implementation of hook_install().
+ */
+function l10n_community_install() {
+  $table_config = "";
+  $serial = "SERIAL";
+  switch ($GLOBALS["db_type"]) {
+    case "mysql":
+    case "mysqli":
+      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
+      // Intentionally no break here.
+    case "pgsql":
+      // Adds "managed language" information to localization teams.
+      db_query("CREATE TABLE {l10n_community_team} (
+          nid           INTEGER       NOT NULL,
+          language      VARCHAR(12)   NOT NULL
+        ) $table_config;");
+      db_query("CREATE INDEX {l10n_community_team}_nid ON {l10n_community_team} (nid);");
+      break;
+  }
+}
+
+function l10n_community_uninstall() {
+  db_query("DROP TABLE {l10n_community_team}");
+}

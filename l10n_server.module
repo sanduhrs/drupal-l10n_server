@@ -52,7 +52,7 @@ function l10n_server_menu($may_cache) {
       'title' => t('Scan'),
       'path' => 'admin/settings/l10n_server/scan',
       'access' => user_access('administer localization server'),
-      'callback' => 'l10n_server_scan_new_projects',
+      'callback' => 'l10n_server_scan',
       'type' => MENU_LOCAL_TASK
     );
     /*$items[] = array(
@@ -81,7 +81,7 @@ function l10n_server_perm() {
  */
 function l10n_server_cron() {
   if (variable_get('l10n_server_cron', FALSE)) {
-    l10n_server_scan_new_projects(TRUE);
+    l10n_server_scan(TRUE);
   }
 }
 
@@ -111,159 +111,126 @@ function l10n_server_settings_form() {
 // = Project handling ==========================================================
 
 /**
- * Scan new projects for strings. Record project and string details in the
- * database.
+ * Scans files of a project and release picked.
+ *
+ * @param $automated
+ *   Whether the execution was automated and user feedback should
+ *   not be provided.
+ *
+ * @todo
+ *   Do less HTTP queries!
  */
-function l10n_server_scan_new_projects($automated = FALSE) {
+function l10n_server_scan($automated = FALSE) {
+  include_once 'l10n_server_projects.inc';
   
-  if (!$projects = l10n_server_get_new_projects()) {
-    // If we have no new projects to scan, abort.
-    watchdog('l10n_server', t('No new projects to scan.'));
-    return;
-  }
+  // Always update full project list.
+  l10n_server_sync_projects();
   
-  // This could take a long time.
-  @set_time_limit(0);
-
-  // We depend on the PEAR Tar class and potx module.
-  include_once('Archive/Tar.php');
-  require_once(drupal_get_path('module', 'potx') .'/potx.inc');
-
-  // Set up status messages if not in automated mode.
-  _potx_status($automated ? POTX_STATUS_SILENT : POTX_STATUS_MESSAGE);
+  // Pick the project we did not update for the longest period.
+  $uri = db_result(db_query_range("SELECT uri FROM {l10n_server_project} ORDER BY last_parsed ASC", 0, 1));
+  $project = l10n_server_get_projects($uri);
+  l10n_server_sync_releases($project);
   
-  foreach($projects as $project_code => $project) {
-    // Local place to save the tarball.
-    $file = file_directory_temp() .'/'. $project->file;
-    // Local place to extract the tarball.
-    $path = file_directory_temp() .'/l10n_server';
-    
-    // Nothing to do if already downloaded and/or extracted in the local filesystem.
-    if (file_exists($file) or is_dir($path)) {
-      watchdog('l10n_server', t('Project %project (%code) file %file or the path %path already exists.', array('%project' => $project->project, '%code' => $project_code, '%file' => $file, '%path' => $path)));
-      continue;
-    }
-    
-    // Download the tar.gz file from drupal.org and save it in the local filesystem.
-    if (!copy($project->path, $file)) {
-      watchdog('l10n_server', t('Unbale to download and save project %project (%code) file.', array('%project' => $project->project, '%code' => $project_code)));
-      continue;
-    }
-    
-    // Extract the local file to the l10n_server directory and remove the tarball.
-    $obj = new Archive_Tar($file);
-    if (!$obj->extract($path)) {
-      watchdog('l10n_server', t('Error on extracting project %project (%code) file.', array('%project' => $project->project, '%code' => $project_code)));
-      unlink($file);
-      continue;
-    }
-    
-    // Get all source files and save strings with our callback for this project.
-    $files = _potx_explore_dir($path);
-    l10n_server_save_string($project_code);
-    foreach ($files as $filename) {
-      _potx_process_file($filename, 0, 'l10n_server_save_string');
-    }
-    
-    // Delete the extracted files and the tarball.
-    l10n_server_rmdir_recursive($path);
-    unlink($file);
-    
-    // Record changes of the scanned project in the database.
-    if (db_result(db_query("SELECT code FROM {l10n_server_projects} WHERE code = '%s'", $project_code))) {
-      db_query("UPDATE {l10n_server_projects} SET file = '%s', path = '%s' WHERE code = '%s'", $code, $project->file, $project->path);
-    }
-    else {
-      db_query("INSERT INTO {l10n_server_projects} (code, project, file, path) VALUES ('%s', '%s', '%s', '%s')", $project_code, $project->project,$project->file, $project->path);
-    }
-    watchdog('l10n_server', t('Project %project (%code) has been scanned.', array('%project' => $project->project, '%code' => $project_code)));
-    if (!$automated) {
-      drupal_set_message(t('Project %project (%code) has been scanned.', array('%project' => $project->project, '%code' => $project_code)));
-    }
-  }
+  // Pick the release we did not update for the longest period.
+  $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid WHERE p.uri = '%s' ORDER BY r.last_parsed ASC", $uri, 0, 1));
+  $result = l10n_server_sync_files($release);
+  
   if (!$automated) {
-    return '<p>'. t('Manual scan run completed.') . '</p>';
-  }
-}
-
-/**
- * String saving callback for potx. The project can be set with calling
- * l10n_server_save_string() with the project name only. A string is saved
- * with passing on the strings value, file and line number.
- *
- * @todo
- *   Save the strings where the string was found.
- * @todo
- *   More elegant plural handling.
- * @todo
- *   Abstract strings out of projects, so we can link them together,
- *   and share between versions.
- * @todo
- *   Find a way to properly use POTX constants before potx.inc is
- *   loaded.
- *
- * @param $value
- *   Project name to set if $file is NULL. Otherwise the string value to store.
- * @param $file
- *   Name of file the string occured in.
- * @param $line
- *   Number of line the string was found.
- * @param $string_mode
- *   String mode: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
- *   or POTX_STRING_BOTH.
- */
-function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string_mode = POTX_STRING_RUNTIME) {
-  static $project;
-  
-  if ($file == NULL) {
-    $project = $value;
-  }
-  else {
-    $parts = explode("\0", $value, 2);
-    foreach ($parts as $num => $part) {
-      if (!db_result(db_query("SELECT sid FROM {l10n_server_source} WHERE source = '%s' AND project= '%s'", $part, $project))) {
-        $ptid = 0;
-        if (!empty($num)) {
-          $ptid = db_result(db_query("SELECT sid FROM {l10n_server_source} WHERE source = '%s' AND project= '%s' AND ptid = 0", $parts[0], $project));
-        }
-        db_query("INSERT INTO {l10n_server_source} (source, project, ptid) VALUES ('%s', '%s', %d)", $part, $project, $ptid);
-      }
+    // User feedback if not automated. Log messages are already done.
+    if (isset($result['error'])) {
+      drupal_set_message($result['error'], 'error');
+    }
+    if (isset($result['message'])) {
+      drupal_set_message($result['message']);
     }
   }
-}
-
-/**
- * Delete the complete contents of a directory recursively.
- *
- * @param $dirname
- *  The directory name to be deleted.
- */
-function l10n_server_rmdir_recursive($directory) {
-  if (!is_dir($directory)) {
-    return;
-  }
-  if (substr($directory, -1) != '/') {
-    $directory .= '/';
-  }
-  if ($handle = opendir($directory)) {
-    while ($file = readdir($handle)) {
-        if ($file == '.' or $file == '..') {
-          continue;
-        }
-        $path = $directory .'/'. $file;
-        if (is_dir($path)) {
-          l10n_server_rmdir_recursive($path);
-        }
-        else {
-          unlink($path);
-        }
-    }
-    rmdir($directory);
-    closedir($handle);
-  }
+  // Ensure that a Drupal page will be displayed with the messages.
+  return '';
 }
 
 // = Serving l10n_client =======================================================
+
+/**
+ * PO file with all translated strings from a given locale and module
+ *
+ * @param $language
+ *  string, the language code, ie "en", "pt-br", "de"
+ * @param $project
+ *  string, the project name
+ * @param $startdate
+ *  number, the last uptade date
+ * @return
+ *  string, a XML file with all translated strings
+ *
+function l10n_server_update($language, $projects, $startdate) {
+  if (empty($language) or empty($projects)) {
+    print("");
+    return;
+  }
+  $projects = explode("|", $projects);
+  $strings = array();
+  // transform GMT time into Unix time
+  preg_match('/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:(\d{2}))?(?:([-+])(\d{2}):?(\d{2})|(Z))?/', $startdate, $match);
+  list($year, $month, $day, $hour, $minute, $second) = array($match[1], $match[2], $match[3], $match[4], $match[5], $match[7]);
+  $startdate = gmmktime($hour, $minute, $second, $month, $day, $year);
+  $items = "";
+  foreach ($projects as $project) {
+    if ($strings = l10n_server_get_strings($language, "translated", NULL, $project, $startdate)) {
+      while (list(, $string) = each($strings)) {
+        $item = array("item" => array("string" => $string["source"],
+          "translation" => $string["translated"]));
+        $items .= format_xml_elements($item);
+      }
+    }
+  }
+  if (!empty($items)) {
+  print("<?xml version='1.0' encoding='utf-8'?>
+<module>
+<language>". $language ."</language>
+<fromdate>". $startdate ."</fromdate>
+<todate>". time() ."</todate>".
+  $items .
+"</module>");
+  }
+}*/
+
+// = API functions =============================================================
+
+/**
+ * Provides a list of projects already recoreded in the l10n_server
+ * database, ordered by uri.
+ *
+ * @param $uri
+ *   Project URI, if requesting information about one project only.
+ * @param $pager
+ *  Number of projects to return a pager query result with. If NULL,
+ *  all projects are returned.
+ *  
+ * @return
+ *  An associative array keyed with project uris.
+ */
+function l10n_server_get_projects($uri = NULL, $pager = NULL) {
+  $projects = array();
+  if (!isset($pager)) {
+    if (isset($uri)) {
+      $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri);
+      if ($project = db_fetch_object($result)) {
+        $project->core_compatibility = unserialize($project->core_compatibility);
+        return $project;
+      }
+      return NULL;
+    }
+    $results = db_query('SELECT * FROM {l10n_server_project} ORDER BY uri');
+  }
+  else {
+    $results = pager_query('SELECT * FROM {l10n_server_project} ORDER BY uri', $pager, 0, NULL);
+  }
+  while ($project = db_fetch_object($results)) {
+    $project->core_compatibility = unserialize($project->core_compatibility);
+    $projects[$project->uri] = $project;
+  }
+  return $projects;
+}
 
 /**
  * Get strings under some conditions.
@@ -352,117 +319,4 @@ function l10n_server_get_strings($langcode, $status, $count = FALSE, $project = 
     $result[] = $string;
   }
   return !empty($result) ? $result : NULL;
-}
-
-/**
- * PO file with all translated strings from a given locale and module
- *
- * @param $language
- *  string, the language code, ie "en", "pt-br", "de"
- * @param $project
- *  string, the project name
- * @param $startdate
- *  number, the last uptade date
- * @return
- *  string, a XML file with all translated strings
- *
-function l10n_server_update($language, $projects, $startdate) {
-  if (empty($language) or empty($projects)) {
-    print("");
-    return;
-  }
-  $projects = explode("|", $projects);
-  $strings = array();
-  // transform GMT time into Unix time
-  preg_match('/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:(\d{2}))?(?:([-+])(\d{2}):?(\d{2})|(Z))?/', $startdate, $match);
-  list($year, $month, $day, $hour, $minute, $second) = array($match[1], $match[2], $match[3], $match[4], $match[5], $match[7]);
-  $startdate = gmmktime($hour, $minute, $second, $month, $day, $year);
-  $items = "";
-  foreach ($projects as $project) {
-    if ($strings = l10n_server_get_strings($language, "translated", NULL, $project, $startdate)) {
-      while (list(, $string) = each($strings)) {
-        $item = array("item" => array("string" => $string["source"],
-          "translation" => $string["translated"]));
-        $items .= format_xml_elements($item);
-      }
-    }
-  }
-  if (!empty($items)) {
-  print("<?xml version='1.0' encoding='utf-8'?>
-<module>
-<language>". $language ."</language>
-<fromdate>". $startdate ."</fromdate>
-<todate>". time() ."</todate>".
-  $items .
-"</module>");
-  }
-}*/
-
-// = API functions =============================================================
-
-/**
- * Provides a list of projects already recoreded in the l10n_server
- * database, ordered by codename.
- *
- * @param $pager
- *  Number of projects to return a pager query result with. If NULL,
- *  all projects are returned.
- *  
- * @return
- *  An associative array keyed with project codenames, 
- */
-function l10n_server_get_projects($pager = NULL) {
-  $projects = array();
-  if (!isset($pager)) {
-    $results = db_query('SELECT * FROM {l10n_server_projects} ORDER BY code');
-  }
-  else {
-    $results = pager_query('SELECT * FROM {l10n_server_projects} ORDER BY code', $pager, 0, NULL);
-  }
-  while ($project = db_fetch_object($results)) {
-    $projects[$project->code] = $project;
-  }
-  return $projects;
-}
-
-/**
- * Compile a list of *new* projects by consulting the updates.drupal.org
- * XML-RPC interface and comparing the project list to the list on the
- * local database. The number of new projects recorded is limited by
- * the 'l10n_server_limit' variable.
- *
- * @todo
- *   This only scans 5.x projects, lift this limitation!
- *
- * @return
- *   An associative array keyed by the project codename with project
- *   object values.
- */
-function l10n_server_get_new_projects() {
-  $projects = $remote = array();
-  // Get list of currently recorded projects.
-  $current = l10n_server_get_projects();
-  // Get complete list of projects maintained at Drupal.org from the
-  // project_release module XML-RPC API running at updates.drupal.org.
-  if ($remote = xmlrpc('http://updates.drupal.org/xmlrpc.php', 'project.release.data', 'all', '5.x')) {
-    $remote = unserialize(gzinflate(substr(substr(base64_decode($remote), 10), 0, -8)));
-    $countdown = variable_get('l10n_server_limit', 1);
-    foreach($remote as $project_code => $project) {
-      if ($countdown == 0) {
-        // We reached our limit.
-        break 1;
-      }
-      if ($current[$project_code]->file != $project['download']['title']) {
-        // We have found a project with a *new name*.
-        $projects[$project_code] = (object) array(
-          'code'    => $project_code,
-          'project' => $project['name'],
-          'file'    => $project['download']['title'],
-          'path'    => $project['download']['href'],
-        );
-        $countdown--;
-      }
-    }
-  }
-  return $projects;
 }
