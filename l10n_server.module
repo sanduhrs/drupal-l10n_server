@@ -210,12 +210,16 @@ function l10n_server_update($language, $projects, $startdate) {
  *  An associative array keyed with project uris.
  */
 function l10n_server_get_projects($uri = NULL, $pager = NULL) {
-  $projects = array();
+  static $projects = array();
   if (!isset($pager)) {
     if (isset($uri)) {
+      if (isset($projects[$uri])) {
+        return $projects[$uri];
+      }
       $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri);
       if ($project = db_fetch_object($result)) {
         $project->core_compatibility = unserialize($project->core_compatibility);
+        $projects[$uri] = $project;
         return $project;
       }
       return NULL;
@@ -242,8 +246,8 @@ function l10n_server_get_projects($uri = NULL, $pager = NULL) {
  *   L10N_STATUS_SUGGESTED and L10N_STATUS_TRANSLATED.
  * @param $count
  *   Boolean to return the result count (TRUE) or the result itself (FALSE).
- * @param $project
- *   Code name of te the project.
+ * @param $uri
+ *   URI of the project.
  * @param $startdate
  *   The unix timestamp that all translations shuold be older than.
  * @param $pager
@@ -251,10 +255,28 @@ function l10n_server_get_projects($uri = NULL, $pager = NULL) {
  * @return
  *   An array of strings columns from database.
  */
-function l10n_server_get_strings($langcode, $status, $count = FALSE, $project = NULL, $startdate = NULL, $pager = NULL) {
+function l10n_server_get_strings($langcode, $status, $count = FALSE, $uri = NULL, $startdate = NULL, $pager = NULL) {
   if (empty($langcode)) {
     return NULL;
   }
+  
+  $project = l10n_server_get_projects($uri);
+  $sql = "SELECT DISTINCT s.sid, s.value FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d";
+  $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d";
+  $sql_arg = $project->pid;
+  if (!empty($pager)) {
+    $strings = pager_query($sql, $pager, 0, $sql_count, $sql_arg);
+  }
+  else {
+    $strings = db_query($sql, $sql_arg);
+  }
+  $result = array();
+  while ($string = db_fetch_object($strings)) {
+    $result[] = $string;
+  }
+  return $result;
+
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
   $sql_args[] = $langcode;
   

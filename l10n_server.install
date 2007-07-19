@@ -33,6 +33,11 @@ function l10n_server_install() {
         file_date          INTEGER,
         last_parsed        INTEGER
         ) $table_config;");
+      db_query("CREATE TABLE {l10n_server_error} (
+        eid                $serial      PRIMARY KEY,
+        rid                INTEGER,
+        value              TEXT         NOT NULL
+        ) $table_config;");
       db_query("CREATE TABLE {l10n_server_file} (
         fid                $serial      PRIMARY KEY,
         rid                INTEGER,
@@ -47,26 +52,27 @@ function l10n_server_install() {
       db_query("CREATE TABLE {l10n_server_string} (
         sid                $serial      PRIMARY KEY,
         value              TEXT         NOT NULL,
-        psid               INTEGER
+        plural             INTEGER
         ) $table_config;");
       
-      db_query("CREATE TABLE {l10n_server_target} (
+      db_query("CREATE TABLE {l10n_server_translation} (
+        tid           $serial       PRIMARY KEY,
         sid           INTEGER       NOT NULL,
-        translated    TEXT          NOT NULL,
-        locale        VARCHAR(12)   NOT NULL,
+        language      VARCHAR(12)   NOT NULL,
+        translation   TEXT          NOT NULL,
         uid           INTEGER       NOT NULL,
-        update_date   INTEGER,
-        official      BOOLEAN,
-        plural        SMALLINT
+        changed       INTEGER       NOT NULL
         ) $table_config;");
       db_query("ALTER TABLE  {l10n_server_release} ADD FOREIGN KEY (pid) REFERENCES {l10n_server_project} (pid);");
+      db_query("ALTER TABLE  {l10n_server_error}   ADD FOREIGN KEY (rid) REFERENCES {l10n_server_release} (rid);");
       db_query("ALTER TABLE  {l10n_server_file}    ADD FOREIGN KEY (rid) REFERENCES {l10n_server_release} (rid);");
       db_query("ALTER TABLE  {l10n_server_line}    ADD FOREIGN KEY (fid) REFERENCES {l10n_server_file} (fid);");
       db_query("ALTER TABLE  {l10n_server_line}    ADD FOREIGN KEY (sid) REFERENCES {l10n_server_string} (sid);");
       db_query("CREATE INDEX {l10n_server_project}_uri         ON {l10n_server_project} (uri);");
 
-      db_query("CREATE INDEX {l10n_server_target}_locale       ON {l10n_server_target} (locale);");
-      db_query("CREATE INDEX {l10n_server_target}_update_date  ON {l10n_server_target} (update_date);");
+      db_query("ALTER TABLE  {l10n_server_target}   ADD FOREIGN KEY (sid) REFERENCES {l10n_server_string} (sid);");
+      db_query("CREATE INDEX {l10n_server_target}_language     ON {l10n_server_target} (language);");
+      db_query("CREATE INDEX {l10n_server_target}_changed      ON {l10n_server_target} (changed);");
       break;
   }
 }
@@ -76,6 +82,7 @@ function l10n_server_uninstall() {
   variable_del("l10n_server_limit");
   db_query("DROP TABLE {l10n_server_project}");
   db_query("DROP TABLE {l10n_server_release}");
+  db_query("DROP TABLE {l10n_server_error}");
   db_query("DROP TABLE {l10n_server_file}");
   db_query("DROP TABLE {l10n_server_line}");
   db_query("DROP TABLE {l10n_server_string}");

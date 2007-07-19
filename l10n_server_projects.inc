@@ -158,6 +158,16 @@ function l10n_server_sync_files($release) {
 
       // Parsed this releases files.
       db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+      
+      // Update error list for this release. Although the errors are related to
+      // files, we are not interested in the fine details, the file names are in
+      // the error messages as text. We assume no other messages are added while
+      // importing, so we can safely use drupal_get_message() to grab our errors.
+      db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid);
+      $messages = drupal_get_messages('error');
+      foreach ($messages['error'] as $error_message) {
+        db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
+      }
     }
   }
   
@@ -247,21 +257,17 @@ function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string
     $files[$file] = l10n_server_save_file(NULL, $file);
   }
   else {
-    // Multiple parts mean a string with plural variants. This means two
-    // pieces, first being the singular form, second being the plural. We
-    // link these two together with a psid (parent sid).
-    $parts = explode("\0", $value, 2);
-    $psid = 0;
-    foreach ($parts as $value) {
-      if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value))) {
-        // String does not exist.
-        db_query("INSERT INTO {l10n_server_string} (value, psid) VALUES ('%s', %d)", $value, $psid);
-        $sid = $psid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value));
-      }
-      if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND lineno = %d", $fid, $line))) {
-        // Location does not exist.
-        db_query("INSERT INTO {l10n_server_line} (fid, sid, lineno) VALUES (%d, %d, %d)", $files[$file], $sid, $line);
-      }
+    // The \0 separator means we deal with a string with plural variants.
+    // Unlike Drupal core, we store all in the same string, as it is easier
+    // to handle later, and we don't need the individual string parts.
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value))) {
+      // String does not exist.
+      db_query("INSERT INTO {l10n_server_string} (value, plural) VALUES ('%s', %d)", $value, (strpos($value, "\0") !== FALSE));
+      $sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value));
+    }
+    if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND sid = %d AND lineno = %d", $fid, $sid, $line))) {
+      // Location does not exist with this string.
+      db_query("INSERT INTO {l10n_server_line} (fid, sid, lineno) VALUES (%d, %d, %d)", $files[$file], $sid, $line);
     }
   }
 }
