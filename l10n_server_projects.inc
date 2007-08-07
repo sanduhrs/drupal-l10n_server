@@ -101,6 +101,10 @@ function l10n_server_sync_releases($project) {
 /**
  * Downloads files for a particular release and parses contents.
  *
+ * @todo
+ *   Consider using drupal_http_request() or some more Drupal friendly
+ *   way instead of lame copy().
+ *
  * @param $release
  *   Release object.
  */

@@ -12,9 +12,24 @@
  *   strings online.
  */
 
+/**
+ * Strings with any status.
+ */
 define('L10N_STATUS_ALL', 0); 
+
+/**
+ * Untranslated strings only.
+ */
 define('L10N_STATUS_UNTRANSLATED', 1); 
+
+/**
+ * Suggested (but not approved) strings only.
+ */
 define('L10N_STATUS_SUGGESTED', 2); 
+
+/**
+ * Translated strings only.
+ */
 define('L10N_STATUS_TRANSLATED', 3); 
 
 // = Core hooks ================================================================
@@ -55,16 +70,6 @@ function l10n_server_menu($may_cache) {
       'callback' => 'l10n_server_scan',
       'type' => MENU_LOCAL_TASK
     );
-    /*$items[] = array(
-      'path' => 'translation_update',
-      'access' => TRUE,
-      'callback' => 'l10n_server_update',
-      'callback arguments' => array(
-        !empty($_GET['language'])  ? $_GET['language']  : NULL,
-        !empty($_GET['projects'])  ? $_GET['projects']  : NULL,
-        !empty($_GET['startdate']) ? $_GET['startdate'] : NULL),
-      'type' => MENU_CALLBACK
-    );*/
   }
   return $items;
 }
@@ -148,52 +153,6 @@ function l10n_server_scan($automated = FALSE) {
   return '';
 }
 
-// = Serving l10n_client =======================================================
-
-/**
- * PO file with all translated strings from a given locale and module
- *
- * @param $language
- *  string, the language code, ie "en", "pt-br", "de"
- * @param $project
- *  string, the project name
- * @param $startdate
- *  number, the last uptade date
- * @return
- *  string, a XML file with all translated strings
- *
-function l10n_server_update($language, $projects, $startdate) {
-  if (empty($language) or empty($projects)) {
-    print("");
-    return;
-  }
-  $projects = explode("|", $projects);
-  $strings = array();
-  // transform GMT time into Unix time
-  preg_match('/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(:(\d{2}))?(?:([-+])(\d{2}):?(\d{2})|(Z))?/', $startdate, $match);
-  list($year, $month, $day, $hour, $minute, $second) = array($match[1], $match[2], $match[3], $match[4], $match[5], $match[7]);
-  $startdate = gmmktime($hour, $minute, $second, $month, $day, $year);
-  $items = "";
-  foreach ($projects as $project) {
-    if ($strings = l10n_server_get_strings($language, "translated", NULL, $project, $startdate)) {
-      while (list(, $string) = each($strings)) {
-        $item = array("item" => array("string" => $string["source"],
-          "translation" => $string["translated"]));
-        $items .= format_xml_elements($item);
-      }
-    }
-  }
-  if (!empty($items)) {
-  print("<?xml version='1.0' encoding='utf-8'?>
-<module>
-<language>". $language ."</language>
-<fromdate>". $startdate ."</fromdate>
-<todate>". time() ."</todate>".
-  $items .
-"</module>");
-  }
-}*/
-
 // = API functions =============================================================
 
 /**
@@ -211,29 +170,43 @@ function l10n_server_update($language, $projects, $startdate) {
  */
 function l10n_server_get_projects($uri = NULL, $pager = NULL) {
   static $projects = array();
-  if (!isset($pager)) {
+  
+  if (isset($pager)) {
+    // If a pager view was asked, collect data independently.
+    $results = pager_query('SELECT * FROM {l10n_server_project} ORDER BY uri', $pager, 0, NULL);
+    $pager_results = array();
+    while ($project = db_fetch_object($results)) {
+      $project->core_compatibility = unserialize($project->core_compatibility);
+      $pager_results[$project->uri] = $project;
+      $projects[$project->uri] = $project;
+    }
+    return $pager_results;
+  }
+  else {
     if (isset($uri)) {
+      // A specific project was asked for.
       if (isset($projects[$uri])) {
+        // Can be served from the local cache.
         return $projects[$uri];
       }
+      // Not found in cache, so query and cache before returning.
       $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri);
       if ($project = db_fetch_object($result)) {
         $project->core_compatibility = unserialize($project->core_compatibility);
         $projects[$uri] = $project;
         return $project;
       }
-      return NULL;
     }
-    $results = db_query('SELECT * FROM {l10n_server_project} ORDER BY uri');
+    else {
+      // A list of all projects was asked for.
+      $results = db_query('SELECT * FROM {l10n_server_project} ORDER BY uri');
+      while ($project = db_fetch_object($results)) {
+        $project->core_compatibility = unserialize($project->core_compatibility);
+        $projects[$project->uri] = $project;
+      }
+      return $projects;
+    }
   }
-  else {
-    $results = pager_query('SELECT * FROM {l10n_server_project} ORDER BY uri', $pager, 0, NULL);
-  }
-  while ($project = db_fetch_object($results)) {
-    $project->core_compatibility = unserialize($project->core_compatibility);
-    $projects[$project->uri] = $project;
-  }
-  return $projects;
 }
 
 /**
@@ -241,6 +214,9 @@ function l10n_server_get_projects($uri = NULL, $pager = NULL) {
  *
  * @param $uri
  *   Project code to look up releases for.
+ * @param $parsed_only
+ *   TRUE or FALSE depending on whether to return already
+ *   parsed (translatable) releases.
  * @return
  *   Array of release objects for project.
  */
@@ -254,7 +230,6 @@ function l10n_server_get_releases($uri = NULL, $parsed_only = TRUE) {
   while ($release = db_fetch_object($result)) {
     $releases[] = $release;
   }
-  
   return $releases;
 }
 
