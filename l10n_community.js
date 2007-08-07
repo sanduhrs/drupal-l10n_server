@@ -6,7 +6,7 @@ function l10n_community_init() {
   // the strings ideitifiers.
   $('img.l10n-community-copy').click(function() {
     var id = $(this).attr('id').replace('l10n-community-copy-', '');
-    $('#new_suggestion' + Drupal.settings.l10n_strings[id][0]).val(Drupal.settings.l10n_strings[id][1]);
+    $('#l10n-commumnity-translation-' + id).val(Drupal.settings.l10n_strings[id]);
   ;})
   // Link-like behaviour with pointer mouse icon.
   $('.form-item img').mouseover(function() {
