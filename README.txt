@@ -61,6 +61,8 @@ translation based on the different suggestions. To translate a project, go
 to Translations, choose a language and choose the project. There you
 can translate all strings.
 
+For more details, look into the documentation directory.
+
 DEVELOPERS
 --------------------------------------------------------------------------------
 
