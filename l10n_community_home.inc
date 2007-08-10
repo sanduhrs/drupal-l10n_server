@@ -15,7 +15,7 @@ $output = '<div id="l10n-community-home" class="admin clear-block"><div class="l
 $block = array(
   'title' => t('About this site'),
   'description' => t('Community for Drupal translations'),
-  'content' => t('This web site serves as a community interface for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, so all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.')
+  'content' => t('This web site serves as a community interface for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, meaning that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.')
 );
 $output .= theme('admin_block', $block);
 
@@ -47,7 +47,7 @@ else {
 }
 $items[] = array('title' => t('Subscribe to groups of your interest'), 'path' => 'og', 'description' => t('Choose any translation groups you would like to participate in, and subscribe.'));
   // Emphasize this list item, so it stands out.
-$items[] = array('title' => '<strong><big>'. t('Translate') .'</big></strong>', 'path' => 'translations', 'description' => t('Pick projects to translate to your language; translate on the web interface or import existing translations.'));
+$items[] = array('title' => '<strong><big>'. t('Translate') .'</big></strong>', 'path' => 'translate', 'description' => t('Pick projects to translate to your language; translate on the web interface or import existing translations.'));
 $items[] = array('title' => t('Export'), 'path' => 'translations', 'description' => t('Translations are automatically packaged on drupal.org, but you can export translations to test them yourself, even if logged out.'));
 $content = '';
 foreach ($items as $item) {
