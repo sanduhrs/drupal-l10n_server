@@ -13,26 +13,28 @@
 $output = '<div id="l10n-community-home" class="admin clear-block"><div class="left clear-block">';
 
 $block = array(
-  'title' => t('About this site'),
+  'title' => t('About this interface'),
   'description' => t('Community for Drupal translations'),
-  'content' => t('This web site serves as a community interface for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, meaning that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.')
+  'content' => t('This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, meaning that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.')
 );
 $output .= theme('admin_block', $block);
 
-$users = db_result(db_query('SELECT COUNT(*) FROM {users}'));
+//$users = db_result(db_query('SELECT COUNT(*) FROM {users}'));
 $groups = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_group}'));
 $projects = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_project}'));
 $files = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_file}'));
 $strings = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
+$translations = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_translation}'));
 $block = array(
   'title' => t('Quick stats'),
-  'description' => t('Some facts about this web site'),
+  'description' => t('Some facts about the system'),
   'content' => theme('item_list', array(
     t('%num translation groups', array('%num' => $groups)),
-    t('%num registered users', array('%num' => $users)),
+    //t('%num registered users', array('%num' => $users)),
     t('%num projects managed', array('%num' => $projects)),
     t('%num files scanned', array('%num' => $files)),
     t('%num strings to translate', array('%num' => $strings)),
+    t('%num translations recorded', array('%num' => $translations)),
   )),
 );
 $output .= theme('admin_block', $block);
@@ -47,8 +49,8 @@ else {
 }
 $items[] = array('title' => t('Subscribe to groups of your interest'), 'path' => 'og', 'description' => t('Choose any translation groups you would like to participate in, and subscribe.'));
   // Emphasize this list item, so it stands out.
-$items[] = array('title' => '<strong><big>'. t('Translate') .'</big></strong>', 'path' => 'translate', 'description' => t('Pick projects to translate to your language; translate on the web interface or import existing translations.'));
-$items[] = array('title' => t('Export'), 'path' => 'translations', 'description' => t('Translations are automatically packaged on drupal.org, but you can export translations to test them yourself, even if logged out.'));
+$items[] = array('title' => '<strong><big>'. t('Translate') .'</big></strong>', 'path' => 'translate/languages', 'description' => t('Pick projects to translate to your language; translate on the web interface or import existing translations.'));
+$items[] = array('title' => t('Export'), 'path' => 'translate/languages', 'description' => t('Translations are automatically packaged on drupal.org, but you can export translations to test them yourself, even if logged out.'));
 $content = '';
 foreach ($items as $item) {
   $content .= '<dt>'. l($item['title'], $item['path'], array(), NULL, NULL, FALSE, TRUE) .'</dt>';

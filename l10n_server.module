@@ -243,9 +243,9 @@ function l10n_server_get_releases($uri = NULL, $parsed_only = TRUE) {
  *       Language code, for example: 'hu', 'pt-br', 'de', 'it' and so on.
  *   - project_uri
  *      URI of a project to filter to.
- *   - release
- *      Release title (version) of the particular project release to
- *      filter with. Only used if a project_uri was provided.
+ *   - release_rid
+ *      Release id  of the particular project release to filter with.
+ *      Only used if a project_uri was provided.
  *   - status
  *      Filter strings by status. See L10N_STATUS_ALL,
  *      L10N_STATUS_UNTRANSLATED, L10N_STATUS_SUGGESTED and
@@ -290,18 +290,19 @@ function l10n_server_get_strings($options) {
   elseif (!empty($options['project_uri']) && empty($options['langcode'])) {
     // Only project based filtering, no language filtering.
     $project = l10n_server_get_projects($options['project_uri']);
-    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.* FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE r.pid = %d";
+    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.* FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE r.pid = %d";
     // No need to join with translations for the count.
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d";
+    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d";
     $sql_args = array($project->pid);
   }
   
   elseif (!empty($options['project_uri']) && !empty($options['langcode'])) {
     // Project *and* language based filtering.
     $project = l10n_server_get_projects($options['project_uri']);
-    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r LEFT JOIN {l10n_server_file} f ON r.rid = f.rid LEFT JOIN {l10n_server_line} l ON f.fid = l.fid LEFT JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
+    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
+    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
     $sql_args = array($options['langcode'], $project->pid);
+
     if (!empty($options['search'])) {
       // Search in the source or target strings.
       $sql_args[] = $options['search'];
@@ -309,6 +310,35 @@ function l10n_server_get_strings($options) {
       $search_sql = " AND (s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
       $sql .= $search_sql;
       $sql_count .= $search_sql;
+    }
+
+    if (!empty($options['release_rid']) && $options['release_rid'] != 'all') {
+      // Release restriction.
+      $sql_args[] = $options['release_rid'];
+      $sql_args[] = $options['release_rid'];
+      $release_sql = ' AND r.rid = %d';
+      $sql .= $release_sql;
+      $sql_count .= $release_sql;
+    }
+    
+    if (!empty($options['status'])) {
+      // Restriction based on string status
+      switch ($options['status']) {
+        case L10N_STATUS_UNTRANSLATED:
+          $status_sql = " AND (t.translation IS NULL OR t.translation = '')";
+          $sql .= $status_sql;
+          $sql_count .= $status_sql;
+          break;
+        case L10N_STATUS_TRANSLATED:
+        case L10N_STATUS_SUGGESTED:
+          $status_sql = " AND t.translation != ''";
+          $sql .= $status_sql;
+          $sql_count .= $status_sql;
+          break;
+        case L10N_STATUS_ALL:
+          // leave query alone.
+          break;
+      }
     }
   }
 

@@ -28,7 +28,7 @@ function l10n_community_install() {
   }
   
   // Set variables.
-  variable_set('site_frontpage', 'l10nhome');
+  variable_set('site_frontpage', 'translate');
   variable_set('site_name', 'Drupal localization server');
   
   // Add languages and plurals we know have Drupal translations

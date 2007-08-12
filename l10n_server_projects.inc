@@ -40,7 +40,7 @@ function l10n_server_sync_projects() {
   // Record all projects in the database.
   foreach ($projects as $uri => $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri))) {
-      if (serialize($project->core_compatibility) != serialize($existing_project->core_compatibility) || $project->title != $existing_project->title) {
+      if ((serialize($project->core_compatibility) != $existing_project->core_compatibility) || ($project->title != $existing_project->title)) {
         // Update if core compatibility or title is different (uri should not
         // change, other data is internal). Also set the parsed timestamp to
         // the past, so we will reparse the releases later.
@@ -255,6 +255,9 @@ function l10n_server_save_file($revision = NULL, $file = NULL) {
  */
 function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string_mode = 2 /*POTX_STRING_RUNTIME*/) {
   static $files = array();
+  
+  // Strip all slashes from string.
+  $value = stripcslashes($value);
   
   if (!isset($files[$file])) {
     // Get file ID for saving, locally cache.
