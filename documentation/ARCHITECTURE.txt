@@ -69,8 +69,6 @@ l10n_community
    of the translations hosted on the site, as well as make it possible to
    import and export translations based on languages or projects.
    
-   TODO: implement the initially project based navigation
-   
 3. Translation can either happen on the site (which only requires a user
    account subscribed to at least one translation group) or off-site. The
    online interface should allow translators to provide suggestions for
@@ -85,9 +83,8 @@ l10n_community
    files of a specific project release. Translators can work with offline
    translation tools and import the modified PO files later.
    
-   TODO: implement PO file import
-   TODO: implement PO(T) file import (big projects will be tricky,
-   they require a directory structure built, not a simple standalon file)
+   TODO: implement PO(T) file export (big projects will be tricky,
+   they require a directory structure built, not a simple standalone file)
    
 5. Integration with drupal.org makes it possible to list translation
    packages and offer them for download for each project release. The
