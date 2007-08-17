@@ -236,120 +236,84 @@ function l10n_server_get_releases($uri = NULL, $parsed_only = TRUE) {
 /**
  * Get strings under some conditions.
  *
- * @param $options
- *   Array to filter strings. Either a langcode or project_uri is required.
- *   The following keys are used:
- *   - langcode
- *       Language code, for example: 'hu', 'pt-br', 'de', 'it' and so on.
- *   - project_uri
- *      URI of a project to filter to.
- *   - release_rid
- *      Release id  of the particular project release to filter with.
- *      Only used if a project_uri was provided.
- *   - status
- *      Filter strings by status. See L10N_STATUS_ALL,
- *      L10N_STATUS_UNTRANSLATED, L10N_STATUS_SUGGESTED and
- *      L10N_STATUS_TRANSLATED.
- *
- *   - count
- *      Boolean to return the result count (TRUE) or the result itself (FALSE).
- *      If TRUE, 'pager' is not considered, and a number is returned only.
- *   - pager
- *      Number of strings to be returned.
- *      
+ * @param $pid
+ *   Project ID to look up strings for.
+ * @param $langcode
+ *   Language code to use for the lookup.
+ * @param $status
+ *   Filter strings by status. See L10N_STATUS_ALL,
+ *   L10N_STATUS_UNTRANSLATED, L10N_STATUS_SUGGESTED and
+ *   L10N_STATUS_TRANSLATED.
+ * @param $release
+ *   Release id of the particular project release to filter with.
+ *   Use NULL to not filter on releases.
+ * @param $search
+ *   Substring to search for in all source and translation strings.
+ * @param $pager
+ *   Number of strings to be returned in a pager. Should be NULL if
+ *   no pager should be used.
+ * @param $count
+ *   Boolean indicator to return the result count (TRUE) or the result
+ *   itself (FALSE). If TRUE, $pager is not considered, and only a number
+ *   is returned.
  * @return
  *   An array of strings columns from database.
- *
- * @todo
- *   Implement status filters.
  */
-function l10n_server_get_strings($options) {
+function l10n_server_get_strings($project, $langcode, $status = L10N_STATUS_ALL, $release = NULL, $search = NULL, $pager = NULL, $count = FALSE) {
   
   $sql = $sql_count = '';
   $sql_args = array();
   
-  if (!isset($options['status'])) {
-    // Default to all types of strings.
-    $options['status'] = L10N_STATUS_ALL;
-  }
-  
-  if (empty($options['langcode']) && empty($options['project_uri'])) {
-    // No language or project filter -> only apply the status filter.
-    $sql = 'SELECT s.value, s.plural, t.* FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid';
-    // No need to join with translations for the count.
-    $sql_count = 'SELECT COUNT(sid) FROM {l10n_server_string}';
-  }
-  
-  elseif (!empty($options['langcode']) && empty($options['project_uri'])) {
-    // Languge provided but no project -> apply language and status filter.
-    $sql = "SELECT s.value, s.plural, t.* FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE t.language = '%s'";
-    $sql_count = "SELECT COUNT(s.sid) FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE t.language = '%s'";
-    $sql_args = array($options['langcode']);
-  }
-  
-  elseif (!empty($options['project_uri']) && empty($options['langcode'])) {
-    // Only project based filtering, no language filtering.
-    $project = l10n_server_get_projects($options['project_uri']);
-    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.* FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE r.pid = %d";
-    // No need to join with translations for the count.
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d";
-    $sql_args = array($project->pid);
-  }
-  
-  elseif (!empty($options['project_uri']) && !empty($options['langcode'])) {
-    // Project *and* language based filtering.
-    $project = l10n_server_get_projects($options['project_uri']);
-    $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
-    $sql_args = array($options['langcode'], $project->pid);
+  // Project *and* language based filtering.
+  $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
+  $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
+  $sql_args = array($langcode, $project->pid);
 
-    if (!empty($options['search'])) {
-      // Search in the source or target strings.
-      $sql_args[] = $options['search'];
-      $sql_args[] = $options['search'];
-      $search_sql = " AND (s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
-      $sql .= $search_sql;
-      $sql_count .= $search_sql;
-    }
+  if (!empty($search)) {
+    // Search in the source or target strings.
+    $sql_args[] = $search;
+    $sql_args[] = $search;
+    $search_sql = " AND (s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
+    $sql .= $search_sql;
+    $sql_count .= $search_sql;
+  }
 
-    if (!empty($options['release_rid']) && $options['release_rid'] != 'all') {
-      // Release restriction.
-      $sql_args[] = $options['release_rid'];
-      $sql_args[] = $options['release_rid'];
-      $release_sql = ' AND r.rid = %d';
-      $sql .= $release_sql;
-      $sql_count .= $release_sql;
-    }
+  if (isset($release)) {
+    // Release restriction.
+    $sql_args[] = $release;
+    $sql_args[] = $release;
+    $release_sql = ' AND r.rid = %d';
+    $sql .= $release_sql;
+    $sql_count .= $release_sql;
+  }
     
-    if (!empty($options['status'])) {
-      // Restriction based on string status
-      switch ($options['status']) {
-        case L10N_STATUS_UNTRANSLATED:
-          $status_sql = " AND (t.translation IS NULL OR t.translation = '')";
-          $sql .= $status_sql;
-          $sql_count .= $status_sql;
-          break;
-        case L10N_STATUS_TRANSLATED:
-        case L10N_STATUS_SUGGESTED:
-          $status_sql = " AND t.translation != ''";
-          $sql .= $status_sql;
-          $sql_count .= $status_sql;
-          break;
-        case L10N_STATUS_ALL:
-          // leave query alone.
-          break;
-      }
-    }
+  // Restriction based on string status
+  switch ($status) {
+    case L10N_STATUS_UNTRANSLATED:
+      $status_sql = " AND (t.translation IS NULL OR t.translation = '')";
+      $sql .= $status_sql;
+      $sql_count .= $status_sql;
+      break;
+    case L10N_STATUS_TRANSLATED:
+    case L10N_STATUS_SUGGESTED:
+      $status_sql = " AND t.translation != ''";
+      $sql .= $status_sql;
+      $sql_count .= $status_sql;
+      break;
+    case L10N_STATUS_ALL:
+    default:
+      // leave query alone.
+      break;
   }
 
-  if (!empty($options['count']) && $sql_count) {
+  if ($count && $sql_count) {
     // If a count is required, only run the count query.
     return db_result(db_query($sql_count, $sql_args));
   }
   elseif ($sql) {
     // Otherwise we either need a pager or a full result.
-    if (!empty($options['pager'])) {
-      $strings = pager_query($sql, $options['pager'], 0, $sql_count, $sql_args);
+    if (isset($pager)) {
+      $strings = pager_query($sql, $pager, 0, $sql_count, $sql_args);
     }
     else {
       $strings = db_query($sql, $sql_args);
@@ -359,5 +323,72 @@ function l10n_server_get_strings($options) {
       $result[] = $string;
     }
     return $result;
+  }
+}
+
+/**
+ * Get string counts for summaries.
+ *
+ * @param $type
+ *   Type of string count to return:
+ *     - all: a count of all strings
+ *     - project: a count of strings in a project (identified by $id)
+ *     - languages: an array of the count of translated strings by langcode
+ *     - projects: an array of the count of translated strings by pid
+ * @param $id
+ *   The result set can be restricted by an ID from the oppposing type. Eg.
+ *   'projects' summaries can be restricted to one specific language, or
+ *   'languages' summeries can be restricted to one specific project. This
+ *   id represents the identifier (pid or langcode) of the restricting item.
+ *
+ * @todo
+ *   These queries are *slooow*. The query cache helps a lot with caching the
+ *   result, so the slowness only shows for the first run, but still it would
+ *   be good to look into optimizing these.
+ */
+function l10n_server_get_string_count($type, $id = NULL) {
+  switch ($type) {
+    case 'all':
+      // Return a count of all strings.
+      return db_result(db_query("SELECT COUNT(sid) FROM {l10n_server_string}"));
+    
+    case 'project':
+      // Return a count of all strings in this project.
+      return db_result(db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE r.pid = %d', $id));
+    
+    case 'languages':
+      $sums = array();
+      if (!isset($id)) {
+        // Simple count query if we are not filtering by project.
+        $count_sql = 'SELECT COUNT(t.sid) translation_count, t.language FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid GROUP BY t.language';
+      }
+      else {
+        // Rather complex join if we also need to factor the project in.
+        $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, t.language FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE r.pid = %d GROUP BY t.language';
+      }
+      $result = db_query($count_sql, $id);
+      while ($row = db_fetch_object($result)) {
+        $sums[$row->language] = $row->translation_count;
+      }
+      return $sums;
+      break;
+    
+    case 'projects':
+      $sums = $count_args = array();
+      $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, r.pid FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid ';
+      if (isset($id)) {
+        $count_sql .= "WHERE t.language = '%s' ";
+        $count_args[] = $id;
+      }
+      $count_sql .= 'GROUP BY r.pid';
+      $result = db_query($count_sql, $count_args);
+      while ($row = db_fetch_object($result)) {
+        $sums[$row->pid] = $row->translation_count;
+      }
+      $result = db_query("SELECT COUNT(DISTINCT s.sid) string_count, r.pid FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid GROUP BY r.pid;");
+      while ($row = db_fetch_object($result)) {
+        $sums[$row->pid] = array($row->string_count, $sums[$row->pid]);
+      }
+      return $sums;
   }
 }

@@ -40,7 +40,8 @@ function l10n_community_help($section) {
       return '<p>'. t('Choose a project, and then either export translation templates, or click on the project name to go to the language list to pick a language to translate to. There is also a <a href="@by-language-link">by-language listing</a> available, which allows you to dig into projects from the language angle.', array('@by-language-link' => url('translate/languages'))) .'</p>';
   }
   if (preg_match('!translate/languages/(?P<langcode>[^/]+)(/(?P<uri>[^/]+)(/(?P<action>import|export))?)?$!', $section, $args) ||
-      preg_match('!translate/projects/(?P<uri>[^/]+)(/(?P<langcode>[^/]+)(/(?P<action>import|export))?)?$!', $section, $args)) {
+      (preg_match('!translate/projects/(?P<uri>[^/]+)(/(?P<langcode>[^/]+)(/(?P<action>import|export))?)?$!', $section, $args) &&
+      !preg_match('!translate/projects/([^/]+)/export$!', $section))) {
     $perm = isset($args['langcode']) ? l10n_community_get_permission($args['langcode']) : L10N_PERM_NONE;
     $languages = l10n_community_languages('name');
     $groups = l10n_community_groups();
@@ -194,6 +195,13 @@ function l10n_community_menu($may_cache) {
           'access' => TRUE,
           'type' => MENU_CALLBACK,
         );
+        $items[] = array(
+          'title' => t('Export template'),
+          'path' => 'translate/projects/' . $uri .'/export',
+          'callback' => 'drupal_get_form',
+          'callback arguments' => array('l10n_community_export_form', $uri),
+          'type' => MENU_CALLBACK,
+        );
         if (($langcode = arg(3)) && ($languages = l10n_community_languages('name')) && isset($languages[$langcode])) {
           // Menu item for language listing based on project.
           $items[] = array(
@@ -254,7 +262,8 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       // Named patterns used to support two URL forms. See hook_help for information.
       if (preg_match('!translate/languages/(?P<langcode>[^/]+)/(?P<uri>[^/]+)!', $_GET['q'], $args) ||
-          preg_match('!translate/projects/(?P<uri>[^/]+)/(?P<langcode>[^/]+)!', $_GET['q'], $args)) {
+          (preg_match('!translate/projects/(?P<uri>[^/]+)/(?P<langcode>[^/]+)!', $_GET['q'], $args) &&
+          !preg_match('!translate/projects/([^/]+)/export!', $_GET['q']))) {
         // Only show block if we have valuable and relevant information.
         $languages = l10n_community_languages();
         $items = array();
@@ -414,16 +423,15 @@ function l10n_community_overview_languages() {
     return '';
   }
 
-  if (!$num_source = l10n_server_get_strings(array('count' => TRUE))) {
+  if (!$num_source = l10n_server_get_string_count('all')) {
     drupal_set_message(t('No strings to translate.'), 'error');
     return '';
   }
   
   $groups = l10n_community_groups();
   $table = array();
+  $string_counts = l10n_server_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
-    $num_suggested = rand(1, $num_source/3); //l10n_server_get_strings($langcode, L10N_STATUS_SUGGESTED, TRUE);
-    $num_translated = rand(1, $num_source/2); //l10n_server_get_strings($langcode, L10N_STATUS_TRANSLATED, TRUE);
     $group = isset($groups[$langcode]) ? l(t('Group'), 'node/'. $groups[$langcode]->nid, array('title' => t('To the group homepage.'))) : t('n/a');
     $table[] = array_merge(
       array(
@@ -431,7 +439,7 @@ function l10n_community_overview_languages() {
         l(t('Projects'), 'translate/languages/'. $langcode, array('title' => t('To the project list.'))),
         $group
       ),
-      theme('l10n_progress_columns', $num_source, $num_translated, $num_suggested)
+      theme('l10n_progress_columns', $num_source, (isset($string_counts[$langcode]) ? $string_counts[$langcode] : 0))
     );
   }
   return theme(
@@ -442,7 +450,7 @@ function l10n_community_overview_languages() {
       t('Group'),
       t('Overall status'),
       t('Translated'),
-      t('Suggested'),
+      //t('Suggested'),
       t('Untranslated')
     ),
     $table,
@@ -458,15 +466,13 @@ function l10n_community_overview_projects() {
   if ($projects = l10n_server_get_projects(NULL, 10)) {
     $output = theme("pager", NULL, 10, 0);
     $table = array();
+    $string_counts = l10n_server_get_string_count('projects');
     foreach ($projects as $uri => $project) {
-      $num_source = l10n_server_get_strings(array('count' => TRUE, 'project_uri' => $uri));
-      if (!empty($num_source)) {
-        $num_suggested = rand(1, $num_source/3); //l10n_server_get_strings($langcode, L10N_STATUS_SUGGESTED, TRUE, $uri);
-        $num_translated = rand(1, $num_source/2); //l10n_server_get_strings($langcode, L10N_STATUS_TRANSLATED, TRUE, $uri);
-        $table[] = array_merge(array(l($project->title, 'translate/projects/'. $uri), l(t('Export'), 'translate/projects/'. $uri . '/export')), theme('l10n_progress_columns', $num_source, $num_translated, $num_suggested));
+      if (isset($string_counts[$project->pid])) {
+        $table[] = array_merge(array(l($project->title, 'translate/projects/'. $uri), l(t('Export'), 'translate/projects/'. $uri . '/export')), theme('l10n_progress_columns', $string_counts[$project->pid][0], $string_counts[$project->pid][1]));
       }
     }
-    $output .= theme('table', array(t('Project'), t('Export template'), t('Overall status'), t('Translated'), t('Suggested'), t('Untranslated')), $table);
+    $output .= theme('table', array(t('Project'), t('Export template'), t('Overall status'), t('Translated')/*, t('Suggested')*/, t('Untranslated')), $table);
     $output .= theme("pager", NULL, 10, 0);
   }
   else {
@@ -493,22 +499,20 @@ function l10n_community_status_projects($langcode = NULL) {
   if ($projects = l10n_server_get_projects(NULL, 10)) {
     $output = theme("pager", NULL, 10, 0);
     $table = array();
+    $string_counts = l10n_server_get_string_count('projects', $langcode);
     foreach ($projects as $uri => $project) {
-      $num_source = l10n_server_get_strings(array('count' => TRUE, 'project_uri' => $uri));
-      if (!empty($num_source)) {
-        $num_suggested = rand(1, $num_source/3); //l10n_server_get_strings($langcode, L10N_STATUS_SUGGESTED, TRUE, $uri);
-        $num_translated = rand(1, $num_source/2); //l10n_server_get_strings($langcode, L10N_STATUS_TRANSLATED, TRUE, $uri);
+      if (isset($string_counts[$project->pid])) {
         $table[] = array_merge(
           array(
             l($project->title, 'translate/languages/'. $langcode .'/' . $uri),
             ($perm != L10N_PERM_NONE ? l(t('Import'), 'translate/languages/'. $langcode . '/'. $uri .'/import') : t('n/a')),
             l(t('Export'), 'translate/languages/'. $langcode . '/'. $uri .'/export')
           ),
-          theme('l10n_progress_columns', $num_source, $num_translated, $num_suggested)
+          theme('l10n_progress_columns', $string_counts[$project->pid][0], $string_counts[$project->pid][1])
         );
       }
     }
-    $output .= theme('table', array(t('Project'), t('Import'), t('Export'), t('Overall status'), t('Translated'), t('Suggested'), t('Untranslated')), $table);
+    $output .= theme('table', array(t('Project'), t('Import'), t('Export'), t('Overall status'), t('Translated')/*, t('Suggested')*/, t('Untranslated')), $table);
     $output .= theme("pager", NULL, 10, 0);
   }
   return $output;
@@ -532,23 +536,20 @@ function l10n_community_status_languages($uri = NULL) {
     return '';
   }
 
-  if (!$num_source = l10n_server_get_strings(array('project_uri' => $uri, 'count' => TRUE))) {
-    drupal_set_message(t('No strings to translate.'), 'error');
-    return '';
-  }
+  $project = l10n_server_get_projects($uri);
+  $num_source = l10n_server_get_string_count('project', $project->pid);
+  $string_counts = l10n_server_get_string_count('languages', $project->pid);
   
   $table = array();
   foreach ($languages as $langcode => $language) {
     $perm = l10n_community_get_permission($langcode);
-    $num_suggested = rand(1, $num_source/3); //l10n_server_get_strings($langcode, L10N_STATUS_SUGGESTED, TRUE);
-    $num_translated = rand(1, $num_source/2); //l10n_server_get_strings($langcode, L10N_STATUS_TRANSLATED, TRUE);
     $table[] = array_merge(
       array(
         array('data' => l("<strong>$language</strong> ($langcode)", 'translate/projects/'. $uri . '/'. $langcode, array(), NULL, NULL, FALSE, TRUE), 'class' => 'language'),
         ($perm != L10N_PERM_NONE) ? l(t('Import'), 'translate/projects/'. $uri . '/'. $langcode .'/import') : t('n/a'),
         l(t('Export'), 'translate/projects/'. $uri . '/'. $langcode .'/export'),
       ),
-      theme('l10n_progress_columns', $num_source, $num_translated, $num_suggested)
+      theme('l10n_progress_columns', $num_source, $string_counts[$langcode])
     );
   }
 
@@ -560,7 +561,7 @@ function l10n_community_status_languages($uri = NULL) {
       t('Export'),
       t('Overall status'),
       t('Translated'),
-      t('Suggested'),
+      /*t('Suggested'),*/
       t('Untranslated')
     ),
     $table,
@@ -593,7 +594,7 @@ function l10n_community_translate_page($langcode = NULL, $uri = NULL) {
   // Retrieve values stored from the form changes.
   list ($status, $release, $search) = l10n_community_filter_build();
   
-  $strings = l10n_server_get_strings(array('langcode' => $languages[$langcode]->locale, 'project_uri' => $uri, 'pager' => 10, 'search' => $search, 'release_rid' => $release, 'status' => $status));
+  $strings = l10n_server_get_strings($project, $languages[$langcode]->locale, $status, $release, $search, 10);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter.'));
   }
@@ -637,7 +638,7 @@ function l10n_community_filter_form($uri, $status = L10N_STATUS_ALL, $release = 
     '#title' => t('Release'),
     '#type' => 'select',
     '#options' => $release_options,
-    '#default_value' => $release,
+    '#default_value' => isset($release) ? $release : 'all',
   );
   $form['filters']['search'] = array(
     '#title' => t('Search'),
@@ -660,7 +661,7 @@ function l10n_community_filter_form_submit($form_id, &$form) {
   // be 'personal', ie. not included in website links.
   $_SESSION['l10n_community_filter'] = array(
     'status'  => intval($form['status']),
-    'release' => is_numeric($form['release']) ? $form['release'] : 'all',
+    'release' => is_numeric($form['release']) ? $form['release'] : NULL,
     'search'  => $form['search'],
   );
   // This redirects back to the first translation page, by design.
@@ -672,7 +673,7 @@ function l10n_community_filter_form_submit($form_id, &$form) {
 function l10n_community_filter_build() {
   return array(
     isset($_SESSION['l10n_community_filter']['status']) ? intval($_SESSION['l10n_community_filter']['status']) : L10N_STATUS_ALL,
-    isset($_SESSION['l10n_community_filter']['release']) ? $_SESSION['l10n_community_filter']['release'] : 'all',
+    isset($_SESSION['l10n_community_filter']['release']) ? $_SESSION['l10n_community_filter']['release'] : NULL,
     isset($_SESSION['l10n_community_filter']['search']) ? $_SESSION['l10n_community_filter']['search'] : '',
   );
 }
@@ -1002,14 +1003,14 @@ function l10n_community_export_form($uri, $langcode = NULL) {
 /**
  * Progress bar display for translation status information.
  */
-function theme_l10n_progress_columns($sum, $translated, $suggested) {
+function theme_l10n_progress_columns($sum, $translated/*, $suggested*/) {
   // Compute numbers, percentages and provide alternate text titles.
   $status = array(
     'translated' => array((int) $translated, round($translated / $sum * 100, 2), t('!percent translated')),
-    'suggested' => array((int) $suggested,  round($suggested / $sum * 100, 2),  t('!percent suggested')),
+    //'suggested' => array((int) $suggested,  round($suggested / $sum * 100, 2),  t('!percent suggested')),
     'untranslated' => array($sum - $translated - $suggested, 0, t('!percent untranslated')),
   );
-  $status['untranslated'][1] = 100 - $status['suggested'][1] - $status['translated'][1];
+  $status['untranslated'][1] = 100 - /*$status['suggested'][1] -*/ $status['translated'][1];
   
   // Visual summary with a progress bar.
   $bar = '<div class="l10n-community-progress">';
@@ -1020,7 +1021,7 @@ function theme_l10n_progress_columns($sum, $translated, $suggested) {
   }
   $bar .= '</div>';
   
-  return array($bar, $status['translated'][0] .' ('. $status['translated'][1] .'%)', $status['suggested'][0], $status['untranslated'][0]);
+  return array($bar, $status['translated'][0] .' ('. $status['translated'][1] .'%)'/*, $status['suggested'][0]*/, $status['untranslated'][0]);
 }
 
 // = Utility functions =========================================================
