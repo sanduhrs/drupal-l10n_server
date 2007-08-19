@@ -46,6 +46,21 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
 #l10n-community-translate-form .form-item {
   margin-top: 0.5em;
 }
+#l10n-community-translate-form .translation {
+  border-top: 2px dotted #cdcdcd;
+  padding-top: 0.5em;
+}
+#l10n-community-translate-form .toolbox {
+  border-bottom: 1px solid #cdcdcd;
+  margin-bottom: 0.3em;
+}
+#l10n-community-translate-form .toolbox img {
+  padding-right: 0.4em;
+  cursor: pointer;
+}
+#l10n-community-translate-form img.copy {
+  cursor: pointer;
+}
 
 #l10n-community-filter {
   margin: 1em 0;

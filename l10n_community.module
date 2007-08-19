@@ -129,6 +129,14 @@ function l10n_community_menu($may_cache) {
     );
   }    
   elseif (arg(0) == 'translate') {
+    $items[] = array(
+      'title' => t('String details'),
+      'path' => 'translate/details',
+      'callback' => 'l10n_community_string_details',
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+    
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // The translate home page uses this to present admin page like panels.
     drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
@@ -267,7 +275,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
         // Only show block if we have valuable and relevant information.
         $languages = l10n_community_languages();
         $items = array();
-        $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation, even if it is at the beginning or end!', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/img/si_newline.png" alt="'. t('Newline marker.') . '" /> '));
+        $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation, even if it is at the beginning or end!', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/newline.png" alt="'. t('Newline marker.') . '" /> '));
         $items[] = t('Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the text as-is.');
         $formula = join(' ', preg_split('!(&&|\\|\\||%|<=|>=|==|\\!=|\\?|:)!', $languages[$args['langcode']]->formula, -1, PREG_SPLIT_DELIM_CAPTURE));
         $items[] = t('The plural formula in use with this language is %formula.', array('%formula' => str_replace('$n', 'n', $formula)));
@@ -709,11 +717,21 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
   foreach ($strings as $id => $string) {
     $form[$id] = array(
       '#type' => 'fieldset',
-      //'#description' => $string->plural ? t('This string should have different plural versions based on the formula for this language.') : '',
+      '#attributes' => array('id' => 'l10n-community-fields-'. $string->sid),
     );
     $form[$id]['sid'] = array(
       '#type' => 'value',
       '#value' => $string->sid
+    );
+    // Include sid as hidden field for JavaScript to call us back with it.
+    $form[$id]['sid_callback'] = array(
+      '#type' => 'hidden',
+      '#attributes' => array('class' => 'l10n-community-sid-callback'),
+      '#value' => url('translate/details/'. $string->sid)
+    );
+    $form[$id]['toolbox'] = array(
+      '#type' => 'markup',
+      '#value' => '<div class="toolbox" id="l10n-community-toolbox-'. $id .'"></div>'
     );
 
 
@@ -722,8 +740,9 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
       $parts = explode(chr(0), $string->value);
       $string_parts = array();
       foreach ($parts as $i => $part) {
-        $js_strings[$id .'-'. $i] = $part;
-        $string_parts[] = theme('l10n_community_copy_button', $id .'-'. $i) .' '. l10n_community_format_text(check_plain($part));
+        $target = $id .'-'. $i;
+        $js_strings[$target] = $part;
+        $string_parts[] = theme('l10n_community_copy_button', $target) .' '. l10n_community_format_text(check_plain($part));
       }
       $source = theme('item_list', $string_parts);
     }
@@ -734,29 +753,61 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     }
 
     $form[$id]['source'] = array(
+      '#prefix' => '<div>',
       '#type' => 'markup',
       '#value' => $source,
+      '#suffix' => '</div>',
     );
 
+    $translated = !empty($string->translation);
     if ($string->plural) {
-      $translations = (!empty($string->translation) ? explode("\0", $string->translation) : array_fill(0, $language->plurals, ''));
+      $translations = ($translated ? explode("\0", $string->translation) : array_fill(0, $language->plurals, ''));
+      if ($translated) {
+        $string_parts = array();
+        for($i = 0; $i < $language->plurals; $i++) {
+          $target = $id .'-'. $i;
+          $string_parts[] = theme('l10n_community_copy_button', $target .'-t') .' '. l10n_community_format_text(check_plain($translations[$i]));
+          $js_strings[$target .'-t'] = $translations[$i];
+        }
+        $form[$id]['translation'] = array(
+          '#prefix' => '<div class="translation">',
+          '#type' => 'markup',
+          '#value' => theme('item_list', $string_parts),
+          '#suffix' => '</div>',
+        );
+      }
+      
       for($i = 0; $i < $language->plurals; $i++) {
-        $form[$id]['translation'][$i] = array(
+        $target = $id .'-'. $i;
+        $form[$id]['new_translation'][$i] = array(
+          // Hide textareas of translated stuff to save some space and guide user eyes.
+          '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
           '#type' => 'textarea',
-          '#title' => t('Translation for variant #%d', array('%d' => $i)),
-          '#default_value' => $translations[$i],
+          '#title' => t('New translation for variant #%d', array('%d' => $i)),
           '#rows' => 1,
-          '#id' => 'l10n-commumnity-translation-'. $id .'-'. $i
+          '#id' => 'l10n-commumnity-new-translation-'. $target,
+          '#suffix' => ($translated ? '</div>' : ''),
         );
       }
     }
     else {
-      $form[$id]['translation'] = array(
+      if ($translated) {
+        $form[$id]['translation'] = array(
+          '#prefix' => '<div class="translation">',
+          '#type' => 'markup',
+          '#value' => theme('l10n_community_copy_button', $id .'-t') .' '. l10n_community_format_text(check_plain($string->translation)),
+          '#suffix' => '</div>',
+        );
+        $js_strings[$id .'-t'] = $string->translation;
+      }
+      $form[$id]['new_translation'] = array(
+        // Hide textareas of translated stuff to save some space and guide user eyes.
+        '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
         '#type' => 'textarea',
-        '#title' => t('Translation'),
-        '#default_value' => !empty($string->translation) ? $string->translation : '',
+        '#title' => t('New translation'),
         '#rows' => 1,
-        '#id' => 'l10n-commumnity-translation-'. $id
+        '#id' => 'l10n-commumnity-new-translation-'. $id,
+        '#suffix' => ($translated ? '</div>' : ''),
       );
     }
   }
@@ -832,7 +883,7 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $ur
  */
 function l10n_community_format_text($string) {
   $path = base_path() . drupal_get_path('module', 'l10n_community');
-  $string = str_replace(array("\n", "\\\\n"), '<img src="'. $path .'/img/si_newline.png" alt="newline" /><br />', $string);
+  $string = str_replace(array("\n", "\\\\n"), '<img src="'. $path .'/images/newline.png" alt="newline" /><br />', $string);
   $string = preg_replace('~((%|!|@)[0-9a-zA-Z_-]+)~', '<em class="l10n-community-marker">\\1</em>', $string);
   return $string;
 }
@@ -845,19 +896,19 @@ function l10n_community_translate_form_submit($form_id, &$form) {
 
   $inserted = $updated = $unchanged = 0;
   foreach ($form as $item => $value) {
-    if (!is_array($form[$item]) || !isset($form[$item]['translation'])) {
+    if (!is_array($form[$item]) || !isset($form[$item]['new_translation'])) {
       // Skip, if we don't have translations in this form item.
       continue;
     }
     
     $text = '';
-    if (is_string($form[$item]['translation'])) {
+    if (is_string($form[$item]['new_translation'])) {
       // Single string representation: simple translation.
-      $text = $form[$item]['translation'];
+      $text = $form[$item]['new_translation'];
     }
-    if (is_array($form[$item]['translation'])) {
+    if (is_array($form[$item]['new_translation'])) {
       // Array -> plural variants are provided. Join them with a NULL separator.
-      $text = join("\0", $form[$item]['translation']);
+      $text = join("\0", $form[$item]['new_translation']);
       if (trim($text) == '') {
         // If the whole string only contains NULL bytes, empty the string, so
         // we don't save an empty translation. Otherwise the NULL bytes need
@@ -891,6 +942,42 @@ function l10n_community_update_message($inserted, $updated, $unchanged) {
     $message[] = format_plural($unchanged, '1 translation unchanged', '@count translations unchanged');
   }
   drupal_set_message(join(', ', $message) .'.');
+}
+
+/**
+ * Return a HTML list of projects, releases and counts of where strings
+ * appear in the managed projects.
+ *
+ * We could have been provided much more information, but usability should
+ * also be kept in mind. It is possible to investigate hidden information
+ * sources though, like tooltips on the release titles presented.
+ *
+ * This callback is invoked from JavaScript and is used as an AHAH provider.
+ *
+ * @param $sid
+ *   String id.
+ */
+function l10n_community_string_details($sid) {
+  $result = db_query('SELECT p.pid, p.title project_title, r.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE s.sid = %d GROUP BY r.rid ORDER by p.pid, r.rid', $sid);
+  
+  $list = array();
+  $output = array();
+  $previous_project = '';
+  while ($instance = db_fetch_object($result)) {
+    if ($instance->project_title != $previous_project) {
+      if (!empty($list)) {
+        $output[] = join(', ', $list);
+      }
+      $list = array('<strong>'. $instance->project_title . ':</strong> '. $instance->release_title .' ('. $instance->occurance_count .')');
+    }
+    else {
+      $list[] = $instance->release_title .' ('. $instance->occurance_count .')';
+    }
+    $previous_project = $instance->project_title; 
+  }
+  $output[] = join(', ', $list);
+  print $sid ."\n\n". '<div>'. join('</div><div>', $output) .'</div>';
+  exit;
 }
 
 // = Import functionality ======================================================
@@ -1203,7 +1290,7 @@ function l10n_community_get_permission($langcode, $account = NULL) {
 /**
  * Copy button for string values.
  */
-function theme_l10n_community_copy_button($id = 0) {
+function theme_l10n_community_copy_button($source_id = 0) {
   $title = t('Copy value to edit field.');
-  return ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/img/edit-copy.png" alt="'. $title .'" title="'. $title .'" id="l10n-community-copy-'. $id .'" class="l10n-community-copy" />';
+  return ' <span title="'. $title .'" id="l10n-community-copy-'. $source_id .'" class="l10n-community-copy"></span>';
 }
