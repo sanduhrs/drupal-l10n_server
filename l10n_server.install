@@ -70,9 +70,9 @@ function l10n_server_install() {
       db_query("ALTER TABLE  {l10n_server_line}    ADD FOREIGN KEY (sid) REFERENCES {l10n_server_string} (sid);");
       db_query("CREATE INDEX {l10n_server_project}_uri         ON {l10n_server_project} (uri);");
 
-      db_query("ALTER TABLE  {l10n_server_target}   ADD FOREIGN KEY (sid) REFERENCES {l10n_server_string} (sid);");
-      db_query("CREATE INDEX {l10n_server_target}_language     ON {l10n_server_target} (language);");
-      db_query("CREATE INDEX {l10n_server_target}_changed      ON {l10n_server_target} (changed);");
+      db_query("ALTER TABLE  {l10n_server_translation} ADD FOREIGN KEY (sid) REFERENCES {l10n_server_string} (sid);");
+      db_query("CREATE INDEX {l10n_server_translation}_language ON {l10n_server_translation} (language);");
+      db_query("CREATE INDEX {l10n_server_translation}_changed  ON {l10n_server_translation} (changed);");
       break;
   }
 }
@@ -86,5 +86,5 @@ function l10n_server_uninstall() {
   db_query("DROP TABLE {l10n_server_file}");
   db_query("DROP TABLE {l10n_server_line}");
   db_query("DROP TABLE {l10n_server_string}");
-  db_query("DROP TABLE {l10n_server_target}");
+  db_query("DROP TABLE {l10n_server_translation}");
 }

@@ -49,7 +49,7 @@ function l10n_community_help($section) {
     switch ($perm) {
       // Inform user about her permission level in this group.
       case L10N_PERM_NONE:
-        $permtext = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$args['langcode']]))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$args['langcode']]))));
+        $permtext = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$args['langcode']]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$args['langcode']]->nid))));
         break;
       case L10N_PERM_SUGGEST:
         $permtext = t('You are a member of this translation group, so you can suggest translations and import complete Gettext translation files to suggest more strings at once. Administrators of this group will either accept or decline suggestions provided by members of the group. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
@@ -61,7 +61,7 @@ function l10n_community_help($section) {
     if (!isset($args['action'])) {
       if (!isset($args['uri'])) {
         // Only language code => project list if shown.
-        $output = '<p>'. t('This page shows a list of all projects and their overall translation status in this language (accumulated for all releases). The <a href="@group">%language group</a> might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$args['langcode']]), '%language' => $languages[$args['langcode']])) .' '. $permtext .'</p>';
+        $output = '<p>'. t('This page shows a list of all projects and their overall translation status in this language (accumulated for all releases). The <a href="@group">%language group</a> might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$args['langcode']]->nid), '%language' => $languages[$args['langcode']])) .' '. $permtext .'</p>';
         return $output;
       }
       elseif (!isset($args['langcode'])) {
@@ -77,9 +77,9 @@ function l10n_community_help($section) {
     else {
       switch ($args['action']) {
         case 'import':
-          return '<p>'. $permtext .' '. t('Because all project translations are shared, although you import this file for this project, it might provide translations for strings used in other projects too.') . '</p>';
+          return '<p>'. $permtext .' '. t('Because all project translations are shared, although you import this file for this project, it might provide translations for strings used in other projects too.') .'</p>';
         case 'export':
-          // TODO
+          return '<p>'. $permtext .' '. t('You have two different options to export. You can either export a template package for this project, or a package containing the existing translations for a given release. Both types will use the GNU Gettext Portable Object (Template) format, which is understood by Drupal and desktop translation editing tools.') . '</p>';
       }
     }
   }
@@ -410,7 +410,7 @@ function l10n_community_form(&$node) {
 // = Status pages ==============================================================
 
 function l10n_community_home() {
-  include_once 'l10n_community_home.inc';
+  include_once drupal_get_path('module', 'l10n_community') .'/l10n_community_home.inc';
   return $output;
 }
 
@@ -631,8 +631,8 @@ function l10n_community_filter_form($uri, $status = L10N_STATUS_ALL, $release = 
   );
   $releases = l10n_server_get_releases($uri);
   $release_options = array('all' => t('All'));
-  foreach ($releases as $this_release) {
-    $release_options[$this_release->rid] = $this_release->title;
+  foreach ($releases as $rid => $this_release) {
+    $release_options[$rid] = $this_release->title;
   }
   $form['filters']['release'] = array(
     '#title' => t('Release'),
@@ -991,12 +991,69 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, &$inser
  * User interface for the translation export screen.
  */
 function l10n_community_export_form($uri, $langcode = NULL) {
-  $form['todo'] = array(
-    '#type' => 'markup',
-    '#value' => 'Todo.',
+  $releases = l10n_server_get_releases($uri);
+  $release_options = array('all' => t('All'));
+  foreach ($releases as $rid => $this_release) {
+    $release_options[$rid] = $this_release->title;
+  }
+  $form['release'] = array(
+    '#title' => t('Release number'),
+    '#type' => 'select',
+    '#options' => $release_options,
+    '#default_value' => isset($release) ? $release : 'all',
+    '#description' => t('Exporting a template or translation package for all releases is useful for translators, but is not optimal to use for end users because unused data would clutter up their database, when the file gets imported. Export for all releases if you would like to provide a complete translation working with a desktop tool.'),
+  );
+  if (isset($langcode)) {
+    // Only include the type selector if we are not presenting
+    // a template export page (which does not have a language).
+    $form['type'] = array(
+      '#title' => t('Type of export'),
+      '#type' => 'radios',
+      '#options' => array('translation' => t('Translation'), 'template' => t('Translation template')),
+      '#default_value' => 'translation',
+      '#description' => t('Templates only contain the source (English) strings.')
+    );
+    $form['langcode'] = array(
+      '#type' => 'value',
+      '#value' => $langcode,
+    );
+  }
+  $form['uri'] = array(
+    '#type' => 'value',
+    '#value' => $uri,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Export'),
   );
   return $form;
 }
+
+/**
+ * Generate translation or template package on the fly based on
+ * all details available and return the output via HTTP.
+ */
+function l10n_community_export_form_submit($form_id, &$form) { 
+  include_once drupal_get_path('module', 'l10n_server') .'/gettextapi.inc';
+  
+  $language = NULL;
+  if (isset($form['langcode'])) {
+    $languages = l10n_community_languages();
+    $language = $languages[$form['langcode']];
+  }
+  $type = (isset($form['type']) ? $form['type'] : 'template');
+
+  // Generate tarball and get file name.
+  $filename = gettextapi_export($form['uri'], ($form['release'] == 'all' ? NULL : $form['release']), $language, $type);
+  
+  // Return compressed archive to user.
+  header('Content-Disposition: attachment; filename='. $form['uri'] . (isset($language) ? '-'. $language->locale : '') . ($type == 'template' ? '-templates' : '-translations') .'.tgz');
+  header('Content-Type: application/x-compressed');
+  echo file_get_contents($filename);
+  unlink($filename);
+  die();
+}
+
 
 // = Theme functions ===========================================================
 

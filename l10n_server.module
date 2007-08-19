@@ -228,7 +228,7 @@ function l10n_server_get_releases($uri = NULL, $parsed_only = TRUE) {
   }
   $result = db_query($query, $uri);
   while ($release = db_fetch_object($result)) {
-    $releases[] = $release;
+    $releases[$release->rid] = $release;
   }
   return $releases;
 }
