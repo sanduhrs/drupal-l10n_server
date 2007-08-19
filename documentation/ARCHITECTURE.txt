@@ -82,10 +82,7 @@ l10n_community
 4. Off-site translation support is possible with exporting Gettext PO(T)
    files of a specific project release. Translators can work with offline
    translation tools and import the modified PO files later.
-   
-   TODO: implement PO(T) file export (big projects will be tricky,
-   they require a directory structure built, not a simple standalone file)
-   
+      
 5. Integration with drupal.org makes it possible to list translation
    packages and offer them for download for each project release. The
    translation status summary can also be used as part of the metrics
