@@ -819,7 +819,13 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
   );
   
   
-  drupal_add_js(array('l10n_strings' => $js_strings), 'setting');
+  drupal_add_js(
+    array(
+      'l10n_strings' => $js_strings,
+      'l10n_image_path' => drupal_get_path('module', 'l10n_community') . '/images/',
+    ),
+    'setting'
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save translations')
