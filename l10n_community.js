@@ -25,13 +25,13 @@ l10nCommunity.init = function() {
 
   $('#l10n-community-translate-form .toolbox').each(function(){
     // Add expand button to the toolbox.
-    $(this).append($(document.createElement('IMG')).attr('src', imagePath + 'expand.png').attr('class', 'expand').click(function() {
+    $(this).append($(document.createElement('IMG')).attr('src', imagePath + 'expand.png').attr('class', 'expand').attr('title', Drupal.settings.l10n_expand_help).click(function() {
       var id = $(this).parent().attr('id').replace('l10n-community-toolbox-', '');
       // Reveal textareas where the translation is done (if those were hidden).
       $('.l10n-commumnity-wrapper-' + id).css('display', 'block');
     ;}));
     // Add a lookup button to invoke server side callback.
-    $(this).append($(document.createElement('IMG')).attr('src', imagePath + 'lookup.png').attr('class', 'lookup').click(function() {
+    $(this).append($(document.createElement('IMG')).attr('src', imagePath + 'lookup.png').attr('class', 'lookup').attr('title', Drupal.settings.l10n_lookup_help).click(function() {
       var uri = $(this).parent().parent().children('.l10n-community-sid-callback').attr('value');
       // Ajax GET request to retrieve more details about this string.
       $.ajax({

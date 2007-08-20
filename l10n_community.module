@@ -727,7 +727,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     $form[$id]['sid_callback'] = array(
       '#type' => 'hidden',
       '#attributes' => array('class' => 'l10n-community-sid-callback'),
-      '#value' => url('translate/details/'. $string->sid)
+      '#value' => url('translate/details/'. $string->sid .'/'. $language->locale)
     );
     $form[$id]['toolbox'] = array(
       '#type' => 'markup',
@@ -783,7 +783,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
           // Hide textareas of translated stuff to save some space and guide user eyes.
           '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
           '#type' => 'textarea',
-          '#title' => t('New translation for variant #%d', array('%d' => $i)),
+          '#title' => $translated ? t('New translation for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i)),
           '#rows' => 1,
           '#id' => 'l10n-commumnity-new-translation-'. $target,
           '#suffix' => ($translated ? '</div>' : ''),
@@ -804,7 +804,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
         // Hide textareas of translated stuff to save some space and guide user eyes.
         '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
         '#type' => 'textarea',
-        '#title' => t('New translation'),
+        '#title' => $translated ? t('New translation') : t('Translation'),
         '#rows' => 1,
         '#id' => 'l10n-commumnity-new-translation-'. $id,
         '#suffix' => ($translated ? '</div>' : ''),
@@ -823,6 +823,8 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     array(
       'l10n_strings' => $js_strings,
       'l10n_image_path' => drupal_get_path('module', 'l10n_community') . '/images/',
+      'l10n_expand_help' => t('Show the translation editing field.'),
+      'l10n_lookup_help' => t('Show detailed information about this string.'),
     ),
     'setting'
   );
@@ -962,8 +964,10 @@ function l10n_community_update_message($inserted, $updated, $unchanged) {
  *
  * @param $sid
  *   String id.
+ * @param $langcode
+ *   Language code.
  */
-function l10n_community_string_details($sid) {
+function l10n_community_string_details($sid = 0, $langcode = NULL) {
   $result = db_query('SELECT p.pid, p.title project_title, r.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE s.sid = %d GROUP BY r.rid ORDER by p.pid, r.rid', $sid);
   
   $list = array();
@@ -982,7 +986,15 @@ function l10n_community_string_details($sid) {
     $previous_project = $instance->project_title; 
   }
   $output[] = join(', ', $list);
-  print $sid ."\n\n". '<div>'. join('</div><div>', $output) .'</div>';
+  
+  $translation_info = '';
+  $translation = db_fetch_object(db_query("SELECT t.translation, t.uid, t.changed FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE t.language = '%s' AND s.sid = %d", $langcode, $sid));
+  if (!empty($translation->translation)) {
+    $account = user_load(array('uid' => $translation->uid));
+    $translation_info = '<div>'. t('<strong>Translated by:</strong> %username at %date', array('%username' => $account->name, '%date' => format_date($translation->changed))) .'</div>';
+  }
+  
+  print $sid ."\n\n". $translation_info .'<div>'. join('</div><div>', $output) .'</div>';
   exit;
 }
 
