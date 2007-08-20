@@ -14,10 +14,7 @@ l10n_server
    
    TODO: there is a project list stub implemented, real implementation is
    possible once this patch is committed: http://drupal.org/node/157514
-   
-   TODO: because release lists are tied to Drupal core compatibility terms,
-   we cannot query all releases at once yet: http://drupal.org/node/165068
-   
+ 
 2. Syncronization with the project list is always performed, and a project
    is picked to retrieve list of releases for. Then the releases are
    traversed, tarballs are downloaded and uncompressed.

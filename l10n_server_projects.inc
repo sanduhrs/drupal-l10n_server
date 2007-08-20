@@ -24,31 +24,28 @@ function l10n_server_sync_projects() {
     'drupal' => (object) array(
       'uri' => 'drupal',
       'title' => 'Drupal',
-      'core_compatibility' => array('4.7.x', '5.x', '6.x'),
     ),
     'ecommerce' => (object) array(
       'uri' => 'ecommerce',
       'title' => 'E-Commerce',
-      'core_compatibility' => array('4.7.x', '5.x'),
     ),
     'og' => (object) array(
       'uri' => 'og',
       'title' => 'Organic groups',
-      'core_compatibility' => array('4.7.x', '5.x'),
     ),
   );
   // Record all projects in the database.
   foreach ($projects as $uri => $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri))) {
-      if ((serialize($project->core_compatibility) != $existing_project->core_compatibility) || ($project->title != $existing_project->title)) {
-        // Update if core compatibility or title is different (uri should not
-        // change, other data is internal). Also set the parsed timestamp to
-        // the past, so we will reparse the releases later.
-        db_query("UPDATE {l10n_server_project} SET title = '%s', core_compatibility = '%s', last_parsed = 0 WHERE uri = '%s'", $project->title, serialize($project->core_compatibility), $uri);
+      if ($project->title != $existing_project->title) {
+        // Update if title is different (uri should not change, other data is
+        // internal). Also set the parsed timestamp to the past, so we will
+        // reparse the releases later.
+        db_query("UPDATE {l10n_server_project} SET title = '%s', last_parsed = 0 WHERE uri = '%s'", $project->title, $uri);
       }
     }
     else {
-      db_query("INSERT INTO {l10n_server_project} (uri, title, core_compatibility, last_parsed) VALUES ('%s', '%s', '%s', 0)", $uri, $project->title, serialize($project->core_compatibility));
+      db_query("INSERT INTO {l10n_server_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $uri, $project->title);
     }
   }
 }
@@ -61,35 +58,33 @@ function l10n_server_sync_projects() {
  */
 function l10n_server_sync_releases($project) {
  
-  foreach ($project->core_compatibility as $core_version) {
-    // Request the update XML file with releases for this project for this core version.
-    $xml = drupal_http_request(L10N_PROJECT_RELEASES_URL .'/'. $project->uri .'/'. $core_version);
-    if (!$xml->data) {
-      // No data, keep our lists.
-      continue;
-    }
-    
-    $parser = new l10n_server_project_xml_parser;
-    $releases = $parser->parse(array($xml->data));
-    
-    if (isset($releases[$project->uri]['releases'])) {
-      // We have releases to work with.
-      foreach ($releases[$project->uri]['releases'] as $release) {
-        if ($release['status'] != 'published') {
-          // Skip unpublished releases.
-          continue;
+  // Request the update XML file with releases for this project.
+  $xml = drupal_http_request(L10N_PROJECT_RELEASES_URL .'/'. $project->uri .'/all');
+  if (!$xml->data) {
+    // No data, keep our lists.
+    continue;
+  }
+  
+  $parser = new l10n_server_project_xml_parser;
+  $releases = $parser->parse(array($xml->data));
+  
+  if (isset($releases[$project->uri]['releases'])) {
+    // We have releases to work with.
+    foreach ($releases[$project->uri]['releases'] as $release) {
+      if ($release['status'] != 'published') {
+        // Skip unpublished releases.
+        continue;
+      }
+      if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE pid = %d AND title = '%s'", $project->pid, $release['version']))) {
+        if ($release['date'] != $existing_release->file_date) {
+          // New file with possibly new date for the same release (dev snapshot
+          // probably), so update data, set parsed date to past.
+          db_query("UPDATE {l10n_server_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $release['download_link'], $release['date'], $existing_release->rid);
         }
-        if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE pid = %d AND title = '%s'", $project->pid, $release['version']))) {
-          if ($release['date'] != $existing_release->file_date) {
-            // New file with possibly new date for the same release (dev snapshot
-            // probably), so update data, set parsed date to past.
-            db_query("UPDATE {l10n_server_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $release['download_link'], $release['date'], $existing_release->rid);
-          }
-        }
-        else {
-          // No such release recorded yet.
-          db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release['version'], $release['download_link'], $release['date']);
-        }
+      }
+      else {
+        // No such release recorded yet.
+        db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release['version'], $release['download_link'], $release['date']);
       }
     }
   }

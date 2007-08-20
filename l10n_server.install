@@ -22,7 +22,6 @@ function l10n_server_install() {
         pid                $serial      PRIMARY KEY,
         uri                VARCHAR(50)  NOT NULL,
         title              VARCHAR(128) NOT NULL,
-        core_compatibility TEXT         NOT NULL,
         last_parsed        INTEGER
         ) $table_config;");
       db_query("CREATE TABLE {l10n_server_release} (
