@@ -21,7 +21,8 @@ function l10n_community_install() {
       // Adds "managed language" information to localization groups.
       db_query("CREATE TABLE {l10n_community_group} (
           nid           INTEGER       NOT NULL,
-          language      VARCHAR(12)   NOT NULL
+          language      VARCHAR(12)   NOT NULL,
+          model         INTEGER       NOT NULL
         ) $table_config;");
       db_query("CREATE INDEX {l10n_community_group}_nid ON {l10n_community_group} (nid);");
       break;

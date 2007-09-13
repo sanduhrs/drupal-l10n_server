@@ -265,7 +265,7 @@ function gettextapi_export($uri, $release = NULL, $language = NULL, $type = 'tem
           $filename = './translations/general';
         }
         else {
-          // Putting into one specific directory to a file.
+          // Putting into one specific directory, and there to a file.
           $filename = preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment'])));
           $filename = dirname($filename) .'/translations/'. str_replace(array('.', '_'), '-', basename($filename));
         }
