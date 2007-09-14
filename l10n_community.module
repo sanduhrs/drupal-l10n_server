@@ -146,6 +146,13 @@ function l10n_community_menu($may_cache) {
       'access' => TRUE,
       'type' => MENU_CALLBACK,
     );
+    $items[] = array(
+      'title' => t('Approve suggestion'),
+      'path' => 'translate/approve',
+      'callback' => 'l10n_community_string_approve',
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
     
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // The translate home page uses this to present admin page like panels.
@@ -502,7 +509,7 @@ function l10n_community_overview_projects() {
     $output .= theme("pager", NULL, 10, 0);
   }
   else {
-    drupal_set_message(t('No projects found.'));
+    drupal_set_message(t('No projects found.'), 'error');
   }
   return $output;
 }
@@ -640,7 +647,7 @@ function l10n_community_filter_form($uri, $status = L10N_STATUS_ALL, $release = 
   $status_options = array(
     L10N_STATUS_ALL => t('All'),
     L10N_STATUS_UNTRANSLATED => t('Untranslated'),
-    L10N_STATUS_SUGGESTED => t('Suggested'),
+    L10N_STATUS_SUGGESTED => t('Has suggestions'),
     L10N_STATUS_TRANSLATED => t('Translated'),
   );
   $form['filters'] = array(
@@ -745,7 +752,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     $form[$id]['sid_callback'] = array(
       '#type' => 'hidden',
       '#attributes' => array('class' => 'l10n-community-sid-callback'),
-      '#value' => url('translate/details/'. $string->sid .'/'. $language->locale)
+      '#value' => url('translate/details/'. $string->sid .'/'. $language->locale .'/'. $id)
     );
     $form[$id]['toolbox'] = array(
       '#type' => 'markup',
@@ -796,15 +803,23 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
       }
       
       for($i = 0; $i < $language->plurals; $i++) {
+        
         $target = $id .'-'. $i;
+        if ($translated) {
+          $title = ($perm == L10N_PERM_SUGGEST) ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
+        }
+        else {
+          $title = ($perm == L10N_PERM_SUGGEST) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
+        }
+        
         $form[$id]['new_translation'][$i] = array(
           // Hide textareas of translated stuff to save some space and guide user eyes.
-          '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
+          '#prefix' => '<div class="'. ($translated ? 'hidden ' : '') .'l10n-community-wrapper-'. $id .'">',
           '#type' => 'textarea',
-          '#title' => $translated ? t('New translation for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i)),
+          '#title' => $title,
           '#rows' => 1,
-          '#id' => 'l10n-commumnity-new-translation-'. $target,
-          '#suffix' => ($translated ? '</div>' : ''),
+          '#id' => 'l10n-community-new-translation-'. $target,
+          '#suffix' => '</div>',
         );
       }
     }
@@ -820,14 +835,20 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
       }
       $form[$id]['new_translation'] = array(
         // Hide textareas of translated stuff to save some space and guide user eyes.
-        '#prefix' => ($translated ? '<div class="hidden l10n-commumnity-wrapper-'. $id .'">' : ''),
+        '#prefix' => '<div class="'. ($translated ? 'hidden ' : '') .'l10n-community-wrapper-'. $id .'">',
         '#type' => 'textarea',
-        '#title' => $translated ? t('New translation') : t('Translation'),
+        '#title' => $translated ? (($perm == L10N_PERM_SUGGEST) ? t('New suggestion') : t('New translation')) : (($perm == L10N_PERM_SUGGEST) ? t('Suggestion') : t('Translation')),
         '#rows' => 1,
-        '#id' => 'l10n-commumnity-new-translation-'. $id,
-        '#suffix' => ($translated ? '</div>' : ''),
+        '#id' => 'l10n-community-new-translation-'. $id,
+        '#suffix' => '</div>',
       );
     }
+    
+    // Store type of translation field.
+    $form[$id]['type'] = array(
+      '#type' => 'value',
+      '#value' => $perm
+    );
   }
   
   // Keep being on the same page when the form is submitted.
@@ -920,7 +941,7 @@ function l10n_community_format_text($string) {
 function l10n_community_translate_form_submit($form_id, &$form) {
   global $user;
 
-  $inserted = $updated = $unchanged = 0;
+  $inserted = $updated = $unchanged = $suggested = 0;
   foreach ($form as $item => $value) {
     if (!is_array($form[$item]) || !isset($form[$item]['new_translation'])) {
       // Skip, if we don't have translations in this form item.
@@ -945,21 +966,24 @@ function l10n_community_translate_form_submit($form_id, &$form) {
       
     if ($text) {
       // We have some string to save.
-      l10n_community_target_save($form[$item]['sid'], $text, $form['langcode'], $user->uid, $inserted, $updated, $unchanged);
+      l10n_community_target_save($form[$item]['sid'], $text, $form['langcode'], $user->uid, ($form[$item]['type'] == L10N_PERM_SUGGEST), $inserted, $updated, $unchanged, $suggested);
     }
   }
-  l10n_community_update_message($inserted, $updated, $unchanged);
+  l10n_community_update_message($inserted, $updated, $unchanged, $suggested);
 }
 
 /**
  * Print a message based on the number of translations changed.
  * Used by both the save and import process.
  */
-function l10n_community_update_message($inserted, $updated, $unchanged) {
+function l10n_community_update_message($inserted, $updated, $unchanged, $suggested) {
   // Inform user about changes made.
   $message = array();
   if ($inserted) {
     $message[] = format_plural($inserted, '1 new translation added', '@count new translations added');
+  }
+  if ($suggested) {
+    $message[] = format_plural($suggested, '1 new suggestion added', '@count new suggestions added');
   }
   if ($updated) {
     $message[] = format_plural($updated, '1 translation updated', '@count translations updated');
@@ -967,7 +991,9 @@ function l10n_community_update_message($inserted, $updated, $unchanged) {
   if ($unchanged) {
     $message[] = format_plural($unchanged, '1 translation unchanged', '@count translations unchanged');
   }
-  drupal_set_message(join(', ', $message) .'.');
+  if (count($message)) {
+    drupal_set_message(join(', ', $message) .'.');
+  }
 }
 
 /**
@@ -984,8 +1010,12 @@ function l10n_community_update_message($inserted, $updated, $unchanged) {
  *   String id.
  * @param $langcode
  *   Language code.
+ * @param $form_index
+ *   Index of form element to copy suggestions to.
  */
-function l10n_community_string_details($sid = 0, $langcode = NULL) {
+function l10n_community_string_details($sid = 0, $langcode = NULL, $form_index = 0) {
+  
+  // List of project releases, where this string is used.
   $result = db_query('SELECT p.pid, p.title project_title, r.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE s.sid = %d GROUP BY r.rid ORDER by p.pid, r.rid', $sid);
   
   $list = array();
@@ -996,7 +1026,7 @@ function l10n_community_string_details($sid = 0, $langcode = NULL) {
       if (!empty($list)) {
         $output[] = join(', ', $list);
       }
-      $list = array('<strong>'. $instance->project_title . ':</strong> '. $instance->release_title .' ('. $instance->occurance_count .')');
+      $list = array('<em>'. $instance->project_title . ':</em> '. $instance->release_title .' ('. $instance->occurance_count .')');
     }
     else {
       $list[] = $instance->release_title .' ('. $instance->occurance_count .')';
@@ -1004,15 +1034,58 @@ function l10n_community_string_details($sid = 0, $langcode = NULL) {
     $previous_project = $instance->project_title; 
   }
   $output[] = join(', ', $list);
+  $usage_info = '<div style="float:right"><strong>'. t('Used in:') .'</strong>'. theme('item_list', $output) .'</div>';
   
+  // Information about translator and translation timestamp.
   $translation_info = '';
-  $translation = db_fetch_object(db_query("SELECT t.translation, t.uid, t.changed FROM {l10n_server_string} s LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid WHERE t.language = '%s' AND s.sid = %d", $langcode, $sid));
+  $translation = db_fetch_object(db_query("SELECT translation, uid, changed FROM {l10n_server_translation} WHERE language = '%s' AND sid = %d", $langcode, $sid));
   if (!empty($translation->translation)) {
     $account = user_load(array('uid' => $translation->uid));
-    $translation_info = '<div>'. t('<strong>Translated by:</strong> %username at %date', array('%username' => $account->name, '%date' => format_date($translation->changed))) .'</div>';
+    $translation_info = '<div>'. t('<strong>Translated by:</strong><br /> %username at %date', array('%username' => $account->name, '%date' => format_date($translation->changed))) .'</div>';
   }
   
-  print $sid ."\n\n". $translation_info .'<div>'. join('</div><div>', $output) .'</div>';
+  // Existing, "unresolved" suggestions.
+  $suggestions = array();
+  $result = db_query("SELECT * FROM {l10n_server_suggestion} WHERE language = '%s' AND sid = %d AND status = 1", $langcode, $sid);
+  $perm = l10n_community_get_permission($langcode);
+  while ($suggestion = db_fetch_object($result)) {
+    // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
+    $approve_button = $perm == L10N_PERM_ALL ? '<img src="' . drupal_get_path('module', 'l10n_community') . '/images/approve.png" class="copy" title="'. t('Approve suggestion.') .'" onclick="l10nCommunity.approveSuggestion(\''. url('/translate/approve/'. $suggestion->gid) .'\','. intval($form_index) .','. $suggestion->sid .'); return false;" /> ' : '';
+    $suggestions[] = $approve_button .'<img src="' . drupal_get_path('module', 'l10n_community') . '/images/edit.png" class="copy" title="'. t('Edit suggestion.') .'" onclick="$(\'#l10n-community-new-translation-'. intval($form_index) . '\').val(\''. str_replace("'", "\\'", $suggestion->suggestion) . '\'); $(\'.l10n-community-wrapper-'. intval($form_index) .'\').css(\'display\', \'block\'); return false;" /> ' . $suggestion->suggestion; 
+  }
+  $suggestion_info = count($suggestions) ? '<div><strong>'. t('Outstanding suggestions:') .'</strong>'. theme('item_list', $suggestions) .'</div>' : ''; 
+  
+  print $sid ."\n\n". $usage_info . $translation_info . $suggestion_info;
+  exit;
+}
+
+/**
+ * Records approval of a previous string suggestion.
+ * 
+ * This callback is invoked from JavaScript.
+ *
+ * @param $gid
+ *   Suggestion ID.
+ */
+function l10n_community_string_approve($gid = 0) {
+  global $user;
+  
+  if (l10n_community_get_permission($langcode) != L10N_PERM_ALL) {
+    return 'error';
+  }
+  
+  if ($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_server_suggestion} WHERE gid = %d", $gid))) {
+    // If there was a suggestion, we surely have at least an empty translation,
+    // which acted as a placeholder to communicate that we have suggestions,
+    // so we can update the translation right away.
+    db_query("UPDATE {l10n_server_translation} SET translation = '%s', changed = %d, uid = %d, has_suggestions = 0 WHERE sid = %d AND language = '%s';", $suggestion->suggestion, time(), $suggestion->uid, $suggestion->sid, $suggestion->language);
+    // Mark all existing suggestions are "handled".
+    db_query("UPDATE {l10n_server_suggestion} SET status = 0 WHERE sid = %d", $suggestion->sid);
+    // Record approval in history.
+    db_query("INSERT INTO {l10n_server_history} (sid, language, type, description, uid, changed) VALUES (%d, '%s', '%s', '%s', %d, %d)", $suggestion->sid, $suggestion->language, 'approve', $gid, $user->uid, time());
+    // Return something so the client sees we are OK.
+    print 'done';
+  }
   exit;
 }
 
@@ -1078,33 +1151,54 @@ function l10n_community_import_form_submit($form_id, &$form) {
  *   Language code, for example: 'hu', 'pt-br', 'de', 'it' and so on.
  * @param $uid
  *   User ID.
+ * @param $suggestion
+ *   TRUE if $translation is a suggestion, FALSE otherwise.
  * @param $inserted
  *   Counter to increment if insert is made.
  * @param $updated
  *   Counter to increment if update is made.
- *
- * @return
- *   An array with two elements: (number of inserts done, number of updates done).
- *
- * @todo
- *   Handle permission levels, suggestions and fuzzy changes.
+ * @param $suggested
+ *   Counter to increment if suggestion was saved.
  */
-function l10n_community_target_save($sid, $translation, $langcode, $uid, &$inserted, &$updated, &$unchanged) {
+function l10n_community_target_save($sid, $translation, $langcode, $uid, $suggestion, &$inserted, &$updated, &$unchanged, &$suggested) {
   $string = db_fetch_object(db_query("SELECT sid, translation FROM {l10n_server_translation} WHERE sid = %d AND language = '%s'", $sid, $langcode));
   if (isset($string->sid)) {
     if ($string->translation != $translation) {
-      // String translation exists in this language code, and what we should save now is different -> UPDATE.
-      db_query("UPDATE {l10n_server_translation} SET translation = '%s', changed = %d, uid = %d WHERE sid = %d AND language = '%s';", $translation, time(), $uid, $sid, $langcode);
-      $updated++;
+      if ($suggestion) {
+        // Saving a suggestion, so set flag on translation.
+        db_query("UPDATE {l10n_server_translation} SET has_suggestions = 1 WHERE sid = %d AND language = '%s';", $sid, $langcode);
+        $suggested++;
+      }
+      else {
+        // String translation exists in this language code, and what we should save now is different -> UPDATE.
+        db_query("UPDATE {l10n_server_translation} SET translation = '%s', changed = %d, uid = %d, has_suggestions = 0 WHERE sid = %d AND language = '%s';", $translation, time(), $uid, $sid, $langcode);
+        db_query("UPDATE {l10n_server_suggestion} SET status = 0 WHERE sid = %d", $sid);
+        $updated++;
+      }
     }
     else {
       $unchanged++;
     }
   }
   else {
-    // No translation yet -> INSERT.
-    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid, changed) VALUES (%d, '%s', '%s', %d, %d)", $sid, $translation, $langcode, $uid, time());
-    $inserted++;
+    if ($suggestion) {
+      // No translation yet -> INSERT empty placeholder so we can track suggestions.
+      db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid, changed, has_suggestions) VALUES (%d, '', '%s', 0, %d, 1)", $sid, $langcode, time());
+      $suggested++;
+    }
+    else {
+      // No translation yet -> INSERT.
+      db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid, changed) VALUES (%d, '%s', '%s', %d, %d)", $sid, $translation, $langcode, $uid, time());
+      $inserted++;
+    }
+  }
+  
+  // Record suggestion or changelog entry in history table.
+  if ($suggestion) {
+    db_query("INSERT INTO {l10n_server_suggestion} (sid, language, suggestion, uid, changed, status) VALUES (%d, '%s', '%s', %d, %d, %d)", $sid, $langcode, $translation, $uid, time(), 1);
+  }
+  else {
+    db_query("INSERT INTO {l10n_server_history} (sid, language, type, description, uid, changed) VALUES (%d, '%s', '%s', '%s', %d, %d)", $sid, $langcode, 'update', $translation, $uid, time());
   }
 }
 

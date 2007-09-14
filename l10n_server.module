@@ -292,8 +292,12 @@ function l10n_server_get_strings($project, $langcode, $status = L10N_STATUS_ALL,
       $sql_count .= $status_sql;
       break;
     case L10N_STATUS_TRANSLATED:
-    case L10N_STATUS_SUGGESTED:
       $status_sql = " AND t.translation != ''";
+      $sql .= $status_sql;
+      $sql_count .= $status_sql;
+      break;
+    case L10N_STATUS_SUGGESTED:
+      $status_sql = " AND t.has_suggestions = 1";
       $sql .= $status_sql;
       $sql_count .= $status_sql;
       break;

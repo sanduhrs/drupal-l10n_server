@@ -62,6 +62,16 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
   cursor: pointer;
 }
 
+#l10n-community-translate-form .info-pane {
+  padding: 0.5em;
+  border-top: 3px double #f5f5f5;
+  display: none;
+}
+#l10n-community-translate-form .info-pane .item-list ul li {
+  background: none;
+  padding: 0 0 0.2em 1em;
+}
+
 #l10n-community-filter {
   margin: 1em 0;
 }
