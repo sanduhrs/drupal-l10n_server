@@ -99,7 +99,7 @@ function l10n_community_help($section) {
       }
       else {
         // Language code and project both present.
-        return '<p>'. $permtext .'</p>';
+        return '<p>'. $permission_help .'</p>';
       }
     }
   }
