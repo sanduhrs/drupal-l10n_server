@@ -15,9 +15,9 @@
 define('L10N_MODEL_OPEN', 0);
 
 /**
- * Restricted translation model, where only admins can translate.
+ * Controlled translation model, where only admins can translate.
  */
-define('L10N_MODEL_RESTRICTED', 1);
+define('L10N_MODEL_CONTROLLED', 1);
 
 /**
  * Regular users have no permission to approve or suggest translations.
@@ -426,7 +426,7 @@ function l10n_community_form(&$node) {
     '#title' => t('Permission model'),
     '#description' => t('Whether different types of group members have different permissions.'),
     '#default_value' => isset($node->l10n_community_model) ? $node->l10n_community_model : L10N_MODEL_OPEN,
-    '#options' => array(L10N_MODEL_OPEN => t('Everybody is equal. All members can suggest and approve translations.'), L10N_MODEL_RESTRICTED => t('Members can only suggest translations, group administrators can approve them.')),
+    '#options' => array(L10N_MODEL_OPEN => t('Open. Everybody is equal, all members can suggest and approve translations.'), L10N_MODEL_CONTROLLED => t('Controlled. Members can only suggest translations, group administrators can approve them.')),
     '#weight' => -3
   );
   $form['body'] = array(
@@ -756,7 +756,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     );
     $form[$id]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox" id="l10n-community-toolbox-'. $id .'"></div>'
+      '#value' => '<div class="toolbox" id="l10n-community-toolbox-'. $id .'">' . ($string->has_suggestions ? '<span class="suggestions"></span>' : '') .'</div>'
     );
 
 
@@ -783,8 +783,15 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
       '#value' => $source,
       '#suffix' => '</div>',
     );
-
+    
     $translated = !empty($string->translation);
+    $form[$id]['new_translation'] = array(
+      '#type' => 'item',
+      // Hide textareas of translated stuff to save some space and guide user eyes.
+      '#prefix' => '<div class="'. ($translated ? 'hidden ' : '') .'l10n-community-wrapper-'. $id .'">',
+      '#suffix' => '</div>',
+    );
+
     if ($string->plural) {
       $translations = ($translated ? explode("\0", $string->translation) : array_fill(0, $language->plurals, ''));
       if ($translated) {
@@ -812,14 +819,11 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
           $title = ($perm == L10N_PERM_SUGGEST) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
         }
         
-        $form[$id]['new_translation'][$i] = array(
-          // Hide textareas of translated stuff to save some space and guide user eyes.
-          '#prefix' => '<div class="'. ($translated ? 'hidden ' : '') .'l10n-community-wrapper-'. $id .'">',
+        $form[$id]['new_translation']['value'][$i] = array(
           '#type' => 'textarea',
           '#title' => $title,
           '#rows' => 1,
           '#id' => 'l10n-community-new-translation-'. $target,
-          '#suffix' => '</div>',
         );
       }
     }
@@ -833,22 +837,30 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
         );
         $js_strings[$id .'-t'] = $string->translation;
       }
-      $form[$id]['new_translation'] = array(
+      $form[$id]['new_translation']['value'] = array(
         // Hide textareas of translated stuff to save some space and guide user eyes.
-        '#prefix' => '<div class="'. ($translated ? 'hidden ' : '') .'l10n-community-wrapper-'. $id .'">',
         '#type' => 'textarea',
         '#title' => $translated ? (($perm == L10N_PERM_SUGGEST) ? t('New suggestion') : t('New translation')) : (($perm == L10N_PERM_SUGGEST) ? t('Suggestion') : t('Translation')),
         '#rows' => 1,
         '#id' => 'l10n-community-new-translation-'. $id,
-        '#suffix' => '</div>',
       );
     }
     
-    // Store type of translation field.
-    $form[$id]['type'] = array(
-      '#type' => 'value',
-      '#value' => $perm
-    );
+    if ($perm == L10N_PERM_SUGGEST) {
+      // User with suggestion capability only.
+      $form[$id]['new_translation']['is_suggestion'] = array(
+        '#type' => 'value',
+        '#value' => TRUE
+      );
+    }
+    else {
+      // User with full privileges.
+      $form[$id]['new_translation']['is_suggestion'] = array(
+        '#title' => t('Store as suggestion'),
+        '#type' => 'checkbox',
+        '#description' => t('Check if the translation you provided needs discussion.'),
+      );
+    }
   }
   
   // Keep being on the same page when the form is submitted.
@@ -949,13 +961,13 @@ function l10n_community_translate_form_submit($form_id, &$form) {
     }
     
     $text = '';
-    if (is_string($form[$item]['new_translation'])) {
+    if (is_string($form[$item]['new_translation']['value'])) {
       // Single string representation: simple translation.
-      $text = $form[$item]['new_translation'];
+      $text = $form[$item]['new_translation']['value'];
     }
-    if (is_array($form[$item]['new_translation'])) {
+    if (is_array($form[$item]['new_translation']['value'])) {
       // Array -> plural variants are provided. Join them with a NULL separator.
-      $text = join("\0", $form[$item]['new_translation']);
+      $text = join("\0", $form[$item]['new_translation']['value']);
       if (trim($text) == '') {
         // If the whole string only contains NULL bytes, empty the string, so
         // we don't save an empty translation. Otherwise the NULL bytes need
@@ -966,7 +978,7 @@ function l10n_community_translate_form_submit($form_id, &$form) {
       
     if ($text) {
       // We have some string to save.
-      l10n_community_target_save($form[$item]['sid'], $text, $form['langcode'], $user->uid, ($form[$item]['type'] == L10N_PERM_SUGGEST), $inserted, $updated, $unchanged, $suggested);
+      l10n_community_target_save($form[$item]['sid'], $text, $form['langcode'], $user->uid, ($form[$item]['new_translation']['is_suggestion'] == TRUE), $inserted, $updated, $unchanged, $suggested);
     }
   }
   l10n_community_update_message($inserted, $updated, $unchanged, $suggested);
@@ -1050,7 +1062,7 @@ function l10n_community_string_details($sid = 0, $langcode = NULL, $form_index =
   $perm = l10n_community_get_permission($langcode);
   while ($suggestion = db_fetch_object($result)) {
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
-    $approve_button = $perm == L10N_PERM_ALL ? '<img src="' . drupal_get_path('module', 'l10n_community') . '/images/approve.png" class="copy" title="'. t('Approve suggestion.') .'" onclick="l10nCommunity.approveSuggestion(\''. url('/translate/approve/'. $suggestion->gid) .'\','. intval($form_index) .','. $suggestion->sid .'); return false;" /> ' : '';
+    $approve_button = $perm == L10N_PERM_ALL ? '<img src="' . drupal_get_path('module', 'l10n_community') . '/images/approve.png" class="copy" title="'. t('Approve suggestion.') .'" onclick="l10nCommunity.approveSuggestion(\''. url('/translate/approve/'. $langcode .'/'. $suggestion->gid) .'\','. intval($form_index) .','. $suggestion->sid .'); return false;" /> ' : '';
     $suggestions[] = $approve_button .'<img src="' . drupal_get_path('module', 'l10n_community') . '/images/edit.png" class="copy" title="'. t('Edit suggestion.') .'" onclick="$(\'#l10n-community-new-translation-'. intval($form_index) . '\').val(\''. str_replace("'", "\\'", $suggestion->suggestion) . '\'); $(\'.l10n-community-wrapper-'. intval($form_index) .'\').css(\'display\', \'block\'); return false;" /> ' . $suggestion->suggestion; 
   }
   $suggestion_info = count($suggestions) ? '<div><strong>'. t('Outstanding suggestions:') .'</strong>'. theme('item_list', $suggestions) .'</div>' : ''; 
@@ -1067,14 +1079,10 @@ function l10n_community_string_details($sid = 0, $langcode = NULL, $form_index =
  * @param $gid
  *   Suggestion ID.
  */
-function l10n_community_string_approve($gid = 0) {
+function l10n_community_string_approve($langcode = '', $gid = 0) {
   global $user;
   
-  if (l10n_community_get_permission($langcode) != L10N_PERM_ALL) {
-    return 'error';
-  }
-  
-  if ($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_server_suggestion} WHERE gid = %d", $gid))) {
+  if ((l10n_community_get_permission($langcode) == L10N_PERM_ALL) && ($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_server_suggestion} WHERE gid = %d", $gid)))) {
     // If there was a suggestion, we surely have at least an empty translation,
     // which acted as a placeholder to communicate that we have suggestions,
     // so we can update the translation right away.
@@ -1085,7 +1093,10 @@ function l10n_community_string_approve($gid = 0) {
     db_query("INSERT INTO {l10n_server_history} (sid, language, type, description, uid, changed) VALUES (%d, '%s', '%s', '%s', %d, %d)", $suggestion->sid, $suggestion->language, 'approve', $gid, $user->uid, time());
     // Return something so the client sees we are OK.
     print 'done';
+    exit;
   }
+  
+  print 'error';
   exit;
 }
 
@@ -1109,6 +1120,12 @@ function l10n_community_import_form($langcode) {
     '#size' => 50,
     '#description' => t('A gettext Portable Object (.po) file to upload.'),
   );
+  $form['is_suggestion'] = array(
+    '#title' => t('Store as suggestions'),
+    '#type' => 'checkbox',
+    '#description' => t('Check if the translations you import need discussion. If checked, all translations in the imported file will be saved as suggestions.'),
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import')
@@ -1128,11 +1145,11 @@ function l10n_community_import_form_submit($form_id, &$form) {
       set_time_limit(240);
     }
 
-    if (gettextapi_import($file, $form['langcode'])) {
+    if (gettextapi_import($file, $form['langcode'], $form['is_suggestion'])) {
       // Get status report on what was done in the process.
-      list($inserted, $updated, $unchanged) = gettextapi_import_one_string();
+      list($inserted, $updated, $unchanged, $suggested) = gettextapi_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));
-      l10n_community_update_message($inserted, $updated, $unchanged);
+      l10n_community_update_message($inserted, $updated, $unchanged, $suggested);
     }
   }
   else {

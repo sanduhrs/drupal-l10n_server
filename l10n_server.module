@@ -262,7 +262,7 @@ function l10n_server_get_strings($project, $langcode, $status = L10N_STATUS_ALL,
   $sql_args = array();
   
   // Project *and* language based filtering.
-  $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
+  $sql = "SELECT DISTINCT s.sid, s.value, s.plural, t.tid, t.translation, t.uid, t.changed, t.has_suggestions FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
   $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_release} r INNER JOIN {l10n_server_file} f ON r.rid = f.rid INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' WHERE r.pid = %d";
   $sql_args = array($langcode, $project->pid);
 

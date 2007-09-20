@@ -24,12 +24,14 @@ define('GETTEXTAPI_MODE_OVERWRITE', 1);
  *
  * @param $file
  *   Drupal file object corresponding to the PO file to import.
- * @param $mode
- *   Should existing translations be replaced (GETTEXTAPI_MODE_KEEP or GETTEXTAPI_MODE_OVERWRITE).
  * @param $langcode
  *   Language code.
+ * @param $is_suggestion
+ *   Strings uploaded are to be saved as suggestions.
+ * @param $mode
+ *   Should existing translations be replaced (GETTEXTAPI_MODE_KEEP or GETTEXTAPI_MODE_OVERWRITE).
  */
-function gettextapi_import($file, $langcode, $mode = GETTEXTAPI_MODE_KEEP) {
+function gettextapi_import($file, $langcode, $is_suggestion, $mode = GETTEXTAPI_MODE_KEEP) {
   $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
   if (!$fd) {
     _locale_import_message('The translation import failed, because the file %filename could not be read.', $file);
@@ -51,7 +53,7 @@ function gettextapi_import($file, $langcode, $mode = GETTEXTAPI_MODE_KEEP) {
         $current["#"][] = substr($line, 1);
       }
       elseif (($context == "MSGSTR") || ($context == "MSGSTR_ARR")) { // End current entry, start a new one
-        gettextapi_import_one_string($current, $mode, $langcode);
+        gettextapi_import_one_string($current, $mode, $langcode, $is_suggestion);
         $current = array();
         $current["#"][] = substr($line, 1);
         $context = "COMMENT";
@@ -77,7 +79,7 @@ function gettextapi_import($file, $langcode, $mode = GETTEXTAPI_MODE_KEEP) {
     }
     elseif (!strncmp("msgid", $line, 5)) {
       if ($context == "MSGSTR") {   // End current entry, start a new one
-        gettextapi_import_one_string($current, $mode, $langcode);
+        gettextapi_import_one_string($current, $mode, $langcode, $is_suggestion);
         $current = array();
       }
       elseif ($context == "MSGID") { // Already in this context? Parse error
@@ -151,7 +153,7 @@ function gettextapi_import($file, $langcode, $mode = GETTEXTAPI_MODE_KEEP) {
 
   // End of PO file, flush last entry
   if (($context == "MSGSTR") || ($context == "MSGSTR_ARR")) {
-    gettextapi_import_one_string($current, $mode, $langcode);
+    gettextapi_import_one_string($current, $mode, $langcode, $is_suggestion);
   }
   elseif ($context != "COMMENT") {
     _locale_import_message('The translation file %filename ended unexpectedly at line %line.', $file, $lineno);
@@ -170,38 +172,36 @@ function gettextapi_import($file, $langcode, $mode = GETTEXTAPI_MODE_KEEP) {
  *   Should existing translations be replaced (GETTEXTAPI_MODE_KEEP or GETTEXTAPI_MODE_OVERWRITE).
  * @param $langcode
  *   Language to store the string in.
+ * @param $is_suggestion
+ *   TRUE if the string to store is a suggestion, FALSE otherwise.
  */
-function gettextapi_import_one_string($value = NULL, $mode = NULL, $langcode = NULL) {
+function gettextapi_import_one_string($value = NULL, $mode = NULL, $langcode = NULL, $is_suggestion = FALSE) {
   global $user;
   
   static $inserted = 0;
   static $updated = 0;
   static $unchanged = 0;
-  static $strings = array();
+  static $suggested = 0;
 
   if ($value == NULL) {
     // Result stats queried.
-    return array($inserted, $updated, $unchanged);
+    return array($inserted, $updated, $unchanged, $suggested);
   }
   elseif (isset($value['msgid']) && $value['msgid'] != '') {
     // Some real string to import, not header information, which we don't care about.
     $comments = _locale_import_shorten_comments($value['#']);
     
+    // TODO: check equal values on binary data, otherwise we get mixed case translation imports.
     if ($sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value['msgid']))) {
       // We have this source string (otherwise we don't save anything).
-      if ($translation = db_result(db_query("SELECT translation FROM {l10n_server_translation} WHERE sid = %d", $sid))) {
-        // We have a translation saved for this already, so only act on it, if we should.
-        if ($mode == GETTEXTAPI_MODE_OVERWRITE) {
-          l10n_community_target_save($sid, $value['msgstr'], $langcode, $user->uid, $inserted, $updated, $unchanged);
-        }
-        else {
-          // We certainly did not update this one.
-          $unchanged++;
-        }
+      $translation = db_result(db_query("SELECT translation FROM {l10n_server_translation} WHERE sid = %d AND language = '%s'", $sid, $langcode));
+      
+      if ($is_suggestion || !$translation || empty($translation->translation) || $mode == GETTEXTAPI_MODE_OVERWRITE) {
+        l10n_community_target_save($sid, $value['msgstr'], $langcode, $user->uid, TRUE, $inserted, $updated, $unchanged, $suggested);
       }
       else {
-        // No translation yet, so save anyway.
-        l10n_community_target_save($sid, $value['msgstr'], $langcode, $user->uid, $inserted, $updated, $unchanged);
+        // We certainly did not update this one.
+        $unchanged++;
       }
     }
   }
@@ -293,7 +293,7 @@ function gettextapi_export($uri, $release = NULL, $language = NULL, $type = 'tem
             // Empty msgstrs based on plural formula for language. Could be
             // a plural without translation or a template generated for a
             // specific language.
-            for ($pi = 0; $pi < $language->nplurals; $pi++) {
+            for ($pi = 0; $pi < $language->plurals; $pi++) {
               $output .= 'msgstr['. $pi . '] ""'."\n";
             }
           }
@@ -358,7 +358,7 @@ function gettextapi_export($uri, $release = NULL, $language = NULL, $type = 'tem
     $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
     if (!$template) {
       $header = '# '. $language->name .' translation of '. $release_title ."\n";
-      $header .= "# Copyright (c) ". date('Y') . "\n";
+      $header .= "# Copyright (c) ". date('Y') .' by the '. $language->name ." translation team\n";
       $header .= $file_list;
       $header .= "#\n";
       $header .= "msgid \"\"\n";

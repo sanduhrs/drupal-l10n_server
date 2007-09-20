@@ -58,6 +58,14 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
   padding-right: 0.4em;
   cursor: pointer;
 }
+#l10n-community-translate-form .toolbox .suggestions {
+  background-image: url('images/suggestions.png');
+  width: 16px;
+  height: 16px;
+  display: block; 
+  margin-right: 0.3em;
+  float: left;
+}
 #l10n-community-translate-form img.copy {
   cursor: pointer;
 }
