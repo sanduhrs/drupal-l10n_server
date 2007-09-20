@@ -3,11 +3,19 @@
 
 /**
  * @file
- *   Introduction page for the l10n_community site.
+ *   Introduction page for an l10n_community setup.
  *
  *   All string are in PHP source code, so translators can translate
  *   them to their own language, without resorting to i18n module or
  *   some other solution for node translation.
+ *
+ *   This page is based on the admin page layout from system.module,
+ *   so we are using classes and concepts from there. This might not
+ *   fit perfectly with all listings, so I bended some stuff more to comply.
+ *
+ * @todo
+ *   See whether we can do something about having a sum of all translation
+ *   group members. Look into organic groups API for this.
  */
 
 $output = '<div id="l10n-community-home" class="admin clear-block"><div class="left clear-block">';
@@ -40,7 +48,7 @@ $block = array(
 $output .= theme('admin_block', $block);
 
 $output .= '</div><div class="right clear-block">';
-// Only display account task if not logged in.
+// Only display account creation task if not logged in.
 if (!$GLOBALS['user']->uid) {
   $items = array(array('title' => t('Create an account or log in'), 'path' => 'user', 'description' => t('Create an account on the site and log in.')));
 }
