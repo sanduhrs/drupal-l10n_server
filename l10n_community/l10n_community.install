@@ -1,0 +1,164 @@
+<?php
+// $Id$
+/**
+ * @file
+ *   Localization community installation, update and uninstallation.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+ * - We have a list of projects running with a unique short name
+ *   each to identify them nicely in paths.
+ * - Then each project has releases, for which we need to store
+ *   download links. And to optimize downloads, we need to take
+ *   care of when did we process something and what was the hash
+ *   of the file. If these differ, we need to download it again.
+ *
+ * - When files of a release are parsed, we find errors in them,
+ *   which need to be stored for later examination (inform developers,
+ *   use for project metrics, use to fix extractor bugs). Although
+ *   we find errors in the release files, we store error notes on
+ *   a release level, to make them easily accessible without the
+ *   need for extraneous detail. 
+ * - Each project release has multiple files (eg. a module has an .info
+ *   file and a .module file at least), which are parsed for translatables.
+ *   CVS revision information from files, as well as their name and paths
+ *   are stored, so we know where strings are used.
+ * - We also store location of strings on the line granularity level.
+ *   If the same string is used multiple times on the same line, then we
+ *   only store on occassion. 
+ *
+ * - Finally we reach the actual translatables, which are the strings.
+ *   For strings with multiple plural versions, we store them as the
+ *   same translatable with a \0 separator (unlike Drupal itself), 
+ *   because it is easier to match translations with them (for
+ *   multiple plural versions) this way, and we can force people to 
+ *   translate both at once.
+ *
+ * The translation table stores two things:
+ *  - translations: is_suggestion = 0, *_approved is filled
+ *  - suggestions:  is_suggestion = 1, *_approved should be 0
+ *
+ * Translations have the has_suggestion flag, which is cached information of
+ * whether there is at least one is_active is_suggestion record for the same sid
+ * and language. 
+ * 
+ * Both translations and suggestions can be outdated (is_active = 0):
+ *  - in case of translations, when newer translation was added
+ *  - in case of suggestions, an admin choose a suggestion (or added a 
+ *    new translation), and this was not that one, so the action marks
+ *    the previous suggestions inactive (ie. they are supposed to be 
+ *    reviewed and refused)
+ *
+ * Unprocessed suggestions and active translations have is_active = 1.
+ *
+ * - Finally, the translations themselfs are maintained by communities,
+ *   who share a common space based on organic groups. We need to store
+ *   their permission model and language association.
+ */
+function l10n_community_install() {
+  $table_config = "";
+  $serial = "SERIAL";
+  switch ($GLOBALS["db_type"]) {
+    case "mysql":
+    case "mysqli":
+      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
+      // Intentionally no break here.
+    case "pgsql":
+       db_query("CREATE TABLE {l10n_community_project} (
+        pid                $serial      PRIMARY KEY,
+        uri                VARCHAR(50)  NOT NULL,
+        title              VARCHAR(128) NOT NULL,
+        last_parsed        INTEGER
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_community_release} (
+        rid                $serial      PRIMARY KEY,
+        pid                INTEGER,
+        title              VARCHAR(128) NOT NULL,
+        download_link      TEXT         NOT NULL,
+        file_date          INTEGER,
+        file_hash          VARCHAR(32),
+        last_parsed        INTEGER
+        ) $table_config;");
+
+      db_query("CREATE TABLE {l10n_community_error} (
+        eid                $serial      PRIMARY KEY,
+        rid                INTEGER,
+        value              TEXT         NOT NULL
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_community_file} (
+        fid                $serial      PRIMARY KEY,
+        rid                INTEGER,
+        location           VARCHAR(255) NOT NULL,
+        revision           VARCHAR(255) NOT NULL
+        ) $table_config;");
+      db_query("CREATE TABLE {l10n_community_line} (
+        fid                INTEGER,
+        lineno             INTEGER,
+        sid                INTEGER
+        ) $table_config;");
+
+      db_query("CREATE TABLE {l10n_community_string} (
+        sid                $serial      PRIMARY KEY,
+        value              TEXT         NOT NULL
+        ) $table_config;");
+      
+      db_query("CREATE TABLE {l10n_community_translation} (
+        tid            $serial       PRIMARY KEY,
+        sid            INTEGER       NOT NULL,
+        language       VARCHAR(12)   NOT NULL,
+        translation    TEXT          NOT NULL,
+        
+        uid_entered    INTEGER       NOT NULL,
+        uid_approved   INTEGER       NOT NULL,
+        time_entered   INTEGER       NOT NULL,
+        time_approved  INTEGER       NOT NULL,
+        
+        has_suggestion INTEGER       NOT NULL,
+        is_suggestion  INTEGER       NOT NULL,
+        is_active      INTEGER       NOT NULL
+        ) $table_config;");
+
+      db_query("CREATE TABLE {l10n_community_group} (
+          nid           INTEGER       NOT NULL,
+          language      VARCHAR(12)   NOT NULL,
+          model         INTEGER       NOT NULL
+        ) $table_config;");
+
+      db_query("ALTER TABLE  {l10n_community_release}  ADD FOREIGN KEY (pid) REFERENCES {l10n_community_project} (pid);");
+      db_query("ALTER TABLE  {l10n_community_error}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
+      db_query("ALTER TABLE  {l10n_community_file}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
+      db_query("ALTER TABLE  {l10n_community_line}     ADD FOREIGN KEY (fid) REFERENCES {l10n_community_file} (fid);");
+      db_query("ALTER TABLE  {l10n_community_line}     ADD FOREIGN KEY (sid) REFERENCES {l10n_community_string} (sid);");
+      db_query("CREATE INDEX {l10n_community_project}_uri         ON {l10n_community_project} (uri);");
+
+      db_query("ALTER TABLE  {l10n_community_translation} ADD FOREIGN KEY (sid) REFERENCES {l10n_community_string} (sid);");
+      db_query("CREATE INDEX {l10n_community_translation}_language ON {l10n_community_translation} (language);");
+      db_query("CREATE INDEX {l10n_community_translation}_is_suggestion ON {l10n_community_translation} (is_suggestion);");
+      db_query("CREATE INDEX {l10n_community_translation}_is_active ON {l10n_community_translation} (is_active);");
+
+      db_query("CREATE INDEX {l10n_community_group}_nid ON {l10n_community_group} (nid);");
+      break;
+  }
+
+  // Designate our node type as an OG home node type.
+  $home_types = variable_get('og_node_types', array());
+  $home_types['l10n_group'] = 'l10n_group';
+  variable_set('og_node_types', $home_types);
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function l10n_community_uninstall() {
+  db_query("DROP TABLE {l10n_community_project}");
+  db_query("DROP TABLE {l10n_community_release}");
+  db_query("DROP TABLE {l10n_community_error}");
+  db_query("DROP TABLE {l10n_community_file}");
+  db_query("DROP TABLE {l10n_community_line}");
+  db_query("DROP TABLE {l10n_community_string}");
+  db_query("DROP TABLE {l10n_community_translation}");
+  db_query("DROP TABLE {l10n_community_group}");
+}

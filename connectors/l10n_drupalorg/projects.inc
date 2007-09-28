@@ -3,13 +3,13 @@
 
 /**
  * @file
- *   Project data updates for l10n_server.
+ *   Project data updates for l10n_drupalorg.
  */
 
 /**
  * Central update server, from where project updates come from.
  */
-define('L10N_PROJECT_RELEASES_URL', 'http://updates.drupal.org/release-history');
+define('L10N_DRUPALORG_SYNC_URL', 'http://updates.drupal.org/release-history');
 
 /**
  * Syncronize local project list with all available projects on the update server.
@@ -18,7 +18,7 @@ define('L10N_PROJECT_RELEASES_URL', 'http://updates.drupal.org/release-history')
  *   There is no service interface for this yet on the server, so for now this
  *   is just a stub, implement stuff later.
  */
-function l10n_server_sync_projects() {
+function l10n_drupalorg_sync_projects() {
   // TEST DATA!
   $projects = array(
     'drupal' => (object) array(
@@ -36,16 +36,17 @@ function l10n_server_sync_projects() {
   );
   // Record all projects in the database.
   foreach ($projects as $uri => $project) {
-    if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $uri))) {
+    if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $uri))) {
       if ($project->title != $existing_project->title) {
         // Update if title is different (uri should not change, other data is
         // internal). Also set the parsed timestamp to the past, so we will
         // reparse the releases later.
-        db_query("UPDATE {l10n_server_project} SET title = '%s', last_parsed = 0 WHERE uri = '%s'", $project->title, $uri);
+        db_query("UPDATE {l10n_community_project} SET title = '%s', last_parsed = 0 WHERE uri = '%s'", $project->title, $uri);
       }
     }
     else {
-      db_query("INSERT INTO {l10n_server_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $uri, $project->title);
+      // New project, not recorded before.
+      db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $uri, $project->title);
     }
   }
 }
@@ -56,16 +57,16 @@ function l10n_server_sync_projects() {
  * @param $project
  *   Project object.
  */
-function l10n_server_sync_releases($project) {
+function l10n_drupalorg_sync_releases($project) {
  
   // Request the update XML file with releases for this project.
-  $xml = drupal_http_request(L10N_PROJECT_RELEASES_URL .'/'. $project->uri .'/all');
+  $xml = drupal_http_request(L10N_DRUPALORG_SYNC_URL .'/'. $project->uri .'/all');
   if (!$xml->data) {
     // No data, keep our lists.
     continue;
   }
   
-  $parser = new l10n_server_project_xml_parser;
+  $parser = new l10n_drupalorg_project_xml_parser;
   $releases = $parser->parse(array($xml->data));
   
   if (isset($releases[$project->uri]['releases'])) {
@@ -75,22 +76,22 @@ function l10n_server_sync_releases($project) {
         // Skip unpublished releases.
         continue;
       }
-      if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE pid = %d AND title = '%s'", $project->pid, $release['version']))) {
+      if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE pid = %d AND title = '%s'", $project->pid, $release['version']))) {
         if ($release['date'] != $existing_release->file_date) {
           // New file with possibly new date for the same release (dev snapshot
           // probably), so update data, set parsed date to past.
-          db_query("UPDATE {l10n_server_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $release['download_link'], $release['date'], $existing_release->rid);
+          db_query("UPDATE {l10n_community_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $release['download_link'], $release['date'], $existing_release->rid);
         }
       }
       else {
         // No such release recorded yet.
-        db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release['version'], $release['download_link'], $release['date']);
+        db_query("INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release['version'], $release['download_link'], $release['date']);
       }
     }
   }
   
   // Parsed this projects releases.
-  db_query("UPDATE {l10n_server_project} SET last_parsed = %d WHERE pid = %d", time(), $project->pid);
+  db_query("UPDATE {l10n_community_project} SET last_parsed = %d WHERE pid = %d", time(), $project->pid);
 }
 
 /**
@@ -103,7 +104,7 @@ function l10n_server_sync_releases($project) {
  * @param $release
  *   Release object.
  */
-function l10n_server_sync_files($release) {
+function l10n_drupalorg_sync_files($release) {
   // This could take a long time.
   @set_time_limit(0);
   $error = $message = '';
@@ -121,7 +122,7 @@ function l10n_server_sync_files($release) {
   // Location to save the tarball.
   $file = $tempdir . $filename;
   // Location to extract the tarball.
-  $path = $tempdir .'l10n_server';
+  $path = $tempdir .'l10n_drupalorg';
     
   // Nothing to do if already downloaded and/or the extraction folder is taken.
   if (file_exists($file) or is_dir($path)) {
@@ -133,7 +134,7 @@ function l10n_server_sync_files($release) {
     $error = t('Unbale to download and save %download_link file.', array('%download_link' => $release->download_link));
   }
   
-  // Extract the local file to the l10n_server directory and remove the tarball.
+  // Extract the local file to the l10n_drupalorg directory and remove the tarball.
   else {
     $obj = new Archive_Tar($file);
     if (!$obj->extract($path)) {
@@ -143,29 +144,29 @@ function l10n_server_sync_files($release) {
     else {
       // Get all source files and save strings with our callback for this release.
       $files = _potx_explore_dir($path);
-      l10n_server_save_file($release->rid);
+      l10n_drupalorg_save_file($release->rid);
       foreach ($files as $name) {
-        _potx_process_file($name, strlen($path) + 1, 'l10n_server_save_string', 'l10n_server_save_file');
+        _potx_process_file($name, strlen($path) + 1, 'l10n_drupalorg_save_string', 'l10n_drupalorg_save_file');
       }
       
       // Delete the extracted files and the tarball.
-      l10n_server_rmdir_recursive($path);
+      l10n_drupalorg_rmdir_recursive($path);
       unlink($file);
       
       // Record changes of the scanned project in the database.
       $message = t('Contents of %filename have been scanned.', array('%filename' => $filename));
 
       // Parsed this releases files.
-      db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
       
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
       // the error messages as text. We assume no other messages are added while
       // importing, so we can safely use drupal_get_message() to grab our errors.
-      db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid);
+      db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release->rid);
       $messages = drupal_get_messages('error');
       foreach ($messages['error'] as $error_message) {
-        db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
+        db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
       }
     }
   }
@@ -174,11 +175,11 @@ function l10n_server_sync_files($release) {
   if ($error) {
     // WARNING: We should not do this reuse in the 6.x port, or otherwise
     // the extractor cannot pick the watchdog() strings up.
-    watchdog('l10n_server', $error, WATCHDOG_ERROR);
+    watchdog('l10n_drupalorg', $error, WATCHDOG_ERROR);
     $return['error'] = $error;
   }
   if ($message) {
-    watchdog('l10n_server', $message);
+    watchdog('l10n_community', $message);
     $return['message'] = $message;
   }
   
@@ -202,7 +203,7 @@ function l10n_server_sync_files($release) {
  *   File location in package. If not given, $revision is taken as a
  *   release id to use to store the file list.
  */
-function l10n_server_save_file($revision = NULL, $file = NULL) {
+function l10n_drupalorg_save_file($revision = NULL, $file = NULL) {
   static $rid = 0;
   static $files = array();
   
@@ -215,15 +216,15 @@ function l10n_server_save_file($revision = NULL, $file = NULL) {
     return $files[$file];
   }
   else {
-    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_server_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
+    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_community_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
       // Changed revision on a file.
-      db_query("UPDATE {l10n_server_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+      db_query("UPDATE {l10n_community_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
       $fid = $existing_file->fid;
     }
     else {
       // New file in this release.
-      db_query("INSERT INTO {l10n_server_file} (rid, location, revision) VALUES(%d, '%s', '%s')", $rid, $file, $revision);
-      $fid = db_result(db_query("SELECT fid FROM {l10n_server_file} WHERE rid = %d and location = '%s'", $rid, $file));
+      db_query("INSERT INTO {l10n_community_file} (rid, location, revision) VALUES(%d, '%s', '%s')", $rid, $file, $revision);
+      $fid = db_result(db_query("SELECT fid FROM {l10n_community_file} WHERE rid = %d and location = '%s'", $rid, $file));
     }
     $files[$file] = $fid;
   }
@@ -248,7 +249,7 @@ function l10n_server_save_file($revision = NULL, $file = NULL) {
  *   String mode: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
  *   or POTX_STRING_BOTH.
  */
-function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string_mode = 2 /*POTX_STRING_RUNTIME*/) {
+function l10n_drupalorg_save_string($value = NULL, $file = NULL, $line = 0, $string_mode = 2 /*POTX_STRING_RUNTIME*/) {
   static $files = array();
   
   // Strip all slashes from string.
@@ -256,20 +257,20 @@ function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string
   
   if (!isset($files[$file])) {
     // Get file ID for saving, locally cache.
-    $files[$file] = l10n_server_save_file(NULL, $file);
+    $files[$file] = l10n_drupalorg_save_file(NULL, $file);
   }
   else {
-    // The \0 separator means we deal with a string with plural variants.
+    // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value))) {
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $value))) {
       // String does not exist.
-      db_query("INSERT INTO {l10n_server_string} (value, plural) VALUES ('%s', %d)", $value, (strpos($value, "\0") !== FALSE));
-      $sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", $value));
+      db_query("INSERT INTO {l10n_community_string} (value) VALUES ('%s')", $value);
+      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $value));
     }
-    if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND sid = %d AND lineno = %d", $fid, $sid, $line))) {
+    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d", $fid, $sid, $line))) {
       // Location does not exist with this string.
-      db_query("INSERT INTO {l10n_server_line} (fid, sid, lineno) VALUES (%d, %d, %d)", $files[$file], $sid, $line);
+      db_query("INSERT INTO {l10n_community_line} (fid, sid, lineno) VALUES (%d, %d, %d)", $files[$file], $sid, $line);
     }
   }
 }
@@ -280,7 +281,7 @@ function l10n_server_save_string($value = NULL, $file = NULL, $line = 0, $string
  * @param $dirname
  *  The directory name to be deleted.
  */
-function l10n_server_rmdir_recursive($directory) {
+function l10n_drupalorg_rmdir_recursive($directory) {
   if (!is_dir($directory)) {
     return;
   }
@@ -294,7 +295,7 @@ function l10n_server_rmdir_recursive($directory) {
         }
         $path = $directory .'/'. $file;
         if (is_dir($path)) {
-          l10n_server_rmdir_recursive($path);
+          l10n_drupalorg_rmdir_recursive($path);
         }
         else {
           unlink($path);
@@ -311,7 +312,7 @@ function l10n_server_rmdir_recursive($directory) {
  *
  * Copied from update.module being developed for Drupal 6.
  */
-class l10n_server_project_xml_parser {
+class l10n_drupalorg_project_xml_parser {
   var $projects = array();
   var $current_project;
   var $current_release;

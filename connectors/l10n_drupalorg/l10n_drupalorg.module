@@ -1,0 +1,138 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Localization community connector for drupal.org, update and uninstallation.
+ *
+ *   Maintains a copy of project and release listings, extracts translatable 
+ *   strings from project files.
+ */
+
+// = Core hooks ================================================================
+
+/**
+ * Implementation of hook_help().
+ */
+function l10n_drupalorg_help($section) {
+  switch ($section) {
+    case 'admin/settings/l10n_drupalorg':
+      return '<p>'. t('The drupal.org localization community connector watches for new projects popping up at drupal.org, downloads the new packages and extracts translatable strings out of them. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/settings/l10n_drupalorg/scan'))) . '</p>';
+    case '#l10n_community_welcome':
+      return t('This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, meaning that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.');
+    case '#l10n_community_export':
+      return t('Translations are automatically packaged on drupal.org, but you can export translations to test them yourself, even if logged out.');
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function l10n_drupalorg_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'title' => t('Localization community drupal.org connector'),
+      'path' => 'admin/settings/l10n_drupalorg',
+      'description' => t('Configure the drupal.org connector for the localization community'),
+      'access' => user_access('administer localization community connector for drupal.org'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'l10n_drupalorg_settings_form',
+    );
+    $items[] = array(
+      'title' => t('Configure'),
+      'path' => 'admin/settings/l10n_drupalorg/configure',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+    $items[] = array(
+      'title' => t('Scan'),
+      'path' => 'admin/settings/l10n_drupalorg/scan',
+      'access' => user_access('administer localization community connector for drupal.org'),
+      'callback' => 'l10n_drupalorg_scan',
+      'type' => MENU_LOCAL_TASK
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function l10n_drupalorg_perm() {
+  return array('administer localization community connector for drupal.org');
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function l10n_drupalorg_cron() {
+  if (variable_get('l10n_drupalorg_cron', FALSE)) {
+    l10n_drupalorg_scan(TRUE);
+  }
+}
+
+// = Settings ==================================================================
+
+/**
+ * Settings form callback.
+ */
+function l10n_drupalorg_settings_form() {
+  $form = array();
+  $form['l10n_drupalorg_limit'] = array(
+    '#title' => t('Number of projects to scan at once'),
+    '#description' => t('How many projects to scan on a manual or a cron run. Scanning is syncronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project, releases, files, translatable strings end up in the database and are ready to translate.'),
+    '#type' => 'select',
+    '#options' => array(-1 => t('Unlimited (not recommended)'), 1 => 1) + drupal_map_assoc(range(10, 100, 10)),
+    '#default_value' => variable_get('l10n_drupalorg_limit', 1),
+  );
+  $form['l10n_drupalorg_cron'] = array(
+    '#title' => t('Scan new projects on every cron run'),
+    '#type' => 'radios',
+    '#options' => array(t('Disabled'), t('Enabled')),
+    '#default_value' => variable_get('l10n_drupalorg_cron', 0),
+  );
+  return system_settings_form($form);
+}
+
+// = Project syncronization ====================================================
+
+/**
+ * Scans files of a project and release picked.
+ *
+ * @param $automated
+ *   TRUE if the execution was automated, so user feedback should
+ *   not be provided. FALSE otherwise.
+ *
+ * @todo
+ *   Do less HTTP queries! Look at ARCHITECTURE.txt for more information.
+ */
+function l10n_drupalorg_scan($automated = FALSE) {
+  include_once 'projects.inc';
+  
+  // Always update full project list.
+  l10n_drupalorg_sync_projects();
+  
+  // Pick the project we did not update for the longest period and sync fresh release list.
+  $uri = db_result(db_query_range("SELECT uri FROM {l10n_community_project} ORDER BY last_parsed ASC", 0, 1));
+  $project = l10n_community_get_projects($uri);
+  l10n_drupalorg_sync_releases($project);
+  
+  // Pick the release we did not update for the longest period, and sync the tarball.
+  // We should only look for releases with downloads. Placeholder releases for later
+  // versions should not be considered.
+  $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.download_link != '' ORDER BY r.last_parsed ASC", $uri, 0, 1));
+  $result = l10n_drupalorg_sync_files($release);
+  
+  if (!$automated) {
+    // User feedback, if not automated. Log messages are already done.
+    if (isset($result['error'])) {
+      drupal_set_message($result['error'], 'error');
+    }
+    if (isset($result['message'])) {
+      drupal_set_message($result['message']);
+    }
+  }
+  
+  // Ensure that a Drupal page will be displayed with the messages.
+  return '';
+}

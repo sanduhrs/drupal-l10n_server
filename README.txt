@@ -19,49 +19,56 @@ based interface. The various Drupal projects release source code on a daily
 basis. The goal is to help translators to keep up with this pace by sharing
 already translated strings and distributing translations effectively.
 
-The localization server module suite consists of two modules:
+The localization server module suite consists of two components:
 
- - l10n_server: Scans Drupal projects for translatable strings and stores
-   these in the database. The translations are syndicated to sites
-   running l10n_client.module (in a separate project).
-   
  - l10n_community: A translation community interface using "Organic
-   Groups" module to handle the teams.
+   Groups" module to handle the teams. This module provides the database
+   backend to store projects and releases, but does not fill these with
+   actual data.
+   
+ - A connector module: Connectors serve the purpose of filling in the actual
+   list of projects, releases and strings used in the released packages.
+   Different connectors allow this suite to be used in different use cases.
+   
+     - l10n_drupalorg: The original connector developed for this module.
+       Maintains a relation with the drupal.org project and release listing,
+       downloads tarballs, collects translatables.
+       
+     - More connectors. To be done.
 
 INSTALLATION
 --------------------------------------------------------------------------------
 
 - Your PHP installation should have the PEAR Tar package installed (which
-  requires zzlib support). Files are simply copied from the drupal.org
+  requires zzlib support). This is required for Tar extraction (eg. in
+  l10n_drupalorg module) and Tar generation (eg. in l10n_community module).
+- With l10n_drupalorg module, files are simply copied from the drupal.org
   server, so allow_url_fopen needs to be enabled.
 - Locale (built into Drupal) and Organic Groups
-  (http://drupal.org/project/og) modules are required.
+  (http://drupal.org/project/og) modules are also required.
 
-1. Enable both modules at Administer > Site configuration > Modules.
-2. Configure the server at Administer > Site configuration > Localization Server.
+1. Enable l10n_community and *only one* of the connector modules at
+   Administer > Site configuration > Modules.
+2. Configure the connector at Administer > Site configuration.
 
 HOW DOES IT WORK
 --------------------------------------------------------------------------------
 
-The localization server scans new/updated projects for new strings on every
-cron run. Manual scan of projects is possible by going to Administer > Site
-configuration > Localization Server > Scan.
+The connector module's duty is to maintain a list of projects and releases, as
+well as fill up the database with translatable strings based on release source
+codes. This modules comsume a huge amount of resources. Downloading packages,
+unpacking their contents and running the string extraction process takes time,
+CPU cycles and hard disk space. Although only temporal copies of the packages
+are kept, some hard disk space and a decent amount of memory is required. This
+is why connectors are preconfigured to scan only one project at a time. Big
+projects like E-Commerce or Drupal itself take considerable time to parse.
 
-This module comsumes a huge amount of resources. It downloads each project
-package from drupal.org, extracts their contents and scans them for translatable
-strings. Although only temporal copies of the packages are kept, some hard disk
-space and a decent amount of memory is required. This is why the module is
-preconfigured to scan only one project at a time. Big projects like
-E-Commerce or Drupal itself take considerable time to parse.
-
-The localization community module couples the server with translation team
-capabilities relying on Organic Groups. Group members can suggest new
-translations for strings, maintainers can even decide on the official
-translation based on the different suggestions. To translate a project, go
-to Translations, choose a language and choose the project. There you
-can translate all strings.
-
-For more details, look into the documentation directory.
+The localization community module provides the actual interface giving
+translation team capabilities relying on Organic Groups. Group members can
+suggest new translations for strings, maintainers can even decide on the
+official translation based on the different suggestions. To translate a
+project, go to Translations, choose a language and choose the project.
+There you can translate all strings.
 
 DEVELOPERS
 --------------------------------------------------------------------------------
@@ -78,4 +85,4 @@ Bruno Massa  http://drupal.org/user/67164 (original author)
 Gábor Hojtsy http://drupal.org/user/4166 (current maintainer)
 
 This module was originally sponsored by Titan Atlas (http://www.titanatlas.com),
-a brazilian computer company, and is sponsored now by Google Summer of Code 2007.
+a brazilian computer company, and then by Google Summer of Code 2007.

@@ -2,58 +2,37 @@
 // $Id$
 /**
  * @file
- *   Localization community installation, update and uninstallation.
-*/
+ *   Localization community connector for drupal.org, update and uninstallation.
+ */
 
 /**
  * Implementation of hook_install().
  */
-function l10n_community_install() {
-  $table_config = "";
-  $serial = "SERIAL";
-  switch ($GLOBALS["db_type"]) {
-    case "mysql":
-    case "mysqli":
-      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
-      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
-      // Intentionally no break here.
-    case "pgsql":
-      // Adds "managed language" information to localization groups.
-      db_query("CREATE TABLE {l10n_community_group} (
-          nid           INTEGER       NOT NULL,
-          language      VARCHAR(12)   NOT NULL,
-          model         INTEGER       NOT NULL
-        ) $table_config;");
-      db_query("CREATE INDEX {l10n_community_group}_nid ON {l10n_community_group} (nid);");
-      break;
-  }
-  
-  // Set variables.
-  variable_set('site_frontpage', 'translate');
-  variable_set('site_name', 'Drupal localization server');
-  
+function l10n_drupalorg_install() {
   // Add languages and plurals we know have Drupal translations
-  // to some degree already. See l10n_community_plurals().
-  $languages = l10n_community_plurals();
+  // to some degree already. See l10n_drupalorg_plurals().
+  $languages = l10n_drupalorg_plurals();
   include_once 'includes/locale.inc';
   foreach ($languages as $langcode => $data) {
+    // Use artificial file name. Although this is not localizable, because this is only run once,
+    // it is not considered to be a problem.
     list($plurals, $formula) = _locale_import_parse_plural_forms($data[1], 'automatic install of '. $data[0]);
     if (!$locale = db_result(db_query("SELECT locale FROM {locales_meta} WHERE locale = '%s'", $langcode))) {
       db_query("INSERT INTO {locales_meta} (locale, name, enabled, plurals, formula) VALUES ('%s', '%s', %d, %d, '%s')", $langcode, $data[0], 1, $plurals, $formula);
     }
     else {
+      // Update plural formula to the one we know works.
       db_query("UPDATE {locales_meta} SET plurals = %d, formula = '%s' WHERE locale = '%s'", $plurals, $formula, $langcode);
     }
-    
-    // Designate our node type as an OG home node type.
-    $home_types = variable_get('og_node_types', array());
-    $home_types['l10n_group'] = 'l10n_group';
-    variable_set('og_node_types', $home_types);
   }
 }
 
-function l10n_community_uninstall() {
-  db_query("DROP TABLE {l10n_community_group}");
+/**
+ * Implementation of hook_uninstall().
+ */
+function l10n_drupalorg_uninstall() {
+  variable_del("l10n_drupalorg_cron");
+  variable_del("l10n_drupalorg_limit");
 }
 
 /**
@@ -63,8 +42,9 @@ function l10n_community_uninstall() {
  * Plural information based on:
  *   - http://www.wordforge.org/static/l10n-pluralforms.html
  *   - our own CVS repository information from core translations
+ *   - feedback from drupal.org users and translators: http://groups.drupal.org/node/5216
  */
-function l10n_community_plurals() {
+function l10n_drupalorg_plurals() {
   $default = 'nplurals=2; plural=(n!=1);';
   $one = 'nplurals=1; plural=0;';
   return array(
@@ -116,7 +96,7 @@ function l10n_community_plurals() {
     'my' => array('Burmese', $default),
     'nb' => array('Norvegian Bokmål', $default),
     'nn' => array('Norwegian Nynorsk', $default),
-    // This is already superceeded in CVS by the above two?!?
+    // The 'no' code is superceeded by nb and nn
     //'no' => array('Norwegian', $default),
     'np' => array('Nepali', $default),
     'pl' => array('Polish', 'nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);'),
