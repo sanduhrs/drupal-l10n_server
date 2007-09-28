@@ -1,4 +1,4 @@
 ; $Id$
 name = "Localization community"
 description = A community interface for string translation
-dependencies = og
+dependencies = og locale
