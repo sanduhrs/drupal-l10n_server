@@ -2,3 +2,4 @@
 name = "Localization community"
 description = A community interface for string translation
 dependencies = og locale
+package = "Localization server"
