@@ -22,7 +22,7 @@
  *   group members. Look into organic groups API for this.
  */
 function l10n_community_welcome_page() {
-  $output = '<div id="l10n-community-home" class="admin clear-block"><div class="left clear-block">';
+  $output = '<div id="l10n-community-welcome" class="admin clear-block"><div class="left clear-block">';
 
   $block = array(
     'title' => t('About this interface'),

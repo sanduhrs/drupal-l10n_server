@@ -1,41 +1,62 @@
 /* $Id$ */
-.l10n-community-marker {
-  font-weight: bold;
+
+/* Welcome page */
+#l10n-community-welcome {
+  margin-top: 2em;
 }
 
+/* Overview navigation tables for projects and languages */
+#l10n-community-overview td, #l10n-community-overview thead th {
+  text-align: center;
+}
+#l10n-community-overview td.rowhead, #l10n-community-overview thead th.rowhead {
+  text-align: right;
+}
 .l10n-community-progress {
   height: 1em;
   border: 1px solid #cdcdcd;
   padding: 2px;
   background-color: #f5f5f5;
 }
-.l10n-community-progress-translated {
+.l10n-community-progress-translated,
+.l10n-community-progress-untranslated,
+.l10n-community-progress-has-suggestion {
   background-color: #69b123;
   height: 1em;
   float: left;
 }
 .l10n-community-progress-untranslated {
   background-color: #b93131;
-  height: 1em;
-  float: left;
 }
-.l10n-community-progress-suggested {
+.l10n-community-progress-has-suggestion {
   background-color: #6a4970;
-  height: 1em;
-  float: left;
 }
 
-table#l10n-community-overview td, table#l10n-community-overview thead th {
+/* String search filtering form */
+#l10n-community-filter-form {
+  margin: 1em 0;
+}
+#l10n-community-filter-form fieldset {
   text-align: center;
 }
-table#l10n-community-overview td.language, table#l10n-community-overview thead th.language {
-  text-align: right;
+#l10n-community-filter-form fieldset div, #l10n-community-filter-form fieldset label {
+  display: inline;
 }
 
-#l10n-community-home {
-  margin-top: 2em;
+/* Emphasized replaceable parts of translatables */
+em.l10n-community-marker {
+  font-weight: bold;
 }
 
+/* Translation display on the view page */
+#l10n-community-translate-view .translation,
+#l10n-community-translate-form .translation {
+  border-top: 2px dotted #cdcdcd;
+  padding-top: 0.5em;
+  color: brown;
+}
+
+/* Translation editor styles */
 #l10n-community-translate-form .pager {
   margin-bottom: 1em;
 }
@@ -58,7 +79,7 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
   padding-right: 0.4em;
   cursor: pointer;
 }
-#l10n-community-translate-form .toolbox .suggestions {
+#l10n-community-translate-form .toolbox .has-suggestion {
   background-image: url('images/suggestions.png');
   width: 16px;
   height: 16px;
@@ -66,10 +87,9 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
   margin-right: 0.3em;
   float: left;
 }
-#l10n-community-translate-form img.copy {
+#l10n-community-translate-form img.action {
   cursor: pointer;
 }
-
 #l10n-community-translate-form .info-pane {
   padding: 0.5em;
   border-top: 3px double #f5f5f5;
@@ -78,11 +98,4 @@ table#l10n-community-overview td.language, table#l10n-community-overview thead t
 #l10n-community-translate-form .info-pane .item-list ul li {
   background: none;
   padding: 0 0 0.2em 1em;
-}
-
-#l10n-community-filter {
-  margin: 1em 0;
-}
-#l10n-community-filter fieldset {
-  text-align: center;
 }
