@@ -13,14 +13,27 @@
    height="1052.3622047"
    id="svg2"
    sodipodi:version="0.32"
-   inkscape:version="0.44"
-   sodipodi:docbase="/home/goba/Desktop"
-   sodipodi:docname="l10n.svg"
-   inkscape:export-filename="/home/goba/Desktop/l10n.png"
+   inkscape:version="0.45.1"
+   sodipodi:docbase="/Users/gabor/Websites/l10n_server/sites/all/modules/l10n_server"
+   sodipodi:docname="l10n_modules.svg"
+   inkscape:export-filename="/Users/gabor/Desktop/l10n.png"
    inkscape:export-xdpi="90"
-   inkscape:export-ydpi="90">
+   inkscape:export-ydpi="90"
+   inkscape:output_extension="org.inkscape.output.svg.inkscape">
   <defs
      id="defs4">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient2440">
+      <stop
+         style="stop-color:#ffffff;stop-opacity:1;"
+         offset="0"
+         id="stop2442" />
+      <stop
+         style="stop-color:#ffffff;stop-opacity:0;"
+         offset="1"
+         id="stop2444" />
+    </linearGradient>
     <linearGradient
        inkscape:collect="always"
        id="linearGradient7629">
@@ -104,7 +117,7 @@
        x2="264.28571"
        y2="373.07648"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(1.085409,0,0,0.68323,15.92018,185.8947)" />
+       gradientTransform="matrix(1.085409,0,0,0.5778228,15.92018,214.00132)" />
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient5765"
@@ -135,6 +148,15 @@
        y2="614.50507"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(1.365384,0,0,0.958042,-48.87362,-8.916856)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient2440"
+       id="linearGradient2446"
+       x1="104.68073"
+       y1="173.74362"
+       x2="171.17552"
+       y2="200.72227"
+       gradientUnits="userSpaceOnUse" />
   </defs>
   <sodipodi:namedview
      id="base"
@@ -148,13 +170,13 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.98994949"
      inkscape:cx="339.9282"
-     inkscape:cy="654.96691"
+     inkscape:cy="695.37301"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      inkscape:window-width="1440"
      inkscape:window-height="827"
      inkscape:window-x="0"
-     inkscape:window-y="24" />
+     inkscape:window-y="22" />
   <metadata
      id="metadata7">
     <rdf:RDF>
@@ -171,17 +193,24 @@
      inkscape:groupmode="layer"
      id="layer1">
     <rect
+       id="rect2474"
+       width="664.68036"
+       height="585.88849"
+       x="54.548237"
+       y="66.4533"
+       style="fill:none;stroke:#000000;stroke-opacity:1;stroke-linejoin:round" />
+    <rect
        style="fill:#214478;fill-opacity:1;stroke:#9cb3d3;stroke-width:0.78597039;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        id="rect1872"
        width="145.21402"
        height="54.499744"
-       x="112.75013"
-       y="204.39803"
+       x="172.34914"
+       y="121.56551"
        ry="24.222109" />
     <flowRoot
        xml:space="preserve"
        id="flowRoot2760"
-       transform="translate(44.99996,181.4286)"><flowRegion
+       transform="translate(106.61927,98.596091)"><flowRegion
          id="flowRegion2762"><rect
            id="rect2764"
            width="166.42857"
@@ -189,7 +218,7 @@
            x="87.14286"
            y="34.505039" /></flowRegion><flowPara
          id="flowPara2766"
-         style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:white;font-family:Bitstream Vera Sans">Drupal 5</flowPara></flowRoot>    <path
+         style="font-size:24px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;font-family:Bitstream Vera Sans">Drupal 5</flowPara></flowRoot>    <path
        sodipodi:type="arc"
        style="fill:white;fill-opacity:1;stroke:#9cb3d3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        id="path2768"
@@ -238,36 +267,36 @@
          id="flowPara2784">Localization server</flowPara></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot2786"
-       transform="matrix(1,0,0,1.205871,130.7143,110.4635)"><flowRegion
+       transform="matrix(1,0,0,1.205871,131.72445,112.48381)"><flowRegion
          id="flowRegion2788"><rect
            id="rect2790"
            width="226.42857"
            height="72.14286"
            x="142.14285"
            y="130.21933" /></flowRegion><flowPara
-         id="flowPara2792"
-         style="text-align:center;text-anchor:middle">Localization</flowPara><flowPara
          id="flowPara2794"
-         style="text-align:center;text-anchor:middle">server</flowPara></flowRoot>    <path
+         style="text-align:center;text-anchor:middle">Drupal.org</flowPara><flowPara
+         style="text-align:center;text-anchor:middle"
+         id="flowPara2460">connector</flowPara></flowRoot>    <path
        sodipodi:type="arc"
-       style="fill:white;fill-opacity:1;stroke:#9cb3d3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       style="fill:url(#linearGradient2446);fill-opacity:1.0;stroke:#9cb3d3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        id="path2804"
        sodipodi:cx="68.571426"
        sodipodi:cy="157.00504"
        sodipodi:rx="47.142857"
        sodipodi:ry="43.214287"
        d="M 115.71428 157.00504 A 47.142857 43.214287 0 1 1  21.42857,157.00504 A 47.142857 43.214287 0 1 1  115.71428 157.00504 z"
-       transform="matrix(0.805147,0,0,0.795698,278.3614,64.57644)" />
+       transform="matrix(0.805147,0,0,0.795698,212.70148,100.94193)" />
     <text
        xml:space="preserve"
-       style="font-size:13.06026649px;font-style:normal;font-weight:normal;fill:black;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
-       x="363.82181"
-       y="176.97881"
+       style="font-size:13.06026649px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;font-family:Bitstream Vera Sans"
+       x="292.36044"
+       y="210.39204"
        id="text2806"
        transform="scale(0.918817,1.088356)"><tspan
          sodipodi:role="line"
-         x="363.82181"
-         y="176.97881"
+         x="292.36044"
+         y="210.39204"
          style="text-align:center;text-anchor:middle"
          id="tspan2814">Locale</tspan></text>
     <path
@@ -293,7 +322,7 @@
          id="tspan2822"
          style="text-align:center;text-anchor:middle">Template</tspan><tspan
          sodipodi:role="line"
-         x="473.43485"
+         x="473.43484"
          y="178.20931"
          style="text-align:center;text-anchor:middle"
          id="tspan2826">extractor</tspan><tspan
@@ -306,21 +335,6 @@
        style="fill:none;fill-rule:evenodd;stroke:black;stroke-width:1.32730997px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 420.42972,220.88061 L 405.26551,250.27382"
        id="path2852"
-       inkscape:connector-type="polyline" />
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:black;stroke-width:1.42469954px;stroke-linecap:butt;stroke-linejoin:miter;marker-start:none;marker-mid:none;marker-end:none;stroke-opacity:1"
-       d="M 350.57854,219.50075 L 367.77152,250.22513"
-       id="path2854"
-       inkscape:connector-type="polyline" />
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:black;stroke-width:1.10263312px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 254.12273,247.87157 L 340.15913,273.47863"
-       id="path3925"
-       inkscape:connector-type="polyline" />
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:black;stroke-width:1.20103717px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 254.88622,214.36219 L 295.11142,200.5126"
-       id="path3927"
        inkscape:connector-type="polyline" />
     <path
        sodipodi:type="arc"
@@ -359,11 +373,6 @@
        inkscape:connector-type="polyline"
        inkscape:connection-start="#path3929"
        inkscape:connection-end="#path2768" />
-    <path
-       style="fill:none;fill-rule:evenodd;stroke:black;stroke-width:1.22251022px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 140.77868,292.46754 L 165.98297,259.40201"
-       id="path3945"
-       inkscape:connector-type="polyline" />
     <path
        sodipodi:type="arc"
        style="fill:#5aa02c;fill-opacity:1;stroke:#9cb3d3;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -412,10 +421,10 @@
        style="fill:url(#linearGradient4864);fill-opacity:1;stroke:#9cb3d3;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect4856"
        width="217.85713"
-       height="78.571426"
+       height="66.449593"
        x="95"
        y="368.07645"
-       ry="31.965393"
+       ry="27.03384"
        rx="0" />
     <flowRoot
        xml:space="preserve"
@@ -423,16 +432,16 @@
        transform="matrix(0.996364,0,0,1,-14.58093,117.1429)"><flowRegion
          id="flowRegion5753"><rect
            id="rect5755"
-           width="207.17935"
-           height="105"
+           width="214.27623"
+           height="104.99998"
            x="115"
            y="255.93361" /></flowRegion><flowPara
          id="flowPara5757"
          style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:112.99999952%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans"><flowSpan
    style="font-weight:bold"
-   id="flowSpan5785">Organic groups</flowSpan> manages the translation teams, hands out permissions and provides a community interface. The <flowSpan
+   id="flowSpan5785">Organic groups</flowSpan> module manages the translation teams, hands out permissions and provides a community interface. The <flowSpan
    style="font-weight:bold"
-   id="flowSpan5787">localization community</flowSpan> module allows translation of strings (found in project releases).</flowPara></flowRoot>    <rect
+   id="flowSpan5787">localization community</flowSpan> module allows translation of strings.</flowPara></flowRoot>    <rect
        style="fill:url(#linearGradient5771);fill-opacity:1;stroke:#9cb3d3;stroke-width:0;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
        id="rect5763"
        width="181.42857"
@@ -476,7 +485,7 @@
          id="flowPara5805"
          style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans">The <flowSpan
    style="font-weight:bold"
-   id="flowSpan5807">template extractor</flowSpan> is reused to generate a list of the transnslatable strings from specific files. <flowSpan
+   id="flowSpan5807">template extractor</flowSpan> is reused to generate a list of the transnlatable strings from specific files. <flowSpan
    style="font-weight:bold"
    id="flowSpan5809">Locale module</flowSpan> provides the list of languages, and allows the community server itself to be available in all languages possible.</flowPara></flowRoot>    <rect
        style="fill:#214478;fill-opacity:1;stroke:#9cb3d3;stroke-width:0.78597039;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
@@ -598,5 +607,48 @@
            x="103.57143"
            y="526.64789" /></flowRegion><flowPara
          id="flowPara7643"
-         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans">Due to new features we use for on-page translation, this module is only possible with Drupal 6. The connection between the server and client is still to be defined; it could be &quot;bidirectional&quot;, or could work from the client to the server only.</flowPara></flowRoot>  </g>
+         style="font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;writing-mode:lr-tb;text-anchor:start;font-family:Bitstream Vera Sans">Due to new features we use for on-page translation, this module is only possible with Drupal 6. The connection between the server and client is still to be defined; it could be &quot;bidirectional&quot;, or could work from the client to the server only.</flowPara></flowRoot>    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 304.05592,235.14877 L 351.53309,260.40258"
+       id="path2448"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 265.67012,258.38228 L 260.61936,275.55487"
+       id="path2450"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 137.38075,288.68686 L 207.08127,175.54977"
+       id="path2452"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 263.64982,176.55992 L 263.64982,190.70206"
+       id="path2454"
+       inkscape:connector-type="polyline" />
+    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 301.02546,173.52947 L 379.81736,247.2706"
+       id="path2456"
+       inkscape:connector-type="polyline" />
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot2462"
+       transform="translate(3.030457,-8.020305)"><flowRegion
+         id="flowRegion2464"><rect
+           id="rect2466"
+           width="588.91895"
+           height="35.355339"
+           x="93.944183"
+           y="82.615738" /></flowRegion><flowPara
+         id="flowPara2468"
+         style="text-align:center;text-anchor:middle">Localization server and client architecture overview with Drupal.org connector</flowPara><flowPara
+         id="flowPara2470"><flowSpan
+   style="text-align:center;text-anchor:middle"
+   id="flowSpan2472">(ie. in the form of how this is planned to be deployed in connection to drupal.org</flowSpan>)</flowPara></flowRoot>    <path
+       style="fill:none;fill-rule:evenodd;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 61.619305,110.90001 C 709.12709,110.90001 709.12709,110.90001 709.12709,110.90001 L 709.12709,110.90001"
+       id="path3455" />
+  </g>
 </svg>
