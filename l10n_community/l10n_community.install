@@ -52,10 +52,6 @@
  *    reviewed and refused)
  *
  * Unprocessed suggestions and active translations have is_active = 1.
- *
- * - Finally, the translations themselfs are maintained by communities,
- *   who share a common space based on organic groups. We need to store
- *   their permission model and language association.
  */
 function l10n_community_install() {
   $table_config = "";
@@ -121,12 +117,6 @@ function l10n_community_install() {
         is_active      INTEGER       NOT NULL
         ) $table_config;");
 
-      db_query("CREATE TABLE {l10n_community_group} (
-          nid           INTEGER       NOT NULL,
-          language      VARCHAR(12)   NOT NULL,
-          model         INTEGER       NOT NULL
-        ) $table_config;");
-
       db_query("ALTER TABLE  {l10n_community_release}  ADD FOREIGN KEY (pid) REFERENCES {l10n_community_project} (pid);");
       db_query("ALTER TABLE  {l10n_community_error}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
       db_query("ALTER TABLE  {l10n_community_file}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
@@ -138,15 +128,8 @@ function l10n_community_install() {
       db_query("CREATE INDEX {l10n_community_translation}_language ON {l10n_community_translation} (language);");
       db_query("CREATE INDEX {l10n_community_translation}_is_suggestion ON {l10n_community_translation} (is_suggestion);");
       db_query("CREATE INDEX {l10n_community_translation}_is_active ON {l10n_community_translation} (is_active);");
-
-      db_query("CREATE INDEX {l10n_community_group}_nid ON {l10n_community_group} (nid);");
       break;
   }
-
-  // Designate our node type as an OG home node type.
-  $home_types = variable_get('og_node_types', array());
-  $home_types['l10n_group'] = 'l10n_group';
-  variable_set('og_node_types', $home_types);
 }
 
 /**
@@ -160,5 +143,4 @@ function l10n_community_uninstall() {
   db_query("DROP TABLE {l10n_community_line}");
   db_query("DROP TABLE {l10n_community_string}");
   db_query("DROP TABLE {l10n_community_translation}");
-  db_query("DROP TABLE {l10n_community_group}");
 }

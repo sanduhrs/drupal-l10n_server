@@ -268,7 +268,6 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
         // already, which is different from what we save now, redirect the data
         // to be a suggestion instead. This allows conflict issues to be resolved.
         $is_suggestion = TRUE;
-        watchdog('l10n_community', var_export($translation, TRUE));
       }
       
       if ($is_suggestion || !$translation) {

@@ -5,34 +5,23 @@
  * @file
  *   A community web interface for Drupal project translation.
  *
- *   Builds on organic groups (og) and uses a connector (eg. l10n_drupalorg)
+ *   Builds on a connector (eg. l10n_drupalorg) and optionally l10n_groups
  *   to provide a convinient web interface for translators to collaborate 
  *   on Drupal project translations.
  */
 
 /**
- * Open translation model, here all team members can translate.
- */
-define('L10N_MODEL_OPEN', 0);
-
-/**
- * Controlled translation model, where only admins can translate.
- */
-define('L10N_MODEL_CONTROLLED', 1);
-
-/**
- * Regular users have no permission to approve or suggest translations.
+ * No permission to suggest or translate, just view.
  */
 define('L10N_PERM_NONE', 0);
 
 /**
- * Translation group members have permission to suggest.
+ * Permission to suggest.
  */
 define('L10N_PERM_SUGGEST', 1);
 
 /**
- * User #1 and group administrators have permission to approve and
- * add translations without approval.
+ * Permission both to suggest and translate. 
  */
 define('L10N_PERM_ALL', 2);
 
@@ -60,18 +49,19 @@ define('L10N_STATUS_TRANSLATED', 3);
 
 /**
  * Implementation of hook_help().
- *
- * Note that help texts link to groups which might not exist yet, therefore
- * these links might be broken. This is just a transitional problem though,
- * as once the functionality is set up, translation groups should form.
  */
 function l10n_community_help($section) {
   global $user;
   
+  if (!module_exists('l10n_drupalorg') && $section == 'translate') {
+    // We don't have an overview page, so fix help path.
+    $section = 'translate/languages';
+  }
+  
   switch ($section) {
     // Help text for language overview start page.
     case 'translate/languages':
-      return '<p>'. t('Choose a language, and then either go to the project list or the group page. There is also a <a href="@by-project-link">by-project listing</a> available, which allows you to dig into languages from the project angle.', array('@by-project-link' => url('translate/projects'))) .'</p>';
+      return '<p>'. t('Choose a language to dive in here. There is also a <a href="@by-project-link">by-project listing</a> available, which allows you to dig into languages from the project angle.', array('@by-project-link' => url('translate/projects'))) .'</p>';
     // Help for project overview start page.
     case 'translate/projects':
       return '<p>'. t('Choose a project, and then either export translation templates, or click on the project name to go to the language list to pick a language to translate to. There is also a <a href="@by-language-link">by-language listing</a> available, which allows you to dig into projects from the language angle.', array('@by-language-link' => url('translate/languages'))) .'</p>';
@@ -84,19 +74,23 @@ function l10n_community_help($section) {
       !preg_match('!translate/languages/([^/]+)/import$!', $section))) {
     $perm = isset($args['langcode']) ? l10n_community_get_permission($args['langcode']) : L10N_PERM_NONE;
     $languages = l10n_community_get_languages('name');
-    $groups = l10n_community_get_groups();
     $permission_help = '';
-    switch ($perm) {
-      // Inform user about her permission level in this group.
-      case L10N_PERM_NONE:
-        $permission_help = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$args['langcode']]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$args['langcode']]->nid))));
-        break;
-      case L10N_PERM_SUGGEST:
-        $permission_help = t('You are a member of this translation group, so you can suggest translations and import complete Gettext translation files to suggest more strings at once. Administrators of this group will either accept or decline suggestions provided by members of the group. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
-        break;
-      case L10N_PERM_ALL:
-        $permission_help = t('As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible.');
-        break;
+    if (!module_exists('l10n_groups')) {
+      // Localization groups is not present so we are dealing with a simple
+      // permission model, not a groups based permission scheme. Provide help
+      // based on this model. Otherwise l10n_groups provides the extra help.
+      switch ($perm) {
+        case L10N_PERM_NONE:
+          $permission_help = t("You don't have permission to suggest or translate strings, but you can still view the existing translations and export templates or translations for your own use.");
+          break;
+        case L10N_PERM_SUGGEST:
+          $permission_help = t('You can suggest translations and import complete Gettext translation files to suggest more strings at once. People with permission to approve suggestions will be able to either accept or decline your suggestions. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
+          break;
+        case L10N_PERM_ALL:
+          $permission_help = t('As a fully empowered user, you can suggest translations as well as approve translations suggested by others. Export/import of Gettext translation files is also possible.');
+          break;
+      }
+      $permission_help = '<p>'. $permission_help .'</p>';
     }
 
     // Now construct the actual help text depending on whether we have project or language values from the address. 
@@ -104,26 +98,26 @@ function l10n_community_help($section) {
       // We have an import or export action. 
       switch ($args['action']) {
         case 'import':
-          return '<p>'. $permission_help .' '. t('Because all project translations are shared, although you import this file for this project, it might provide translations for strings used in other projects too. This means that your actions can have impact easily on other project translations too.') .'</p>';
+          return '<p>'. t('Because all project translations are shared, although you import this file for this project, it might provide translations for strings used in other projects too. This means that your actions can have impact easily on other project translations too.') .'</p>'. $permission_help;
         case 'export':
-          return '<p>'. $permission_help .' '. t('You have two different options to export. You can either export a template package for this project, or a package containing the existing translations for a given release. Both types will use the GNU Gettext Portable Object (Template) format, which is understood by Drupal and desktop translation editing tools.') . '</p>';
+          return '<p>'. t('You have two different options to export. You can either export a template package for this project, or a package containing the existing translations for a given release. Both types will use the GNU Gettext Portable Object (Template) format, which is understood by Drupal and desktop translation editing tools.') .'</p>'. $permission_help;
       }
     }
     else {
       // We are on some overview page.
       if (!isset($args['uri'])) {
         // Only language code is present => project list is shown.
-        $output = '<p>'. t('This page shows a list of all projects and their overall translation status in this language (accumulated for all releases). The <a href="@group">%language group</a> pages might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$args['langcode']]->nid), '%language' => $languages[$args['langcode']])) .' '. $permission_help .'</p>';
+        $output = '<p>'. t('This page shows a list of all projects and their overall translation status in this language (accumulated for all releases).') .'</p>'. $permission_help;
         return $output;
       }
       elseif (!isset($args['langcode'])) {
         // Only project code is present => language list is shown.
-        $output = '<p>'. t('This page shows a list of all languages and their overall translation status (accumulated for all releases). Exporting translation works for all languages. Importing your translations is only possible to groups where have sufficient privileges to do so.') .'</p>';
+        $output = '<p>'. t('This page shows a list of all languages and their overall translation status (accumulated for all releases). Exporting translation works for all languages. Importing your translations is only possible to languages where you have sufficient privileges to do so.') .'</p>';
         return $output;
       }
       else {
         // Language code and project both present.
-        return '<p>'. $permission_help .'</p>';
+        return $permission_help;
       }
     }
   }
@@ -141,30 +135,25 @@ function l10n_community_menu($may_cache) {
   if ($may_cache) {
     // Main menu items (cacheable). These are a small number of items, and
     // they are always the same, so we are safe to cache them.
-    $items[] = array(
-      'title' => t('Translate Drupal'),
-      'path' => 'translate',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('welcome', 'l10n_community_welcome_page'),
-      'access' => TRUE,
-    );
-    $items[] = array(
-      'title' => t('Overview'),
-      'path' => 'translate/overview',
-      'access' => TRUE,
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -20,
-    );
-    $items[] = array(
-      'title' => t('By language'),
-      'description' => t('Overview of languages and their translation status.'),
-      'path' => 'translate/languages',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('pages', 'l10n_community_overview_languages'),
-      'access' => TRUE,
-      'type' => MENU_LOCAL_TASK,
-      'weight' => -10,
-    );
+    if (!module_exists('l10n_drupalorg')) {
+      // These are defined differently by l10n_drupalorg to provide an
+      // additional overview for translators.
+      $items[] = array(
+        'title' => t('Translate projects'),
+        'path' => 'translate',
+        'callback' => 'l10n_community_page_wrapper',
+        'callback arguments' => array('pages', 'l10n_community_overview_languages'),
+        'access' => TRUE,
+      );
+      $items[] = array(
+        'title' => t('By language'),
+        'description' => t('Overview of languages and their translation status.'),
+        'path' => 'translate/languages',
+        'access' => TRUE,
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'weight' => -10,
+      );
+    }
     $items[] = array(
       'title' => t('By project'),
       'description' => t('Overview of projects and their translation status.'),
@@ -323,6 +312,13 @@ function l10n_community_menu($may_cache) {
 }
 
 /**
+ * Implementation of hook_perm().
+ */
+function l10n_community_perm() {
+  return array('submit suggestions', 'submit translations and approve suggestions');
+}
+
+/**
  * Implementation of hook_block().
  *
  * Guide users on the special chars in translatables.
@@ -359,156 +355,6 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
         );
       }
   }
-}
-
-/**
- * Implemenation of hook_form_alter().
- * 
- * Take care of the one translation group per language limitation.
- *
- * @todo
- *   Figure out how to support formal/informal differences, local language versions and so on.
- *   These might need to maintain a diff, not a full translation, so we need to think about this.
- */
-function l10n_community_form_alter($form_id, &$form) {
-  if ($form_id == 'l10n_group_node_form' && empty($form['l10n_community_language']['#value']) && empty($form['l10n_community_language']['#options'])) {
-    drupal_set_message(t("All available languages have groups now. You cannot create another group until a new language is added on the administration interface."), 'error');
-    $form['submit']['#disabled'] = TRUE;
-  }
-}
-
-// = Organic groups node type ==================================================
-
-/**
- * Implementation of hook_node_info().
- *
- * We expose one node type to tie into the organic groups system, and maintain a list
- * of localization community related ones with their permission models.
- */
-function l10n_community_node_info() {
-  return array(
-    'l10n_group' => array(
-      'name' => t('Translation group'),
-      'module' => 'l10n_community',
-      'description' => t('A language community around Drupal project translations.'),
-    )
-  );
-}
-
-/**
- * Implementation of hook_insert().
- */
-function l10n_community_insert(&$node) {
-  db_query("INSERT INTO {l10n_community_group} (nid, language, model) VALUES (%d, '%s', %d)", $node->nid, $node->l10n_community_language, $node->l10n_community_model);
-}
-
-/**
- * Implementation of hook_delete().
- */
-function l10n_community_delete(&$node) {
-  db_query('DELETE FROM {l10n_community_group} WHERE nid = %d', $node->nid);
-}
-
-/**
- * Implementation of hook_update().
- */
-function l10n_community_update($node) {
-  if ($nid = db_result(db_query('SELECT nid FROM {l10n_community_group} WHERE nid = %d', $node->nid))) {
-    db_query("UPDATE {l10n_community_group} SET language = '%s', model = %d WHERE nid = %d", $node->l10n_community_language, $node->l10n_community_model, $node->nid);
-  }
-  else {
-    l10n_community_insert($node);
-  }
-}
-
-/**
- * Implemenation of hook_load().
- */
-function l10n_community_load(&$node) {
-  return db_fetch_object(db_query('SELECT language AS l10n_community_language, model as l10n_community_model FROM {l10n_community_group} WHERE nid = %d', $node->nid));
-}
-
-/**
- * Implementation of hook_access().
- *
- * @todo
- *   Group admins should be able to edit their group nodes. Look into how others do it.
- */
-function l10n_community_access($op, $node) {
-  if ($op == 'view') { 
-    // Users can always see the translation group page.
-    return TRUE;
-  }
-  if (user_access('administer localization server')) { 
-    // But only few can delete/edit.
-    return TRUE;
-  }
-  return FALSE;
-}
-
-/**
- * Implementation of hook_form().
- */
-function l10n_community_form(&$node) {
-  $form = array();
-  // Create a list of languages on the site having no translation group.
-  $groups = db_query('SELECT language FROM {l10n_community_group}');
-  $languages = l10n_community_get_languages('name');
-  while ($group = db_fetch_object($groups)) {
-    if ($languages[$group->language]) {
-      unset($languages[$group->language]);
-    }
-  }
-  
-  $form['title'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Group name'),
-    '#description' => t('Name of the translation group.'),
-    '#default_value' => isset($node->title) ? $node->title : '',
-    '#weight' => -5,
-    '#required' => TRUE
-  );
-  if (!empty($node->l10n_community_language)) {
-    // Already attached to a language, not possible to modify.
-    $form['l10n_community_language'] = array(
-      '#type' => 'item',
-      '#title' => t('Language'),
-      '#description' => t('The language managed by this group. This is not possible to modify.'),
-      '#value' => $node->l10n_community_language,
-      '#weight' => -5
-    );
-  }
-  else {
-    // Not yet attached to a language.
-    $form['l10n_community_language'] = array(
-      '#type' => 'select',
-      '#title' => t('Language'),
-      '#description' => t('The language managed by this group. Language not shown here are either not active on the site, or already have a translation group.'),
-      '#options' => $languages,
-      '#weight' => -5,
-      '#required' => TRUE
-    );
-  }
-  $form['l10n_community_model'] = array(
-    '#type' => 'radios',
-    '#title' => t('Permission model'),
-    '#description' => t('Whether different types of group members have different permissions.'),
-    '#default_value' => isset($node->l10n_community_model) ? $node->l10n_community_model : L10N_MODEL_OPEN,
-    '#options' => array(
-      L10N_MODEL_OPEN => t('Open. Everybody is equal, all members can suggest and approve translations.'), 
-      L10N_MODEL_CONTROLLED => t('Controlled. Members can only suggest translations, group administrators can approve them.'),
-    ),
-    '#weight' => -3
-  );
-  $form['body'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Welcome message'),
-    '#description' => t('Welcome message to display on the group homepage.'),
-    '#default_value' => isset($node->body) ? $node->body : '',
-    '#rows' => 5,
-  );
-  $form['format'] = isset($node->format) ? filter_form($node->format) : filter_form();
-  return $form;
 }
 
 // = Status pages ==============================================================
@@ -563,30 +409,8 @@ function l10n_community_get_languages($key = NULL) {
 }
 
 /**
- * Helper function for group listing.
- *
- * @return
- *   List of l10n_community_group objects keyed by language code.
- */
-function l10n_community_get_groups() {
-  static $groups = NULL;
-  
-  if (!isset($groups)) {
-    $groups = array();
-    $result = db_query('SELECT nid, language, model FROM {l10n_community_group}');
-    while ($group = db_fetch_object($result)) {
-      $groups[$group->language] = $group;
-    }
-  }
-  
-  return $groups;
-}
-
-/**
  * Get translation permission level for a specific user.
  *
- * The group permissio model is taken into account and membership of
- * the user in this group is checked.
  *
  * @param $langcode
  *   Language code, for example 'hu', 'pt-br', 'de' or 'it'.
@@ -615,29 +439,19 @@ function l10n_community_get_permission($langcode, $account = NULL) {
   $permissions[$account->uid][$langcode] = L10N_PERM_NONE;
   
   if ($account->uid == 1) {
-    // The administrator has all permissions in all groups.
+    // The administrator has all permissions in all languages.
     return ($permissions[$account->uid][$langcode] = L10N_PERM_ALL);
   }
-
-  if ($groups = l10n_community_get_groups()) {
-    // Fill up local cache with all langcode permissions of this account for
-    // future reference (eg. a page showing links for all languages).
-    foreach ($groups as $group) {
-      if (!empty($account->og_groups) and !empty($account->og_groups[$group->nid])) {
-        if (!empty($account->og_groups[$group->nid]['is_admin'])) {
-          // Administrators of groups have all permissions in the group.
-          $permissions[$account->uid][$group->language] = L10N_PERM_ALL; 
-        }
-        else if ($account->og_groups[$group->nid]['is_active']) {
-          // Members in the group have a permission depending on the model used.
-          $permissions[$account->uid][$group->language] = ($group->model == L10N_MODEL_OPEN ? L10N_PERM_ALL : L10N_PERM_SUGGEST);
-        }
-        else {
-          // Otherwise permission to view, no permission to write.
-          $permissions[$account->uid][$group->language] = L10N_PERM_NONE;
-        }
-      }
-    }
+  
+  $global_permission = user_access('submit translations and approve suggestions', $account) ? L10N_PERM_ALL : (user_access('submit suggestions', $account) ? L10N_PERM_SUGGEST : L10N_PERM_NONE);
+  
+  if (($global_permission != L10N_PERM_NONE) && module_exists('l10n_groups')) {
+    // Fill up permission information for this account if it has any permission.
+    l10n_groups_get_permission($permissions, $global_permission, $langcode, $account);
+  }
+  else {
+    // Remember global permission if using l10n_community standalone.
+    $permissions[$account->uid][$langcode] = $global_permission;
   }
   
   // Return from local cache.

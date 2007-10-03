@@ -25,37 +25,39 @@ function l10n_community_overview_languages() {
   
   // Generate listing of all languages with summaries. The list of languages
   // is relatively "short", compared to projects, so we don't need a pager here.
-  $groups = l10n_community_get_groups();
+  $groups = array();
+  if (module_exists('l10n_groups')) {
+    $groups = l10n_groups_get_groups();
+  }
   $table = array();
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
     $perm = l10n_community_get_permission($langcode);
-    $group = isset($groups[$langcode]) ? l(t('Group'), 'node/'. $groups[$langcode]->nid, array('title' => t('Go to the group homepage.'))) : t('n/a');
     $table[] = array_merge(
       array(
         array('data' => "<strong>$language</strong> ($langcode)", 'class' => 'rowhead'),
         l(t('Projects'), 'translate/languages/'. $langcode, array('title' => t('Go to the project list.'))),
         ($perm == L10N_PERM_NONE ? t('n/a') : l(t('Import'), 'translate/languages/'. $langcode . '/import')),
-        $group,
       ),
+      count($groups) ? (isset($groups[$langcode]) ? l(t('Group'), 'node/'. $groups[$langcode]->nid, array('title' => t('Go to the group homepage.'))) : t('n/a')) : array(),
       isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1]) : theme('l10n_community_progress_columns', $num_source, 0, 0)
     );
   }
-  return theme(
-    'table',
-    array(
-      array('data' => t('Language'), 'class' => 'rowhead'),
-      t('Projects'),
-      t('Import'),
-      t('Group'),
-      t('Overall status'),
-      t('Translated'),
-      t('Has suggestion'),
-      t('Untranslated')
-    ),
-    $table,
-    array('id' => 'l10n-community-overview')
+  $header = array(
+    array('data' => t('Language'), 'class' => 'rowhead'),
+    t('Projects'),
+    t('Import'),
+    t('Group'),
+    t('Overall status'),
+    t('Translated'),
+    t('Has suggestion'),
+    t('Untranslated')
   );
+  if (!count($groups)) {
+    unset($header[3]);
+  }
+
+  return theme('table', $header, $table, array('id' => 'l10n-community-overview'));
 }
 
 /**
@@ -68,6 +70,7 @@ function l10n_community_overview_projects() {
   $output = '';
   if (!$projects = l10n_community_get_projects(NULL, 10)) {
     drupal_set_message(t('No projects found.'), 'error');
+    return '';
   }
 
   $output = theme('pager', NULL, 10, 0);

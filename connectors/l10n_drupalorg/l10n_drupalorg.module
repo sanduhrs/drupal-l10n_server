@@ -18,10 +18,6 @@ function l10n_drupalorg_help($section) {
   switch ($section) {
     case 'admin/settings/l10n_drupalorg':
       return '<p>'. t('The drupal.org localization community connector watches for new projects popping up at drupal.org, downloads the new packages and extracts translatable strings out of them. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/settings/l10n_drupalorg/scan'))) . '</p>';
-    case '#l10n_community_welcome':
-      return t('This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about all Drupal projects and their respective releases, meaning that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.');
-    case '#l10n_community_export':
-      return t('Translations are automatically packaged on drupal.org, but you can export translations to test them yourself, even if logged out.');
   }
 }
 
@@ -32,7 +28,7 @@ function l10n_drupalorg_menu($may_cache) {
   $items = array();
   if ($may_cache) {
     $items[] = array(
-      'title' => t('Localization community drupal.org connector'),
+      'title' => t('Localization community for drupal.org'),
       'path' => 'admin/settings/l10n_drupalorg',
       'description' => t('Configure the drupal.org connector for the localization community'),
       'access' => user_access('administer localization community connector for drupal.org'),
@@ -50,6 +46,33 @@ function l10n_drupalorg_menu($may_cache) {
       'access' => user_access('administer localization community connector for drupal.org'),
       'callback' => 'l10n_drupalorg_scan',
       'type' => MENU_LOCAL_TASK
+    );
+    
+    // We provide menu items for l10n_community, adding our own overview
+    // page as a default local task. If we are not turned on, these menu
+    // items are provided differently by l10n_community.
+    $items[] = array(
+      'title' => t('Translate projects'),
+      'path' => 'translate',
+      'callback' => 'l10n_drupalorg_welcome',
+      'access' => TRUE,
+    );
+    $items[] = array(
+      'title' => t('Overview'),
+      'path' => 'translate/overview',
+      'access' => TRUE,
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'weight' => -20,
+    );
+    $items[] = array(
+      'title' => t('By language'),
+      'description' => t('Overview of languages and their translation status.'),
+      'path' => 'translate/languages',
+      'callback' => 'l10n_community_page_wrapper',
+      'callback arguments' => array('pages', 'l10n_community_overview_languages'),
+      'access' => TRUE,
+      'type' => MENU_LOCAL_TASK,
+      'weight' => -10,
     );
   }
   return $items;
@@ -69,6 +92,13 @@ function l10n_drupalorg_cron() {
   if (variable_get('l10n_drupalorg_cron', FALSE)) {
     l10n_drupalorg_scan(TRUE);
   }
+}
+
+// = Welcome page ==============================================================
+
+function l10n_drupalorg_welcome() {
+  include_once 'welcome.inc';
+  return l10n_drupalorg_welcome_page();
 }
 
 // = Settings ==================================================================

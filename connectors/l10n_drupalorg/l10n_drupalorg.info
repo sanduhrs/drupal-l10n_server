@@ -1,5 +1,5 @@
 ; $Id$
-name = "Localization community connector for drupal.org"
+name = "Localization community for drupal.org"
 description = Maintains a copy of project and release listings, extracts translateable strings from project files.
-dependencies = l10n_community locale potx
+dependencies = l10n_community potx
 package = "Localization server"

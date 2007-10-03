@@ -1,0 +1,46 @@
+<?php
+// $Id$
+/**
+ * @file
+ *   Localization groups installation, update and uninstallation.
+ */
+
+/**
+ * Implementation of hook_install().
+ *
+ * With this module, the translations are maintained by communities,
+ * who share a common space based on organic groups. We need to store
+ * their permission model and language association.
+ */
+function l10n_groups_install() {
+  $table_config = "";
+  $serial = "SERIAL";
+  switch ($GLOBALS["db_type"]) {
+    case "mysql":
+    case "mysqli":
+      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
+      // Intentionally no break here.
+    case "pgsql":
+      db_query("CREATE TABLE {l10n_groups_group} (
+          nid           INTEGER       NOT NULL,
+          language      VARCHAR(12)   NOT NULL,
+          model         INTEGER       NOT NULL
+        ) $table_config;");
+
+      db_query("CREATE INDEX {l10n_groups_group}_nid ON {l10n_groups_group} (nid);");
+      break;
+  }
+
+  // Designate our node type as an OG home node type.
+  $home_types = variable_get('og_node_types', array());
+  $home_types['l10n_group'] = 'l10n_group';
+  variable_set('og_node_types', $home_types);
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function l10n_groups_uninstall() {
+  db_query("DROP TABLE {l10n_groups_group}");
+}
