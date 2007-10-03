@@ -1,0 +1,194 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Localization community for local packages.
+ *
+ *   Extracts translateable strings from local package files.
+ */
+
+// = Core hooks ================================================================
+
+/**
+ * Implementation of hook_help().
+ */
+function l10n_localpacks_help($section) {
+  switch ($section) {
+    case 'admin/settings/l10n_localpacks':
+      return '<p>'. t('The local package connector for localization community looks at a local directory and grabs packages you upload there, making them available for localization on the localization community interface. Here you can set up the properties of the directory. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory.', array('@scan_link' => url('admin/settings/l10n_localpacks/scan'))) . '</p>';
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function l10n_localpacks_menu($may_cache) {
+  $items = array();
+  if ($may_cache) {
+    $items[] = array(
+      'title' => t('Localization community for local packages'),
+      'path' => 'admin/settings/l10n_localpacks',
+      'description' => t('Configure the local package connector for the localization community'),
+      'access' => user_access('administer localization community for local packages'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'l10n_localpacks_settings_form',
+    );
+    $items[] = array(
+      'title' => t('Configure'),
+      'path' => 'admin/settings/l10n_localpacks/configure',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+    $items[] = array(
+      'title' => t('Scan'),
+      'path' => 'admin/settings/l10n_localpacks/scan',
+      'access' => user_access('administer localization community for local packages'),
+      'callback' => 'l10n_localpacks_scan',
+      'type' => MENU_LOCAL_TASK
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function l10n_localpacks_perm() {
+  return array('administer localization community for local packages');
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function l10n_localpacks_cron() {
+  if (variable_get('l10n_localpacks_cron', FALSE)) {
+    l10n_localpacks_scan(TRUE);
+  }
+}
+
+// = Settings ==================================================================
+
+/**
+ * Settings form callback.
+ */
+function l10n_localpacks_settings_form() {
+  $form = array();
+  $form['l10n_localpacks_directory'] = array(
+    '#title' => t('Local packages directory'),
+    '#description' => t('The directory on the local file system, where packages should be looked for. It could be relative to the Drupal site root or could be an absolute path on your system. It is important that Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directrly in the root directory, releases are identified based on the second part of package filenames, eg. Drupal/drupal-6.0.tar.gz is Drupal in version 6.0.'),
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#default_value' => variable_get('l10n_localpacks_directory', ''),
+  );
+  $form['l10n_localpacks_limit'] = array(
+    '#title' => t('Number of projects to scan at once'),
+    '#description' => t('How many projects to scan on a manual or a cron run. Scanning is syncronous, so you need to wait for Drupal to extract and parse the tarball content. If everything goes well, detailed data about the files and translatable strings end up in the database and are ready to translate.'),
+    '#type' => 'select',
+    '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
+    '#default_value' => variable_get('l10n_localpacks_limit', 1),
+  );
+  $form['l10n_localpacks_cron'] = array(
+    '#title' => t('Scan new projects on every cron run'),
+    '#type' => 'radios',
+    '#options' => array(t('Disabled'), t('Enabled')),
+    '#default_value' => variable_get('l10n_localpacks_cron', 0),
+  );
+  return system_settings_form($form);
+}
+
+// = Project syncronization ====================================================
+
+/**
+ * Scans files of a project and release picked.
+ *
+ * @param $automated
+ *   TRUE if the execution was automated, so user feedback should
+ *   not be provided. FALSE otherwise.
+ */
+function l10n_localpacks_scan($automated = FALSE) {
+  
+  // We look for projects in the working directory.
+  $workdir = variable_get('l10n_localpacks_directory', '');
+  
+  if (is_dir($workdir)) {
+    // Packages are always .tar.gz files.
+    $files = file_scan_directory($workdir, '.tar.gz$');
+    if (count($files)) {
+      foreach ($files as $path => $file) {
+        
+        // Get rid of $workdir prefix on file names, eg. files/Drupal/drupal-4.6.7.tar.gz
+        $path = $package = trim(preg_replace('!(^'. preg_quote($workdir, '!') .')(.+)\.tar\.gz!', '\2', $path), '/');
+        
+        $project_title = '';
+        if (strpos($path, '/')) {
+          // We have a slash, so this package is in a subfolder.
+          // Eg. Drupal/drupal-4.6.7. Grab the directory name as project title.
+          list ($project_title, $package) = explode('/', $path);
+        }
+        // Only remaining are the project uri and release, eg. drupal-4.6.7
+        list($project_uri, $release_version) = explode('-', $package);
+        
+        l10n_localpacks_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path .'.tar.gz', filemtime($file->filename));
+      }
+    }        
+  }
+  
+  for ($i = 0; $i < variable_get('l10n_localpacks_limit', 1); $i++) { 
+    // Pick the release we did not update for the longest period, and parse the tarball.
+    $release = db_fetch_object(db_query_range("SELECT * FROM {l10n_community_release} ORDER BY last_parsed ASC", 0, 1));
+    include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
+    $result = l10n_community_parse_package($workdir .'/'. $release->download_link, $release->rid);
+    
+    if (!$automated) {
+      // User feedback, if not automated. Log messages are already done.
+      if (isset($result['error'])) {
+        drupal_set_message($result['error'], 'error');
+      }
+      if (isset($result['message'])) {
+        drupal_set_message($result['message']);
+      }
+    }
+  }
+  
+  // Ensure that a Drupal page will be displayed with the messages.
+  return '';
+}
+
+/**
+ * Data save callback for local project and release mappings.
+ *
+ * @param $project_uri
+ *   Short project URI, the first part of file names, eg. 'drupal', 'og'.
+ * @param $project_title
+ *   Project title, effectively the directory name under which this release
+ *   was found. Characters allowed in directory names are allowed here.
+ * @param $release_version
+ *   Version identified string, such as '5.2' or '5.x-1.x-dev'.
+ * @param $filepath
+ *   Path to file (without the working directory name).
+ * @param filedate
+ *   Modification date of the package file.
+ */
+function l10n_localpacks_save_data($project_uri, $project_title, $release_version, $filepath, $filedate) {
+  // Save project information first.
+  if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri))) {
+    db_query("UPDATE {l10n_community_project} SET title = '%s' WHERE uri = '%s'", $project_title, $project_uri);
+  }
+  else {
+    db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $project_uri, $project_title);
+  }
+  
+  // Grab updated project data and save release information.
+  $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri));
+  if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE pid = %d AND title = '%s'", $project->pid, $release_version))) {
+    if ($filedate != $existing_release->file_date) {
+      // New file with possibly new date for the same release (dev snapshot
+      // probably), so update data, set parsed date to past.
+      db_query("UPDATE {l10n_community_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $filepath, $filedate, $existing_release->rid);
+    }
+  }
+  else {
+    // No such release recorded yet.
+    db_query("INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release_version, $filepath, $filedate);
+  }
+}

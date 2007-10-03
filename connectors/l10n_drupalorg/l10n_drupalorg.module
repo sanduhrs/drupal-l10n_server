@@ -3,7 +3,7 @@
 
 /**
  * @file
- *   Localization community connector for drupal.org, update and uninstallation.
+ *   Localization community for drupal.org.
  *
  *   Maintains a copy of project and release listings, extracts translatable 
  *   strings from project files.
@@ -31,7 +31,7 @@ function l10n_drupalorg_menu($may_cache) {
       'title' => t('Localization community for drupal.org'),
       'path' => 'admin/settings/l10n_drupalorg',
       'description' => t('Configure the drupal.org connector for the localization community'),
-      'access' => user_access('administer localization community connector for drupal.org'),
+      'access' => user_access('administer localization community for drupal.org'),
       'callback' => 'drupal_get_form',
       'callback arguments' => 'l10n_drupalorg_settings_form',
     );
@@ -43,7 +43,7 @@ function l10n_drupalorg_menu($may_cache) {
     $items[] = array(
       'title' => t('Scan'),
       'path' => 'admin/settings/l10n_drupalorg/scan',
-      'access' => user_access('administer localization community connector for drupal.org'),
+      'access' => user_access('administer localization community for drupal.org'),
       'callback' => 'l10n_drupalorg_scan',
       'type' => MENU_LOCAL_TASK
     );
@@ -82,7 +82,7 @@ function l10n_drupalorg_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function l10n_drupalorg_perm() {
-  return array('administer localization community connector for drupal.org');
+  return array('administer localization community for drupal.org');
 }
 
 /**
@@ -112,7 +112,7 @@ function l10n_drupalorg_settings_form() {
     '#title' => t('Number of projects to scan at once'),
     '#description' => t('How many projects to scan on a manual or a cron run. Scanning is syncronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project, releases, files, translatable strings end up in the database and are ready to translate.'),
     '#type' => 'select',
-    '#options' => array(-1 => t('Unlimited (not recommended)'), 1 => 1) + drupal_map_assoc(range(10, 100, 10)),
+    '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
     '#default_value' => variable_get('l10n_drupalorg_limit', 1),
   );
   $form['l10n_drupalorg_cron'] = array(
@@ -138,28 +138,31 @@ function l10n_drupalorg_settings_form() {
  */
 function l10n_drupalorg_scan($automated = FALSE) {
   include_once 'projects.inc';
+  include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
   
   // Always update full project list.
   l10n_drupalorg_sync_projects();
   
-  // Pick the project we did not update for the longest period and sync fresh release list.
-  $uri = db_result(db_query_range("SELECT uri FROM {l10n_community_project} ORDER BY last_parsed ASC", 0, 1));
-  $project = l10n_community_get_projects($uri);
-  l10n_drupalorg_sync_releases($project);
-  
-  // Pick the release we did not update for the longest period, and sync the tarball.
-  // We should only look for releases with downloads. Placeholder releases for later
-  // versions should not be considered.
-  $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.download_link != '' ORDER BY r.last_parsed ASC", $uri, 0, 1));
-  $result = l10n_drupalorg_sync_files($release);
-  
-  if (!$automated) {
-    // User feedback, if not automated. Log messages are already done.
-    if (isset($result['error'])) {
-      drupal_set_message($result['error'], 'error');
-    }
-    if (isset($result['message'])) {
-      drupal_set_message($result['message']);
+  for ($i = 0; $i < variable_get('l10n_drupalorg_limit', 1); $i++) { 
+    // Pick the project we did not update for the longest period and sync fresh release list.
+    $uri = db_result(db_query_range("SELECT uri FROM {l10n_community_project} ORDER BY last_parsed ASC", 0, 1));
+    $project = l10n_community_get_projects($uri);
+    l10n_drupalorg_sync_releases($project);
+    
+    // Pick the release we did not update for the longest period, and sync the tarball.
+    // We should only look for releases with downloads. Placeholder releases for later
+    // versions should not be considered.
+    $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.download_link != '' ORDER BY r.last_parsed ASC", $uri, 0, 1));
+    $result = l10n_drupalorg_sync_files($release);
+    
+    if (!$automated) {
+      // User feedback, if not automated. Log messages are already done.
+      if (isset($result['error'])) {
+        drupal_set_message($result['error'], 'error');
+      }
+      if (isset($result['message'])) {
+        drupal_set_message($result['message']);
+      }
     }
   }
   
