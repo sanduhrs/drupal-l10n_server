@@ -4,6 +4,9 @@
 /**
  * @file
  *   Package extractor for localization community.
+ *
+ *   This is not used in the l10n_community module but reused in
+ *   different connectors which utilize the same functionality.
  */
 
 /**

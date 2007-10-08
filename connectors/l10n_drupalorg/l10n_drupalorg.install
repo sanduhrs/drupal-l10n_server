@@ -2,7 +2,7 @@
 // $Id$
 /**
  * @file
- *   Localization community connector for drupal.org, update and uninstallation.
+ *   Localization community for drupal.org, update and uninstallation.
  */
 
 /**
@@ -31,8 +31,8 @@ function l10n_drupalorg_install() {
  * Implementation of hook_uninstall().
  */
 function l10n_drupalorg_uninstall() {
-  variable_del("l10n_drupalorg_cron");
-  variable_del("l10n_drupalorg_limit");
+  variable_del('l10n_drupalorg_cron');
+  variable_del('l10n_drupalorg_limit');
 }
 
 /**

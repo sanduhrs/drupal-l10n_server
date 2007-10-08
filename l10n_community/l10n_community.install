@@ -27,7 +27,7 @@
  *   are stored, so we know where strings are used.
  * - We also store location of strings on the line granularity level.
  *   If the same string is used multiple times on the same line, then we
- *   only store on occassion. 
+ *   only store one occassion.
  *
  * - Finally we reach the actual translatables, which are the strings.
  *   For strings with multiple plural versions, we store them as the
