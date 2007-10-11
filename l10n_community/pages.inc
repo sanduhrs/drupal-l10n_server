@@ -565,7 +565,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     array(
       'l10n_strings'          => $js_strings,
 
-      'l10n_image_path'       => drupal_get_path('module', 'l10n_community') . '/images/',
+      'l10n_image_path'       => base_path() . drupal_get_path('module', 'l10n_community') . '/images/',
 
       'l10n_expand_help'      => t('Show the translation editing field.'),
       'l10n_lookup_help'      => t('Show detailed information about this string.'),
