@@ -125,10 +125,16 @@ function l10n_localpacks_scan($automated = FALSE) {
           // Eg. Drupal/drupal-4.6.7. Grab the directory name as project title.
           list ($project_title, $package) = explode('/', $path);
         }
-        // Only remaining are the project uri and release, eg. drupal-4.6.7
-        list($project_uri, $release_version) = explode('-', $package);
-        
-        l10n_localpacks_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path .'.tar.gz', filemtime($file->filename));
+        if (strpos($package, '-')) {
+          // Only remaining are the project uri and release, eg. drupal-4.6.7
+          list($project_uri, $release_version) = explode('-', $package);
+
+          l10n_localpacks_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path .'.tar.gz', filemtime($file->filename));
+        }
+        else {
+          // File name not formatted properly.
+          $result['error'] = t('File name should have project codename and version number included separated with hyphen, such as drupal-5.2.tar.gz.');
+        }
       }
     }        
   }
