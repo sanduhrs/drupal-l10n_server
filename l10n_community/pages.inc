@@ -39,7 +39,7 @@ function l10n_community_overview_languages() {
         l(t('Projects'), 'translate/languages/'. $langcode, array('title' => t('Go to the project list.'))),
         ($perm == L10N_PERM_NONE ? t('n/a') : l(t('Import'), 'translate/languages/'. $langcode . '/import')),
       ),
-      count($groups) ? (isset($groups[$langcode]) ? l(t('Group'), 'node/'. $groups[$langcode]->nid, array('title' => t('Go to the group homepage.'))) : t('n/a')) : array(),
+      count($groups) ? (isset($groups[$langcode]) ? array(l(t('Group'), 'node/'. $groups[$langcode]->nid, array('title' => t('Go to the group homepage.')))) : array(t('n/a'))) : array(),
       isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1]) : theme('l10n_community_progress_columns', $num_source, 0, 0)
     );
   }
