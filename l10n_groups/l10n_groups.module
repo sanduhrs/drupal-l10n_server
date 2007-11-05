@@ -258,7 +258,7 @@ function l10n_groups_get_groups() {
  *   Optional user account.
  */
 function l10n_groups_get_permission(&$permissions, $global_permission, $langcode, $account = NULL) {
-  if ($groups = l10n_community_get_groups()) {
+  if ($groups = l10n_groups_get_groups()) {
     // Fill up local cache with all langcode permissions of this account for
     // future reference (eg. a page showing links for all languages).
     foreach ($groups as $group) {
