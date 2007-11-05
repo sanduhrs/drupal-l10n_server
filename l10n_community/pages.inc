@@ -684,9 +684,9 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   $status = array(
     'translated'     => array((int) $translated, round($translated / $sum * 100, 2), t('!percent translated')),
     'has-suggestion' => array((int) $has_suggestion, round($has_suggestion / $sum * 100, 2),  t('!percent has suggestion')),
-    'untranslated'   => array($sum - $translated - $has_suggestion, 0, t('!percent untranslated')),
+    'untranslated'   => array($sum - $translated, 0, t('!percent untranslated')),
   );
-  $status['untranslated'][1] = 100 - $status['has-suggestion'][1] - $status['translated'][1];
+  $status['untranslated'][1] = 100 - $status['translated'][1];
   
   // Visual summary with a progress bar.
   $bar = '<div class="l10n-community-progress">';
