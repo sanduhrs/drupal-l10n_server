@@ -681,12 +681,13 @@ function l10n_community_format_text($string) {
  */
 function theme_l10n_community_progress_columns($sum, $translated, $has_suggestion) {
   // Compute numbers, percentages and provide alternate text titles.
+  $done_percent = round($translated / $sum * 100, 2);
   $status = array(
-    'translated'     => array((int) $translated, round($translated / $sum * 100, 2), t('!percent translated')),
-    'has-suggestion' => array((int) $has_suggestion, round($has_suggestion / $sum * 100, 2),  t('!percent has suggestion')),
-    'untranslated'   => array($sum - $translated, 0, t('!percent untranslated')),
+    'translated'     => array((int) $translated, $done_percent, t('!percent translated')),
+    'untranslated'   => array($sum - $translated, 100 - $done_percent, t('!percent untranslated')),
+    // suggestions are not in the bar as they overlap with both translated and
+    // untranslated strings, so we cannot display them here.
   );
-  $status['untranslated'][1] = 100 - $status['translated'][1];
   
   // Visual summary with a progress bar.
   $bar = '<div class="l10n-community-progress">';
@@ -700,7 +701,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   return array(
     $bar,
     $status['translated'][0] .' ('. $status['translated'][1] .'%)',
-    $status['has-suggestion'][0],
+    (int) $has_suggestion,
     $status['untranslated'][0]
   );
 }
