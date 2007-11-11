@@ -95,6 +95,7 @@ function l10n_drupalorg_plurals() {
     'ms' => array('Malay', $default),
     'my' => array('Burmese', $default),
     'nb' => array('Norvegian Bokmål', $default),
+    'nl' => array('Dutch', $default),
     'nn' => array('Norwegian Nynorsk', $default),
     // The 'no' code is superceeded by nb and nn
     //'no' => array('Norwegian', $default),
