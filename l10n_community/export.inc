@@ -52,6 +52,13 @@ function l10n_community_export_form($uri, $langcode = NULL) {
       '#type' => 'value',
       '#value' => $langcode,
     );
+    $form['version'] = array(
+      '#title' => t('Format suitable for'),
+      '#type' => 'radios',
+      '#options' => array('drupal-6' => t('Drupal 6'), 'drupal-5' => t('Drupal 5 with autolocale module')),
+      '#default_value' => 'drupal-6',
+      '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming. Select which one to use here."),
+    );
   }
   $form['uri'] = array(
     '#type' => 'value',
@@ -77,7 +84,7 @@ function l10n_community_export_form_submit($form_id, &$form) {
   $type = (isset($form['type']) ? $form['type'] : 'template');
 
   // Generate tarball and get file name.
-  $filename = l10n_community_export($form['uri'], ($form['release'] == 'all' ? NULL : $form['release']), $language, ($type != 'translation'));
+  $filename = l10n_community_export($form['uri'], ($form['release'] == 'all' ? NULL : $form['release']), $language, ($type != 'translation'), $form['version']);
   
   // Return compressed archive to user.
   header('Content-Disposition: attachment; filename='. $form['uri'] . (isset($language) ? '-'. $language->locale : '') . ($type == 'template' ? '-templates' : '-translations') .'.tgz');
@@ -104,7 +111,7 @@ function l10n_community_export_form_submit($form_id, &$form) {
  * @todo
  *   Look into possibly exporting suggestions as fuzzy translations.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE) {
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL) {
   include_once 'Archive/Tar.php';
   
   $project = l10n_community_get_projects($uri);
@@ -134,6 +141,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $result = db_query($sql, $sql_args);
   $previous_sid = 0;
   $export_string = $string_files = array();
+  $version == 'drupal-5' ? $po_folder = 'po' : 'translations';
     
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
@@ -145,12 +153,12 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           // Appeared in more then one file, so goes to general.po.
           // Note that some modules like ubercart might not have their
           // root module in the root folder, so this needs to be rethought.
-          $filename = './translations/general';
+          $filename = './'. $po_folder .'/general';
         }
         else {
           // Putting into one specific directory, and there to a file.
           $filename = preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment'])));
-          $filename = dirname($filename) .'/translations/'. str_replace(array('.', '_'), '-', basename($filename));
+          $filename = dirname($filename) .'/'. $po_folder .'/'. str_replace(array('.', '_'), '-', basename($filename));
         }
         $filename .= ($template ? '.pot' : '.'. $language->locale .'.po');
         
