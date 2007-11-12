@@ -50,8 +50,9 @@ function l10n_community_parse_package($package_file, $release_rid) {
       // Get all source files and save strings with our callback for this release.
       $files = _potx_explore_dir($temp_path);
       l10n_community_save_file($release_rid);
+      $version = l10n_community_detect_major_version($package_file);
       foreach ($files as $name) {
-        _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file');
+        _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file', $version);
       }
       
       // Delete the extracted files.
@@ -167,10 +168,10 @@ function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $str
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $value))) {
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s'", $value))) {
       // String does not exist.
       db_query("INSERT INTO {l10n_community_string} (value) VALUES ('%s')", $value);
-      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $value));
+      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s'", $value));
     }
     if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d", $fid, $sid, $line))) {
       // Location does not exist with this string.

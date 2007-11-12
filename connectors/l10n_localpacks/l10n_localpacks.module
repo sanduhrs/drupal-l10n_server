@@ -116,6 +116,11 @@ function l10n_localpacks_scan($automated = FALSE) {
     if (count($files)) {
       foreach ($files as $path => $file) {
         
+        if (!l10n_community_is_supported_version($path)) {
+          // Skip files for unsupported versions. 
+          continue;
+        }
+        
         // Get rid of $workdir prefix on file names, eg.
         // files/Drupal/drupal-4.6.7.tar.gz or
         // files/Ubercart/ubercart-5.x-1.0-alpha8.tar.gz.

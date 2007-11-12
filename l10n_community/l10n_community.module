@@ -809,3 +809,38 @@ function l10n_community_update_message($inserted, $updated, $unchanged, $suggest
     drupal_set_message(join(', ', $message) .'.');
   }
 }
+
+/**
+ * Detect major version number for given project file.
+ *
+ * @param $path
+ *   Either a file name or a path to a file, containing the file name.
+ * @return
+ *   A number with the major version of the project file, computed from
+ *   the version portion of the filename.
+ *     - 4 for 4.x versions (even 4.6.x. and 4.7.x)
+ *     - 5 for 5.x versions
+ *     - 6 for 6.x versions
+ */
+function l10n_community_detect_major_version($path) {
+  // Only interested in the filename.
+  $filename = basename($path);
+  // The project name could not contain hyphens, as the project name equals
+  // function name prefixes, and hyphens are not allowed in function names.
+  list ($project_name, $version) = explode('-', $filename);
+  // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
+  return (int) $version;
+}
+
+/**
+ * Does the given file path point to a package with a supported major version?
+ *
+ * @param $path
+ *   Either a file name or a path to a file, containing the file name.
+ * @return
+ *   TRUE if the major version is supported, FALSE otherwise.
+ */
+function l10n_community_is_supported_version($path) {
+  // Only Drupal 5.x and 6.x projects are supported.
+  return in_array(l10n_community_detect_major_version($path), array(5, 6));
+}
