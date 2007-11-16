@@ -45,6 +45,9 @@ function l10n_community_parse_package($package_file, $release_rid) {
     $obj = new Archive_Tar($package_file);
     if (!$obj->extract($temp_path)) {
       $error = t('Error on untaring %filename file.', array('%filename' => $package_file));
+
+      // Delete the files extracted from broken archive.
+      l10n_community_rmdir_recursive($temp_path);
     }
     else {
       // Get all source files and save strings with our callback for this release.
