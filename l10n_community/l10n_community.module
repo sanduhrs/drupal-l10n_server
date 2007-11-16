@@ -164,6 +164,13 @@ function l10n_community_menu($may_cache) {
       'type' => MENU_LOCAL_TASK,
       'weight' => -5,
     );
+    $items[] = array(
+      'path' => 'translate/projects/autocomplete',
+      'title' => t('Project autocomplete'),
+      'callback' => 'l10n_community_projects_autocomplete',
+      'access' => TRUE,
+      'type' => MENU_CALLBACK
+    );
   }
   
   // Non-cachable menu items. These are numerous to generate for all languages and all projects,
@@ -843,4 +850,19 @@ function l10n_community_detect_major_version($path) {
 function l10n_community_is_supported_version($path) {
   // Only Drupal 5.x and 6.x projects are supported.
   return in_array(l10n_community_detect_major_version($path), array(5, 6));
+}
+
+/**
+ * Retrieve a pipe delimited string of autocomplete suggestions for projects.
+ */
+function l10n_community_projects_autocomplete($string = '') {
+  $matches = array();
+  if ($string) {
+    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%')", $string, 0, 10);
+    while ($project = db_fetch_object($result)) {
+      $matches[$project->tite] = check_plain($project->title);
+   }
+  }
+  print drupal_to_js($matches);
+  exit();
 }

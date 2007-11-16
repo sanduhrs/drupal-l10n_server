@@ -73,7 +73,10 @@ function l10n_community_overview_projects() {
     return '';
   }
 
-  $output = theme('pager', NULL, 10, 0);
+  // Add autocomplete lookup form.
+  $output = drupal_get_form('l10n_community_status_projects_jump_form');
+
+  $output .= theme('pager', NULL, 10, 0);
   $table = array();
   $string_counts = l10n_community_get_string_count('projects');
   foreach ($projects as $uri => $project) {
@@ -124,9 +127,12 @@ function l10n_community_status_projects($langcode = NULL) {
   if (!$projects = l10n_community_get_projects(NULL, 10)) {
     drupal_set_message(t('No projects found.'), 'error');
   }
+  
+  // Add autocomplete lookup form.
+  $output = drupal_get_form('l10n_community_status_projects_jump_form', $langcode);
 
   $perm = l10n_community_get_permission($langcode);
-  $output = theme('pager', NULL, 10, 0);
+  $output .= theme('pager', NULL, 10, 0);
   $table = array();
   $string_counts = l10n_community_get_string_count('projects', $langcode);
   foreach ($projects as $uri => $project) {
@@ -134,8 +140,8 @@ function l10n_community_status_projects($langcode = NULL) {
       list($sum, $translated, $suggested) = $string_counts[$project->pid];
       $table[] = array_merge(
         array(
-          array('data' => l($project->title, 'translate/languages/'. $langcode .'/' . $uri), 'class' => 'rowhead'),
-          ($perm != L10N_PERM_NONE ? l(t('Import'), 'translate/languages/'. $langcode . '/'. $uri .'/import') : t('n/a')),
+          array('data' => l($project->title, 'translate/languages/'. $langcode .'/'. $uri), 'class' => 'rowhead'),
+          ($perm != L10N_PERM_NONE ? l(t('Import'), 'translate/languages/'. $langcode .'/'. $uri .'/import') : t('n/a')),
           l(t('Export'), 'translate/languages/'. $langcode . '/'. $uri .'/export')
         ),
         theme('l10n_community_progress_columns', $sum, $translated, $suggested)
@@ -158,6 +164,52 @@ function l10n_community_status_projects($langcode = NULL) {
   );
   $output .= theme('pager', NULL, 10, 0);
   return $output;
+}
+
+/**
+ * Form for jumping to a specifiec project by name, with autocomplete.
+ *
+ * @param $langcode
+ *   Optional language code to use. The redirect URL depends on whether
+ *   there is a language code already selected or not.
+ */
+function l10n_community_status_projects_jump_form($langcode = NULL) {
+  $form['fieldset'] = array(
+    '#type' => 'fieldset',
+    '#attributes' => array('class' => 'container-inline'),
+  );
+  $form['fieldset']['langcode'] = array(
+    '#type' => 'value',
+    '#value' => $langcode,
+  );
+  $form['fieldset']['project'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Jump to project (JS is still buggy)'),
+    '#maxlength' => 60,
+    '#autocomplete_path' => 'translate/projects/autocomplete',
+  );
+  $form['fieldset']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Go'),
+  );
+  return $form;
+}
+
+/**
+ * Submission handler for l10n_community_status_projects_jump_form().
+ *
+ * Redirects the user to the selected project page with language selection
+ * if already done, or to the language selection page if not.
+ */
+function l10n_community_status_projects_jump_form_submit($form_id, &$form) {
+  if (isset($form['project']) && ($uri = db_result(db_query("SELECT uri FROM {l10n_community_project} WHERE title = '%s'", $form['project'])))) {
+    if (!empty($form['langcode'])) {
+      drupal_goto('translate/languages/'. $form['langcode'] .'/'. $uri);
+    }
+    else {
+      drupal_goto('translate/projects/'. $uri);
+    }
+  }
 }
 
 /**
