@@ -860,7 +860,7 @@ function l10n_community_projects_autocomplete($string = '') {
   if ($string) {
     $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%')", $string, 0, 10);
     while ($project = db_fetch_object($result)) {
-      $matches[$project->tite] = check_plain($project->title);
+      $matches[$project->title] = check_plain($project->title);
    }
   }
   print drupal_to_js($matches);

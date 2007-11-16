@@ -184,7 +184,7 @@ function l10n_community_status_projects_jump_form($langcode = NULL) {
   );
   $form['fieldset']['project'] = array(
     '#type' => 'textfield',
-    '#title' => t('Jump to project (JS is still buggy)'),
+    '#title' => t('Jump to project'),
     '#maxlength' => 60,
     '#autocomplete_path' => 'translate/projects/autocomplete',
   );
