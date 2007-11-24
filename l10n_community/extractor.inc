@@ -169,7 +169,9 @@ function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $str
     // Get file ID for saving, locally cache.
     $files[$file] = l10n_community_save_file(NULL, $file);
   }
-  else {
+  
+  // If we have the file entry now, we can process adding the string.
+  if (isset($files[$file])) {
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
