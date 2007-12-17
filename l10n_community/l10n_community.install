@@ -59,7 +59,7 @@ function l10n_community_install() {
   switch ($GLOBALS["db_type"]) {
     case "mysql":
     case "mysqli":
-      $table_config = "TYPE=MyISAM /*!40100 DEFAULT CHARACTER SET utf8 */";
+      $table_config = " /*!40100 DEFAULT CHARACTER SET utf8 */";
       $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
       // Intentionally no break here.
     case "pgsql":
