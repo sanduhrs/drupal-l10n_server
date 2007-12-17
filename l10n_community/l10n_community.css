@@ -32,7 +32,7 @@ div.admin form {
 }
 .l10n-community-progress {
   height: 1em;
-  border: 1px solid #cdcdcd;
+  border: 1px solid #adadad;
   padding: 2px;
   background-color: #f5f5f5;
 }
@@ -43,7 +43,7 @@ div.admin form {
   float: left;
 }
 .l10n-community-progress-untranslated {
-  background-color: #b93131;
+  background-color: #bdbdbd;
 }
 
 /* String search filtering form */
