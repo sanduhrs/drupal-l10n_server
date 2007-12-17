@@ -47,33 +47,6 @@ function l10n_drupalorg_menu($may_cache) {
       'callback' => 'l10n_drupalorg_scan',
       'type' => MENU_LOCAL_TASK
     );
-    
-    // We provide menu items for l10n_community, adding our own overview
-    // page as a default local task. If we are not turned on, these menu
-    // items are provided differently by l10n_community.
-    $items[] = array(
-      'title' => t('Translate projects'),
-      'path' => 'translate',
-      'callback' => 'l10n_drupalorg_welcome',
-      'access' => TRUE,
-    );
-    $items[] = array(
-      'title' => t('Overview'),
-      'path' => 'translate/overview',
-      'access' => TRUE,
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -20,
-    );
-    $items[] = array(
-      'title' => t('By language'),
-      'description' => t('Overview of languages and their translation status.'),
-      'path' => 'translate/languages',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('pages', 'l10n_community_overview_languages'),
-      'access' => TRUE,
-      'type' => MENU_LOCAL_TASK,
-      'weight' => -10,
-    );
   }
   return $items;
 }
@@ -92,13 +65,6 @@ function l10n_drupalorg_cron() {
   if (variable_get('l10n_drupalorg_cron', FALSE)) {
     l10n_drupalorg_scan(TRUE);
   }
-}
-
-// = Welcome page ==============================================================
-
-function l10n_drupalorg_welcome() {
-  include_once 'welcome.inc';
-  return l10n_drupalorg_welcome_page();
 }
 
 // = Settings ==================================================================

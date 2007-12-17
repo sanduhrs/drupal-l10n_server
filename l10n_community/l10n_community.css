@@ -1,8 +1,26 @@
 /* $Id$ */
 
-/* Welcome page */
-#l10n-community-welcome {
-  margin-top: 2em;
+div.admin .admin-panel-contribute {
+  background: #ffb;
+  margin-bottom: 2em;
+  padding-bottom: 0.3em;
+}
+table#l10n-community-overview {
+  width: 45%;
+  margin-left: 1em;
+  float: left;
+}
+table#l10n-community-overview td {
+  vertical-align: middle;
+}
+div.admin table#l10n-community-overview {
+  width: auto;
+}
+div.admin .form-submit {
+  margin-top: 0;
+}
+div.admin form {
+  margin-bottom: 0 !important;
 }
 
 /* Overview navigation tables for projects and languages */
@@ -27,22 +45,27 @@
 .l10n-community-progress-untranslated {
   background-color: #b93131;
 }
-#l10n-community-status-projects-jump-form div {
-  text-align: center;
-}
-#l10n-community-status-projects-jump-form .form-text {
-  width: 30em;
-}
 
 /* String search filtering form */
 #l10n-community-filter-form {
   margin: 1em 0;
+  position: relative;
+}
+#l10n-community-filter-form a {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  /*float: right;*/
 }
 #l10n-community-filter-form fieldset {
   text-align: center;
 }
 #l10n-community-filter-form fieldset div, #l10n-community-filter-form fieldset label {
   display: inline;
+  line-height: 2.5em;
+}
+#l10n-community-filter-form .form-text {
+  width: 200px !important; 
 }
 
 /* Emphasized replaceable parts of translatables */
@@ -51,6 +74,16 @@ em.l10n-community-marker {
 }
 
 /* Translation display on the view page */
+#l10n-community-translate-view .l10n-community-string,
+#l10n-community-translate-view .pager {
+  border-bottom: 1px solid #f1f1f1;
+  margin-bottom: 0.8em;
+  padding-bottom: 0.8em;
+}
+#l10n-community-translate-view .pager-bottom {
+  border-bottom: none;
+}
+
 #l10n-community-translate-view .translation,
 #l10n-community-translate-form .translation {
   border-top: 2px dotted #cdcdcd;

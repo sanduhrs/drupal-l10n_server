@@ -9,50 +9,116 @@
 /**
  * User interface for the translation export screen.
  */
-function l10n_community_export_page($uri, $langcode = NULL) {
+function l10n_community_export_page($uri = NULL, $langcode = NULL) {
+  $breadcrumb = array(
+    l(t('Home'), NULL),
+    l(t('Translate'), 'translate'),
+  );
+  
   // Set a matching title with the translation page.
   $project = l10n_community_get_projects($uri);
   if (isset($langcode)) {
     $languages = l10n_community_get_languages();
-    drupal_set_title(t('Translate %project to @language', array('%project' => $project->title, '@language' => $languages[$langcode]->name)));
+    drupal_set_title(t('Export @language translations', array('@language' => $languages[$langcode]->name)));
+    $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
   }
   else {
-    drupal_set_title(t('Export @project templates', array('@project' => $project->title)));
+    $project = l10n_community_get_projects($uri);
+    drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
+    $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
   }
+  // Add missing breadcrumb.
+  drupal_set_breadcrumb($breadcrumb);
+
   return drupal_get_form('l10n_community_export_form', $uri, $langcode);
 }
 
 /**
- * Translation export form.
+ * Translation export form. This is multi-step with the project selection.
  */
-function l10n_community_export_form($uri, $langcode = NULL) {
-  $releases = l10n_community_get_releases($uri);
-  $release_options = array('all' => t('All'));
-  foreach ($releases as $rid => $this_release) {
-    $release_options[$rid] = $this_release->title;
+function l10n_community_export_form($uri = NULL, $langcode = NULL) {
+
+  // Give precendence to project selected in the form.
+  $hide_projects = FALSE;
+  if (!isset($uri)) {
+    $uri = isset($_SESSION['l10n_community']['export_project']) ?
+           l10n_community_project_uri_by_title($_SESSION['l10n_community']['export_project']) :
+           l10n_community_filter_value('project');
   }
-  $form['release'] = array(
-    '#title' => t('Release number'),
-    '#type' => 'select',
-    '#options' => $release_options,
-    '#default_value' => isset($release) ? $release : 'all',
-    '#description' => t('Exporting a template or translation package for all releases is useful for translators, but is not optimal to use for end users because unused data would clutter up their database, when files get imported. Export for all releases if you would like to provide a complete translation, and you work with a desktop tool.'),
+  else {
+    // When project was preset from URL, disable the selector.
+    $hide_projects = TRUE;
+  }
+  
+  $projects = l10n_community_get_projects();
+  $form['data'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Source data'),
   );
-  if (isset($langcode)) {
+  if ($hide_projects) {
+    $form['data']['project'] = array(
+      '#type' => 'value',
+      '#value' => $projects[$uri]->title,
+    );
+  }
+  else {
+    $form['data']['project'] = array(
+      '#title' => t('Choose a project'),
+    );
+    if (($count = count($projects)) <= 30) {
+      // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
+      $form['data']['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+      $form['data']['project']['#options'] = array();
+      foreach ($projects as $project) {
+        // title used to conform to the autocomplete behavior.
+        $form['data']['project']['#options'][$project->title] = $project->title;
+      }
+    }
+    else {
+      // Autocomplete field for more then 30 projects.
+      $form['data']['project'] += array(
+        '#type' => 'textfield',
+        '#autocomplete_path' => 'translate/projects/autocomplete',
+      );
+    }
+  }
+  if (isset($projects[$uri])) {
+    // Set this project as default value if identified.
+    $form['data']['project']['#default_value'] = $projects[$uri]->title;
+  
+    $releases = l10n_community_get_releases($uri);
+    $release_options = array('all' => t('All'));
+    foreach ($releases as $rid => $this_release) {
+      $release_options[$rid] = $this_release->title;
+    }
+    $form['data']['release'] = array(
+      '#title' => t('Release'),
+      '#type' => count($release_options) <= 3 ? 'radios' : 'select',
+      '#options' => $release_options,
+      '#default_value' => isset($release) ? $release : 'all',
+      '#description' => t('Exporting with all releases is useful for translators, but is not optimal to use for end users because unused data would clutter up their database, when files get imported. Export for all releases if you would like to provide a complete translation, and you work with a desktop tool.'),
+    );
+  }
+  if (isset($langcode) && isset($form['data']['release'])) {
+    $form['langcode'] = array(
+      '#type' => 'value',
+      '#value' => $langcode,
+    );
+
+    $form['format'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Format'),
+    );
     // Only include the type selector if we are not presenting
     // a template export page (which does not have a language).
-    $form['type'] = array(
+    $form['format']['type'] = array(
       '#title' => t('Type of export'),
       '#type' => 'radios',
       '#options' => array('translation' => t('Translation'), 'template' => t('Translation template')),
       '#default_value' => 'translation',
       '#description' => t('Templates only contain the source (English) strings, translations are represented by empty placeholders.')
     );
-    $form['langcode'] = array(
-      '#type' => 'value',
-      '#value' => $langcode,
-    );
-    $form['version'] = array(
+    $form['format']['version'] = array(
       '#title' => t('Format suitable for'),
       '#type' => 'radios',
       '#options' => array('drupal-6' => t('Drupal 6'), 'drupal-5' => t('Drupal 5 with autolocale module')),
@@ -60,34 +126,69 @@ function l10n_community_export_form($uri, $langcode = NULL) {
       '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming. Select which one to use here."),
     );
   }
-  $form['uri'] = array(
-    '#type' => 'value',
-    '#value' => $uri,
-  );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Export'),
+    '#value' => isset($form['data']['release']) ? t('Export') : t('Choose project'),
   );
   return $form;
+}
+
+/**
+ * Release field is mandatory.
+ */
+function l10n_community_export_form_validate($form_id, &$form_values) {
+  if (empty($form_values['project'])) {
+    form_set_error('project', t('You should choose a project, submit the form and choose a release.'));
+  }
+  else if (!$project = l10n_community_project_uri_by_title($form_values['project'])) {
+    form_set_error('project', t('Invalid project chosen.'));
+    $form_values['project'] = '';
+  }
 }
 
 /**
  * Generate translation or template package on the fly based on
  * all details available and return the output via HTTP.
  */
-function l10n_community_export_form_submit($form_id, &$form) {   
-  $language = NULL;
-  if (isset($form['langcode'])) {
-    $languages = l10n_community_get_languages();
-    $language = $languages[$form['langcode']];
+function l10n_community_export_form_submit($form_id, &$form_values) {
+
+  // Set temporary storage used to remember project.
+  $_SESSION['l10n_community']['export_project'] = $form_values['project'];
+  
+  if (empty($form_values['release'])) {
+    form_set_error('release', t('You should choose a release.'));
+    return;
   }
-  $type = (isset($form['type']) ? $form['type'] : 'template');
+  elseif ($form_values['release'] != 'all') {
+    $releases = l10n_community_get_releases(l10n_community_project_uri_by_title($form_values['project']));
+    if (!isset($releases[$form_values['release']])) {
+      form_set_error('release', t('Invalid release chosen.'));
+      return;
+    }
+  }
+  
+  $language = NULL;
+  if (isset($form_values['langcode'])) {
+    $languages = l10n_community_get_languages();
+    $language = $languages[$form_values['langcode']];
+  }
+  $type = (isset($form_values['type']) ? $form_values['type'] : 'template');
+
+  // This was validated to work in the validation code.
+  $uri = l10n_community_project_uri_by_title($form_values['project']);
 
   // Generate tarball and get file name.
-  $filename = l10n_community_export($form['uri'], ($form['release'] == 'all' ? NULL : $form['release']), $language, ($type != 'translation'), $form['version']);
+  $filename = l10n_community_export(
+    $uri,
+    ($form_values['release'] == 'all' ? NULL : $form_values['release']),
+    $language,
+    ($type != 'translation'),
+    $form_values['version']
+  );
+  
   
   // Return compressed archive to user.
-  header('Content-Disposition: attachment; filename='. $form['uri'] . (isset($language) ? '-'. $language->locale : '') . ($type == 'template' ? '-templates' : '-translations') .'.tgz');
+  header('Content-Disposition: attachment; filename='. $uri . (isset($language) ? '-'. $language->locale : '') . ($type == 'template' ? '-templates' : '-translations') .'.tgz');
   header('Content-Type: application/x-compressed');
   echo file_get_contents($filename);
   unlink($filename);
@@ -141,7 +242,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $result = db_query($sql, $sql_args);
   $previous_sid = 0;
   $export_string = $string_files = array();
-  $version == 'drupal-5' ? $po_folder = 'po' : 'translations';
+  $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
     
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {

@@ -24,14 +24,17 @@ function l10n_drupalorg_sync_projects() {
     'drupal' => (object) array(
       'uri' => 'drupal',
       'title' => 'Drupal',
+      'link' => 'http://drupal.org/project/drupal',
     ),
     'ecommerce' => (object) array(
       'uri' => 'ecommerce',
       'title' => 'E-Commerce',
+      'link' => 'http://drupal.org/project/ecommerce',
     ),
     'og' => (object) array(
       'uri' => 'og',
       'title' => 'Organic groups',
+      'link' => 'http://drupal.org/project/og',
     ),
   );
   // Record all projects in the database.
@@ -41,12 +44,12 @@ function l10n_drupalorg_sync_projects() {
         // Update if title is different (uri should not change, other data is
         // internal). Also set the parsed timestamp to the past, so we will
         // reparse the releases later.
-        db_query("UPDATE {l10n_community_project} SET title = '%s', last_parsed = 0 WHERE uri = '%s'", $project->title, $uri);
+        db_query("UPDATE {l10n_community_project} SET title = '%s', last_parsed = 0, home_link = '%s' WHERE uri = '%s'", $project->title, $uri, $project->link);
       }
     }
     else {
       // New project, not recorded before.
-      db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $uri, $project->title);
+      db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link) VALUES ('%s', '%s', 0, '%s')", $uri, $project->title, $project->link);
     }
   }
 }

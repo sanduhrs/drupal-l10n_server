@@ -9,23 +9,27 @@
 /**
  * User interface for the translation import screen.
  */
-function l10n_community_import_page($langcode, $uri = NULL) {
-  // Set a matching title with the translation page.
+function l10n_community_import_page($langcode) {
   $languages = l10n_community_get_languages();
-  if (isset($uri)) {
-    $project = l10n_community_get_projects($uri);
-    drupal_set_title(t('Translate %project to @language', array('%project' => $project->title, '@language' => $languages[$langcode]->name)));
+  if (($perm = l10n_community_get_permission($langcode)) == L10N_PERM_ALL) {
+    drupal_set_title(t('Import translations to @language', array('@language' => $languages[$langcode]->name)));
   }
   else {
-    drupal_set_title(t('Import to @language', array('@language' => $languages[$langcode]->name)));
+    drupal_set_title(t('Import suggestions to @language', array('@language' => $languages[$langcode]->name)));
   }
-  return drupal_get_form('l10n_community_import_form', $langcode);
+  // Add missing breadcrumb.
+  drupal_set_breadcrumb(
+    array(
+      l(t('Home'), NULL),
+      l(t('Translate projects'), 'translate'))    
+  );
+  return drupal_get_form('l10n_community_import_form', $langcode, $perm);
 }
 
 /**
  * Translation import form.
  */
-function l10n_community_import_form($langcode) {
+function l10n_community_import_form($langcode, $perm) {
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
   $form['langcode'] = array(
@@ -37,13 +41,18 @@ function l10n_community_import_form($langcode) {
     '#type' => 'file',
     '#title' => t('Translation file'),
     '#size' => 50,
-    '#description' => t('A gettext Portable Object (.po) file to upload.'),
+    '#description' => t('A Gettext Portable Object (.po) file to upload.'),
   );
   $form['is_suggestion'] = array(
     '#title' => t('Store as suggestions'),
     '#type' => 'checkbox',
     '#description' => t('Check if the translations you import need discussion. If checked, all translations in the imported file will be saved as suggestions.'),
   );
+  // Restrict to suggestions if no permission to submit translations directly.
+  if ($perm != L10N_PERM_ALL) {
+    $form['is_suggestion']['#type'] = 'value';
+    $form['is_suggestion']['#value'] = 1;
+  }
 
   $form['submit'] = array(
     '#type' => 'submit',
@@ -59,9 +68,9 @@ function l10n_community_import_form_submit($form_id, &$form) {
   // Save file in the local file system.
   if ($file = file_save_upload('file')) {
 
-    // Increase time limit for PO parsing.
+    // Increase time limit for PO parsing if possible.
     if (!ini_get('safe_mode')) {
-      set_time_limit(240);
+      @set_time_limit(240);
     }
 
     // Do the actual parsing on the local file.

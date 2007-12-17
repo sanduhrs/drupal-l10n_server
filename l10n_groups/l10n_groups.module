@@ -19,51 +19,6 @@ define('L10N_MODEL_CONTROLLED', 1);
 // = Core hooks ================================================================
 
 /**
- * Implementation of hook_help().
- *
- * Note that help texts link to groups which might not exist yet, therefore
- * these links might be broken. This is just a transitional problem though,
- * as once the functionality is set up, translation groups should form.
- */
-function l10n_groups_help($section) {
-  global $user;
-  
-  // Match actual translation editing or review pages with the two different path models they could have. 
-  if (preg_match('!translate/languages/(?P<langcode>[^/]+)(/(?P<uri>[^/]+)(/(?P<action>import|export))?)?$!', $section, $args) ||
-      (preg_match('!translate/projects/(?P<uri>[^/]+)(/(?P<langcode>[^/]+)(/(?P<action>import|export))?)?$!', $section, $args) &&
-      !preg_match('!translate/projects/([^/]+)/export$!', $section) &&
-      !preg_match('!translate/languages/([^/]+)/import$!', $section))) {
-    $perm = isset($args['langcode']) ? l10n_community_get_permission($args['langcode']) : L10N_PERM_NONE;
-    $languages = l10n_community_get_languages('name');
-    $groups = l10n_groups_get_groups();
-    $permission_help = '';
-    switch ($perm) {
-      // Inform user about her permission level in this group.
-      case L10N_PERM_NONE:
-        $permission_help = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$args['langcode']]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$args['langcode']]->nid))));
-        break;
-      case L10N_PERM_SUGGEST:
-        $permission_help = t('You are a member of this translation group, so you can suggest translations and import complete Gettext translation files to suggest more strings at once. Administrators of this group will either accept or decline suggestions provided by members of the group. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
-        break;
-      case L10N_PERM_ALL:
-        $permission_help = t('As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible.');
-        break;
-    }
-    $permission_help = '<p>'. $permission_help .'</p>';
-
-    if (!isset($args['uri'])) {
-      // Only language code is present => project list is shown.
-      $output = '<p>'. t('The <a href="@group">%language group</a> pages might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$args['langcode']]->nid), '%language' => $languages[$args['langcode']])) .'</p>'. $permission_help;
-      return $output;
-    }
-    elseif (isset($args['langcode'])) {
-      // Language code and project both present.
-      return $permission_help;
-    }
-  }
-}
-
-/**
  * Implementation of hook_perm().
  */
 function l10n_groups_perm() {
@@ -221,6 +176,38 @@ function l10n_groups_form(&$node) {
 }
 
 // = API functions =============================================================
+
+/**
+ * Plugin for l10n_community_block_help().
+ *
+ * Note that help texts link to groups which might not exist yet, therefore
+ * these links might be broken. This is just a transitional problem though,
+ * as once the functionality is set up, translation groups should form.
+ */
+function l10n_groups_block_help($perm, $langcode = NULL) {
+  global $user;
+  
+  // Only return anything if we have a language group code.
+  if (!isset($langcode)) {
+    return '';
+  }
+  
+  $groups = l10n_groups_get_groups();
+  $permission_help = '';
+  switch ($perm) {
+    // Inform user about her permission level in this group.
+    case L10N_PERM_NONE:
+      $permission_help = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
+      break;
+    case L10N_PERM_SUGGEST:
+      $permission_help = t('You are a member of this translation group, so you can suggest translations and import complete Gettext translation files to suggest more strings at once. Administrators of this group will either accept or decline suggestions provided by members of the group. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
+      break;
+    case L10N_PERM_ALL:
+      $permission_help = t('As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible.');
+      break;
+  }
+  return '<p>'. $permission_help .'</p>';
+}
 
 /**
  * Helper function for group listing.

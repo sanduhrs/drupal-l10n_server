@@ -28,9 +28,12 @@ function l10n_community_parse_package($package_file, $release_rid) {
 
   // Set up status messages if not in automated mode.
   _potx_status($automated ? POTX_STATUS_SILENT : POTX_STATUS_MESSAGE);
-  
-  // Location to extract the tarball.
-  $temp_path = file_directory_temp() .'/l10n_community';
+    
+  // Generate temp folder to extract the tarball. tempnam() creates a regular
+  // file, thus reserving the name. But we need a directory. Because $rempname
+  // is unique, we can append '_dir', and it will still be unique.
+  $temp_name = tempnam(file_directory_temp(), 'l10n_community_');
+  $temp_path = $temp_name .'_dir';
     
   // Nothing to do if the file is not there or the extraction folder is taken.
   if (!file_exists($package_file)) {
@@ -81,6 +84,9 @@ function l10n_community_parse_package($package_file, $release_rid) {
     }
   }
   
+  // Remove temporary file we used to reserve the name for the directory.
+  unlink($temp_name);
+
   $return = array();
   if ($error) {
     // WARNING: We should not do this reuse in the 6.x port, or otherwise

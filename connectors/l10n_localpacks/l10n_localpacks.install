@@ -12,4 +12,5 @@ function l10n_localpacks_uninstall() {
   variable_del('l10n_localpacks_directory');
   variable_del('l10n_localpacks_cron');
   variable_del('l10n_localpacks_limit');
+  variable_del('l10n_localpacks_home_link');
 }

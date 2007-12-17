@@ -113,10 +113,7 @@ Drupal 6 and later because it requires a change made in Drupal 6 to work.
    translation' permission associated can see a form to translate strings used
    to build the page viewed. Translations are saved with AJAX callbacks, so
    on-page translation is easy.
-   
-   TODO: implement rich user feedback
-   TODO: make this look cool
-   
+
 2. Users of l10n_client should be able to opt to share their translations as
    they produce it, so there should be a component in l10n_community to receive
    translation suggestions from group members using the external (from the

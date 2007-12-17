@@ -16,7 +16,7 @@
 function l10n_localpacks_help($section) {
   switch ($section) {
     case 'admin/settings/l10n_localpacks':
-      return '<p>'. t('The local package connector for localization community looks at a local directory and grabs packages you upload there, making them available for localization on the localization community interface. Here you can set up the properties of the directory. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory.', array('@scan_link' => url('admin/settings/l10n_localpacks/scan'))) . '</p>';
+      return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/settings/l10n_localpacks/scan'))) . '</p>';
   }
 }
 
@@ -75,24 +75,30 @@ function l10n_localpacks_settings_form() {
   $form = array();
   $form['l10n_localpacks_directory'] = array(
     '#title' => t('Local packages directory'),
-    '#description' => t('The directory on the local file system, where packages should be looked for. It could be relative to the Drupal site root or could be an absolute path on your system. It is important that Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directrly in the root directory, releases are identified based on the second part of package filenames, eg. Drupal/drupal-6.0.tar.gz is Drupal in version 6.0.'),
+    '#description' => t('The directory on the local file system, where packages will be looked for. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Drupal/drupal-6.0.tar.gz is from project "Drupal" in version 6.0, while og-5.x-2.0-alpha1 is project "og" in version 5.x-2.0-alpha1.'),
     '#type' => 'textfield',
     '#required' => TRUE,
     '#default_value' => variable_get('l10n_localpacks_directory', ''),
   );
   $form['l10n_localpacks_limit'] = array(
     '#title' => t('Number of projects to scan at once'),
-    '#description' => t('How many projects to scan on a manual or a cron run. Scanning is syncronous, so you need to wait for Drupal to extract and parse the tarball content. If everything goes well, detailed data about the files and translatable strings end up in the database and are ready to translate.'),
+    '#description' => t('How many projects to scan on a manual or cron run. Scanning is syncronous, so you need to wait for Drupal to extract and parse the tarball content.'),
     '#type' => 'select',
     '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
     '#default_value' => variable_get('l10n_localpacks_limit', 1),
   );
   $form['l10n_localpacks_cron'] = array(
     '#title' => t('Scan new projects on every cron run'),
-    '#type' => 'radios',
-    '#options' => array(t('Disabled'), t('Enabled')),
+    '#type' => 'checkbox',
     '#default_value' => variable_get('l10n_localpacks_cron', 0),
+    '#description' => t('It is advised to set up a regular cron run to parse new package files, instead of hitting the Scan tab manually.'),
   );
+  $form['l10n_localpacks_home_link'] = array(
+    '#title' => t('Assign drupal.org home links to packages'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('l10n_localpacks_home_link', 0),
+    '#description' => t('Assigns http://drupal.org/project/<em>project</em> type home links to projects. These home links are used to guide users to the home pages of the projects. The setting only affects newly parsed packages.'),
+  );  
   return system_settings_form($form);
 }
 
@@ -151,11 +157,23 @@ function l10n_localpacks_scan($automated = FALSE) {
   for ($i = 0; $i < variable_get('l10n_localpacks_limit', 1); $i++) { 
     // Pick the release we did not update for the longest period, and parse the tarball.
     $release = db_fetch_object(db_query_range("SELECT * FROM {l10n_community_release} ORDER BY last_parsed ASC", 0, 1));
-    include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
-    $result = l10n_community_parse_package($workdir .'/'. $release->download_link, $release->rid);
+    
+    // Only parse file if something changes since we last parsed it.
+    $file_name = $workdir .'/'. $release->download_link;
+    if (filemtime($file_name) > $release->last_parsed) {
+      include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
+      $result = l10n_community_parse_package($file_name, $release->rid);
+    }
+    else {
+      $result['message'] .= t('@release was already parsed, no need to scan again.', array('@release' => $release->download_link));
+      // Hackish update of last parsed time so other tarballs will get into the queue too.
+      // @todo: work on something better for this.
+      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+    }
     
     if (!$automated) {
       // User feedback, if not automated. Log messages are already done.
+      // @todo: these swallow all but the latest message. Needs fixing.
       if (isset($result['error'])) {
         drupal_set_message($result['error'], 'error');
       }
@@ -187,10 +205,11 @@ function l10n_localpacks_scan($automated = FALSE) {
 function l10n_localpacks_save_data($project_uri, $project_title, $release_version, $filepath, $filedate) {
   // Save project information first.
   if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri))) {
+    // No need to update home_link here, as uri is not changed, and we base home_link on the uri.
     db_query("UPDATE {l10n_community_project} SET title = '%s' WHERE uri = '%s'", $project_title, $project_uri);
   }
   else {
-    db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed) VALUES ('%s', '%s', 0)", $project_uri, $project_title);
+    db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link) VALUES ('%s', '%s', 0, '%s')", $project_uri, $project_title, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''));
   }
   
   // Grab updated project data and save release information.

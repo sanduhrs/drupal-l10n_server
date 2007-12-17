@@ -67,6 +67,7 @@ function l10n_community_install() {
         pid                $serial      PRIMARY KEY,
         uri                VARCHAR(50)  NOT NULL,
         title              VARCHAR(128) NOT NULL,
+        home_link          TEXT         NOT NULL,
         last_parsed        INTEGER
         ) $table_config;");
       db_query("CREATE TABLE {l10n_community_release} (
@@ -130,6 +131,17 @@ function l10n_community_install() {
       db_query("CREATE INDEX {l10n_community_translation}_is_active ON {l10n_community_translation} (is_active);");
       break;
   }
+}
+
+/**
+ * Add home_link column so we can interlink projects with drupal.org pages.
+ *
+ * The uri is not enough as with local projects, we should not automatically
+ * link to http://drupal.org/project/$uri.
+ */
+function l10n_community_update_5000() {
+  $ret[] = update_sql('ALTER TABLE {l10n_community_project} ADD home_link TEXT NOT NULL AFTER title');
+  return $ret;
 }
 
 /**
