@@ -108,14 +108,14 @@ function l10n_community_install() {
         language       VARCHAR(12)   NOT NULL,
         translation    TEXT          NOT NULL,
         
-        uid_entered    INTEGER       NOT NULL DEFAULT 0,
-        uid_approved   INTEGER       NOT NULL DEFAULT 0,
-        time_entered   INTEGER       NOT NULL DEFAULT 0,
-        time_approved  INTEGER       NOT NULL DEFAULT 0,
+        uid_entered    INTEGER       NOT NULL,
+        uid_approved   INTEGER       NOT NULL,
+        time_entered   INTEGER       NOT NULL,
+        time_approved  INTEGER       NOT NULL,
         
-        has_suggestion INTEGER       NOT NULL DEFAULT 0,
-        is_suggestion  INTEGER       NOT NULL DEFAULT 0,
-        is_active      INTEGER       NOT NULL DEFAULT 0
+        has_suggestion INTEGER       NOT NULL,
+        is_suggestion  INTEGER       NOT NULL,
+        is_active      INTEGER       NOT NULL
         ) $table_config;");
 
       db_query("ALTER TABLE  {l10n_community_release}  ADD FOREIGN KEY (pid) REFERENCES {l10n_community_project} (pid);");
@@ -140,20 +140,7 @@ function l10n_community_install() {
  * link to http://drupal.org/project/$uri.
  */
 function l10n_community_update_5000() {
-  $ret = array();
   $ret[] = update_sql('ALTER TABLE {l10n_community_project} ADD home_link TEXT NOT NULL AFTER title');
-  return $ret;
-}
-
-/**
- * Add DEFAULT 0 to integer fields we not always fill in.
- */
-function l10n_community_update_5001() {
-  $default_to_zero = array('uid_entered', 'uid_approved', 'time_entered', 'time_approved', 'has_suggestion', 'is_suggestion', 'is_active');  
-  $ret = array();
-  foreach ($default_to_zero as $column)
-    $ret[] = update_sql('ALTER TABLE {l10n_community_translation} CHANGE '. $column .' '. $column . ' INTEGER NOT NULL DEFAULT 0');
-  }
   return $ret;
 }
 
