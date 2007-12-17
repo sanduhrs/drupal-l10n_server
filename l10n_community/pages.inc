@@ -108,7 +108,7 @@ function l10n_community_overview_language($langcode = NULL) {
   $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
 
   $has_posts = FALSE;
-  if ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode)) {
+  if (module_exists('taxonomy') && ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode))) {
     $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
     if (db_num_rows($result) > 0) {
       while ($node = db_fetch_object($result)) {
@@ -118,7 +118,7 @@ function l10n_community_overview_language($langcode = NULL) {
     }
   }
   if (!$has_posts) {
-    $output .= '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag.', array('%tagname' => 'l10n-server-'. $langcode)) .'</p>';
+    $output .= '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $langcode)) .'</p>';
   }
 
   $output .= '</div><div class="right clear-block">';
