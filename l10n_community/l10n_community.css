@@ -28,7 +28,7 @@ div.admin form {
   text-align: center;
 }
 #l10n-community-overview td.rowhead, #l10n-community-overview thead th.rowhead {
-  text-align: right;
+  text-align: left;
 }
 .l10n-community-progress {
   height: 1em;
