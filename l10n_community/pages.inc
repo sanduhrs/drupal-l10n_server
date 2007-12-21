@@ -361,7 +361,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   return array(
     $bar,
     ($sum - $translated),
-    (int) $has_suggestions
+    (int) $has_suggestion
     //t('@num untranslated', array('@num' => ($sum - $translated))),
     //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions'))
   );
