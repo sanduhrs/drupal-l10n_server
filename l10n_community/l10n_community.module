@@ -57,6 +57,26 @@ define('L10N_STATUS_TRANSLATED', 3);
 function l10n_community_menu($may_cache) {
   $items = array();
   if ($may_cache) {
+    // Settings menu items.
+    $items[] = array(
+      'path' => 'admin/l10n_server',
+      'title' => t('Localization server'),
+      'description' => t('Configuration options for the localization server.'),
+      'position' => 'right',
+      'weight' => -5,
+      'callback' => 'l10n_community_settings_overview',
+      'access' => user_access('administer localization community')
+    );
+    $items[] = array(
+      'title' => t('Translation interface'),
+      'path' => 'admin/l10n_server/l10n_community',
+      'description' => t('Control the display of the translation interface.'),
+      'access' => user_access('administer localization community'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => 'l10n_community_settings_form',
+      'weight' => -5,
+    );
+
     // Main menu items (cacheable). These are a small number of items, and
     // they are always the same, so we are safe to cache them.
     $items[] = array(
@@ -231,7 +251,7 @@ function l10n_community_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function l10n_community_perm() {
-  return array('submit suggestions', 'submit translations and approve suggestions');
+  return array('submit suggestions', 'submit translations and approve suggestions', 'administer localization community');
 }
 
 /**
@@ -356,6 +376,9 @@ function l10n_community_block_help() {
   }
 }
 
+/**
+ * Implementation of hook_user().
+ */
 function l10n_community_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'view') {
     $languages = l10n_community_get_languages('name');
@@ -375,6 +398,33 @@ function l10n_community_user($op, &$edit, &$account, $category = NULL) {
 function l10n_community_welcome() {
   include_once 'welcome.inc';
   return l10n_community_welcome_page();
+}
+
+// = Settings ==================================================================
+
+/**
+ * This is the same admin block display function as in system.module
+ */
+function l10n_community_settings_overview() {
+  $menu = menu_get_item(NULL, 'admin/l10n_server');
+  $content = system_admin_menu_block($menu);
+  $output = theme('admin_block_content', $content);
+  return $output;
+}
+
+/**
+ * Settings form callback.
+ */
+function l10n_community_settings_form() {
+  $form = array();
+  $form['l10n_community_project_per_page'] = array(
+    '#title' => t('Number of projects to display per page'),
+    '#description' => t('Number of projects displayed per page in overviews. It is not advised to change this setting on live sites, as it changes what is displayed on each page, so links will break to existing project listings.'),
+    '#type' => 'select',
+    '#options' => drupal_map_assoc(array(4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40)),
+    '#default_value' => variable_get('l10n_community_project_per_page', 10),
+  );
+  return system_settings_form($form);
 }
 
 // = Page callbacks ============================================================

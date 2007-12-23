@@ -15,7 +15,7 @@
  */
 function l10n_localpacks_help($section) {
   switch ($section) {
-    case 'admin/settings/l10n_localpacks':
+    case 'admin/l10n_server/l10n_localpacks':
       return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/settings/l10n_localpacks/scan'))) . '</p>';
   }
 }
@@ -27,21 +27,21 @@ function l10n_localpacks_menu($may_cache) {
   $items = array();
   if ($may_cache) {
     $items[] = array(
-      'title' => t('Localization community for local packages'),
-      'path' => 'admin/settings/l10n_localpacks',
-      'description' => t('Configure the local package connector for the localization community'),
+      'title' => t('Local package connector'),
+      'path' => 'admin/l10n_server/l10n_localpacks',
+      'description' => t('Configure where does the server look for files locally.'),
       'access' => user_access('administer localization community for local packages'),
       'callback' => 'drupal_get_form',
       'callback arguments' => 'l10n_localpacks_settings_form',
     );
     $items[] = array(
       'title' => t('Configure'),
-      'path' => 'admin/settings/l10n_localpacks/configure',
+      'path' => 'admin/l10n_server/l10n_localpacks/configure',
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
     $items[] = array(
       'title' => t('Scan'),
-      'path' => 'admin/settings/l10n_localpacks/scan',
+      'path' => 'admin/l10n_server/l10n_localpacks/scan',
       'access' => user_access('administer localization community for local packages'),
       'callback' => 'l10n_localpacks_scan',
       'type' => MENU_LOCAL_TASK

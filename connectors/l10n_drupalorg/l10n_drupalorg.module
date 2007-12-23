@@ -16,7 +16,7 @@
  */
 function l10n_drupalorg_help($section) {
   switch ($section) {
-    case 'admin/settings/l10n_drupalorg':
+    case 'admin/l10n_server/l10n_drupalorg':
       return '<p>'. t('The drupal.org localization community connector watches for new projects popping up at drupal.org, downloads the new packages and extracts translatable strings out of them. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/settings/l10n_drupalorg/scan'))) . '</p>';
   }
 }
@@ -28,21 +28,21 @@ function l10n_drupalorg_menu($may_cache) {
   $items = array();
   if ($may_cache) {
     $items[] = array(
-      'title' => t('Localization community for drupal.org'),
-      'path' => 'admin/settings/l10n_drupalorg',
-      'description' => t('Configure the drupal.org connector for the localization community'),
+      'title' => t('Connector for drupal.org'),
+      'path' => 'admin/l10n_server/l10n_drupalorg',
+      'description' => t('Configure the drupal.org connector.'),
       'access' => user_access('administer localization community for drupal.org'),
       'callback' => 'drupal_get_form',
       'callback arguments' => 'l10n_drupalorg_settings_form',
     );
     $items[] = array(
       'title' => t('Configure'),
-      'path' => 'admin/settings/l10n_drupalorg/configure',
+      'path' => 'admin/l10n_server/l10n_drupalorg/configure',
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
     $items[] = array(
       'title' => t('Scan'),
-      'path' => 'admin/settings/l10n_drupalorg/scan',
+      'path' => 'admin/l10n_server/l10n_drupalorg/scan',
       'access' => user_access('administer localization community for drupal.org'),
       'callback' => 'l10n_drupalorg_scan',
       'type' => MENU_LOCAL_TASK
