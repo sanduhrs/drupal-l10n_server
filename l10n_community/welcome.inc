@@ -44,7 +44,7 @@ function l10n_community_welcome_page() {
     'title' => t('Quick stats'),
     'description' => t('Some facts about this community'),
     'content' => theme('item_list', array_merge($stats, array(
-      format_plural($users, '1 contributors', '@count contributors'),
+      format_plural($users, '1 contributor', '@count contributors'),
       format_plural($projects, '1 project managed', '@count projects managed'),
       format_plural($files, '1 file scanned', '@count files scanned'),
       format_plural($strings, '1 string to translate', '@count strings to translate'),

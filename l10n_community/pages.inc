@@ -138,6 +138,22 @@ function l10n_community_overview_language($langcode = NULL) {
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 
+  $strings = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
+  $translations = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
+  $suggestions = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+  $users = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+  $block = array(
+    'title' => t('Progress status'),
+    'description' => t('Status overview'),
+    'content' => theme('item_list', array(
+      format_plural($users, '1 contributor', '@count contributors'),
+      format_plural($strings, '1 string to translate', '@count strings to translate'),
+      format_plural($translations, '1 translation recorded', '@count translations recorded'),
+      format_plural($suggestions, '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+    ))
+  );
+  $output .= theme('admin_block', $block);
+
   $people = l10n_community_get_string_count('top-people', $langcode);
   $block = array(
     'title' => t('Top contributors'),
@@ -156,33 +172,6 @@ function l10n_community_overview_language($langcode = NULL) {
   }
   $output .= theme('admin_block', $block);
 
-  $block = array(
-    'title' => t('Top projects'),
-    'description' => t('Most translated projects'),
-  );
-  $table = array();
-  $string_counts = l10n_community_get_string_count('projects', $langcode);
-  $project_count = 0;
-  foreach ($string_counts as $pid => $project) {
-    list($title, $uri, $sum, $translated, $suggested) = $project;
-    $table[] = array_merge(
-      array(
-        array('data' => l($title, 'translate/languages/'. $langcode .'/view', array(), 'project='. $uri), 'class' => 'rowhead'),
-      ),
-      theme('l10n_community_progress_columns', $sum, $translated, $suggested)
-    );
-    if ($project_count++ > 10) {
-      // Only list top 10 projects.   
-      break;
-    }
-  }
-  $block['content'] = theme(
-    'table',
-    theme('l10n_community_progress_headers', t('Project')),
-    $table,
-    array('id' => 'l10n-community-overview')
-  ) .'<div class="clearing"></div>';
-  $output .=  theme('admin_block', $block);
 
   $output .= '</div></div>';
   
@@ -467,7 +456,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       $result = db_query("SELECT COUNT(DISTINCT s.sid) string_count, p.pid, p.title, p.uri FROM {l10n_community_project} p INNER JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid GROUP BY p.pid;");
       while ($row = db_fetch_object($result)) {
         // Initialize remaining fields to zeroes too.
-        $sums[$row->pid] = array($row->title, $row->uri, $row->string_count, 0, 0, 0);
+        $sums[$row->pid] = array($row->title, $row->uri, $row->string_count, 0, 0);
       }
       // Get the count of distinct strings translated and suggestions per project.
       $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, r.pid, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != "" ';
@@ -481,12 +470,6 @@ function l10n_community_get_string_count($type, $id = NULL) {
       while ($row = db_fetch_object($result)) {
         // Fill up the zero spots we added above with real data.
         $sums[$row->pid][((int) $row->is_suggestion) + 3] = $row->translation_count;
-        if (!$row->is_suggestion && isset($id)) {
-          $sums[$row->pid][5] = $row->translation_count / $sums[$row->pid][2];
-        }
-      }
-      if (isset($id)) {
-        uasort($sums, 'l10n_community_sort_sums');
       }
       return $sums;
 
@@ -499,14 +482,4 @@ function l10n_community_get_string_count($type, $id = NULL) {
       }
       return $accounts;
   }
-}
-
-/**
- * Sort function to order project counts by translation status.
- */
-function l10n_community_sort_sums($a, $b) {
-  if ($a[5] == $b[5]) {
-    return 0;
-  }
-  return ($a[5] < $b[5]) ? 1 : -1;
 }
