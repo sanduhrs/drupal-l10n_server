@@ -307,7 +307,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     // A toolbox which displays action icons on each string editor fieldset.
     $form[$string->sid]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? '<span class="has-suggestion" title="'. t('Has suggestion') .'"></span>' : '') .'</div>'
+      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : '') .'</div>'
     );
 
     $is_plural = strpos($string->value, "\0");
@@ -436,13 +436,16 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
 
       'l10n_image_path'       => base_path() . drupal_get_path('module', 'l10n_community') . '/images/',
 
-      'l10n_expand_help'      => t('Show the translation editing field.'),
-      'l10n_lookup_help'      => t('Show detailed information about this string.'),
+      'l10n_lookup_help'      => t('Show detailed information.'),
       'l10n_approve_error'    => t('There was an error approving this suggestion. You might not have permission or the suggestion id was invalid.'),
       'l10n_approve_confirm'  => t('Suggestion approved.'),
 
+      'l10n_decline_error'    => t('There was an error declining this suggestion. You might not have permission or the suggestion id was invalid.'),
+      'l10n_decline_confirm'  => t('Suggestion declined.'),
+
       'l10n_details_callback' => url('translate/details/'. $language->locale .'/'),
       'l10n_approve_callback' => url('translate/approve/'),
+      'l10n_decline_callback' => url('translate/decline/'),
     ),
     'setting'
   );
@@ -540,8 +543,7 @@ function l10n_community_format_text($string) {
  *   Source string ID.
  */
 function theme_l10n_community_copy_button($sid = 0) {
-  $title = t('Copy value to edit field.');
-  return ' <span title="'. $title .'" id="l10n-community-copy-'. $sid .'" class="l10n-community-copy"></span>';
+  return theme('l10n_community_button', 'edit', 'l10n-community-copy', 'id="l10n-community-copy-'. $sid .'"');
 }
 
 // = API functions =============================================================

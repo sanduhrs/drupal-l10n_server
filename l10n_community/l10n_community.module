@@ -141,6 +141,14 @@ function l10n_community_menu($may_cache) {
       'access' => TRUE,
       'type' => MENU_CALLBACK,
     );
+    $items[] = array(
+      'title' => t('Decline suggestion'),
+      'path' => 'translate/decline',
+      'callback' => 'l10n_community_page_wrapper',
+      'callback arguments' => array('ajax', 'l10n_community_string_decline'),
+      'access' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
     
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // For the translation overview pages. This is used to present admin page like panels.
@@ -781,4 +789,34 @@ function l10n_community_project_uri_by_title($title) {
  */
 function l10n_community_filter_value($name) {
   return isset($_GET[$name]) ? $_GET[$name] : (isset($_SESSION['l10n_community'][$name]) ? $_SESSION['l10n_community'][$name] : NULL);
+}
+
+// = Theme functions ===========================================================
+
+/**
+ * Theme a textual button.
+ *
+ * Text values are centralized here so it is easy to change.
+ */
+function theme_l10n_community_button($type, $class, $extras = '') {
+  switch($type) {
+    case 'edit':
+      // Source string and translation edit field.
+      $text = t('edit');
+      break;
+    case 'has-suggestion':
+    case 'untranslated':
+      // Star in a filled circle.
+      $text = '&#x272a;';
+      break;
+    case 'approve':
+      // Checkmark.
+      $text = '&#x2714;';
+      break;
+    case 'decline':
+      // Checkmark.
+      $text = '&#x2716;';
+      break;
+  }
+  return ' <span class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b><b>'. $text .'</b></b></b></span>';
 }

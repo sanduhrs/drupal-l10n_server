@@ -59,16 +59,24 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
   while ($suggestion = db_fetch_object($result)) {
     
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
-    $approve_button = $perm == L10N_PERM_ALL ? '<img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/approve.png" class="action" title="'. t('Approve suggestion.') .'" onclick="return l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .');" /> ' : '';
+    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'approve', 'onclick="return l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .');" title="'. t('Approve suggestion.') .'"') : '';
     
-    $copy_button = '<img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/edit.png" class="action" title="'. t('Copy text to editor.') .'" onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" /> ';
+    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'decline', 'onclick="return l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .');" title="'. t('Decline suggestion.') .'"') : '';
+    
+    $copy_button = theme('l10n_community_button', 'edit', 'copy', 'onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" title="'. t('Copy suggestion text to the edit field.') .'"');
     
     // Plural versions are shown in a short form.
     $translation = strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation;
     
-    $suggestions[] = $approve_button . $copy_button . $translation; 
+    $suggestions[] = $decline_button . $approve_button . $copy_button . $translation; 
   }
-  $suggestion_info = count($suggestions) ? '<div><strong>'. t('Outstanding suggestions:') .'</strong>'. theme('item_list', $suggestions) .'</div>' : ''; 
+  if (count($suggestions)) {
+    // List of suggestions.
+    $suggestion_info = '<div class="l10n-suggestions"><strong>'. t('Outstanding suggestions:') .'</strong>'. theme('item_list', $suggestions) .'</div>';
+  }
+  else {
+    $suggestion_info .= '<div class="l10n-no-suggestions"></div>';
+  }
   
   print $usage_info . $translation_info . $suggestion_info;
   exit;
@@ -97,7 +105,32 @@ function l10n_community_string_approve($tid = 0) {
     print 'done';
     exit;
   }
-  
+  print 'error';
+  exit;
+}
+
+/**
+ * Records decline action of a previous string suggestion.
+ * 
+ * This callback is invoked from JavaScript.
+ *
+ * @param $tid
+ *   Suggestion ID.
+ */
+function l10n_community_string_decline($tid = 0) {
+  if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
+    // Mark this suggestion as inactive.
+    db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE tid = %d", $tid);
+    // Let's see if we have any other suggestion remaining.
+    $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1", $suggestion->sid));
+    if (!$count) {
+      // No remaining suggestions.
+      db_query("UPDATE {l10n_community_translation} SET has_suggestion = 0 WHERE sid = %d AND is_suggestion = 0 AND is_active = 1", $suggestion->sid);
+    }
+    // Return something so the client sees we are OK.
+    print 'done';
+    exit;
+  }
   print 'error';
   exit;
 }

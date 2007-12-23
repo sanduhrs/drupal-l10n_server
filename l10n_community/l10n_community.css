@@ -86,7 +86,7 @@ em.l10n-community-marker {
 
 #l10n-community-translate-view .translation,
 #l10n-community-translate-form .translation {
-  border-top: 2px dotted #cdcdcd;
+  border-top: 1px dotted #bdbdbd;
   padding-top: 0.5em;
   color: brown;
 }
@@ -102,28 +102,9 @@ em.l10n-community-marker {
 #l10n-community-translate-form .form-item {
   margin-top: 0.5em;
 }
-#l10n-community-translate-form .translation {
-  border-top: 2px dotted #cdcdcd;
-  padding-top: 0.5em;
-}
 #l10n-community-translate-form .toolbox {
-  border-bottom: 1px solid #cdcdcd;
-  margin-bottom: 0.3em;
-}
-#l10n-community-translate-form .toolbox img {
-  padding-right: 0.4em;
-  cursor: pointer;
-}
-#l10n-community-translate-form .toolbox .has-suggestion {
-  background-image: url('images/suggestions.png');
-  width: 16px;
-  height: 16px;
-  display: block; 
-  margin-right: 0.3em;
-  float: left;
-}
-#l10n-community-translate-form img.action {
-  cursor: pointer;
+  margin: 0 0 0.3em 0.3em;
+  float: right;
 }
 #l10n-community-translate-form .info-pane {
   padding: 0.5em;
@@ -133,4 +114,66 @@ em.l10n-community-marker {
 #l10n-community-translate-form .info-pane .item-list ul li {
   background: none;
   padding: 0 0 0.2em 1em;
+}
+
+
+.l10n-button {
+  line-height: 1.8em;
+  padding-right: 5px;
+  margin: 0 0 3px;
+  cursor: pointer;
+}
+#l10n-community-overview .l10n-button {
+  padding-right: 0;
+  cursor: default;
+}
+.l10n-button b {
+  background-color: #3A79AA;
+  border-color: #3A79AA;
+  color: #fff;
+  font-weight: normal;
+
+  border-style: solid;
+  border-width: 1px 0;
+  margin: 0 1px;
+  padding: 0;
+}
+.l10n-button b b {
+  background: transparent none;
+  border-width: 0 1px;
+  margin: 0 -1px;
+  padding: 0;
+  /* Let these be specified above */
+  color: inherit;
+  font-weight: inherit;
+}
+.l10n-button b b b {
+  border-width: 0;
+  margin: 0;
+  padding: 1px 5px;
+  /* Let these be specified above */
+  color: inherit;
+  font-weight: inherit;
+}
+.l10n-button.approve b {
+  background-color: #009966;
+  border-color: #009966;
+  color: #fff;
+  font-weight: normal;
+}
+.l10n-button.l10n-has-suggestion b {
+  background-color: orange;
+  border-color: orange;
+  cursor: default;
+}
+.l10n-button.l10n-untranslated b,
+.l10n-button.decline b {
+  background-color: #890F01;
+  border-color: #890F01;
+}
+.l10n-button.disabled b {
+  background-color: #cdcdcd;
+  border-color: #cdcdcd;
+  color: #000;
+  cursor: default;
 }

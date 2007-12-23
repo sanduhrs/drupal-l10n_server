@@ -376,8 +376,8 @@ function theme_l10n_community_progress_headers($mainhead) {
   return array(
     array('data' => $mainhead, 'class' => 'rowhead'),
     t('Overall status'),
-    theme('image', drupal_get_path('module', 'l10n_community') .'/images/untranslated.png', t('Untranslated'), t('Untranslated')),
-    theme('image', drupal_get_path('module', 'l10n_community') .'/images/suggestions.png', t('Has suggestions'), t('Has suggestions'))
+    theme('l10n_community_button', 'untranslated', 'l10n-untranslated', 'title="'. t('Untranslated.') .'"'),
+    theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Have suggestions.') .'"'),
   );
 }
 
