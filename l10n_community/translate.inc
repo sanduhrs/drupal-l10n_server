@@ -307,7 +307,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     // A toolbox which displays action icons on each string editor fieldset.
     $form[$string->sid]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? '<span class="has-suggestion"></span>' : '') .'</div>'
+      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? '<span class="has-suggestion" title="'. t('Has suggestion') .'"></span>' : '') .'</div>'
     );
 
     $is_plural = strpos($string->value, "\0");
