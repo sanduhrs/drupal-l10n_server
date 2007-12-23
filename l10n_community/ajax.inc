@@ -61,7 +61,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
     $approve_button = $perm == L10N_PERM_ALL ? '<img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/approve.png" class="action" title="'. t('Approve suggestion.') .'" onclick="return l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .');" /> ' : '';
     
-    $copy_button = '<img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/edit.png" class="action" title="'. t('Edit suggestion.') .'" onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" /> ';
+    $copy_button = '<img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/edit.png" class="action" title="'. t('Copy text to editor.') .'" onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" /> ';
     
     // Plural versions are shown in a short form.
     $translation = strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation;
