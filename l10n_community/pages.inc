@@ -429,11 +429,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
       $sums = array();
       if (!isset($id)) {
         // Simple count query if we are not filtering by project.
-        $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, t.language, t.is_suggestion FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != "" GROUP BY t.language, t.is_suggestion';
+        $count_sql = "SELECT COUNT(DISTINCT t.sid) translation_count, t.language, t.is_suggestion FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != '' GROUP BY t.language, t.is_suggestion";
       }
       else {
         // Rather complex join if we also need to factor the project in.
-        $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, t.language, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE r.pid = %d AND t.is_active = 1 AND t.translation != "" GROUP BY t.language, t.is_suggestion';
+        $count_sql = "SELECT COUNT(DISTINCT t.sid) translation_count, t.language, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE r.pid = %d AND t.is_active = 1 AND t.translation != '' GROUP BY t.language, t.is_suggestion";
       }
       $result = db_query($count_sql, $id);
       while ($row = db_fetch_object($result)) {
@@ -459,7 +459,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         $sums[$row->pid] = array($row->title, $row->uri, $row->string_count, 0, 0);
       }
       // Get the count of distinct strings translated and suggestions per project.
-      $count_sql = 'SELECT COUNT(DISTINCT t.sid) translation_count, r.pid, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != "" ';
+      $count_sql = "SELECT COUNT(DISTINCT t.sid) translation_count, r.pid, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != '' ";
       if (isset($id)) {
         // Limit to language if desired.
         $count_sql .= "AND t.language = '%s' ";
