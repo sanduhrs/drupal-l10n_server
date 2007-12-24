@@ -18,8 +18,10 @@
  *   Release ID.
  */
 function l10n_community_parse_package($package_file, $release_rid) {
-  // This could take a long time.
-  @set_time_limit(0);
+  if (!ini_get('safe_mode')) {
+    // This could take a long time.
+    @set_time_limit(0);
+  }
   $error = $message = '';
 
   // We depend on the PEAR Tar class and potx module.
