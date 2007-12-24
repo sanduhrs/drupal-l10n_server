@@ -17,7 +17,7 @@
 function l10n_drupalorg_help($section) {
   switch ($section) {
     case 'admin/l10n_server/l10n_drupalorg':
-      return '<p>'. t('The drupal.org localization community connector watches for new projects popping up at drupal.org, downloads the new packages and extracts translatable strings out of them. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/settings/l10n_drupalorg/scan'))) . '</p>';
+      return '<p>'. t('The drupal.org localization community connector watches for new projects at drupal.org, downloads the new packages and extracts their translatable strings. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/l10n_server/l10n_drupalorg/scan'))) . '</p>';
   }
 }
 
@@ -76,7 +76,7 @@ function l10n_drupalorg_settings_form() {
   $form = array();
   $form['l10n_drupalorg_limit'] = array(
     '#title' => t('Number of projects to scan at once'),
-    '#description' => t('How many projects to scan on a manual or a cron run. Scanning is syncronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project, releases, files, translatable strings end up in the database and are ready to translate.'),
+    '#description' => t('The number of projects to scan on a manual or cron run. Scanning is synchronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project and its releases, files, and translatable strings will be inserted into the database and become available for translation.'),
     '#type' => 'select',
     '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
     '#default_value' => variable_get('l10n_drupalorg_limit', 1),
@@ -90,7 +90,7 @@ function l10n_drupalorg_settings_form() {
   return system_settings_form($form);
 }
 
-// = Project syncronization ====================================================
+// = Project synchronization ===================================================
 
 /**
  * Scans files of a project and release picked.

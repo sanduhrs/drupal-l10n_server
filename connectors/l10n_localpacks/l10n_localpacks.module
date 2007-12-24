@@ -16,7 +16,7 @@
 function l10n_localpacks_help($section) {
   switch ($section) {
     case 'admin/l10n_server/l10n_localpacks':
-      return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/settings/l10n_localpacks/scan'))) . '</p>';
+      return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/l10n_server/l10n_localpacks/scan'))) . '</p>';
   }
 }
 
@@ -75,14 +75,14 @@ function l10n_localpacks_settings_form() {
   $form = array();
   $form['l10n_localpacks_directory'] = array(
     '#title' => t('Local packages directory'),
-    '#description' => t('The directory on the local file system, where packages will be looked for. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Drupal/drupal-6.0.tar.gz is from project "Drupal" in version 6.0, while og-5.x-2.0-alpha1 is project "og" in version 5.x-2.0-alpha1.'),
+    '#description' => t('The directory on the local file system to be scanned for packages. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Drupal/drupal-6.0.tar.gz is from project "Drupal" in version 6.0, while og-5.x-2.0-alpha1 is project "og" in version 5.x-2.0-alpha1.'),
     '#type' => 'textfield',
     '#required' => TRUE,
     '#default_value' => variable_get('l10n_localpacks_directory', ''),
   );
   $form['l10n_localpacks_limit'] = array(
     '#title' => t('Number of projects to scan at once'),
-    '#description' => t('How many projects to scan on a manual or cron run. Scanning is syncronous, so you need to wait for Drupal to extract and parse the tarball content.'),
+    '#description' => t('The number of projects to scan on a manual or cron run. Scanning is synchronous, so you need to wait for Drupal to extract and parse the tarball content.'),
     '#type' => 'select',
     '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
     '#default_value' => variable_get('l10n_localpacks_limit', 1),
@@ -102,7 +102,7 @@ function l10n_localpacks_settings_form() {
   return system_settings_form($form);
 }
 
-// = Project syncronization ====================================================
+// = Project synchronization ===================================================
 
 /**
  * Scans files of a project and release picked.

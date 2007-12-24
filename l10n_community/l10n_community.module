@@ -335,7 +335,7 @@ function l10n_community_block_help() {
           // No user access to this page in this case.
           break;
         case L10N_PERM_SUGGEST:
-          $permission_help = t('You can suggest translations and import complete Gettext translation files to suggest more strings at once. People with permission to approve suggestions will be able to either accept or decline your suggestions. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
+          $permission_help = t('You can suggest translations or import complete Gettext translation files to suggest multiple translations at once. People with permission to approve suggestions may either accept or decline your suggestions. To work offline, export a translation template, which contains the current state of the translation.');
           break;
         case L10N_PERM_ALL:
           $permission_help = t('As a fully empowered user, you can suggest translations as well as approve translations suggested by others. Export/import of Gettext translation files is also possible.');
@@ -358,7 +358,7 @@ function l10n_community_block_help() {
         case 'edit':
           // Language code and project both present.
           $items = array();
-          $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation. Beginning and ending line breaks are saved properly, even if you miss to include them.', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/newline.png" alt="'. t('Newline marker') . '" /> '));
+          $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation. Beginning and ending line breaks are saved properly, even if you forget to include them.', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/newline.png" alt="'. t('Newline marker') . '" /> '));
           $items[] = t('Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the translated text as-is.');
           $languages = l10n_community_get_languages();
           $formula = join(' ', preg_split('!(&&|\\|\\||%|<=|>=|==|\\!=|\\?|:)!', $languages[$args['langcode']]->formula, -1, PREG_SPLIT_DELIM_CAPTURE));

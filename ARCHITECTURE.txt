@@ -1,7 +1,7 @@
 $Id$
 
 This document explains how the l10n_server suite (and l10n_client) modules are
-supposed to work together, and interact with other modules. The figures attached
+intended to work together, and interact with other modules. The figures attached
 may also help understand how the different components fit together. This
 document is also used to track TODO items, as there are still holes in the big
 picture to plug in.
@@ -84,7 +84,7 @@ l10n_drupalorg
    TODO: there is a project list stub implemented, real implementation is
    possible once this patch is committed: http://drupal.org/node/157514
  
-2. Syncronization with the project list is always performed, and a project
+2. Synchronization with the project list is always performed, and a project
    is picked to retrieve list of releases for. Then the releases are
    traversed, tarballs are downloaded and uncompressed.
    

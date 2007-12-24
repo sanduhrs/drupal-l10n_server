@@ -137,7 +137,7 @@ function l10n_groups_form(&$node) {
     $form['l10n_group_language'] = array(
       '#type' => 'item',
       '#title' => t('Language'),
-      '#description' => t('The language managed by this group. This is not possible to modify.'),
+      '#description' => t('The language managed by this group. This cannot be modified.'),
       '#value' => $node->l10n_group_language,
       '#weight' => -5
     );
@@ -147,7 +147,7 @@ function l10n_groups_form(&$node) {
     $form['l10n_group_language'] = array(
       '#type' => 'select',
       '#title' => t('Language'),
-      '#description' => t('The language managed by this group. Language not shown here are either not active on the site, or already have a translation group.'),
+      '#description' => t('The language managed by this group. Languages not shown here are either not active on the site, or already have a translation group.'),
       '#options' => $languages,
       '#weight' => -5,
       '#required' => TRUE
@@ -200,7 +200,7 @@ function l10n_groups_block_help($perm, $langcode = NULL) {
       $permission_help = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
       break;
     case L10N_PERM_SUGGEST:
-      $permission_help = t('You are a member of this translation group, so you can suggest translations and import complete Gettext translation files to suggest more strings at once. Administrators of this group will either accept or decline suggestions provided by members of the group. Feel free to export translation templates, or the current state of the translation if you are more comfortable working offline.');
+      $permission_help = t('You are a member of this translation group, so you can suggest translations or import complete Gettext translation files to suggest multiple translations at once. Administrators of this group either accept or decline suggestions provided by members of the group. To work offline, export a translation template, which contains the current state of the translation.');
       break;
     case L10N_PERM_ALL:
       $permission_help = t('As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible.');
