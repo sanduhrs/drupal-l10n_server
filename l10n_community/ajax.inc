@@ -66,7 +66,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
     $copy_button = theme('l10n_community_button', 'edit', 'copy', 'onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" title="'. t('Copy suggestion text to the edit field.') .'"');
     
     // Plural versions are shown in a short form.
-    $translation = strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation;
+    $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation);
     
     $suggestions[] = $decline_button . $approve_button . $copy_button . $translation; 
   }
