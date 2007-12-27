@@ -19,37 +19,55 @@ based interface. The various Drupal projects release source code on a daily
 basis. The goal is to help translators to keep up with this pace by sharing
 already translated strings and distributing translations effectively.
 
-The localization server module suite consists of two components:
+The localization server module suite consists of a few possible components:
 
- - l10n_community: A translation community interface using "Organic
-   Groups" module to handle the teams. This module provides the database
-   backend to store projects and releases, but does not fill these with
-   actual data.
+ - l10n_community: Required. A translation community interface which provides
+   the database backend to store projects and releases, but does not fill these
+   with actual data itself. Uses a role based permission model.
    
- - A connector module: Connectors serve the purpose of filling in the actual
-   list of projects, releases and strings used in the released packages.
-   Different connectors allow this suite to be used in different use cases.
+ - l10n_groups: Optional. Az "Organic Groups" module binder, which provides
+   permission handling based on language groups (additionaly to the default
+   role based model used by l10n_community). 
    
-     - l10n_drupalorg: The original connector developed for this module.
-       Maintains a relation with the drupal.org project and release listing,
-       downloads tarballs, collects translatables.
-       
-     - More connectors. To be done.
+ - A connector module: One required, only use one at a time. Connectors serve
+   the purpose of filling in the actual list of projects, releases and strings
+   used in the released packages. Different connectors allow this suite to be
+   used in different use cases.
+   
+     - l10n_localpacks: Works based on a list of files uploaded to a local
+       file system directory. The projects and releases are identified based
+       on placement and naming of the package files. 
+     
+     - l10n_drupalorg: To be used on drupal.org. Maintains a relation with
+       the drupal.org project and release listing, downloads tarballs,
+       collects translatables automatically.
 
 INSTALLATION
 --------------------------------------------------------------------------------
 
 - Your PHP installation should have the PEAR Tar package installed (which
-  requires zzlib support). This is required for Tar extraction (eg. in
-  l10n_drupalorg module) and Tar generation (eg. in l10n_community module).
+  requires zzlib support). This is required for Tar extraction (in the
+  l10n_localpacks and l10n_drupalorg modules) and Tar generation (in the
+  l10n_community module).
+
 - With l10n_drupalorg module, files are simply copied from the drupal.org
   server, so allow_url_fopen needs to be enabled.
-- Locale (built into Drupal) and Organic Groups
-  (http://drupal.org/project/og) modules are also required.
+
+- Locale (built into Drupal) is required. Organic Groups
+  (http://drupal.org/project/og) is required by l10n_groups.
+
+- This package makes use of Unicode fonts to create text-based icons. If
+  your icons do not display properly, test your browser for compatibility
+  with the Unicode 'Dingbats' block at the URL
+  http://www.fileformat.info/info/unicode/block/dingbats/utf8test.htm.
+  Note: It may be necessary to install a font that supports characters in the
+  Unicode 'Dingbats' block. A list of these fonts can be found at the URL
+  http://www.fileformat.info/info/unicode/block/dingbats/fontsupport.htm.
 
 1. Enable l10n_community and *only one* of the connector modules at
-   Administer > Site configuration > Modules.
-2. Configure the connector at Administer > Site configuration.
+   Administer > Site configuration > Modules. Optionally enable l10n_groups.
+
+2. Configure the connector at Administer > Localization Server.
 
 HOW DOES IT WORK
 --------------------------------------------------------------------------------
@@ -63,12 +81,11 @@ are kept, some hard disk space and a decent amount of memory is required. This
 is why connectors are preconfigured to scan only one project at a time. Big
 projects like E-Commerce or Drupal itself take considerable time to parse.
 
-The localization community module provides the actual interface giving
-translation team capabilities relying on Organic Groups. Group members can
-suggest new translations for strings, maintainers can even decide on the
-official translation based on the different suggestions. To translate a
-project, go to Translations, choose a language and choose the project.
-There you can translate all strings.
+The localization community module provides the actual interface. Users with
+proper permissions can suggest new translations for strings, maintainers can
+even decide on the official translation based on the different suggestions. To
+translate a project, go to Translations, choose a language and optionally
+choose a project. There you can translate all strings.
 
 DEVELOPERS
 --------------------------------------------------------------------------------
