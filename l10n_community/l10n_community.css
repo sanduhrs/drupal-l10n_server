@@ -103,6 +103,10 @@ em.l10n-community-marker {
   margin-top: 0.5em;
 }
 #l10n-community-translate-form .toolbox {
+  margin: 0 0 0.3em 0.0em;
+  float: left;
+}
+#l10n-community-translate-form .messagebox {
   margin: 0 0 0.3em 0.3em;
   float: right;
 }
@@ -166,12 +170,14 @@ em.l10n-community-marker {
   border-color: orange;
   cursor: default;
 }
+
 .l10n-button.l10n-untranslated b,
 .l10n-button.decline b {
   background-color: #890F01;
   border-color: #890F01;
 }
-.l10n-button.disabled b {
+.l10n-button.disabled b,
+.l10n-button.l10n-has-no-suggestion b {
   background-color: #cdcdcd;
   border-color: #cdcdcd;
   color: #000;

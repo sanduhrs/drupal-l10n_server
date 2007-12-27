@@ -805,6 +805,7 @@ function theme_l10n_community_button($type, $class, $extras = '') {
       $text = t('edit');
       break;
     case 'has-suggestion':
+    case 'has-no-suggestion':
     case 'untranslated':
       // Star in a filled circle.
       $text = '&#x272a;';

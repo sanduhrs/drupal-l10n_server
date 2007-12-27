@@ -307,7 +307,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     // A toolbox which displays action icons on each string editor fieldset.
     $form[$string->sid]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : '') .'</div>'
+      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : theme('l10n_community_button', 'has-no-suggestion', 'l10n-has-no-suggestion', 'title="'. t('Has no suggestions.') .'"') ) .'</div><div class="messagebox"></div>'
     );
 
     $is_plural = strpos($string->value, "\0");
@@ -438,7 +438,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
 
       'l10n_lookup_help'      => t('Show detailed information.'),
       'l10n_approve_error'    => t('There was an error approving this suggestion. You might not have permission or the suggestion id was invalid.'),
-      'l10n_approve_confirm'  => t('Suggestion approved.'),
+      'l10n_approve_confirm'  => t('!icon Suggestion approved.', array('!icon' => '&#10004;')),
 
       'l10n_decline_error'    => t('There was an error declining this suggestion. You might not have permission or the suggestion id was invalid.'),
       'l10n_decline_confirm'  => t('Suggestion declined.'),
