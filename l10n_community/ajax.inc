@@ -34,7 +34,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
       if (!empty($list)) {
         $output[] = join(', ', $list);
       }
-      $list = array('<em>'. $instance->project_title . ':</em> '. $instance->release_title .' ('. $instance->occurance_count .')');
+      $list = array('<em>'. $instance->project_title .':</em> '. $instance->release_title .' ('. $instance->occurance_count .')');
     }
     else {
       $list[] = $instance->release_title .' ('. $instance->occurance_count .')';

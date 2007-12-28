@@ -17,7 +17,7 @@
 function l10n_drupalorg_help($section) {
   switch ($section) {
     case 'admin/l10n_server/l10n_drupalorg':
-      return '<p>'. t('The drupal.org localization community connector watches for new projects at drupal.org, downloads the new packages and extracts their translatable strings. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/l10n_server/l10n_drupalorg/scan'))) . '</p>';
+      return '<p>'. t('The drupal.org localization community connector watches for new projects at drupal.org, downloads the new packages and extracts their translatable strings. Here you can set up the limits of how these operations are performed. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan.', array('@scan_link' => url('admin/l10n_server/l10n_drupalorg/scan'))) .'</p>';
   }
 }
 

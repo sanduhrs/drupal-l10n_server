@@ -16,7 +16,7 @@
 function l10n_localpacks_help($section) {
   switch ($section) {
     case 'admin/l10n_server/l10n_localpacks':
-      return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/l10n_server/l10n_localpacks/scan'))) . '</p>';
+      return '<p>'. t('The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href="@scan_link">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically.', array('@scan_link' => url('admin/l10n_server/l10n_localpacks/scan'))) .'</p>';
   }
 }
 
@@ -137,7 +137,7 @@ function l10n_localpacks_scan($automated = FALSE) {
           // We have a slash, so this package is in a subfolder.
           // Eg. Drupal/drupal-4.6.7 or Ubercart/ubercart-5.x-1.0-alpha8. 
           // Grab the directory name as project title.
-          list ($project_title, $package) = explode('/', $path);
+          list($project_title, $package) = explode('/', $path);
         }
         if (strpos($package, '-')) {
           // Only remaining are the project uri and release,

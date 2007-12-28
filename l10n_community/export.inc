@@ -275,11 +275,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         if (strpos($export_string['value'], "\0") !== FALSE) {
           // This is a string with plural variants.
           list($singular, $plural) = explode("\0", $export_string['value']); 
-          $output = $comment . 'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
+          $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
           if (!$template && !empty($export_string['translation'])) {
             // Export translations we have.
             foreach (explode("\0", $export_string['translation']) as $id => $value) {
-              $output .= 'msgstr['. $id . '] ' . _l10n_community_export_string($value);
+              $output .= 'msgstr['. $id .'] '. _l10n_community_export_string($value);
             }
           }
           elseif (isset($language)) {
@@ -287,7 +287,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
             // a plural without translation or a template generated for a
             // specific language.
             for ($pi = 0; $pi < $language->plurals; $pi++) {
-              $output .= 'msgstr['. $pi . '] ""'."\n";
+              $output .= 'msgstr['. $pi .'] ""'."\n";
             }
           }
           else {
@@ -298,9 +298,9 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         }
         else {
           // Simple string (and possibly translation pair).
-          $output = $comment . 'msgid '. _l10n_community_export_string($export_string['value']);
+          $output = $comment .'msgid '. _l10n_community_export_string($export_string['value']);
           if (!empty($export_string['translation'])) {
-            $output .= 'msgstr ' . _l10n_community_export_string($export_string['translation']);
+            $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
           }
           else {
             $output .= 'msgstr ""'."\n";
@@ -342,10 +342,10 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $tar = new Archive_Tar($tempfile, 'gz');
   foreach ($string_files as $filename => $fileinfo) {
     if (count($fileinfo['revisions']) == 1) {
-      $file_list = '# Generated from file: '. $fileinfo['revisions'][0] . "\n";
+      $file_list = '# Generated from file: '. $fileinfo['revisions'][0] ."\n";
     }
     else {
-      $file_list = '# Generated from files:' . "\n#  " . join("\n#  ", $fileinfo['revisions']) . "\n";
+      $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $fileinfo['revisions']) ."\n";
     }
     
     $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
@@ -356,11 +356,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       $header .= "#\n";
       $header .= "msgid \"\"\n";
       $header .= "msgstr \"\"\n";
-      $header .= "\"Project-Id-Version: ". $release_title . "\\n\"\n";
+      $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
       $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
       // Use date placeholder, if we have no date information (no translation here yet).
       $header .= "\"PO-Revision-Date: ". (!empty($fileinfo['changed']) ? date("Y-m-d H:iO", $fileinfo['changed']) : 'YYYY-mm-DD HH:MM+ZZZZ') ."\\n\"\n";
-      $header .= "\"Language-Team: ". $language->name . "\\n\"\n";
+      $header .= "\"Language-Team: ". $language->name ."\\n\"\n";
       $header .= "\"MIME-Version: 1.0\\n\"\n";
       $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
       $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
@@ -370,16 +370,16 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     }
     else {
       $language_title = (isset($language) ? $language->name : 'LANGUAGE');
-      $header = "# ". $language_title . " translation of ". $release_title . "\n";
-      $header .= "# Copyright (c) ". date('Y') . "\n";
+      $header = "# ". $language_title ." translation of ". $release_title ."\n";
+      $header .= "# Copyright (c) ". date('Y') ."\n";
       $header .= $file_list;
       $header .= "#\n";
       $header .= "msgid \"\"\n";
       $header .= "msgstr \"\"\n";
-      $header .= "\"Project-Id-Version: ". $release_title . "\\n\"\n";
+      $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
       $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
       $header .= "\"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n\"\n";
-      $header .= "\"Language-Team: ". $language_title . "\\n\"\n";
+      $header .= "\"Language-Team: ". $language_title ."\\n\"\n";
       $header .= "\"MIME-Version: 1.0\\n\"\n";
       $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
       $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";

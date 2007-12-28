@@ -239,7 +239,7 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $ur
       // Single source string otherwise.
       $source = l10n_community_format_text($string->value);
     }
-    $output .= '<div class="source">'. $source. '</div>';
+    $output .= '<div class="source">'. $source .'</div>';
     
     // Translation display.
     if (!empty($string->translation)) {
@@ -307,7 +307,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     // A toolbox which displays action icons on each string editor fieldset.
     $form[$string->sid]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox">' . ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : theme('l10n_community_button', 'has-no-suggestion', 'l10n-has-no-suggestion', 'title="'. t('Has no suggestions.') .'"') ) .'</div><div class="messagebox"></div>'
+      '#value' => '<div class="toolbox">'. ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : theme('l10n_community_button', 'has-no-suggestion', 'l10n-has-no-suggestion', 'title="'. t('Has no suggestions.') .'"') ) .'</div><div class="messagebox"></div>'
     );
 
     $is_plural = strpos($string->value, "\0");
@@ -352,7 +352,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
         // Add translation form element with all plural versions.
         $translations = explode("\0", $string->translation);
         $string_parts = array();
-        for($i = 0; $i < $language->plurals; $i++) {
+        for ($i = 0; $i < $language->plurals; $i++) {
           $target = $string->sid .'-'. $i;
           $string_parts[] = theme('l10n_community_copy_button', $target .'-t') .' '. l10n_community_format_text($translations[$i]);
           $js_strings[$target .'-t'] = $translations[$i];
@@ -365,7 +365,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
         );
       }
       
-      for($i = 0; $i < $language->plurals; $i++) {
+      for ($i = 0; $i < $language->plurals; $i++) {
         $target = $string->sid .'-'. $i;
         if ($translated) {
           // Already translated so we ask for new translation or suggestion.
@@ -434,7 +434,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     array(
       'l10n_strings'          => $js_strings,
 
-      'l10n_image_path'       => base_path() . drupal_get_path('module', 'l10n_community') . '/images/',
+      'l10n_image_path'       => base_path() . drupal_get_path('module', 'l10n_community') .'/images/',
 
       'l10n_lookup_help'      => t('Show detailed information.'),
       'l10n_approve_error'    => t('There was an error approving this suggestion. You might not have permission or the suggestion id was invalid.'),

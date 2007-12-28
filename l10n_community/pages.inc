@@ -263,7 +263,7 @@ function l10n_community_overview_project($uri = NULL) {
     'title' => t('@project summary', array('@project' => $project->title)),
     'description' => t('Some details we know about this project'),
     'content' => theme('item_list', array(
-      t('Project home') .': '. (!empty($project->home_link) ? ('<a href="'. check_url($project->home_link) .'">'. check_plain($project->home_link). '</a>') : t('Not available')),
+      t('Project home') .': '. (!empty($project->home_link) ? ('<a href="'. check_url($project->home_link) .'">'. check_plain($project->home_link) .'</a>') : t('Not available')),
       format_plural(count($releases), '1 release in total', '@count releases in total'),
       format_plural($num_parsed, '1 release parsed', '@count releases parsed'),
       format_plural($num_source, '1 source string in total', '@count source strings in total'),
@@ -348,7 +348,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   $bar = '<div class="l10n-community-progress">';
   foreach ($status as $key => $values) {
     if ($values[1] > 0) {
-      $bar .= '<div class="l10n-community-progress-'. $key . '" style="width:'. $values[1] .'%;" title="'. strtr($values[2], array('!percent' => $values[1] .'%')) .'"></div>';
+      $bar .= '<div class="l10n-community-progress-'. $key .'" style="width:'. $values[1] .'%;" title="'. strtr($values[2], array('!percent' => $values[1] .'%')) .'"></div>';
     }
   }
   $bar .= '</div>';
@@ -441,10 +441,10 @@ function l10n_community_get_string_count($type, $id = NULL) {
       }
       $result = db_query($count_sql, $id);
       while ($row = db_fetch_object($result)) {
-      	if (!isset($sums[$row->language])) {
-      	  // Set default zeroes for summaries.
+        if (!isset($sums[$row->language])) {
+          // Set default zeroes for summaries.
           $sums[$row->language] = array(0, 0);
-      	}
+        }
         // Fill in the 0 or 1 element based on whether we have a result
         // for suggestions or translations.
         $sums[$row->language][(int) $row->is_suggestion] = $row->translation_count;

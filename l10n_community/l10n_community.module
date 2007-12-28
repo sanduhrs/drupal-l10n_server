@@ -162,7 +162,7 @@ function l10n_community_menu($may_cache) {
         // As soon as we have a language code, we can translate.
         $items[] = array(
           'title' => t('Translate'),
-          'path' => 'translate/languages/' . $langcode,
+          'path' => 'translate/languages/'. $langcode,
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('pages', 'l10n_community_overview_language', $langcode),
           'access' => TRUE,
@@ -171,7 +171,7 @@ function l10n_community_menu($may_cache) {
         // Language overview.
         $items[] = array(
           'title' => t('Overview'),
-          'path' => 'translate/languages/' . $langcode .'/overview',
+          'path' => 'translate/languages/'. $langcode .'/overview',
           'type' => MENU_DEFAULT_LOCAL_TASK,
           'weight' => -20,
           'access' => TRUE,
@@ -179,7 +179,7 @@ function l10n_community_menu($may_cache) {
         // Tabs to translate, import and export projects.
         $items[] = array(
           'title' => t('View'),
-          'path' => 'translate/languages/' . $langcode .'/view',
+          'path' => 'translate/languages/'. $langcode .'/view',
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode),
           'type' => MENU_LOCAL_TASK,
@@ -188,7 +188,7 @@ function l10n_community_menu($may_cache) {
         );
         $items[] = array(
           'title' => t('Edit'),
-          'path' => 'translate/languages/' . $langcode .'/edit',
+          'path' => 'translate/languages/'. $langcode .'/edit',
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode, 'edit'),
           'type' => MENU_LOCAL_TASK,
@@ -197,7 +197,7 @@ function l10n_community_menu($may_cache) {
         );
         $items[] = array(
           'title' => t('Import'),
-          'path' => 'translate/languages/' . $langcode .'/import',
+          'path' => 'translate/languages/'. $langcode .'/import',
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('import', 'l10n_community_import_page', $langcode),
           'type' => MENU_LOCAL_TASK,
@@ -206,7 +206,7 @@ function l10n_community_menu($may_cache) {
         );
         $items[] = array(
           'title' => t('Export'),
-          'path' => 'translate/languages/' . $langcode .'/export',
+          'path' => 'translate/languages/'. $langcode .'/export',
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('export', 'l10n_community_export_page', NULL, $langcode),
           'type' => MENU_LOCAL_TASK,
@@ -358,7 +358,7 @@ function l10n_community_block_help() {
         case 'edit':
           // Language code and project both present.
           $items = array();
-          $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation. Beginning and ending line breaks are saved properly, even if you forget to include them.', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/newline.png" alt="'. t('Newline marker') . '" /> '));
+          $items[] = t('!newline_image represents a line break. Remember to include a line break in the same position in the translation. Beginning and ending line breaks are saved properly, even if you forget to include them.', array('!newline_image' => ' <img src="'. base_path() . drupal_get_path('module', 'l10n_community') .'/images/newline.png" alt="'. t('Newline marker') .'" /> '));
           $items[] = t('Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the translated text as-is.');
           $languages = l10n_community_get_languages();
           $formula = join(' ', preg_split('!(&&|\\|\\||%|<=|>=|==|\\!=|\\?|:)!', $languages[$args['langcode']]->formula, -1, PREG_SPLIT_DELIM_CAPTURE));
@@ -744,7 +744,7 @@ function l10n_community_detect_major_version($path) {
   $filename = basename($path);
   // The project name could not contain hyphens, as the project name equals
   // function name prefixes, and hyphens are not allowed in function names.
-  list ($project_name, $version) = explode('-', $filename);
+  list($project_name, $version) = explode('-', $filename);
   // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
   return (int) $version;
 }
@@ -799,7 +799,7 @@ function l10n_community_filter_value($name) {
  * Text values are centralized here so it is easy to change.
  */
 function theme_l10n_community_button($type, $class, $extras = '') {
-  switch($type) {
+  switch ($type) {
     case 'edit':
       // Source string and translation edit field.
       $text = t('edit');
