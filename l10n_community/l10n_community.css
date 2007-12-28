@@ -123,17 +123,16 @@ em.l10n-community-marker {
 
 .l10n-button {
   line-height: 1.8em;
-  padding-right: 5px;
-  margin: 0 0 3px;
+  margin-right: 5px;
   cursor: pointer;
 }
 #l10n-community-overview .l10n-button {
-  padding-right: 0;
+  margin-right: 0;
   cursor: default;
 }
 .l10n-button b {
-  background-color: #3A79AA;
-  border-color: #3A79AA;
+  background-color: #3a79aa;
+  border-color: #3a79aa;
   color: #fff;
   font-weight: normal;
 
@@ -143,43 +142,30 @@ em.l10n-community-marker {
   padding: 0;
 }
 .l10n-button b b {
-  background: transparent none;
   border-width: 0 1px;
   margin: 0 -1px;
-  padding: 0;
-  /* Let these be specified above */
-  color: inherit;
-  font-weight: inherit;
-}
-.l10n-button b b b {
-  border-width: 0;
-  margin: 0;
-  padding: 1px 5px;
-  /* Let these be specified above */
-  color: inherit;
-  font-weight: inherit;
-}
-.l10n-button.approve b {
-  background-color: #009966;
-  border-color: #009966;
-  color: #fff;
-  font-weight: normal;
-}
-.l10n-button.l10n-has-suggestion b {
-  background-color: orange;
-  border-color: orange;
-  cursor: default;
+  padding: 0 5px;
 }
 
+.l10n-button.approve b {
+  background-color: #096;
+  border-color: #096;
+  color: #fff;
+}
 .l10n-button.l10n-untranslated b,
 .l10n-button.decline b {
   background-color: #890F01;
   border-color: #890F01;
 }
 .l10n-button.disabled b,
-.l10n-button.l10n-has-no-suggestion b {
+.l10n-button.l10n-has-no-suggestion b,
+.l10n-button.l10n-has-suggestion b {
   background-color: #cdcdcd;
   border-color: #cdcdcd;
   color: #000;
   cursor: default;
+}
+.l10n-button.l10n-has-suggestion b {
+  background-color: orange;
+  border-color: orange;
 }

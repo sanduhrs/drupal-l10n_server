@@ -819,5 +819,5 @@ function theme_l10n_community_button($type, $class, $extras = '') {
       $text = '&#x2716;';
       break;
   }
-  return ' <span class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b><b>'. $text .'</b></b></b></span>';
+  return ' <span class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b>'. $text .'</b></b></span>';
 }

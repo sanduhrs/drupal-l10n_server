@@ -66,8 +66,7 @@ l10nCommunity.formatButton = function(text, title, className, clickFunction) {
   return $(document.createElement('SPAN')).attr('class', className + ' l10n-button').attr('title', title).
          append($(document.createElement('B')).
          append($(document.createElement('B')).
-         append($(document.createElement('B')).
-         append(text)))).click(clickFunction);
+         append(text))).click(clickFunction);
 }
 
 /**
