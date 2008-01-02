@@ -440,8 +440,14 @@ function l10n_community_page_wrapper() {
   $args = func_get_args();
   $filename = array_shift($args);
   $function = array_shift($args);
-  include_once drupal_get_path('module', 'l10n_community') .'/'. $filename .'.inc';
-  return call_user_func_array($function, $args);
+  if (in_array($filename, array('welcome', 'pages', 'ajax', 'translate', 'import', 'export')) && preg_match('!^l10n_community_!', $function)) {
+    // Only allow calling l10n_community_* functions and from known local files.
+    // Although the menu definitions should provide a safety net, so these
+    // dangerous looking include and user function calls cannot be exploited,
+    // it is always good to build in another safety layer.
+    include_once drupal_get_path('module', 'l10n_community') .'/'. $filename .'.inc';
+    return call_user_func_array($function, $args);
+  }
 }
 
 // = API functions =============================================================
