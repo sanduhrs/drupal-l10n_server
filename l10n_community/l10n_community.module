@@ -82,13 +82,14 @@ function l10n_community_menu($may_cache) {
     $items[] = array(
       'title' => t('Translate'),
       'path' => 'translate',
-      'callback' => 'l10n_community_welcome',
-      'access' => TRUE,
+      'callback' => 'l10n_community_page_wrapper',
+      'callback arguments' => array('welcome', 'l10n_community_welcome'),
+      'access' => user_access('access localization community'),
     );
     $items[] = array(
       'title' => t('Overview'),
       'path' => 'translate/overview',
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_DEFAULT_LOCAL_TASK,
       'weight' => -20,
     );
@@ -98,7 +99,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/languages',
       'callback' => 'l10n_community_page_wrapper',
       'callback arguments' => array('pages', 'l10n_community_explore_languages'),
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_LOCAL_TASK,
       'weight' => -10,
     );
@@ -108,7 +109,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/projects',
       'callback' => 'l10n_community_page_wrapper',
       'callback arguments' => array('pages', 'l10n_community_explore_projects'),
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_LOCAL_TASK,
       'weight' => -5,
     );
@@ -116,7 +117,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/projects/autocomplete',
       'title' => t('Project autocomplete'),
       'callback' => 'l10n_community_projects_autocomplete',
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_CALLBACK
     );
   }
@@ -130,7 +131,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/details',
       'callback' => 'l10n_community_page_wrapper',
       'callback arguments' => array('ajax', 'l10n_community_string_details'),
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_CALLBACK,
     );
     $items[] = array(
@@ -138,7 +139,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/approve',
       'callback' => 'l10n_community_page_wrapper',
       'callback arguments' => array('ajax', 'l10n_community_string_approve'),
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_CALLBACK,
     );
     $items[] = array(
@@ -146,7 +147,7 @@ function l10n_community_menu($may_cache) {
       'path' => 'translate/decline',
       'callback' => 'l10n_community_page_wrapper',
       'callback arguments' => array('ajax', 'l10n_community_string_decline'),
-      'access' => TRUE,
+      'access' => user_access('access localization community'),
       'type' => MENU_CALLBACK,
     );
     
@@ -165,7 +166,7 @@ function l10n_community_menu($may_cache) {
           'path' => 'translate/languages/'. $langcode,
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('pages', 'l10n_community_overview_language', $langcode),
-          'access' => TRUE,
+          'access' => user_access('access localization community'),
           'type' => MENU_ITEM,
         );
         // Language overview.
@@ -174,7 +175,7 @@ function l10n_community_menu($may_cache) {
           'path' => 'translate/languages/'. $langcode .'/overview',
           'type' => MENU_DEFAULT_LOCAL_TASK,
           'weight' => -20,
-          'access' => TRUE,
+          'access' => user_access('access localization community'),
         );
         // Tabs to translate, import and export projects.
         $items[] = array(
@@ -184,7 +185,7 @@ function l10n_community_menu($may_cache) {
           'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode),
           'type' => MENU_LOCAL_TASK,
           'weight' => -10,
-          'access' => TRUE,
+          'access' => user_access('access localization community'),
         );
         $items[] = array(
           'title' => t('Edit'),
@@ -192,7 +193,7 @@ function l10n_community_menu($may_cache) {
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode, 'edit'),
           'type' => MENU_LOCAL_TASK,
-          'access' => l10n_community_get_permission($langcode) != L10N_PERM_NONE,
+          'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
           'weight' => -8,
         );
         $items[] = array(
@@ -202,7 +203,7 @@ function l10n_community_menu($may_cache) {
           'callback arguments' => array('import', 'l10n_community_import_page', $langcode),
           'type' => MENU_LOCAL_TASK,
           'weight' => -5,
-          'access' => l10n_community_get_permission($langcode) != L10N_PERM_NONE,
+          'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
         );
         $items[] = array(
           'title' => t('Export'),
@@ -223,13 +224,13 @@ function l10n_community_menu($may_cache) {
           'path' => 'translate/projects/'. $uri,
           'callback' => 'l10n_community_page_wrapper',
           'callback arguments' => array('pages', 'l10n_community_overview_project', $uri),
-          'access' => TRUE,
+          'access' => user_access('access localization community'),
           'type' => MENU_CALLBACK,
         );
         $items[] = array(
           'title' => t('Overview'),
           'path' => 'translate/projects/'. $uri .'/view',
-          'access' => TRUE,
+          'access' => user_access('access localization community'),
           'type' => MENU_DEFAULT_LOCAL_TASK,
           'weight' => -10,
         );
@@ -259,7 +260,7 @@ function l10n_community_menu($may_cache) {
  * Implementation of hook_perm().
  */
 function l10n_community_perm() {
-  return array('submit suggestions', 'submit translations and approve suggestions', 'administer localization community');
+  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community');
 }
 
 /**
@@ -399,13 +400,6 @@ function l10n_community_user($op, &$edit, &$account, $category = NULL) {
       return array(t('Localization contributions') => $items);
     }
   }
-}
-
-// = Welcome page ==============================================================
-
-function l10n_community_welcome() {
-  include_once 'welcome.inc';
-  return l10n_community_welcome_page();
 }
 
 // = Settings ==================================================================
