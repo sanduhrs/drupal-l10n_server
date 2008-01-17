@@ -371,18 +371,10 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       // Existing string but with new location information.
       $export_string['comment'][$string->location][] = $string->lineno;
       $export_string['revisions'][] = $string->revision;
-      switch ($export_string['type']) {
-        case 0: // POTX_STRING_BOTH
-          // Already marked for both installer and runtime.
-          break;
-        case 1: // POTX_STRING_INSTALLER 
-          // Marked for installer only, we might need to elevate to 0.
-          $export_string['type'] = ($string->type == 2) ? 0 : 1;
-          break;
-        case 2: // POTX_STRING_RUNTIME
-          // Marked for runtime only, we might need to elevate to 0.
-          $export_string['type'] = ($string->type == 1) ? 0 : 2;
-          break;
+      if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
+        // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
+        // the currently found string type is different to the previously found.
+        $export_string['type'] = 0; 
       }
     }
   }
