@@ -119,11 +119,11 @@ function l10n_community_export_form($uri = NULL, $langcode = NULL) {
       '#description' => t('Templates only contain the source (English) strings, translations are represented by empty placeholders.')
     );
     $form['format']['version'] = array(
-      '#title' => t('Format suitable for'),
+      '#title' => t('Format used'),
       '#type' => 'radios',
-      '#options' => array('drupal-6' => t('Drupal 6'), 'drupal-5' => t('Drupal 5 with autolocale module')),
+      '#options' => array('drupal-6' => t('Drupal 6 package format'), 'drupal-5' => t('Drupal 5 package format for autolocale module'), 'flat-package' => t('Flat package for CVS commit'), 'all-in-one' => t('All in one file')),
       '#default_value' => 'drupal-6',
-      '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming. Select which one to use here."),
+      '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming in packages. Temporarily, as long as you need to use CVS to distribute translations the flat package helps you generate a package for committing to Drupal.org. Additionally, for testing, spell checking and smaller modules, you can also export in one file without packaging as well. It is not advised to use big .po files for importing in Drupal though, as it might lead to incomplete imports. Use packages for usage with Drupal importing."),
     );
   }
   $form['submit'] = array(
@@ -178,7 +178,7 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
   $uri = l10n_community_project_uri_by_title($form_values['project']);
 
   // Generate tarball and get file name.
-  $filename = l10n_community_export(
+  list($file_name, $serve_name) = l10n_community_export(
     $uri,
     ($form_values['release'] == 'all' ? NULL : $form_values['release']),
     $language,
@@ -186,12 +186,11 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
     $form_values['version']
   );
   
-  
   // Return compressed archive to user.
-  header('Content-Disposition: attachment; filename='. $uri . (isset($language) ? '-'. $language->locale : '') . ($type == 'template' ? '-templates' : '-translations') .'.tgz');
+  header('Content-Disposition: attachment; filename='. $serve_name);
   header('Content-Type: application/x-compressed');
-  echo file_get_contents($filename);
-  unlink($filename);
+  echo file_get_contents($file_name);
+  unlink($file_name);
   die();
 }
 
@@ -208,6 +207,11 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
  *   Language object.
  * @param $template
  *   TRUE if templates should be exported, FALSE if translations.
+ * @param $version
+ *   Version to export with: 'drupal-6', 'drupal-5', 'flat-package' and
+ *   'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
+ *   directory structure generated, the others are suitable packages for the
+ *   given Drupal version.
  *
  * @todo
  *   Look into possibly exporting suggestions as fuzzy translations.
@@ -249,20 +253,6 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       // New string in the stream.
       if (!empty($export_string)) {
         
-        // We have an existing string to store.
-        if (count(array_keys($export_string['comment'])) > 1) {
-          // Appeared in more then one file, so goes to general.po.
-          // Note that some modules like ubercart might not have their
-          // root module in the root folder, so this needs to be rethought.
-          $filename = './'. $po_folder .'/general';
-        }
-        else {
-          // Putting into one specific directory, and there to a file.
-          $filename = preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment'])));
-          $filename = dirname($filename) .'/'. $po_folder .'/'. str_replace(array('.', '_'), '-', basename($filename));
-        }
-        $filename .= ($template ? '.pot' : '.'. $language->locale .'.po');
-        
         // Location comments are constructed in fileone:1,2,5; filetwo:123,537
         // format, where the numbers represent the line numbers of source
         // occurances in the respective source files.
@@ -271,6 +261,37 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
         }
         $comment = '#: '. join('; ', $comment) ."\n";
+
+        // File location is dependent on export format and string location.
+        if ($version == 'all-in-one') {
+          // Fold all strings into this one file.
+          $filename = 'general';
+        }
+        elseif ((strpos($comment, '.info') && $uri == 'drupal') || count(array_keys($export_string['comment'])) > 1) {
+          // An .info file string in Drupal core (which is folded into
+          // general.po, so that later the module screen has all module info
+          // translated for the admin). Or appeared in more then one file, so
+          // goes to general.po for that reason.
+          
+          // Note that some modules like ubercart might not have their
+          // root module in the root folder, so this needs to be rethought.
+          $filename = './'. ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
+        }
+        else {
+          // Putting into a file named after the specific directory.
+          $filename = dirname(preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment']))));
+          if (empty($filename) || $filename == '.') {
+            $filename = './'. ($version != 'flat-package' ? ($po_folder .'/') : '') .'/root';
+          }
+          elseif ($version != 'flat-package') {
+            $filename .= '/'. $po_folder .'/'. str_replace('/', '-', $filename);
+          }
+          else {
+            $filename = './'. str_replace('/', '-', $filename);
+          }
+        }
+        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->locale) : '') .'.po');
+        
         
         if (strpos($export_string['value'], "\0") !== FALSE) {
           // This is a string with plural variants.
@@ -334,12 +355,14 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       $export_string['revisions'][] = $string->revision;
     }
   }
-    
+
   // Generate a 'unique' temporary filename for this package.
   $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $uri);
   
-  // Generate tgz file with all files added.
-  $tar = new Archive_Tar($tempfile, 'gz');
+  if ($version != 'all-in-one') {
+    // Generate tgz file with all files added.
+    $tar = new Archive_Tar($tempfile, 'gz');
+  }
   foreach ($string_files as $filename => $fileinfo) {
     if (count($fileinfo['revisions']) == 1) {
       $file_list = '# Generated from file: '. $fileinfo['revisions'][0] ."\n";
@@ -390,9 +413,26 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         $header .= "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"\n";
       }
     }
-    $tar->addString($filename, $header ."\n". $fileinfo['file']);
+    if ($version == 'all-in-one') {
+      // Write to file directly. We should only do this once.
+      $fh = fopen($tempfile, 'w');
+      fwrite($fh, $header ."\n". $fileinfo['file']);
+      fclose($fh);
+    }
+    else {
+      // Add file to the tgz.
+      $tar->addString($filename, $header ."\n". $fileinfo['file']);
+    }
   }
-  return $tempfile;
+
+  if ($version == 'all-in-one') {
+    // Output a single PO(T) file in this case.
+    return array($tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '.pot' : '.po'));
+  }
+  else {
+    // Output a package in this case.
+    return array($tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '-templates' : '-translations') .'.tgz');
+  }
 }
 
 /**
