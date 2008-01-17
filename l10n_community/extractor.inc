@@ -135,8 +135,10 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
   }
   else {
     if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_community_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
-      // Changed revision on a file.
-      db_query("UPDATE {l10n_community_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+      if ($existing_file->revision != $revision) {
+        // Changed revision on a file.
+        db_query("UPDATE {l10n_community_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+      }
       $fid = $existing_file->fid;
     }
     else {
