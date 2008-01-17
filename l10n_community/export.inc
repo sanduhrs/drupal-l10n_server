@@ -374,7 +374,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
         // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
         // the currently found string type is different to the previously found.
-        $export_string['type'] = 0; 
+        $export_string['type'] = 0;
       }
     }
   }
