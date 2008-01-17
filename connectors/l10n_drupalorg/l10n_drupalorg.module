@@ -78,7 +78,7 @@ function l10n_drupalorg_settings_form() {
     '#title' => t('Number of projects to scan at once'),
     '#description' => t('The number of projects to scan on a manual or cron run. Scanning is synchronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project and its releases, files, and translatable strings will be inserted into the database and become available for translation.'),
     '#type' => 'select',
-    '#options' => array(1 => 1) + drupal_map_assoc(range(10, 100, 10)),
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20)),
     '#default_value' => variable_get('l10n_drupalorg_limit', 1),
   );
   $form['l10n_drupalorg_cron'] = array(
