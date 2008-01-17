@@ -165,11 +165,11 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
  *   Name of file the string occured in.
  * @param $line
  *   Number of line the string was found.
- * @param $string_mode
- *   String mode: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
+ * @param $string_type
+ *   String type: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
  *   or POTX_STRING_BOTH.
  */
-function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $string_mode = 2 /*POTX_STRING_RUNTIME*/) {
+function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $string_type = 2 /*POTX_STRING_RUNTIME*/) {
   static $files = array();
   
   // Strip all slashes from string.
@@ -190,9 +190,9 @@ function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $str
       db_query("INSERT INTO {l10n_community_string} (value) VALUES ('%s')", $value);
       $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s'", $value));
     }
-    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d", $files[$file], $sid, $line))) {
+    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $files[$file], $sid, $line, $string_type))) {
       // Location does not exist with this string.
-      db_query("INSERT INTO {l10n_community_line} (fid, sid, lineno) VALUES (%d, %d, %d)", $files[$file], $sid, $line);
+      db_query("INSERT INTO {l10n_community_line} (fid, sid, lineno, type) VALUES (%d, %d, %d, %d)", $files[$file], $sid, $line, $string_type);
     }
   }
 }

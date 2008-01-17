@@ -94,6 +94,7 @@ function l10n_community_install() {
       db_query("CREATE TABLE {l10n_community_line} (
         fid                INTEGER,
         lineno             INTEGER,
+        type               INTEGER,
         sid                INTEGER
         ) $table_config;");
 
@@ -154,6 +155,17 @@ function l10n_community_update_5001() {
   foreach ($default_to_zero as $column) {
     $ret[] = update_sql('ALTER TABLE {l10n_community_translation} CHANGE '. $column .' '. $column .' INTEGER NOT NULL DEFAULT 0');
   }
+  return $ret;
+}
+
+/**
+ * Add type column to lines, so we can track installer and non-installer
+ * string usage separately.
+ */
+function l10n_community_update_5002() {
+  $ret = array();
+  $ret[] = update_sql('ALTER TABLE {l10n_community_line} ADD type INTEGER AFTER lineno');
+  drupal_set_message('An update was executed to support installer string identification in scanned projects. You need to rescan all your prjects to make this work as expected. Delete data from the project, release, file, error and line tables, and rescan all projects. Make sure to leave the source string and translation tables intact. It is always a good idea to make backups!');
   return $ret;
 }
 

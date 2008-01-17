@@ -221,13 +221,13 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   
   $project = l10n_community_get_projects($uri);
   if ($template) {
-    // The type field might not be set, if we are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, f.location, f.revision, l.lineno FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
+    // We are exporting a template explicitly.
+    $sql = 'SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
     $sql_args = array($project->pid);
   }
   else {
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
+    $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
     $sql_args = array($language->locale, $project->pid);
   }
   
@@ -275,19 +275,19 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           
           // Note that some modules like ubercart might not have their
           // root module in the root folder, so this needs to be rethought.
-          $filename = './'. ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
+          $filename = ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
         }
         else {
           // Putting into a file named after the specific directory.
           $filename = dirname(preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment']))));
           if (empty($filename) || $filename == '.') {
-            $filename = './'. ($version != 'flat-package' ? ($po_folder .'/') : '') .'/root';
+            $filename = ($version != 'flat-package' ? ($po_folder .'/') : '') .'root';
           }
           elseif ($version != 'flat-package') {
             $filename .= '/'. $po_folder .'/'. str_replace('/', '-', $filename);
           }
           else {
-            $filename = './'. str_replace('/', '-', $filename);
+            $filename = str_replace('/', '-', $filename);
           }
         }
         $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->locale) : '') .'.po');
@@ -327,15 +327,32 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
             $output .= 'msgstr ""'."\n";
           }
         }
-        $string_files[$filename]['file'] .= $output ."\n";
-        if (!$template) {
-          $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
+
+        $file_outputs = array($filename);
+        if ($export_string['type'] != 2 /* POTX_STRING_RUNTIME */ && $version != 'all-in-one') {
+          // Not runtime-only, so make sure we try to have an installer entry.
+          $file_outputs[] = ($uri == 'drupal' ?
+            (($version == 'flat-package') ?
+              ('installer'. ($template ? '.pot' : '.po')) :
+              ('profiles/default/'. ($template ? 'installer.pot' : ($language->locale .'.po')))) :
+            ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->locale .'.po')))
+          );
+          if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
+            // Installer-only, remove runtime entry.
+            $file_outputs = array($file_outputs[1]);
+          }
         }
-        if (isset($string_files[$filename]['revisions'])) {
-          $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
-        }
-        else {
-          $string_files[$filename]['revisions'] = array_unique($export_string['revisions']);
+        foreach ($file_outputs as $filename) {
+          $string_files[$filename]['file'] .= $output ."\n";
+          if (!$template) {
+            $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
+          }
+          if (isset($string_files[$filename]['revisions'])) {
+            $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
+          }
+          else {
+            $string_files[$filename]['revisions'] = array_unique($export_string['revisions']);
+          }
         }
       }
       
@@ -347,12 +364,26 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'translation' => isset($string->translation) ? $string->translation : '',
         'revisions'   => array($string->revision),
         'changed'     => $string->time_approved,
+        'type'        => $string->type,
       );
     }
     else {
       // Existing string but with new location information.
       $export_string['comment'][$string->location][] = $string->lineno;
       $export_string['revisions'][] = $string->revision;
+      switch ($export_string['type']) {
+        case 0: // POTX_STRING_BOTH
+          // Already marked for both installer and runtime.
+          break;
+        case 1: // POTX_STRING_INSTALLER 
+          // Marked for installer only, we might need to elevate to 0.
+          $export_string['type'] = ($string->type == 2) ? 0 : 1;
+          break;
+        case 2: // POTX_STRING_RUNTIME
+          // Marked for runtime only, we might need to elevate to 0.
+          $export_string['type'] = ($string->type == 1) ? 0 : 2;
+          break;
+      }
     }
   }
 
