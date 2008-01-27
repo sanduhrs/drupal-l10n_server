@@ -24,7 +24,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: l10n_server\n"
 "POT-Creation-Date: 2008-01-27 19:11+0100\n"
-"PO-Revision-Date: 2008-01-27 22:51+0100\n"
+"PO-Revision-Date: 2008-01-28 00:54+0100\n"
 "Last-Translator: Alexander Hass\n"
 "Language-Team: Alexander Haß\n"
 "MIME-Version: 1.0\n"
@@ -208,7 +208,7 @@ msgstr "Startseite"
 #: l10n_community/translate.inc:26
 #: l10n_community/l10n_community.module:83;165
 msgid "Translate"
-msgstr "Übersetzten"
+msgstr "Übersetzen"
 
 #: l10n_community/export.inc:22
 msgid "Export @language translations"
@@ -354,7 +354,7 @@ msgstr ""
 
 #: l10n_community/import.inc:24
 msgid "Translate projects"
-msgstr "Projekte übersetzten"
+msgstr "Projekte übersetzen"
 
 #: l10n_community/import.inc:42
 msgid "Translation file"
@@ -589,8 +589,8 @@ msgstr[1] ""
 #: l10n_community/welcome.inc:50
 msgid "1 string to translate"
 msgid_plural "@count strings to translate"
-msgstr[0] "1 Zeichenkette zum übersetzten"
-msgstr[1] "@count Zeichenketten zum übersetzten"
+msgstr[0] "1 Zeichenkette zum übersetzen"
+msgstr[1] "@count Zeichenketten zum übersetzen"
 
 #: l10n_community/pages.inc:155
 #: l10n_community/welcome.inc:51
@@ -788,7 +788,7 @@ msgstr ""
 
 #: l10n_community/welcome.inc:68
 msgid "Suggest, translate, review"
-msgstr "Vorschlagen, Übersetzten, Durchsicht"
+msgstr "Vorschlagen, Übersetzen, Durchsicht"
 
 #: l10n_community/welcome.inc:74
 msgid "Translator's guide"
