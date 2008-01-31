@@ -302,7 +302,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
             "includes/$po_folder/includes",
             "misc/$po_folder/misc"
           );
-          if (in_array($filename, array($system_files))) {
+          if (in_array($filename, $system_files)) {
             $filename = "modules/system/$po_folder/". basename($filename);
           }
         }
