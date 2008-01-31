@@ -290,8 +290,25 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
             $filename = str_replace('/', '-', $filename);
           }
         }
-        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->locale) : '') .'.po');
         
+        // Temporary hack to make the core exports put the system module
+        // files to the right place. See http://drupal.org/node/212594
+        // This should be solved more elegantly with a knowledge on the
+        // non-module files (non-info file based directories in Drupal 6)
+        // and a default location for each project.
+        if (!in_array($version, array('flat-package', 'all-in-one')) && ($uri == 'drupal')) {
+          $system_files = array(
+            $po_folder .'/general',
+            "includes/$po_folder/includes",
+            "misc/$po_folder/misc"
+          );
+          if (in_array($filename, array($system_files))) {
+            $filename = "modules/system/$po_folder/". basename($filename);
+          }
+        }
+        
+        // Append extension.
+        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->locale) : '') .'.po');
         
         if (strpos($export_string['value'], "\0") !== FALSE) {
           // This is a string with plural variants.
