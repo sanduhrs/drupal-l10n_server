@@ -94,7 +94,7 @@ function l10n_community_string_approve($tid = 0) {
   global $user;
   
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
-    // Mark existing translations and suggestions as inactive.
+    // Mark existing translations and suggestions as inactive in this language.
     db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid = %d AND language = '%s'", $suggestion->sid, $suggestion->language);
     // Remove placeholder translation record (which was there if
     // first came suggestions, before an actual translation).
@@ -121,11 +121,11 @@ function l10n_community_string_decline($tid = 0) {
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
     // Mark this suggestion as inactive.
     db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE tid = %d", $tid);
-    // Let's see if we have any other suggestion remaining.
-    $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1", $suggestion->sid));
+    // Let's see if we have any other suggestion remaining in this language.
+    $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $suggestion->sid, $suggestion->language));
     if (!$count) {
-      // No remaining suggestions.
-      db_query("UPDATE {l10n_community_translation} SET has_suggestion = 0 WHERE sid = %d AND is_suggestion = 0 AND is_active = 1", $suggestion->sid);
+      // No remaining suggestions in this language.
+      db_query("UPDATE {l10n_community_translation} SET has_suggestion = 0 WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $suggestion->sid, $suggestion->language);
     }
     // Return something so the client sees we are OK.
     print 'done';
