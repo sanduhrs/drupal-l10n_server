@@ -178,7 +178,7 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
   $uri = l10n_community_project_uri_by_title($form_values['project']);
 
   // Generate tarball or PO file and get file name.
-  list($mime_type, $file_name, $serve_name) = l10n_community_export(
+  $export_result = l10n_community_export(
     $uri,
     ($form_values['release'] == 'all' ? NULL : $form_values['release']),
     $language,
@@ -186,12 +186,20 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
     $form_values['version']
   );
   
-  // Return compressed archive to user.
-  header('Content-Disposition: attachment; filename='. $serve_name);
-  header('Content-Type: '. $mime_type);
-  echo file_get_contents($file_name);
-  unlink($file_name);
-  die();
+  if (isset($export_result) && is_array($export_result)) {
+    // If we got an array back from the export build, tear that into pieces.
+    list($mime_type, $file_name, $serve_name) = $export_result;
+    // Return compressed archive to user.
+    header('Content-Disposition: attachment; filename='. $serve_name);
+    header('Content-Type: '. $mime_type);
+    echo file_get_contents($file_name);
+    unlink($file_name);
+    die();  
+  }
+  else {
+    // Messages should already be recorded about any build errors.
+    return;
+  }
 }
 
 /**
@@ -394,6 +402,21 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         $export_string['type'] = 0;
       }
     }
+  }
+  
+  if (empty($string_files)) {
+    // No strings were found.
+    if (isset($release)) {
+      $message = t('There are no strings in the %release release of %project to export.', array('%project' => $project->title, '%release' => $release->title));
+    }
+    else {
+      $message = t('There are no strings in any releases of %project to export.', array('%project' => $project->title));
+    }
+    // Message to the user.
+    drupal_set_message($message);
+    // Message to watchdog for possible automated packaging. 
+    watchdog('l10n_community', $message);
+    return NULL;
   }
 
   // Generate a 'unique' temporary filename for this package.
