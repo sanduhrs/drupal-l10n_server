@@ -177,8 +177,8 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
   // This was validated to work in the validation code.
   $uri = l10n_community_project_uri_by_title($form_values['project']);
 
-  // Generate tarball and get file name.
-  list($file_name, $serve_name) = l10n_community_export(
+  // Generate tarball or PO file and get file name.
+  list($mime_type, $file_name, $serve_name) = l10n_community_export(
     $uri,
     ($form_values['release'] == 'all' ? NULL : $form_values['release']),
     $language,
@@ -188,7 +188,7 @@ function l10n_community_export_form_submit($form_id, &$form_values) {
   
   // Return compressed archive to user.
   header('Content-Disposition: attachment; filename='. $serve_name);
-  header('Content-Type: application/x-compressed');
+  header('Content-Type: '. $mime_type);
   echo file_get_contents($file_name);
   unlink($file_name);
   die();
@@ -467,11 +467,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   if ($version == 'all-in-one') {
     // Output a single PO(T) file in this case.
-    return array($tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '.pot' : '.po'));
+    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '.pot' : '.po'));
   }
   else {
     // Output a package in this case.
-    return array($tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '-templates' : '-translations') .'.tgz');
+    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '-templates' : '-translations') .'.tgz');
   }
 }
 
