@@ -95,10 +95,10 @@ function l10n_community_string_approve($tid = 0) {
   
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
     // Mark existing translations and suggestions as inactive.
-    db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid = %d", $suggestion->sid);
+    db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid = %d AND language = '%s'", $suggestion->sid, $suggestion->language);
     // Remove placeholder translation record (which was there if
     // first came suggestions, before an actual translation).
-    db_query("DELETE FROM {l10n_community_translation} WHERE sid = %d AND translation = ''", $suggestion->sid);
+    db_query("DELETE FROM {l10n_community_translation} WHERE sid = %d AND translation = '' AND language = '%s'", $suggestion->sid, $suggestion->language);
     // Mark this exact suggestion as active, and set approval time.
     db_query("UPDATE {l10n_community_translation} SET time_approved = %d, uid_approved = %d, has_suggestion = 0, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $suggestion->tid);
     // Return something so the client sees we are OK.
