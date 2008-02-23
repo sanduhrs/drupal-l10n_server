@@ -17,7 +17,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: German translation for l10n_server\n"
 "POT-Creation-Date: 2008-02-01 20:54+0100\n"
-"PO-Revision-Date: 2008-02-03 14:23+0100\n"
+"PO-Revision-Date: 2008-02-23 15:09+0100\n"
 "Last-Translator: Alexander Hass\n"
 "Language-Team: Alexander Haß\n"
 "MIME-Version: 1.0\n"
@@ -33,7 +33,7 @@ msgstr "Verwendet in:"
 
 #: ajax.inc:52
 msgid "<strong>Translated by:</strong><br /> %username at %date"
-msgstr ""
+msgstr "<strong>Übersetzt von:</strong><br /> %username am %date"
 
 #: ajax.inc:62
 msgid "Approve suggestion."
@@ -45,11 +45,11 @@ msgstr "Vorschlag ablehnen."
 
 #: ajax.inc:66
 msgid "Copy suggestion text to the edit field."
-msgstr ""
+msgstr "Den Textvorschlag in das Bearbeitungsfeld kopieren."
 
 #: ajax.inc:75
 msgid "Outstanding suggestions:"
-msgstr ""
+msgstr "Ausstehende Vorschläge:"
 
 #: export.inc:14
 #: import.inc:23
@@ -73,7 +73,7 @@ msgstr "Übersetzungen für @language exportieren"
 #: pages.inc:102
 #: l10n_community.module:97
 msgid "Explore languages"
-msgstr ""
+msgstr "Sprachen untersuchen"
 
 #: export.inc:27
 msgid "Export @project translation templates"
@@ -83,11 +83,11 @@ msgstr "Übersetzungsvorlagen für @project exportieren"
 #: pages.inc:198
 #: l10n_community.module:107
 msgid "Explore projects"
-msgstr ""
+msgstr "Projekte untersuchen"
 
 #: export.inc:56
 msgid "Source data"
-msgstr ""
+msgstr "Quelldaten"
 
 #: export.inc:66
 msgid "Choose a project"
@@ -127,11 +127,11 @@ msgstr "Übersetzungsvorlage"
 
 #: export.inc:119
 msgid "Templates only contain the source (English) strings, translations are represented by empty placeholders."
-msgstr ""
+msgstr "Vorlagen enthalten nur Quellzeichenketten (Englisch), die Übersetzungen werden als leere Platzhalter dargestellt."
 
 #: export.inc:122
 msgid "Format used"
-msgstr ""
+msgstr "Verwendetes Format"
 
 #: export.inc:124
 msgid "Drupal 6 package format"
@@ -164,7 +164,7 @@ msgstr "Projekt auswählen"
 
 #: export.inc:141
 msgid "You should choose a project, submit the form and choose a release."
-msgstr ""
+msgstr "Ein Projekt auswählen, das Formular abschicken und eine Veröffentlichung auswählen."
 
 #: export.inc:144
 msgid "Invalid project chosen."
@@ -180,19 +180,19 @@ msgstr "Eine ungültige Veröffentlichung wurde ausgewählt."
 
 #: extractor.inc:42
 msgid "Package to parse (%file) does not exist."
-msgstr ""
+msgstr "Das zu analysierende Paket (%file) ist nicht vorhanden."
 
 #: extractor.inc:45
 msgid "Temporary directory %path already exists."
-msgstr ""
+msgstr "Das temporäre Verzeichnis %path ist schon vorhanden."
 
 #: extractor.inc:52
 msgid "Error on untaring %filename file."
-msgstr ""
+msgstr "Fehler beim Entpacken der Datei %filename."
 
 #: extractor.inc:70
 msgid "Contents of %filename have been scanned."
-msgstr ""
+msgstr "Die Inhalte von %filename wurden durchsucht."
 
 #: extractor.inc:96;100
 #: l10n_community.module:0
@@ -201,11 +201,11 @@ msgstr "l10n_community"
 
 #: import.inc:15
 msgid "Import translations to @language"
-msgstr ""
+msgstr "Übersetzungen in @language importieren"
 
 #: import.inc:18
 msgid "Import suggestions to @language"
-msgstr ""
+msgstr "Vorschläge in @language importieren"
 
 #: import.inc:24
 msgid "Translate projects"
@@ -217,7 +217,7 @@ msgstr "Übersetzungsdatei"
 
 #: import.inc:44
 msgid "A Gettext Portable Object (.po) file to upload."
-msgstr ""
+msgstr "Eine Gettext-Portable-Object-Datei (.po) zum hochladen."
 
 #: import.inc:47
 msgid "Store as suggestions"
@@ -278,8 +278,9 @@ msgid "The translation file %filename ended unexpectedly at line %line."
 msgstr "Die Übersetzungsdatei %filename endete unerwartet in Zeile %line."
 
 #: pages.inc:18;209
+#, fuzzy
 msgid "No languages to list."
-msgstr ""
+msgstr "Keine Sprachen anzuzeigen."
 
 #: pages.inc:22
 msgid "No strings to translate."
@@ -303,8 +304,9 @@ msgid "No language selected."
 msgstr "Keine Sprache ausgewählt."
 
 #: pages.inc:112
+#, fuzzy
 msgid "@language overview"
-msgstr ""
+msgstr "Übersicht für @language"
 
 #: pages.inc:127
 msgid "There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module."
@@ -317,11 +319,11 @@ msgstr ""
 #: pages.inc:139;244
 #: welcome.inc:67
 msgid "Contribute"
-msgstr ""
+msgstr "Beitragen"
 
 #: pages.inc:140
 msgid "Review, translate, import"
-msgstr ""
+msgstr "Durchsicht, Übersetzung, Import"
 
 #: pages.inc:141
 msgid "Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for import to Drupal or offline work."
@@ -341,19 +343,20 @@ msgstr ""
 
 #: pages.inc:164
 msgid "People with most approved translations"
-msgstr ""
+msgstr "Personen mit den meisten akzeptierten Übersetzungen"
 
 #: pages.inc:175
 msgid "Nobody contributed to this translation yet."
-msgstr ""
+msgstr "Zu dieser Übersetzung wurde noch nichts beigetragen."
 
 #: pages.inc:203;286
 msgid "No project selected."
 msgstr "Kein Projekt ausgewählt."
 
 #: pages.inc:206
+#, fuzzy
 msgid "@project project translations"
-msgstr "@project Projektübersetzungen"
+msgstr "Projektübersetzungen für @project"
 
 #: pages.inc:216
 msgid "Translations overview"
@@ -361,7 +364,7 @@ msgstr "Übersetzungsübersicht"
 
 #: pages.inc:217
 msgid "Overall status of translations"
-msgstr ""
+msgstr "Gesamtstatus von Übersetzungen"
 
 #: pages.inc:245
 msgid "Export, translate, review"
@@ -374,15 +377,15 @@ msgstr ""
 #: pages.inc:263
 #, fuzzy
 msgid "@project summary"
-msgstr "@project Übersicht"
+msgstr "Übersicht für @project"
 
 #: pages.inc:264
 msgid "Some details we know about this project"
-msgstr ""
+msgstr "Einige über das Projekt bekannte Details"
 
 #: pages.inc:266
 msgid "Project home"
-msgstr ""
+msgstr "Hauptseite des Projekts"
 
 #: pages.inc:266
 msgid "Not available"
@@ -390,15 +393,16 @@ msgstr "Nicht verfügbar"
 
 #: pages.inc:270
 msgid "No marker error found"
-msgstr ""
+msgstr "Keine Markierungsfehler gefunden"
 
 #: pages.inc:289
+#, fuzzy
 msgid "@project project errors"
-msgstr ""
+msgstr "Projektfehler in @project"
 
 #: pages.inc:292
 msgid "No marker errors found in any of the parsed releases of this project."
-msgstr ""
+msgstr "Es wurden keine Markierungsfehler in irgendeiner der analysierten Veröffentlichungen von diesem Projekt gefunden."
 
 #: pages.inc:301
 msgid "No errors found in this release."
@@ -436,8 +440,8 @@ msgstr "Vorschläge vorhanden."
 #: welcome.inc:47
 msgid "1 contributor"
 msgid_plural "@count contributors"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Beitragender"
+msgstr[1] "@count Beitragende"
 
 #: pages.inc:154
 #: welcome.inc:50
@@ -450,15 +454,15 @@ msgstr[1] ""
 #: welcome.inc:51
 msgid "1 translation recorded"
 msgid_plural "@count translations recorded"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Übersetzung gespeichert"
+msgstr[1] "@count Übersetzungen gespeichert"
 
 #: pages.inc:156
 #: welcome.inc:52
 msgid "1 suggestion awaiting approval"
 msgid_plural "@count suggestions awaiting approval"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Vorschlag wartet auf die Freigabe"
+msgstr[1] "@count Vorschläge warten auf die Freigabe"
 
 #: pages.inc:169
 msgid "!name - 1 translation"
@@ -469,34 +473,35 @@ msgstr[1] ""
 #: pages.inc:267
 msgid "1 release in total"
 msgid_plural "@count releases in total"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Veröffentlichung insgesamt"
+msgstr[1] "@count Veröffentlichungen insgesamt"
 
 #: pages.inc:268
 msgid "1 release parsed"
 msgid_plural "@count releases parsed"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Veröffentlichung analysiert"
+msgstr[1] "@count Veröffentlichungen analysiert"
 
 #: pages.inc:269
 msgid "1 source string in total"
 msgid_plural "@count source strings in total"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Quellzeichenkette insgesamt"
+msgstr[1] "@count Quellzeichenketten insgesamt"
 
 #: pages.inc:270
 msgid "1 marker error found"
 msgid_plural "@count marker errors found"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 Markierungsfehler gefunden"
+msgstr[1] "@count Markierungsfehler gefunden"
 
 #: translate.inc:61
 msgid "No strings found with this filter. Try adjusting the filter options."
-msgstr ""
+msgstr "Mit diesem Filter wurden keine Zeichenketten gefunden. Versuchen Sie die Filteroptionen anzupassen."
 
 #: translate.inc:65
+#, fuzzy
 msgid "@language translations"
-msgstr ""
+msgstr "Übersetzungen für @language"
 
 #: translate.inc:71
 msgid "Translate to @language"
@@ -516,7 +521,7 @@ msgstr "Übersetzt"
 
 #: translate.inc:92
 msgid "Show only strings where"
-msgstr ""
+msgstr "Nur Zeichenketten anzeigen in denen"
 
 #: translate.inc:104
 msgid "Link to this page"
@@ -540,7 +545,7 @@ msgstr "Zurücksetzen"
 
 #: translate.inc:197
 msgid "No project found with name %name. Reverted to filter to all projects."
-msgstr ""
+msgstr "Es wurden keine Projekte mit dem Namen %name gefunden. Der Filter wurde alle Projekte zurückgesetzt."
 
 #: translate.inc:310
 msgid "Has suggestions."
@@ -552,19 +557,19 @@ msgstr "Keine Vorschläge vorhanden."
 
 #: translate.inc:372
 msgid "New suggestion for variant #%d"
-msgstr ""
+msgstr "Neuer Vorschlag für Variante #%d"
 
 #: translate.inc:372
 msgid "New translation for variant #%d"
-msgstr ""
+msgstr "Neue Übersetzung für Variante #%d"
 
 #: translate.inc:376
 msgid "Suggestion for variant #%d"
-msgstr ""
+msgstr "Vorschlag für Variante #%d"
 
 #: translate.inc:376
 msgid "Translation for variant #%d"
-msgstr ""
+msgstr "Übersetzung für Variante #%d"
 
 #: translate.inc:404
 msgid "New suggestion"
@@ -580,7 +585,7 @@ msgstr "Vorschlag"
 
 #: translate.inc:420
 msgid "Flag as suggestion for later discussion"
-msgstr ""
+msgstr "Als Vorschlag zur späteren Diskussion speichern"
 
 #: translate.inc:439
 msgid "Show detailed information."
@@ -620,7 +625,7 @@ msgstr "Über diese Oberfläche"
 
 #: welcome.inc:25
 msgid "Community for Drupal translations"
-msgstr ""
+msgstr "Gemeinschaft für Drupal-Übersetzungen"
 
 #: welcome.inc:26
 msgid "This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about Drupal projects, such as modules, themes and install profiles; with their respective releases. This means that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release."
@@ -628,11 +633,11 @@ msgstr ""
 
 #: welcome.inc:44
 msgid "Quick stats"
-msgstr ""
+msgstr "Kurzstatistiken"
 
 #: welcome.inc:45
 msgid "Some facts about this community"
-msgstr ""
+msgstr "Einige Fakten über diese Gemeinschaft"
 
 #: welcome.inc:61
 msgid "You can view the work being done here, but to participate, first you need to <a href=\"@register\">create an account and/or log in</a>"
@@ -648,7 +653,7 @@ msgstr "Anleitung für Übersetzer"
 
 #: welcome.inc:74
 msgid "Documentation for translators on drupal.org."
-msgstr ""
+msgstr "Dokumentation für Übersetzer auf drupal.org."
 
 #: welcome.inc:75
 msgid "Translations group"
@@ -656,7 +661,7 @@ msgstr "Übersetzungsgruppe"
 
 #: welcome.inc:75
 msgid "Translations group at groups.drupal.org."
-msgstr ""
+msgstr "Übersetzungsgruppe auf groups.drupal.org."
 
 #: welcome.inc:76
 msgid "Mailing list"
@@ -664,39 +669,39 @@ msgstr "Mailingliste"
 
 #: welcome.inc:76
 msgid "Translators mailing list hosted at drupal.org."
-msgstr ""
+msgstr "Die auf drupal.org verwaltete Mailingliste der Übersetzer."
 
 #: welcome.inc:84
 msgid "Handy links"
-msgstr ""
+msgstr "Hilfreiche Verweise"
 
 #: welcome.inc:85
 msgid "Documentation, discussion spaces"
-msgstr ""
+msgstr "Dokumentation und Diskussionsräume"
 
 #: welcome.inc:99
 msgid "No languages defined or no projects scanned yet."
-msgstr ""
+msgstr "Keine Sprachen definiert oder noch keine Projekte durchsucht."
 
 #: welcome.inc:106
 msgid "Pick a language"
-msgstr ""
+msgstr "Eine Sprache auswählen"
 
 #: welcome.inc:108
 msgid "Alternatively you can <a href=\"@explore\">explore languages</a>."
-msgstr ""
+msgstr "Alternativ können die <a href=\"@explore\">Sprachen untersucht</a> werden."
 
 #: welcome.inc:111
 msgid "And/or pick a project"
-msgstr ""
+msgstr "Und/oder ein Projekt auswählen"
 
 #: welcome.inc:112
 msgid "Alternatively you can <a href=\"@explore\">explore projects</a>."
-msgstr ""
+msgstr "Alternativ können die <a href=\"@explore\">Projekte untersucht</a> werden."
 
 #: welcome.inc:135
 msgid "Choose"
-msgstr ""
+msgstr "Auswählen"
 
 #: welcome.inc:143
 msgid "Select a language and/or a project."
@@ -711,8 +716,8 @@ msgstr[1] ""
 #: welcome.inc:48
 msgid "1 project managed"
 msgid_plural "@count projects managed"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "1 verwaltetes Projekt"
+msgstr[1] "@count verwaltete Projekte"
 
 #: welcome.inc:49
 msgid "1 file scanned"
@@ -727,7 +732,7 @@ msgstr "Lokalisierungsserver"
 
 #: l10n_community.module:64
 msgid "Configuration options for the localization server."
-msgstr ""
+msgstr "Konfigurationsoptionen für den Lokalisierungsserver."
 
 #: l10n_community.module:71
 msgid "Translation interface"
@@ -743,11 +748,11 @@ msgstr "Übersicht"
 
 #: l10n_community.module:98
 msgid "Overview of languages and their translation status."
-msgstr ""
+msgstr "Übersicht von Sprachen und ihren Übersetzungsstatus."
 
 #: l10n_community.module:108
 msgid "Overview of projects and their translation status."
-msgstr ""
+msgstr "Übersicht von Projekten und ihren Übersetzungsstatus."
 
 #: l10n_community.module:118
 #, fuzzy
@@ -756,7 +761,7 @@ msgstr "Projekt automatisch vervollständigen"
 
 #: l10n_community.module:130
 msgid "String details"
-msgstr ""
+msgstr "Zeichenkettendetails"
 
 #: l10n_community.module:138
 msgid "Approve suggestion"
@@ -780,7 +785,7 @@ msgstr "Vorlage exportieren"
 
 #: l10n_community.module:246
 msgid "Marker errors"
-msgstr ""
+msgstr "Markierungsfehler"
 
 #: l10n_community.module:274;303
 msgid "Translation help"
@@ -788,7 +793,7 @@ msgstr "Übersetzungshilfe"
 
 #: l10n_community.module:280
 msgid "Bookmarked filters"
-msgstr ""
+msgstr "Vorgemerkte Filter"
 
 #: l10n_community.module:309
 msgid "Welcome to the translation server. This block will show you tips and advice throughout the application."
@@ -804,7 +809,7 @@ msgstr ""
 
 #: l10n_community.module:319
 msgid "Choose a project to explore."
-msgstr ""
+msgstr "Ein Projekt zum Untersuchen auswählen."
 
 #: l10n_community.module:339
 msgid "You can suggest translations or import complete Gettext translation files to suggest multiple translations at once. People with permission to approve suggestions may either accept or decline your suggestions. To work offline, export a translation template, which contains the current state of the translation."
@@ -827,8 +832,9 @@ msgid "!newline_image represents a line break. Remember to include a line break 
 msgstr ""
 
 #: l10n_community.module:362
+#, fuzzy
 msgid "Newline marker"
-msgstr ""
+msgstr "Zeilenumbruchmarkierung"
 
 #: l10n_community.module:363
 msgid "Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the translated text as-is."
@@ -836,7 +842,7 @@ msgstr ""
 
 #: l10n_community.module:366
 msgid "The plural formula in use with this language is %formula."
-msgstr ""
+msgstr "Die in dieser Sprache verwendete Pluralform ist %formula."
 
 #: l10n_community.module:381
 msgid "This page shows a list of all languages and their overall translation status (accumulated for all releases). Exporting translation works for all languages. Importing your translations is only possible to languages where you have sufficient privileges to do so."
@@ -844,7 +850,7 @@ msgstr ""
 
 #: l10n_community.module:400
 msgid "Localization contributions"
-msgstr ""
+msgstr "Lokalisierungsbeiträge"
 
 #: l10n_community.module:423
 msgid "Number of projects to display per page"
@@ -890,7 +896,7 @@ msgstr[1] ""
 
 #: l10n_community.module:263
 msgid "access localization community"
-msgstr ""
+msgstr "Zugriff auf die Lokalisierungsgemeinschaft"
 
 #: l10n_community.module:263
 msgid "submit suggestions"
@@ -902,15 +908,15 @@ msgstr "Übersetzungen speichern und Vorschläge bestätigen"
 
 #: l10n_community.module:263
 msgid "administer localization community"
-msgstr ""
+msgstr "Verwalten der Lokalisierungsgemeinschaft"
 
 #: l10n_community.info:0
 msgid "Localization community"
-msgstr ""
+msgstr "Lokalisierungsgemeinschaft"
 
 #: l10n_community.info:0
 msgid "A community interface for string translation"
-msgstr ""
+msgstr "Eine Gemeinschaftsoberfläche für die Übersetzung von Zeichenketten"
 
 #: (duplicate) import.inc:110
 #, fuzzy
