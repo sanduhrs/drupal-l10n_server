@@ -151,16 +151,18 @@ function l10n_community_menu($may_cache) {
       'type' => MENU_CALLBACK,
     );
     
-    if ((arg(1) == 'remote') && ($langcode = arg(2)) && ($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
+    if ((arg(1) == 'remote') && ($langcode = arg(2))) {
       // Makes it possible to submit translations remotely, especially from
       // an l10n_client install. The user is required to have permissions
-      // to work with the given language, so practically a login is required.
+      // to work with the given language, so practically a login is required,
+      // but the permissions are not checked here, so we can provide meaningful
+      // information to the user if something fails.
       $items[] = array(
         'title' => t('Remote translation submission'),
         'path' => 'translate/remote/'. $langcode,
         'callback' => 'l10n_community_page_wrapper',
         'callback arguments' => array('ajax', 'l10n_community_string_remote', $langcode),
-        'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
+        'access' => TRUE,
         'type' => MENU_CALLBACK,
       );
     }

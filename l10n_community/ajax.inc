@@ -137,20 +137,44 @@ function l10n_community_string_decline($tid = 0) {
 
 /**
  * Remote submission, no form exposed, so we get the data by POST.
+ *
+ * We try our best to inform the remote submitter of the error condition, if
+ * it was not possible to save the translation for some reason.
  */
 function l10n_community_string_remote($langcode) {
   global $user;
   
-  if (!empty($_POST['source']) && !empty($_POST['target'])) {
-    if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $_POST['source']))) {
-      // Always save this as suggestion.
-      l10n_community_target_save(
-        $sid, $_POST['target'], $langcode, $user->uid, TRUE,
-        $inserted, $updated, $unchanged, $suggested
-      );
+  if (user_access('access localization community')) {
+    if (($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
+      if (l10n_community_get_permission($langcode) != L10N_PERM_NONE) {
+        if (!empty($_POST['source']) && !empty($_POST['target'])) {
+          if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $_POST['source']))) {
+            // Always save this as suggestion.
+            l10n_community_target_save(
+              $sid, $_POST['target'], $langcode, $user->uid, TRUE,
+              $inserted, $updated, $unchanged, $suggested
+            );
+          }
+          else {
+            echo '<script>alert("'. t("This source string does not exist on the localization server. Translation not shared.") .'");</script>';
+          }
+        }
+        else {
+          echo '<script>alert("'. t("No POST data with source and translation string. Translation not shared.") .'");</script>';
+        }
+      }
+      else {
+        echo '<script>alert("'. t("You don't have permission to submit suggestions for this language on the localization server. Translation not shared.") .'");</script>';
+      }
+    }
+    else {
+      echo '<script>alert("'. t("No such language set up on the localization server. Translation not shared.") .'");</script>';
     }
   }
-  
+  else {
+    echo '<script>alert("'. t("You don't have permissions to access the localization server. Please log in on the server. Translation not shared.") .'");</script>';
+  }
+
   // Get the iframe we were invoked from not to reload with page
   // reloads (this is a hack dependent on how l10n_client works).
   echo '<script>document.location="about:";</script>';
