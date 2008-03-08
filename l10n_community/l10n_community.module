@@ -151,6 +151,20 @@ function l10n_community_menu($may_cache) {
       'type' => MENU_CALLBACK,
     );
     
+    if ((arg(1) == 'remote') && ($langcode = arg(2)) && ($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
+      // Makes it possible to submit translations remotely, especially from
+      // an l10n_client install. The user is required to have permissions
+      // to work with the given language, so practically a login is required.
+      $items[] = array(
+        'title' => t('Remote translation submission'),
+        'path' => 'translate/remote/'. $langcode,
+        'callback' => 'l10n_community_page_wrapper',
+        'callback arguments' => array('ajax', 'l10n_community_string_remote', $langcode),
+        'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
+        'type' => MENU_CALLBACK,
+      );
+    }
+    
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // For the translation overview pages. This is used to present admin page like panels.
     drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
