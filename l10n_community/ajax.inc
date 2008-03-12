@@ -144,6 +144,9 @@ function l10n_community_string_decline($tid = 0) {
 function l10n_community_string_remote($langcode) {
   global $user;
   
+  // Output information about version of this interface.
+  echo '<!-- v1.0 Localization community remote translation interface -->';
+  
   if (user_access('access localization community')) {
     if (($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
       if (l10n_community_get_permission($langcode) != L10N_PERM_NONE) {
@@ -154,6 +157,8 @@ function l10n_community_string_remote($langcode) {
               $sid, $_POST['target'], $langcode, $user->uid, TRUE,
               $inserted, $updated, $unchanged, $suggested
             );
+            // @todo: output JS to mark string as shared in l10n_client
+            // (eg. mark it blue instead of green for that request)
           }
           else {
             echo '<script>alert("'. t("This source string does not exist on the localization server. Translation not shared.") .'");</script>';

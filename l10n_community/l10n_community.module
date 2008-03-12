@@ -125,7 +125,8 @@ function l10n_community_menu($may_cache) {
   // Non-cachable menu items. These are numerous to generate for all languages and all projects,
   // so we are not caching them, and only generate on demand, when they are in need.    
   elseif (arg(0) == 'translate') {
-    // AJAX callbacks for easy translation management.
+    // AJAX callbacks for easy translation management. These are expected to be
+    // used only onsite (not as remote API endpoints), so they have no versioning.
     $items[] = array(
       'title' => t('String details'),
       'path' => 'translate/details',
@@ -151,15 +152,16 @@ function l10n_community_menu($may_cache) {
       'type' => MENU_CALLBACK,
     );
     
-    if ((arg(1) == 'remote') && ($langcode = arg(2))) {
+    if ((arg(1) == 'remote') && (arg(2) == '1.0') && ($langcode = arg(3))) {
       // Makes it possible to submit translations remotely, especially from
       // an l10n_client install. The user is required to have permissions
       // to work with the given language, so practically a login is required,
       // but the permissions are not checked here, so we can provide meaningful
-      // information to the user if something fails.
+      // information to the user if something fails. The callback is versioned
+      // so that changes to the API can be tracked.
       $items[] = array(
         'title' => t('Remote translation submission'),
-        'path' => 'translate/remote/'. $langcode,
+        'path' => 'translate/remote/1.0/'. $langcode,
         'callback' => 'l10n_community_page_wrapper',
         'callback arguments' => array('ajax', 'l10n_community_string_remote', $langcode),
         'access' => TRUE,
