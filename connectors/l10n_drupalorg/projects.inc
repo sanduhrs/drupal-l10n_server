@@ -101,10 +101,6 @@ function l10n_drupalorg_sync_releases($project) {
 /**
  * Downloads files for a particular release and parses contents.
  *
- * @todo
- *   Consider using drupal_http_request() or some more Drupal friendly
- *   way instead of lame copy().
- *
  * @param $release
  *   Release object.
  */
@@ -122,23 +118,23 @@ function l10n_drupalorg_sync_files($release) {
   }
   
   // Download the tar.gz file from drupal.org and save it in the local filesystem.
-  elseif (!copy($release->download_link, $file)) {
+  elseif (!(($contents = drupal_http_request($release->download_link)) && file_put_contents($file, $contents->data))) {
     $error = t('Unable to download and save %download_link file.', array('%download_link' => $release->download_link));
   }
-  
+
   // Extract and parse the local file and remove the tarball.
   else {
     $return = l10n_community_parse_package($file, $release->rid);
     unlink($file);
   }
-  
+
   if ($error) {
     // WARNING: We should not do this reuse in the 6.x port, or otherwise
     // the extractor cannot pick the watchdog() strings up.
     watchdog('l10n_drupalorg', $error, WATCHDOG_ERROR);
     $return['error'] = $error;
   }
-  
+
   return $return;
 }
 
