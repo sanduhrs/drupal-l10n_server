@@ -182,5 +182,5 @@ function l10n_community_string_remote($langcode) {
 
   // Get the iframe we were invoked from not to reload with page
   // reloads (this is a hack dependent on how l10n_client works).
-  echo '<script>document.location="about:";</script>';
+  echo '<script>document.location="about:blank";</script>';
 }
