@@ -24,6 +24,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
   }
   $error = $message = '';
 
+  // @todo: make this a hook_requirement implementation in Drupal 6.
   if (!@include_once 'Archive/Tar.php') {
     // Message to the user.
     $message = t('The Archive/Tar.php PEAR extension could not be found on your server. This file is required for extracting translatable text from packages.');
