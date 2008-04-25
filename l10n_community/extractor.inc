@@ -24,8 +24,16 @@ function l10n_community_parse_package($package_file, $release_rid) {
   }
   $error = $message = '';
 
-  // We depend on the PEAR Tar class and potx module.
-  include_once 'Archive/Tar.php';
+  if (!@include_once 'Archive/Tar.php') {
+    // Message to the user.
+    $message = t('The Archive/Tar.php PEAR extension could not be found on your server. This file is required for extracting translatable text from packages.');
+    drupal_set_message($message);
+    // Message to watchdog for possible automated packaging. 
+    watchdog('l10n_community', $message);
+    return NULL;
+  }
+
+  // Potx module is already a dependency.
   include_once drupal_get_path('module', 'potx') .'/potx.inc';
 
   // Set up status messages if not in automated mode.
