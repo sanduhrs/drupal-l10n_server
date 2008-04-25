@@ -64,7 +64,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
     
     $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'decline', 'onclick="return l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .');" title="'. t('Decline suggestion.') .'"') : '';
     
-    $copy_button = theme('l10n_community_button', 'edit', 'copy', 'onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .',\''. check_plain(str_replace(array("'", "\0"), array("\\'", "\O"), $suggestion->translation)) .'\');" title="'. t('Copy suggestion text to the edit field.') .'"');
+    $copy_button = theme('l10n_community_button', 'edit', 'copy', 'onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .','. check_plain(str_replace("\\0", "\O", drupal_to_js($suggestion->translation))) .');" title="'. t('Copy suggestion text to the edit field.') .'"');
     
     // Plural versions are shown in a short form.
     $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation);
