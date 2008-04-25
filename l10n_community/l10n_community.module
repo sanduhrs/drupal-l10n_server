@@ -671,8 +671,6 @@ function l10n_community_get_errors($uri) {
  *   Counter to increment if a suggestion was saved.
  *
  * @todo
- *   Take care of trailing and leading whitespace.
- * @todo
  *   Note that we are not tracking if the user entered something which
  *   was an existing active suggestion, in which case a new suggestion
  *   is added. This is an edge case, but possibly not desired.
