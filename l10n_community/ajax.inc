@@ -54,7 +54,8 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
   
   // Existing, "unresolved" suggestions.
   $suggestions = array();
-  $result = db_query("SELECT * FROM {l10n_community_translation} WHERE language = '%s' AND sid = %d AND is_active = 1 AND is_suggestion = 1", $langcode, $sid);
+  $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, u.name FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $langcode, $sid);
+
   $perm = l10n_community_get_permission($langcode);
   while ($suggestion = db_fetch_object($result)) {
     
@@ -68,7 +69,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
     // Plural versions are shown in a short form.
     $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation);
     
-    $suggestions[] = $decline_button . $approve_button . $copy_button . $translation; 
+    $suggestions[] = $decline_button . $approve_button . $copy_button . $translation . '<div class="l10n-suggestion-by">' . t('by %user at %date', array('%user' => (empty($suggestion->name) ? variable_get('anonymous', t('Anonymous')) : $suggestion->name), '%date' => format_date($suggestion->time_entered))) . '</div>';  
   }
   if (count($suggestions)) {
     // List of suggestions.
