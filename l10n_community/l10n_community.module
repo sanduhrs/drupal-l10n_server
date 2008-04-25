@@ -678,11 +678,13 @@ function l10n_community_get_errors($uri) {
  *   is added. This is an edge case, but possibly not desired.
  */
 function l10n_community_target_save($sid, $translation, $langcode, $uid, $suggestion, &$inserted, &$updated, &$unchanged, &$suggested) {
-  
-  // Look for an existing active translation.
-  $existing_string = db_fetch_object(db_query("SELECT sid, tid, translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
-  
-  if (isset($existing_string->sid)) {
+
+  // Look for an existing active translation and grab source string.
+  $existing_string = db_fetch_object(db_query("SELECT s.value, t.sid, t.tid, t.translation FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE s.sid = %d AND ((t.sid IS NULL) OR (t.language = '%s' AND t.is_suggestion = 0 AND t.is_active = 1))", $sid, $langcode));
+  $translation = l10n_community_trim($translation, $existing_string->value);
+
+  if (!empty($existing_string->sid)) {
+
     // We have an active translation.
     if ($existing_string->translation != $translation) {
       // And what we should save now is different.
@@ -718,6 +720,23 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
       $inserted++;
     }
   }
+}
+
+/**
+ * Make spacing and newlines the same in translation as in the source.
+ * 
+ * @param $translation
+ *   Translation string.
+ * @param $source
+ *   Source string.
+ * @return
+ *   Translation string with the right beginning and ending chars.
+ */
+function l10n_community_trim($translation, $source) {
+  $matches = array();
+  $chars = '\n\s\r\t';
+  preg_match("/^([$chars]*).*[^$chars]([$chars]*)\$/", $source, $matches);
+  return $matches[1] . trim($translation) . $matches[2];
 }
 
 /**

@@ -170,6 +170,27 @@ function l10n_community_update_5002() {
 }
 
 /**
+ * Clean up starting and trailing spaces and new lines in translations.
+ */
+function l10n_community_update_5003() {
+  $ret = array();
+  // We just search for strings that begin or end with these characters.
+  foreach (array('\n', ' ') as $char) {
+    $result = db_query("SELECT s.sid, s.value, t.tid, t.translation FROM {l10n_community_string} s INNER JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE s.value LIKE '%s%%' OR  s.value LIKE '%%%s' OR t.translation LIKE '%s%%' OR t.translation LIKE '%%%s'", $char, $char, $char, $char);
+    while ($string = db_fetch_object($result)) {
+      if ($string->translation) {
+        $trimmed = l10n_community_trim($string->translation, $string->value);
+        if ($trimmed != $string->translation) {
+          db_query("UPDATE {l10n_community_translation} SET translation = '%s' WHERE tid = %d", $trimmed, $string->tid);
+          drupal_set_message("Fixed string $string->sid: ". check_plain(substr($string->translation, 0, 50)));
+        }
+      }
+    }
+  }
+  return $ret;
+}
+
+/**
  * Implementation of hook_uninstall().
  */
 function l10n_community_uninstall() {
