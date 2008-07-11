@@ -2,89 +2,133 @@
 
 l10nCommunity = {};
 
+l10nCommunity.switchPanes = function(elem, id) {
+  if ($(elem).parents('.translation').find('.'+id).css('display') == 'none') {
+    // execute animation once per translation
+    var once = 0;
+    $(elem).parents('.translation').find('.pane:not(.'+id+')').each(function() {
+      if ($(this).css('display') == 'block') {
+        $(this).slideUp('fast', function() {
+          if (once == 0) {
+            once = 1;
+            $(this).parents('.translation').find('.'+id).slideDown('fast');
+          }          
+        });
+      }
+    });
+  }
+  $(elem).parents('.toolbox').find('span.l10n-button').removeClass('active');
+  $(elem).addClass('active');  
+}
+
 /**
  * Initialize action images: toolboxes and string copy buttons.
  */
 l10nCommunity.init = function() {
-  // Hide textareas for strings where we already have translations.
-  $('#l10n-community-translate-form .hidden').css('display', 'none'); 
+  // Only attempt to register events if form exists
+  if ($('#l10n-community-translate-form').size() > 0) {  
+    // When the copy button is clicked, copy the original string value to the
+    // translation field for the given strings. Relations are maintained with
+    // the string ideitifiers.
+    $('span.l10n-community-copy').click(function() {
+      l10nCommunity.copyString(this);
+    ;})
 
-  // Add information pane placeholder at the end.
-  $('#l10n-community-translate-form fieldset').append('<div class="info-pane"></div>');
+    // Screw AJAX submit -- we'll just hard submit the form for now
+    $('span.l10n-save').click(function() {
+      $('#l10n-community-translate-form').submit();
+    });
 
-  var imagePath = Drupal.settings.l10n_image_path;
+    // Clear sibling text fields
+    $('span.l10n-clear').click(function() {
+      $(this).parents('.translation').find('input.form-text, textarea').val('');
+    });
+
   
-  // When the copy button is clicked, copy the original string value to the
-  // translation field for the given strings. Relations are maintained with
-  // the string ideitifiers.
-  //$('span.l10n-community-copy').append('<img src="' + imagePath + 'edit.png" class="action" alt="" />');
-  $('span.l10n-community-copy').click(function() {
-    var id = $(this).attr('id').replace('l10n-community-copy-', '');
-    $('#l10n-community-translation-' + id.replace('-t', '')).val(Drupal.settings.l10n_strings[id]);
-    $('#l10n-community-wrapper-' + parseInt(id.replace('-t', ''))).css('display', 'block');
-  ;})
-
-  $('#l10n-community-translate-form .toolbox').each(function(){
-    
-    // Add a lookup button to invoke server side callback.
-    $(this).append(l10nCommunity.formatButton('&#x2600;', Drupal.settings.l10n_lookup_help, 'lookup', function() {
-      var sid = $(this).parent().parent().attr('id').replace('l10n-community-editor-', '');
-      // Ajax GET request to retrieve more details about this string.
-      $.ajax({
-        type: "GET",
-        url: Drupal.settings.l10n_details_callback + sid,
-        success: function (data) {
-          // First empty, then load the data we get into the info pane.
-          $('#l10n-community-editor-' + sid + ' .info-pane').css('display', 'block').empty().append(data);
-          $('#l10n-community-editor-' + sid + ' .lookup').addClass('disabled');
-          // Hide the has-suggestion marker if we don't have suggestions anymore.
-          // Could happen if we declined the last suggestion and reloading.
-          $('#l10n-community-editor-' + sid + ' .l10n-no-suggestions').parent().parent().find('.l10n-has-suggestion').hide();
-        },
-        error: function (xmlhttp) {
-          // Being an internal/system error, this is not translatable.
-          alert('An HTTP error '+ xmlhttp.status +' occured.\n'+ uri);
-        }
+    $('#l10n-community-translate-form .l10n-translate').click(function() {
+      // switch display panes
+      l10nCommunity.switchPanes(this, 'translate');
+    });
+  
+    $('#l10n-community-translate-form .l10n-lookup').click(function() {
+      // switch display panes
+      var elem = this;
+      var sid = $(this).parents('.translation').attr('id').substring(6);
+      $.get(Drupal.settings.l10n_details_callback + sid, null, function(data) {
+        $('#tpane-' + sid + ' .lookup').empty().append(data);
+        l10nCommunity.switchPanes(elem, 'lookup');
       });
-    ;}));
-    
-    /*/ Add expand button to the toolbox.
-    $(this).append(l10nCommunity.formatButton(Drupal.settings.l10n_expand_help, 'expand', function() {
-      var id = $(this).parent().parent().attr('id').replace('l10n-community-editor-', '');
-      // Reveal textareas where the translation is done (if those were hidden).
-      $('#l10n-community-wrapper-' + id).css('display', 'block');
-      $('#l10n-community-editor-' + id + ' .expand').addClass('disabled');
-    }));*/
-    
-  });
+    });
+
+    $('#l10n-community-translate-form .l10n-suggestions').click(function() {
+      // switch display panes
+      var elem = this;
+      var sid = $(this).parents('.translation').attr('id').substring(6);
+      $.get(Drupal.settings.l10n_suggestions_callback + sid, null, function(data) {
+        $('#tpane-' + sid + ' .suggestions').empty().append(data);
+        l10nCommunity.switchPanes(elem, 'suggestions');
+        var suggestions = $('#tpane-' + sid + ' .suggestions');
+        $('span.l10n-community-copy', suggestions).click(function() {
+          l10nCommunity.copyString(this);
+        });
+        // Hide the has-suggestion marker if we don't have suggestions anymore.
+        // Could happen if we declined the last suggestion and reloading.
+        $('#l10n-community-editor-' + sid + ' .l10n-no-suggestions').parent().parent().find('.l10n-has-suggestion').hide();
+      });
+    });
+  }
 }
 
-/**
- * Add button formatted with the given data.
- */
-l10nCommunity.formatButton = function(text, title, className, clickFunction) {
-  return $(document.createElement('SPAN')).attr('class', className + ' l10n-button').attr('title', title).
-         append($(document.createElement('B')).
-         append($(document.createElement('B')).
-         append(text))).click(clickFunction);
+l10nCommunity.copyString = function(elem) {
+  var item = $(elem).parents('li').find('div.string > div');
+  var original = $('.original', item).html();
+  var sid = item.attr('class').substring(7);
+
+  if (original.indexOf(";  ") > 0) {
+    // TODO: find a better delimiter to use in the DOM tree for separating
+    // plural variations.
+    // If we have the delimiter, suggestion has plurals, so we need to
+    // copy over the distinct strings to the distinct textareas.
+    var strings = original.split(";  ");
+    for (string in strings) {
+      $('#l10n-community-translation-'+ sid +'-'+ string).val(strings[string]);
+    }
+  }
+  else {
+    // Otherwise standard string.
+    $('#l10n-community-translation-' + sid).val(original);
+  }
+
+  // If sid is for a plural variant, we need to trim off the variant ID
+  if (sid.indexOf('-')) {
+    sid = sid.split('-');
+    sid = sid[0];
+  }
+
+  $('#l10n-community-wrapper-' + sid).show();
+  
+  /* Switch to translate pane */
+  var parent = $(elem).parents('.translation');
+  var tool = $('.l10n-translate', parent);
+  l10nCommunity.switchPanes(tool, 'translate');
 }
 
 /**
  * Suggestion approval callback.
  */
-l10nCommunity.approveSuggestion = function(tid, sid) {
+l10nCommunity.approveSuggestion = function(tid, sid, elem) {
   // Invoke server side callback to save the approval.
   $.ajax({
     type: "GET",
     url: Drupal.settings.l10n_approve_callback + tid,
     success: function (data) {
       if (data == 'done') {
-        // Hide and empty textarea(s), so it will not be used when saved.
-        $('#l10n-community-wrapper-'+ sid).css('display', 'none');
-        $('#l10n-community-translation-'+ sid).val('');
-        // Hide info pane and inform user that the suggestion was saved.
-        $('#l10n-community-editor-'+ sid +' .info-pane').css('display', 'none').empty();
-        $('#l10n-community-editor-'+ sid +' .messagebox').append(Drupal.settings.l10n_approve_confirm);
+        // Empty translate pane and inform user that the suggestion was saved.
+        $('#tpane-'+ sid +' .translate').empty().append(Drupal.settings.l10n_approve_confirm);
+        // Switch back to translate pane and hide suggestion icon
+        var parent = $(elem).parents('.translation');
+        l10nCommunity.switchPanes($('.l10n-translate', parent), 'translate');
+        $('.l10n-suggestions', parent).hide();
       }
       else {
         alert(Drupal.settings.l10n_approve_error);
@@ -110,7 +154,7 @@ l10nCommunity.declineSuggestion = function(tid, sid) {
     success: function (data) {
       if (data == 'done') {
         // Reload info pane.
-        $('#l10n-community-editor-'+ sid +' .lookup').click();
+        $('#tpane-' + sid + ' .l10n-suggestions').click();
       }
       else {
         alert(Drupal.settings.l10n_decline_error);

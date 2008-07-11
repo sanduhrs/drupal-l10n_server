@@ -22,7 +22,6 @@
  *   Source string id.
  */
 function l10n_community_string_details($langcode = NULL, $sid = 0) {
-
   // List of project releases, where this string is used.
   $result = db_query('SELECT p.pid, p.title project_title, r.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_community_project} p INNER JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE s.sid = %d GROUP BY r.rid ORDER by p.pid, r.rid', $sid);
   
@@ -42,44 +41,47 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
     $previous_project = $instance->project_title; 
   }
   $output[] = join(', ', $list);
-  $usage_info = '<div style="float:right"><strong>'. t('Used in:') .'</strong>'. theme('item_list', $output) .'</div>';
+  $usage_info = '<strong>'. t('Used in:') .'</strong>'. theme('item_list', $output);
   
   // Information about translator and translation timestamp.
   $translation_info = '';
   $translation = db_fetch_object(db_query("SELECT translation, uid_entered, time_entered FROM {l10n_community_translation} WHERE language = '%s' AND sid = %d AND is_active = 1 AND is_suggestion = 0", $langcode, $sid));
   if (!empty($translation->translation)) {
     $account = user_load(array('uid' => $translation->uid_entered));
-    $translation_info = '<div>'. t('<strong>Translated by:</strong><br /> %username at %date', array('%username' => $account->name, '%date' => format_date($translation->time_entered))) .'</div>';
+    $translation_info = t('<strong>Translated by:</strong><br /> %username at %date', array('%username' => $account->name, '%date' => format_date($translation->time_entered)));
   }
-  
+    
+  print $usage_info . $translation_info; // . $suggestion_info;
+  exit;
+}
+
+function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
   // Existing, "unresolved" suggestions.
   $suggestions = array();
   $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, u.name FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $langcode, $sid);
 
   $perm = l10n_community_get_permission($langcode);
-  while ($suggestion = db_fetch_object($result)) {
-    
+  while ($suggestion = db_fetch_object($result)) {    
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
-    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'approve', 'onclick="return l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .');" title="'. t('Approve suggestion.') .'"') : '';
-    
-    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'decline', 'onclick="return l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .');" title="'. t('Decline suggestion.') .'"') : '';
-    
-    $copy_button = theme('l10n_community_button', 'edit', 'copy', 'onclick="return l10nCommunity.copySuggestion('. $suggestion->sid .','. check_plain(str_replace("\\0", "\O", drupal_to_js($suggestion->translation))) .');" title="'. t('Copy suggestion text to the edit field.') .'"');
+    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this);" title="'. t('Approve suggestion.') .'"') : '';    
+    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this);" title="'. t('Decline suggestion.') .'"') : '';
     
     // Plural versions are shown in a short form.
-    $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), '; ', $suggestion->translation) : $suggestion->translation);
-    
-    $suggestions[] = $decline_button . $approve_button . $copy_button . $translation . '<div class="l10n-suggestion-by">' . t('by %user at %date', array('%user' => (empty($suggestion->name) ? variable_get('anonymous', t('Anonymous')) : $suggestion->name), '%date' => format_date($suggestion->time_entered))) . '</div>';  
+    // Since we no longer store an additional copy of strings in JS
+    // and the null byte is stripped out by browsers (?), we need to
+    // use a DOM-safe delimiter
+    $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), ";  ", $suggestion->translation) : $suggestion->translation);
+    $translation = l10n_community_format_text($translation, $suggestion->sid);
+    $suggestions[] = $translation ."<div class='l10n-approval-buttons'>". $approve_button . $decline_button ."</div>" . '<div class="l10n-suggestion-by">' . t('by %user at %date', array('%user' => (empty($suggestion->name) ? variable_get('anonymous', t('Anonymous')) : $suggestion->name), '%date' => format_date($suggestion->time_entered))) . '</div>';  
   }
   if (count($suggestions)) {
     // List of suggestions.
-    $suggestion_info = '<div class="l10n-suggestions"><strong>'. t('Outstanding suggestions:') .'</strong>'. theme('item_list', $suggestions) .'</div>';
+    $suggestion_info = '<strong>'. t('Outstanding suggestions:') .'</strong>'. theme('l10n_community_strings', $suggestions);
   }
   else {
-    $suggestion_info .= '<div class="l10n-no-suggestions"></div>';
+    $suggestion_info .= '<strong>'. t('No suggestions found.') .'</strong>';
   }
-  
-  print $usage_info . $translation_info . $suggestion_info;
+  print $suggestion_info;
   exit;
 }
 

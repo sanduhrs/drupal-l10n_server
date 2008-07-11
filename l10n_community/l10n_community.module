@@ -136,6 +136,14 @@ function l10n_community_menu($may_cache) {
       'type' => MENU_CALLBACK,
     );
     $items[] = array(
+      'title' => t('String suggestions'),
+      'path' => 'translate/suggestions',
+      'callback' => 'l10n_community_page_wrapper',
+      'callback arguments' => array('ajax', 'l10n_community_string_suggestions'),
+      'access' => user_access('access localization community'),
+      'type' => MENU_CALLBACK,
+    );
+    $items[] = array(
       'title' => t('Approve suggestion'),
       'path' => 'translate/approve',
       'callback' => 'l10n_community_page_wrapper',
@@ -835,24 +843,100 @@ function l10n_community_filter_value($name) {
  */
 function theme_l10n_community_button($type, $class, $extras = '') {
   switch ($type) {
+    case 'translate':
+      $text = t('Translate');
+      break;
+    case 'lookup':
+      $text = t('Information');
+      break;
     case 'edit':
       // Source string and translation edit field.
-      $text = t('edit');
+      $text = t('Edit');
       break;
     case 'has-suggestion':
     case 'has-no-suggestion':
     case 'untranslated':
       // Star in a filled circle.
-      $text = '&#x272a;';
+      $text = t('Suggestions');
       break;
     case 'approve':
       // Checkmark.
-      $text = '&#x2714;';
+      $text = t('Approve');
       break;
     case 'decline':
       // Checkmark.
-      $text = '&#x2716;';
+      $text = t('Decline');
       break;
   }
   return ' <span class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b>'. $text .'</b></b></span>';
+}
+
+/**
+ * Theme a list of translatable strings. Adds a copy button to each string
+ * for quickly copying its source text into a translation form. (through ajax)
+ */
+function theme_l10n_community_strings($items, $form = true) {
+  $output = "<ul class='l10n-community-strings'>";
+  foreach ($items as $item) {
+    $output .= "<li class='clear-block'>";
+    if ($form) {
+      $output .= "<div class='buttons'>". theme('l10n_community_copy_button') ."</div>";
+    }
+    $output .= "<div class='string'>". $item ."</div>";
+    $output .= "</li>";    
+  }
+  $output .= "</ul>";
+  return $output;
+}
+
+/**
+ * Copy button for string values.
+ *
+ * @param $sid
+ *   Source string ID.
+ */
+function theme_l10n_community_copy_button($sid = 0) {
+  return theme('l10n_community_button', 'edit', 'l10n-community-copy');
+}
+
+/**
+ * Format translatable strings with custom icons.
+ *
+ * We emphasize some parts of strings, so those are easy to recognize.
+ * Newlines and replacement strings are made more visible.
+ *
+ * @param $string
+ *   Source string to translate.
+ */
+function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
+  static $path = NULL, $title = NULL;
+  
+  if (!isset($path)) {
+    $path = base_path() . drupal_get_path('module', 'l10n_community');
+    $title = t('line break');
+  }
+
+  $original = $string;
+  
+  // Replace all newline chars in the string with an indicator image.
+  $string = str_replace(
+    array("\n", "\\\\n"),
+    '<img src="'. $path .'/images/newline.png" alt="'. $title .'" title="'. $title .'" /><br />',
+    check_plain($string)
+  );
+  // Make all %, ! and @ marked pladeholders emphasized.
+  $string = preg_replace(
+    '~((%|!|@)[0-9a-zA-Z_-]+)~',
+    '<em class="l10n-community-marker">\\1</em>',
+    $string
+  );
+
+  if (isset($sid) && isset($delta)) {
+    $class = "string-$sid-$delta";
+  }
+  else if ($sid) {
+    $class = "string-$sid";
+  }
+
+  return "<div class='$class'><span class='string'>$string</span><span class='original hidden'>$original</span></div>";
 }

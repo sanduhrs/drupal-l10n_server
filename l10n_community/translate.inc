@@ -88,10 +88,6 @@ function l10n_community_filter_form($project = NULL, $status = L10N_STATUS_ALL, 
     L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
     L10N_STATUS_TRANSLATED     => t('Translated'),
   );
-  $form['filters'] = array(
-    '#title' => t('Show only strings where'),
-    '#type' => 'fieldset',
-  );
   
   // Provide link to current page with filters intact for bookmarking.
   $page = intval($_GET['page']);
@@ -99,27 +95,22 @@ function l10n_community_filter_form($project = NULL, $status = L10N_STATUS_ALL, 
            urlencode(isset($release) ? $release : 'all') .'&status='.
            urlencode(isset($status) ? $status : L10N_STATUS_ALL) .'&search='.
            urlencode(isset($search) ? $search : '') . ($page ? '&page='. $page : '');
-  $form['filters']['link'] = array(
-    '#type' => 'markup',
-    '#value' => l(t('Link to this page'), $_GET['q'], array(), $query)
-  );
-
-  $form['filters']['project'] = array(
+  $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => isset($project) ? $project->title : '',
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
-    $form['filters']['project']['#type'] = 'select';
-    $form['filters']['project']['#options'] = array('' => t('All'));
+    $form['project']['#type'] = 'select';
+    $form['project']['#options'] = array('' => t('All'));
     foreach ($projects as $this_project) {
       // title used to conform to the autocomplete behavior.
-      $form['filters']['project']['#options'][$this_project->title] = $this_project->title;
+      $form['project']['#options'][$this_project->title] = $this_project->title;
     }
   }
   else {
     // Autocomplete field for more then 30 projects.
-    $form['filters']['project'] += array(
+    $form['project'] += array(
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/projects/autocomplete',
     );
@@ -131,7 +122,7 @@ function l10n_community_filter_form($project = NULL, $status = L10N_STATUS_ALL, 
     foreach ($releases as $rid => $this_release) {
       $release_options[$rid] = $this_release->title;
     }
-    $form['filters']['release'] = array(
+    $form['release'] = array(
       '#title' => t('Release'),
       '#type' => 'select',
       '#options' => $release_options,
@@ -139,27 +130,30 @@ function l10n_community_filter_form($project = NULL, $status = L10N_STATUS_ALL, 
     );
   }
   
-  $form['filters']['status'] = array(
+  $form['status'] = array(
     '#title' => t('Status'),
     '#type' => 'select',
     '#options' => $status_options,
     '#default_value' => $status,
   );
-  $form['filters']['search'] = array(
+  $form['search'] = array(
     '#title' => t('Contains'),
     '#type' => 'textfield',
     '#default_value' => $search,
-    '#prefix' => '<br />',
   );
-  $form['filters']['submit'] = array(
+  $form['submit'] = array(
     '#value' => t('Filter'),
     '#type' => 'submit',
-    '#prefix' => '<br />',
   );
-  $form['filters']['reset'] = array(
+  $form['reset'] = array(
     '#value' => t('Reset'),
     '#type' => 'submit',
   );
+  $form['link'] = array(
+    '#type' => 'markup',
+    '#value' => l(t('Link to this page'), $_GET['q'], array('class' => 'permalink'), $query),
+  );
+  $form['#theme'] = 'l10n_community_filter_form';
   return $form;
 }
 
@@ -222,25 +216,19 @@ function l10n_community_filter_form_submit($form_id, &$form) {
  *   Project URI.
  */
 function l10n_community_translate_view($strings = array(), $language = NULL, $uri = NULL) {
-  $pager = theme('pager', NULL, 10, 0);
-  
-  $output = '<div id="l10n-community-translate-view">'. $pager;
+  $output = '';
+  $rows = array();
   foreach ($strings as $string) {
-
-    $output .= '<div class="l10n-community-string">';
-
-    // Source string display.
-    $is_plural = strpos($string->value, "\0");
-    if ($is_plural) {
-      // Multiple source strings if we deal with plurals.
+    $row = array();
+    // Source display
+    // Multiple source strings if we deal with plurals.
+    if (strpos($string->value, "\0") !== false) {
       $source = theme('item_list', array_map('l10n_community_format_text', explode(chr(0), $string->value)), '');
     }
     else {
-      // Single source string otherwise.
       $source = l10n_community_format_text($string->value);
     }
-    $output .= '<div class="source">'. $source .'</div>';
-    
+    $row[] = array('data' => $source, 'class' => 'source');
     // Translation display.
     if (!empty($string->translation)) {
       if ($is_plural) {
@@ -254,17 +242,23 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $ur
       else {
         $translation = l10n_community_format_text($string->translation);
       }
-      $output .= '<div class="translation">'. $translation .'</div>';
+      $row[] = $translation;
     }
-    $output .= '</div>';
+    else {
+      $row[] = '';
+    }
+    $rows[] = $row;
   }
-  $output .= str_replace('class="pager"', 'class="pager pager-bottom"', $pager) .'</div>';
+  $output .= theme('pager', NULL, 10, 0);
+  $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
+  $output .= theme('pager', NULL, 10, 0);
+  $output = "<div id='l10n-community-translate-view'>". $output ."</div>";
   return $output;
 }
 
 // = Translation editor ========================================================
 
-/**
+/** 
  * Translation web interface.
  *
  * @param $strings
@@ -278,14 +272,15 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $ur
  */
 function l10n_community_translate_form($strings = array(), $language = NULL, $uri = NULL, $perm = L10N_PERM_SUGGEST) {
   
-  // We are collecting a list of strings to make copy-pasteable in JS.
-  // These need their own identifiers, so we need to collect them.
-  $js_strings = array();
-  
   $form = array(
     '#tree' => TRUE
   );
-  $form['pager'] = array(
+  $form['pager_top'] = array(
+    '#weight' => -10,
+    '#value' => theme('pager', NULL, 10, 0)
+  );
+  $form['pager_bottom'] = array(
+    '#weight' => 10,
     '#value' => theme('pager', NULL, 10, 0)
   );
   // Keep language code and URI in form for further reference.
@@ -300,41 +295,36 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
 
   foreach ($strings as $string) {
     $form[$string->sid] = array(
-      '#type' => 'fieldset',
-      '#attributes' => array('id' => 'l10n-community-editor-'. $string->sid),
+      '#tree' => true,
     );
 
     // A toolbox which displays action icons on each string editor fieldset.
+    $toolbox = theme('l10n_community_button', 'translate', 'l10n-translate active');
+    $toolbox .= theme('l10n_community_button', 'lookup', 'l10n-lookup');
+    $toolbox .= $string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-suggestions') : "";
+    $toolbox = "<div class='toolbox'>$toolbox</div>";    
     $form[$string->sid]['toolbox'] = array(
       '#type' => 'markup',
-      '#value' => '<div class="toolbox">'. ($string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Has suggestions.') .'"') : theme('l10n_community_button', 'has-no-suggestion', 'l10n-has-no-suggestion', 'title="'. t('Has no suggestions.') .'"') ) .'</div><div class="messagebox"></div>'
+      '#value' => $toolbox,
+    );
+    $form[$string->sid]['messagebox'] = array(
+      '#type' => 'markup',
+      '#value' => "<div class='messagebox'></div>",
     );
 
     $is_plural = strpos($string->value, "\0");
-    if ($is_plural) {
-      // Multiple source strings if we deal with plurals. The form item and
-      // consequently the JavaScript strings identifiers are the sid and then
-      // the index of the plural being displayed.
-      $parts = explode(chr(0), $string->value);
-      $string_parts = array();
-      foreach ($parts as $i => $part) {
-        $target = $string->sid .'-'. $i;
-        $js_strings[$target] = $part;
-        $string_parts[] = theme('l10n_community_copy_button', $target) .' '. l10n_community_format_text($part);
-      }
-      $source = theme('item_list', $string_parts);
+    // Multiple source strings if we deal with plurals. The form item and
+    // consequently the JavaScript strings identifiers are the sid and then
+    // the index of the plural being displayed.
+    $string_parts = explode(chr(0), $string->value);
+    foreach ($string_parts as $delta => &$part) {
+      $part = l10n_community_format_text($part, $string->sid, (count($string_parts) > 1) ? $delta : null);
     }
-    else {
-      // Single source string. We use the sid for the form identifier.
-      $source = theme('l10n_community_copy_button', $string->sid) .' '. l10n_community_format_text($string->value);
-      $js_strings[$string->sid] = $string->value;
-    }
+    $source = theme('l10n_community_strings', $string_parts);
 
     $form[$string->sid]['source'] = array(
-      '#prefix' => '<div>',
-      '#type' => 'markup',
+      '#type' => 'item',
       '#value' => $source,
-      '#suffix' => '</div>',
     );
     
     $translated = !empty($string->translation);
@@ -354,58 +344,73 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
         $string_parts = array();
         for ($i = 0; $i < $language->plurals; $i++) {
           $target = $string->sid .'-'. $i;
-          $string_parts[] = theme('l10n_community_copy_button', $target .'-t') .' '. l10n_community_format_text($translations[$i]);
-          $js_strings[$target .'-t'] = $translations[$i];
+          $string_parts[] = l10n_community_format_text($translations[$i], $string->sid, $i);
         }
         $form[$string->sid]['translation_existing'] = array(
-          '#prefix' => '<div class="translation">',
-          '#type' => 'markup',
-          '#value' => theme('item_list', $string_parts),
-          '#suffix' => '</div>',
+          '#type' => 'item',
+          '#value' => theme('l10n_community_strings', $string_parts),
         );
       }
       
+      $string_parts = explode(chr(0), $string->value);
+            
       for ($i = 0; $i < $language->plurals; $i++) {
         $target = $string->sid .'-'. $i;
         if ($translated) {
           // Already translated so we ask for new translation or suggestion.
-          $title = ($perm == L10N_PERM_SUGGEST) ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
+          $description = ($perm == L10N_PERM_SUGGEST) ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
         }
         else {
           // Not translated yet, so we ask for initial translation or suggestion.
-          $title = ($perm == L10N_PERM_SUGGEST) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
+          $description = ($perm == L10N_PERM_SUGGEST) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
         }
         
         // Include a textarea for each plural variant.
         $form[$string->sid]['translation']['value'][$i] = array(
-          '#type' => 'textarea',
-          '#title' => $title,
+          '#type' => strlen($string_parts[$i]) > 45 ? 'textarea' : 'textfield',
+          '#description' => $description,
           '#rows' => 1,
           '#id' => 'l10n-community-translation-'. $target,
         );
       }
     }
     
-    else {
-      // Dealing with a simple string (no plurals).
-      
+    // Dealing with a simple string (no plurals).
+    
+    else {      
       if ($translated) {
         $form[$string->sid]['translation_existing'] = array(
-          '#prefix' => '<div class="translation">',
-          '#type' => 'markup',
-          '#value' => theme('l10n_community_copy_button', $string->sid .'-t') .' '. l10n_community_format_text($string->translation),
-          '#suffix' => '</div>',
+          '#type' => 'item',
+          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, $string->sid))),
         );
-        $js_strings[$string->sid .'-t'] = $string->translation;
       }
       $form[$string->sid]['translation']['value'] = array(
-        '#type' => 'textarea',
+        '#type' => strlen($string->value) > 45 ? 'textarea' : 'textfield',
         // Provide accurate title based on previous data and permission.
-        '#title' => $translated ? (($perm == L10N_PERM_SUGGEST) ? t('New suggestion') : t('New translation')) : (($perm == L10N_PERM_SUGGEST) ? t('Suggestion') : t('Translation')),
-        '#rows' => 1,
+        '#description' => $translated ? (($perm == L10N_PERM_SUGGEST) ? t('Add a new suggestion') : t('Add a new translation')) : (($perm == L10N_PERM_SUGGEST) ? t('Suggestion') : ''),
+        '#rows' => 4,
+        '#resizable' => false,
+        '#cols' => null,
+        '#size' => null,
         '#id' => 'l10n-community-translation-'. $string->sid,
       );
+      if (strlen($string->value) > 200) {
+        $form[$string->sid]['translation']['value']['#rows'] = floor(strlen($string->value) * .03);
+        $form[$string->sid]['translation']['value']['#resizable'] = true;
+      }      
     }
+
+    // Add AJAX saving buttons
+    $form[$string->sid]['translation']['save'] = array(
+      '#prefix' => "<span class='l10n-approval-buttons'>",
+      '#value' => "<span class='l10n-button l10n-save'>". t('Save') ."</span>",
+      '#type' => 'markup',
+    );
+    $form[$string->sid]['translation']['clear'] = array(
+      '#suffix' => "</span>",
+      '#value' => "<span class='l10n-button l10n-clear'>". t('Clear') ."</span>",
+      '#type' => 'markup',
+    );
     
     if ($perm == L10N_PERM_SUGGEST) {
       // User with suggestion capability only, record this.
@@ -417,7 +422,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     else {
       // User with full privileges, offer option to submit suggestion.
       $form[$string->sid]['translation']['is_suggestion'] = array(
-        '#title' => t('Flag as suggestion for later discussion'),
+        '#title' => t('Suggestion for discussion'),
         '#type' => 'checkbox',
       );
     }
@@ -432,10 +437,6 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
   // Add all strings for copy-pasting and some helpers.
   drupal_add_js(
     array(
-      'l10n_strings'          => $js_strings,
-
-      'l10n_image_path'       => base_path() . drupal_get_path('module', 'l10n_community') .'/images/',
-
       'l10n_lookup_help'      => t('Show detailed information.'),
       'l10n_approve_error'    => t('There was an error approving this suggestion. You might not have permission or the suggestion id was invalid.'),
       'l10n_approve_confirm'  => t('!icon Suggestion approved.', array('!icon' => '&#10004;')),
@@ -444,6 +445,7 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
       'l10n_decline_confirm'  => t('Suggestion declined.'),
 
       'l10n_details_callback' => url('translate/details/'. $language->locale .'/'),
+      'l10n_suggestions_callback' => url('translate/suggestions/'. $language->locale .'/'),
       'l10n_approve_callback' => url('translate/approve/'),
       'l10n_decline_callback' => url('translate/decline/'),
     ),
@@ -455,6 +457,9 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     '#type' => 'submit',
     '#value' => ($perm == L10N_PERM_SUGGEST) ? t('Save suggestions') : t('Save translations')
   );
+  
+  $form['#theme'] = 'l10n_community_translate_form';
+  
   return $form;
 }
 
@@ -505,45 +510,65 @@ function l10n_community_translate_form_submit($form_id, &$form) {
 // = Theme functions ===========================================================
 
 /**
- * Format translatable strings with custom icons.
- *
- * We emphasize some parts of strings, so those are easy to recognize.
- * Newlines and replacement strings are made more visible.
- *
- * @param $string
- *   Source string to translate.
+ * Theme function for l10n_community_filter_form.
+ * Arranges elements in a condensed fashion in a table.
  */
-function l10n_community_format_text($string) {
-  static $path = NULL, $title = NULL;
-  
-  if (!isset($path)) {
-    $path = base_path() . drupal_get_path('module', 'l10n_community');
-    $title = t('line break');
+function theme_l10n_community_filter_form($form) {
+  $row = array(); // table content
+  $labels = array(); // table header labels
+  // Only display these elements in distinct table cells
+  $elements = array('project', 'release', 'status', 'search');
+  foreach ($form as $id => &$element) {
+    if (in_array($id, $elements)) {
+      $labels[] = $element['#title'];
+      unset($element['#title']);
+      $row[] = drupal_render($element);
+    }
   }
-
-  // Replace all newline chars in the string with an indicator image.
-  $string = str_replace(
-    array("\n", "\\\\n"),
-    '<img src="'. $path .'/images/newline.png" alt="'. $title .'" title="'. $title .'" /><br />',
-    check_plain($string)
-  );
-  // Make all %, ! and @ marked pladeholders emphasized.
-  $string = preg_replace(
-    '~((%|!|@)[0-9a-zA-Z_-]+)~',
-    '<em class="l10n-community-marker">\\1</em>',
-    $string
-  );
-  return $string;
+  // Add permalink to table header
+  $labels[] = drupal_render($form['link']);
+  // Display the rest of the form in the last cell
+  $row[] = drupal_render($form);
+  return theme('table', $labels, array($row), array('class' => 'l10n-server-translate'));
 }
 
 /**
- * Copy button for string values.
- *
- * @param $sid
- *   Source string ID.
+ * Theme function for l10n_community_translate_form.
  */
-function theme_l10n_community_copy_button($sid = 0) {
-  return theme('l10n_community_button', 'edit', 'l10n-community-copy', 'id="l10n-community-copy-'. $sid .'"');
+function theme_l10n_community_translate_form($form) {
+  $rows = array();
+  foreach ($form as $id => &$element) {
+    // if the form id is numeric, this form element is for editing a string
+    if (is_numeric($id)) {
+      $source_pane = drupal_render($element['source']);
+      $translation_pane = "<div class='l10n-panes clear-block'>";
+      $translation_pane .= drupal_render($element['toolbox']);
+      $translation_pane .= "<div class='pane translate'>";
+      $translation_pane .= $element['translation_existing'] ? drupal_render($element['translation_existing']) : '';
+      $translation_pane .= drupal_render($element['messagebox']);
+      $translation_pane .= drupal_render($element['translation']) . "</div>";
+      $translation_pane .= "<div class='pane suggestions'></div><div class='pane lookup'></div>";
+      $translation_pane .= "</div>";
+      $row = array(
+        array(
+          'data' => $source_pane,
+          'class' => 'source',
+          'id' => 'spane-'. $id,
+        ),
+        array(
+          'data' => $translation_pane,
+          'class' => 'translation',
+          'id' => 'tpane-'. $id,
+        ),        
+      );
+      $rows[] = $row;
+      unset($form[$id]);
+    }
+  }
+  $output .= drupal_render($form['pager_top']);
+  $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
+  $output .= drupal_render($form);
+  return $output;
 }
 
 // = API functions =============================================================
