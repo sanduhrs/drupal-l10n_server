@@ -403,12 +403,12 @@ function l10n_community_translate_form($strings = array(), $language = NULL, $ur
     // Add AJAX saving buttons
     $form[$string->sid]['translation']['save'] = array(
       '#prefix' => "<span class='l10n-approval-buttons'>",
-      '#value' => "<span class='l10n-button l10n-save'>". t('Save') ."</span>",
+      '#value' => theme('l10n_community_button', 'save', 'l10n-save'),
       '#type' => 'markup',
     );
     $form[$string->sid]['translation']['clear'] = array(
       '#suffix' => "</span>",
-      '#value' => "<span class='l10n-button l10n-clear'>". t('Clear') ."</span>",
+      '#value' => theme('l10n_community_button', 'clear', 'l10n-clear'),
       '#type' => 'markup',
     );
     

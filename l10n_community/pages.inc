@@ -369,8 +369,8 @@ function theme_l10n_community_progress_headers($mainhead) {
   return array(
     array('data' => $mainhead, 'class' => 'rowhead'),
     t('Overall status'),
-    theme('l10n_community_button', 'untranslated', 'l10n-untranslated', 'title="'. t('Untranslated.') .'"'),
-    theme('l10n_community_button', 'has-suggestion', 'l10n-has-suggestion', 'title="'. t('Have suggestions.') .'"'),
+    t('Untranslated'),
+    t('Suggestions'),
   );
 }
 

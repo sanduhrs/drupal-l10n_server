@@ -867,8 +867,16 @@ function theme_l10n_community_button($type, $class, $extras = '') {
       // Checkmark.
       $text = t('Decline');
       break;
+    case 'save':
+      // Save button.
+      $text = t('Save');
+      break;
+    case 'clear':
+      // Clear form button.
+      $text = t('Clear');
+      break;
   }
-  return ' <span class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b>'. $text .'</b></b></span>';
+  return ' <span title="'. $text .'" class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b>'. $text .'</b></b></span>';
 }
 
 /**
