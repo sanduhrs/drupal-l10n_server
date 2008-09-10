@@ -54,7 +54,7 @@ l10nCommunity.init = function() {
       // switch display panes
       var elem = this;
       if ($(this).is(".active")) {
-        // Switch back to editing form if already clicked. Convinience feature,
+        // Switch back to editing form if already clicked. Convenience feature,
         // so that you don't need to move your mouse to switch back.
         var parent = $(elem).parents('.translation');
         var tool = $('.l10n-translate', parent);
