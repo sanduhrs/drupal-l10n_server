@@ -69,8 +69,8 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
     // Plural versions are shown in a short form.
     // Since we no longer store an additional copy of strings in JS
     // and the null byte is stripped out by browsers (?), we need to
-    // use a DOM-safe delimiter
-    $translation = check_plain(strpos($suggestion->translation, "\0") ? str_replace(chr(0), ";  ", $suggestion->translation) : $suggestion->translation);
+    // use a DOM-safe delimiter: ";  "
+    $translation = strpos($suggestion->translation, "\0") ? str_replace(chr(0), ";  ", $suggestion->translation) : $suggestion->translation;
     $translation = l10n_community_format_text($translation, $suggestion->sid);
     $suggestions[] = $translation ."<div class='l10n-approval-buttons'>". $approve_button . $decline_button ."</div>" . '<div class="l10n-suggestion-by">' . t('by %user at %date', array('%user' => (empty($suggestion->name) ? variable_get('anonymous', t('Anonymous')) : $suggestion->name), '%date' => format_date($suggestion->time_entered))) . '</div>';  
   }
