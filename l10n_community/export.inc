@@ -36,7 +36,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
 /**
  * Translation export form. This is multi-step with the project selection.
  */
-function l10n_community_export_form($uri = NULL, $langcode = NULL) {
+function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL) {
 
   // Give precendence to project selected in the form.
   $hide_projects = FALSE;
