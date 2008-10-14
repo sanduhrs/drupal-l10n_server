@@ -136,13 +136,13 @@ function l10n_community_export_form($uri = NULL, $langcode = NULL) {
 /**
  * Release field is mandatory.
  */
-function l10n_community_export_form_validate($form_id, &$form_values) {
-  if (empty($form_values['project'])) {
+function l10n_community_export_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['project'])) {
     form_set_error('project', t('You should choose a project, submit the form and choose a release.'));
   }
-  else if (!$project = l10n_community_project_uri_by_title($form_values['project'])) {
+  else if (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
     form_set_error('project', t('Invalid project chosen.'));
-    $form_values['project'] = '';
+    $form_state['values']['project'] = '';
   }
 }
 
@@ -150,40 +150,40 @@ function l10n_community_export_form_validate($form_id, &$form_values) {
  * Generate translation or template package on the fly based on
  * all details available and return the output via HTTP.
  */
-function l10n_community_export_form_submit($form_id, &$form_values) {
+function l10n_community_export_form_submit($form, &$form_state) {
 
   // Set temporary storage used to remember project.
-  $_SESSION['l10n_community']['export_project'] = $form_values['project'];
+  $_SESSION['l10n_community']['export_project'] = $form_state['values']['project'];
   
-  if (empty($form_values['release'])) {
+  if (empty($form_state['values']['release'])) {
     form_set_error('release', t('You should choose a release.'));
     return;
   }
-  elseif ($form_values['release'] != 'all') {
-    $releases = l10n_community_get_releases(l10n_community_project_uri_by_title($form_values['project']));
-    if (!isset($releases[$form_values['release']])) {
+  elseif ($form_state['values']['release'] != 'all') {
+    $releases = l10n_community_get_releases(l10n_community_project_uri_by_title($form_state['values']['project']));
+    if (!isset($releases[$form_state['values']['release']])) {
       form_set_error('release', t('Invalid release chosen.'));
       return;
     }
   }
   
   $language = NULL;
-  if (isset($form_values['langcode'])) {
+  if (isset($form_state['values']['langcode'])) {
     $languages = l10n_community_get_languages();
-    $language = $languages[$form_values['langcode']];
+    $language = $languages[$form_state['values']['langcode']];
   }
-  $type = (isset($form_values['type']) ? $form_values['type'] : 'template');
+  $type = (isset($form_state['values']['type']) ? $form_state['values']['type'] : 'template');
 
   // This was validated to work in the validation code.
-  $uri = l10n_community_project_uri_by_title($form_values['project']);
+  $uri = l10n_community_project_uri_by_title($form_state['values']['project']);
 
   // Generate tarball or PO file and get file name.
   $export_result = l10n_community_export(
     $uri,
-    ($form_values['release'] == 'all' ? NULL : $form_values['release']),
+    ($form_state['values']['release'] == 'all' ? NULL : $form_state['values']['release']),
     $language,
     ($type != 'translation'),
-    $form_values['version']
+    $form_state['values']['version']
   );
   
   if (isset($export_result) && is_array($export_result)) {
@@ -244,7 +244,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   else {
     // We only export active translations, not suggestions.
     $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
-    $sql_args = array($language->locale, $project->pid);
+    $sql_args = array($language->language, $project->pid);
   }
   
   if (isset($release)) {
@@ -324,7 +324,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         }
         
         // Append extension.
-        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->locale) : '') .'.po');
+        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
         
         if (strpos($export_string['value'], "\0") !== FALSE) {
           // This is a string with plural variants.
@@ -367,8 +367,8 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           $file_outputs[] = ($uri == 'drupal' ?
             (($version == 'flat-package') ?
               ('installer'. ($template ? '.pot' : '.po')) :
-              ('profiles/default/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->locale .'.po')))) :
-            ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->locale .'.po')))
+              ('profiles/default/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
+            ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->language .'.po')))
           );
           if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
             // Installer-only, remove runtime entry.
@@ -498,11 +498,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   if ($version == 'all-in-one') {
     // Output a single PO(T) file in this case.
-    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '.pot' : '.po'));
+    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '.pot' : '.po'));
   }
   else {
     // Output a package in this case.
-    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->locale : '') . ($template ? '-templates' : '-translations') .'.tgz');
+    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '-templates' : '-translations') .'.tgz');
   }
 }
 

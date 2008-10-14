@@ -148,8 +148,8 @@ function l10n_community_pick_go() {
   return $form;
 }
 
-function l10n_community_pick_go_validate($form_id, $form_values) {
-  if (empty($form_values['project']) && empty($form_values['langcode'])) {
+function l10n_community_pick_go_validate($form, &$form_state) {
+  if (empty($form_state['values']['project']) && empty($form_state['values']['langcode'])) {
     // We require at least one to be selected to be effective.
     form_set_error('langcode', t('Select a language and/or a project.'));
   }
@@ -162,18 +162,18 @@ function l10n_community_pick_go_validate($form_id, $form_values) {
  * if both are provided, or to the project page with project only or the
  * language page with language only.
  */
-function l10n_community_pick_go_submit($form_id, $form_values) {
-  if (!empty($form_values['project']) && ($uri = l10n_community_project_uri_by_title($form_values['project']))) {
+function l10n_community_pick_go_submit($form, &$form_state) {
+  if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
     // Project surely selected, possibly with language too.
-    if (!empty($form_values['langcode'])) {
-      drupal_goto('translate/languages/'. $form_values['langcode'], 'project='. $uri);
+    if (!empty($form_state['values']['langcode'])) {
+      drupal_goto('translate/languages/'. $form_state['values']['langcode'], 'project='. $uri);
     }
     else {
       drupal_goto('translate/projects/'. $uri);
     }
   }
-  elseif (!empty($form_values['langcode'])) {
+  elseif (!empty($form_state['values']['langcode'])) {
     // Only language selected.
-    drupal_goto('translate/languages/'. $form_values['langcode']);
+    drupal_goto('translate/languages/'. $form_state['values']['langcode']);
   }
 }

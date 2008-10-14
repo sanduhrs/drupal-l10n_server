@@ -1,5 +1,7 @@
 ; $Id$
 name = "Localization groups"
 description = Organic groups mapping for localization server
-dependencies = og l10n_community
+dependencies[] = og
+dependencies[] = l10n_community
 package = "Localization server"
+core = 6.x

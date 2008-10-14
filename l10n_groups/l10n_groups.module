@@ -34,7 +34,7 @@ function l10n_groups_perm() {
  *   Figure out how to support formal/informal differences, local language versions and so on.
  *   These might need to maintain a diff, not a full translation, so we need to think about this.
  */
-function l10n_grops_form_alter($form_id, &$form) {
+function l10n_grops_form_alter(&$form, &$form_state, $form_id) {
   if ($form_id == 'l10n_group_node_form' && empty($form['l10n_group_language']['#value']) && empty($form['l10n_group_language']['#options'])) {
     drupal_set_message(t("All available languages have groups now. You cannot create another group until a new language is added on the administration interface."), 'error');
     $form['submit']['#disabled'] = TRUE;
@@ -98,16 +98,9 @@ function l10n_groups_load(&$node) {
  * @todo
  *   Group admins should be able to edit their group nodes. Look into how others do it.
  */
-function l10n_groups_access($op, $node) {
-  if ($op == 'view') { 
-    // Users can always see the translation group page.
-    return TRUE;
-  }
-  if (user_access('administer localization groups')) { 
-    // But only few can delete/edit.
-    return TRUE;
-  }
-  return FALSE;
+function l10n_groups_access($op, $node, $account) {
+  // Users can always see the translation group page, but only few can delete/edit.
+  return ($op == 'view') ? TRUE : user_access('administer localization groups', $account);
 }
 
 /**
@@ -129,7 +122,7 @@ function l10n_groups_form(&$node) {
     '#title' => t('Group name'),
     '#description' => t('Name of the translation group.'),
     '#default_value' => isset($node->title) ? $node->title : '',
-    '#weight' => -5,
+    '#weight' => -10,
     '#required' => TRUE
   );
   if (!empty($node->l10n_group_language)) {
@@ -244,7 +237,7 @@ function l10n_groups_get_groups() {
  * @param $account
  *   Optional user account.
  */
-function l10n_groups_get_permission(&$permissions, $global_permission, $langcode, $account = NULL) {
+function l10n_groups_get_permission(&$permissions, $global_permission, $langcode, $account) {
   if ($groups = l10n_groups_get_groups()) {
     // Fill up local cache with all langcode permissions of this account for
     // future reference (eg. a page showing links for all languages).

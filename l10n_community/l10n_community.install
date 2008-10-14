@@ -7,132 +7,314 @@
 
 /**
  * Implementation of hook_install().
- *
- * - We have a list of projects running with a unique short name
- *   each to identify them nicely in paths.
- * - Then each project has releases, for which we need to store
- *   download links. And to optimize downloads, we need to take
- *   care of when did we process something and what was the hash
- *   of the file. If these differ, we need to download it again.
- *
- * - When files of a release are parsed, we find errors in them,
- *   which need to be stored for later examination (inform developers,
- *   use for project metrics, use to fix extractor bugs). Although
- *   we find errors in the release files, we store error notes on
- *   a release level, to make them easily accessible without the
- *   need for extraneous detail. 
- * - Each project release has multiple files (eg. a module has an .info
- *   file and a .module file at least), which are parsed for translatables.
- *   CVS revision information from files, as well as their name and paths
- *   are stored, so we know where strings are used.
- * - We also store location of strings on the line granularity level.
- *   If the same string is used multiple times on the same line, then we
- *   only store one occassion.
- *
- * - Finally we reach the actual translatables, which are the strings.
- *   For strings with multiple plural versions, we store them as the
- *   same translatable with a \0 separator (unlike Drupal itself), 
- *   because it is easier to match translations with them (for
- *   multiple plural versions) this way, and we can force people to 
- *   translate both at once.
- *
- * The translation table stores two things:
- *  - translations: is_suggestion = 0, *_approved is filled
- *  - suggestions:  is_suggestion = 1, *_approved should be 0
- *
- * Translations have the has_suggestion flag, which is cached information of
- * whether there is at least one is_active is_suggestion record for the same sid
- * and language. 
- * 
- * Both translations and suggestions can be outdated (is_active = 0):
- *  - in case of translations, when newer translation was added
- *  - in case of suggestions, an admin choose a suggestion (or added a 
- *    new translation), and this was not that one, so the action marks
- *    the previous suggestions inactive (ie. they are supposed to be 
- *    reviewed and refused)
- *
- * Unprocessed suggestions and active translations have is_active = 1.
  */
 function l10n_community_install() {
-  $table_config = "";
-  $serial = "SERIAL";
-  switch ($GLOBALS["db_type"]) {
-    case "mysql":
-    case "mysqli":
-      $table_config = " /*!40100 DEFAULT CHARACTER SET utf8 */";
-      $serial = "INTEGER       NOT NULL AUTO_INCREMENT";
-      // Intentionally no break here.
-    case "pgsql":
-       db_query("CREATE TABLE {l10n_community_project} (
-        pid                $serial      PRIMARY KEY,
-        uri                VARCHAR(50)  NOT NULL,
-        title              VARCHAR(128) NOT NULL,
-        home_link          TEXT         NOT NULL,
-        last_parsed        INTEGER
-        ) $table_config;");
-      db_query("CREATE TABLE {l10n_community_release} (
-        rid                $serial      PRIMARY KEY,
-        pid                INTEGER,
-        title              VARCHAR(128) NOT NULL,
-        download_link      TEXT         NOT NULL,
-        file_date          INTEGER,
-        file_hash          VARCHAR(32),
-        last_parsed        INTEGER
-        ) $table_config;");
-
-      db_query("CREATE TABLE {l10n_community_error} (
-        eid                $serial      PRIMARY KEY,
-        rid                INTEGER,
-        value              TEXT         NOT NULL
-        ) $table_config;");
-      db_query("CREATE TABLE {l10n_community_file} (
-        fid                $serial      PRIMARY KEY,
-        rid                INTEGER,
-        location           VARCHAR(255) NOT NULL,
-        revision           VARCHAR(255) NOT NULL
-        ) $table_config;");
-      db_query("CREATE TABLE {l10n_community_line} (
-        fid                INTEGER,
-        lineno             INTEGER,
-        type               INTEGER,
-        sid                INTEGER
-        ) $table_config;");
-
-      db_query("CREATE TABLE {l10n_community_string} (
-        sid                $serial      PRIMARY KEY,
-        value              TEXT         NOT NULL
-        ) $table_config;");
-      
-      db_query("CREATE TABLE {l10n_community_translation} (
-        tid            $serial       PRIMARY KEY,
-        sid            INTEGER       NOT NULL,
-        language       VARCHAR(12)   NOT NULL,
-        translation    TEXT          NOT NULL,
-        
-        uid_entered    INTEGER       NOT NULL DEFAULT 0,
-        uid_approved   INTEGER       NOT NULL DEFAULT 0,
-        time_entered   INTEGER       NOT NULL DEFAULT 0,
-        time_approved  INTEGER       NOT NULL DEFAULT 0,
-        
-        has_suggestion INTEGER       NOT NULL DEFAULT 0,
-        is_suggestion  INTEGER       NOT NULL DEFAULT 0,
-        is_active      INTEGER       NOT NULL DEFAULT 0
-        ) $table_config;");
-
-      db_query("ALTER TABLE  {l10n_community_release}  ADD FOREIGN KEY (pid) REFERENCES {l10n_community_project} (pid);");
-      db_query("ALTER TABLE  {l10n_community_error}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
-      db_query("ALTER TABLE  {l10n_community_file}    ADD FOREIGN KEY (rid) REFERENCES {l10n_community_release} (rid);");
-      db_query("ALTER TABLE  {l10n_community_line}     ADD FOREIGN KEY (fid) REFERENCES {l10n_community_file} (fid);");
-      db_query("ALTER TABLE  {l10n_community_line}     ADD FOREIGN KEY (sid) REFERENCES {l10n_community_string} (sid);");
-      db_query("CREATE INDEX {l10n_community_project}_uri         ON {l10n_community_project} (uri);");
-
-      db_query("ALTER TABLE  {l10n_community_translation} ADD FOREIGN KEY (sid) REFERENCES {l10n_community_string} (sid);");
-      db_query("CREATE INDEX {l10n_community_translation}_language ON {l10n_community_translation} (language);");
-      db_query("CREATE INDEX {l10n_community_translation}_is_suggestion ON {l10n_community_translation} (is_suggestion);");
-      db_query("CREATE INDEX {l10n_community_translation}_is_active ON {l10n_community_translation} (is_active);");
-      break;
-  }
+  drupal_install_schema('l10n_community');  
 }
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function l10n_community_uninstall() {
+  drupal_uninstall_schema('l10n_community');  
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function l10n_community_schema() {
+  $schema = array();
+  
+  $schema['l10n_community_project'] = array(
+    'description' => t('Projects for which translation is running on the server.'),
+    'fields' => array(
+      'pid' => array(
+        'description' => t('Internal numeric identifier for a project.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'uri' => array(
+        'description' => t('A unique short name to identify the project nicely in paths.'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE
+      ),
+      'title' => array(
+        'description' => t('Human readable name for project used on the interface.'),
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE
+      ),
+      'home_link' => array(
+        'description' => t('Link to project home page.'),
+        'type' => 'text',
+        'not null' => TRUE
+      ),
+      'last_parsed' => array(
+        'description' => t('Unix timestamp of last time project was parsed.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      )
+    ),
+    'primary key' => array('pid'),
+    'indexes' => array(
+      'l10n_community_project_uri' => array('uri')
+    ),
+  );
+
+  $schema['l10n_community_release'] = array(
+    'description' => t('The releases we handle for each project.'),
+    'fields' => array(
+      'rid' => array(
+        'description' => t('Internal numeric identifier for a release.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'pid' => array(
+        'description' => t('Reference to the {l10n_community_project}.pid of the parent project.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'title' => array(
+        'description' => t('Human readable name for release used on the interface.'),
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE
+      ),
+      'download_link' => array(
+        'description' => t('Link to download this release.'),
+        'type' => 'text',
+        'not null' => TRUE
+      ),
+      'file_date' => array(
+        'description' => t('Unix timestamp with release file date. Used to identify file changes.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'file_hash' => array(
+        'description' => t('Hash of file for easy identification of changed files.'),
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => FALSE
+      ),
+      'last_parsed' => array(
+        'description' => t('Unix timestamp of last parsing time for this release package.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      )
+    ),
+    'primary key' => array('rid'),
+    'indexes' => array(
+      'pid' => array('pid')
+    ),
+  );
+
+  $schema['l10n_community_error'] = array(
+    'description' => t('Errors found while parsing release packages. Although we find errors in the release files, we store error notes on a release level, to make them easily accessible without the need for extraneous detail.'),
+    'fields' => array(
+      'eid' => array(
+        'description' => t('Internal numeric identifier for an error.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'),
+      'rid' => array(
+        'description' => t('Reference to the {l10n_community_release}.rid of the affected release.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'),
+      'value' => array(
+        'description' => t('Text of the error message.'),
+        'type' => 'text',
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('eid'),
+    'indexes' => array(
+      'rid' => array('rid')
+    ),
+  );
+
+  $schema['l10n_community_file'] = array(
+    'description' => t('Information on files found and parsed in a release.'),
+    'fields' => array(
+      'fid' => array(
+        'description' => t('Internal numeric identifier for a file.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'rid' => array(
+        'description' => t('Reference to the {l10n_community_release}.rid of the parent release.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'location' => array(
+        'description' => t('Path to the file within the release package.'),
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE
+      ),
+      'revision' => array(
+        'description' => t('CVS revision number extracted for reuse in exports.'),
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('fid'),
+    'indexes' => array(
+      'rid' => array('rid')
+    ),
+  );
+
+  $schema['l10n_community_line'] = array(
+    'description' => t('Information on occurances of strings on lines of specific files.'),
+    'fields' => array(
+      'fid' => array(
+        'description' => t('Reference to the {l10n_community_file}.fid of the parent file.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'lineno' => array(
+        'description' => t('Number of line where the string occurance was found.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'type' => array(
+        'description' => t('Type of occurance. Possible values are constants POTX_STRING_INSTALLER, POTX_STRING_RUNTIME or POTX_STRING_BOTH.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'sid' => array(
+        'description' => t('Reference to the {l10n_community_string}.sid found on this line.'),
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      )
+    ),
+    'indexes' => array(
+      'fid' => array('fid'),
+      'sid' => array('sid')
+    ),
+  );
+
+  $schema['l10n_community_string'] = array(
+    'description' => t('Value of translatable strings found.'),
+    'fields' => array(
+      'sid' => array(
+        'description' => t('Internal numeric identifier for a source string.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'value' => array(
+        'description' => t('The actual translatable string. For strings with multiple plural versions, we store them as the same translatable with a \0 separator (unlike Drupal itself), because it is easier to match translations with them (for multiple plural versions) this way, and we can force people to translate both at once.'),
+        'type' => 'text',
+        'not null' => TRUE
+      )
+    ),
+    'primary key' => array('sid'),
+  );
+
+  $schema['l10n_community_translation'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => t('Internal numeric identifier for a translation.'),
+        'type' => 'serial',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'sid' => array(
+        'description' => t('Reference to the {l10n_community_string}.sid which is being translated.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'disp-width' => '11'
+      ),
+      'language' => array(
+        'description' => t('Reference to the {languages}.language to which the string is being translated.'),
+        'type' => 'varchar',
+        'length' => '12',
+        'not null' => TRUE
+      ),
+      'translation' => array(
+        'description' => t('The actual translation or suggestion.'),
+        'type' => 'text',
+        'not null' => TRUE
+      ),
+      'uid_entered' => array(
+        'description' => t('Reference to the {users}.uid who entered this translation or suggestion.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'uid_approved' => array(
+        'description' => t('Reference to the {users}.uid who approved this translation or suggestion.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'time_entered' => array(
+        'description' => t('Unix timestamp of time when the translation or suggestion was entered.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'time_approved' => array(
+        'description' => t('Unix timestamp of time when the translation or suggestion was approved.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'has_suggestion' => array(
+        'description' => t('Cached flag of whether there is at least one other row in the table where is_suggestion = 1, is_active = 1 and sid and language is the same as this one. Only applicable to rows where is_suggestion = 0.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'is_suggestion' => array(
+        'description' => t('Flag of whether this is a suggestion (1) or not (0). If 0, *_approved fields should also be 0.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'is_active' => array(
+        'description' => t('Flag of whether this is an active (1) suggestion or translation. Older suggestions and translations are kept (0). Unprocessed suggestions and active translations have this as 1.'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      )
+    ),
+    'primary key' => array('tid'),
+    'indexes' => array(
+      'l10n_community_translation_is_active' => array('is_active'),
+      'l10n_community_translation_is_suggestion' => array('is_suggestion'),
+      'l10n_community_translation_language' => array('language'),
+      'sid' => array('sid')
+    ),
+  );
+  
+  return $schema;
+}
+
+// -- Drupal 5 updates ---------------------------------------------------------
 
 /**
  * Add home_link column so we can interlink projects with drupal.org pages.
@@ -190,15 +372,6 @@ function l10n_community_update_5003() {
   return $ret;
 }
 
-/**
- * Implementation of hook_uninstall().
- */
-function l10n_community_uninstall() {
-  db_query("DROP TABLE {l10n_community_project}");
-  db_query("DROP TABLE {l10n_community_release}");
-  db_query("DROP TABLE {l10n_community_error}");
-  db_query("DROP TABLE {l10n_community_file}");
-  db_query("DROP TABLE {l10n_community_line}");
-  db_query("DROP TABLE {l10n_community_string}");
-  db_query("DROP TABLE {l10n_community_translation}");
-}
+// -- Drupal 6 updates ---------------------------------------------------------
+// -- Use schema API from here -------------------------------------------------
+

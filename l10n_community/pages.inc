@@ -116,11 +116,9 @@ function l10n_community_overview_language($langcode = NULL) {
   $has_posts = FALSE;
   if (module_exists('taxonomy') && ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode))) {
     $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-    if (db_num_rows($result) > 0) {
-      while ($node = db_fetch_object($result)) {
-        $has_posts = TRUE;
-        $output .= node_view(node_load($node->nid), 1);
-      }
+    while ($node = db_fetch_object($result)) {
+      $has_posts = TRUE;
+      $output .= node_view(node_load($node->nid), 1);
     }
   }
   if (!$has_posts) {
@@ -133,7 +131,9 @@ function l10n_community_overview_language($langcode = NULL) {
   if (module_exists('l10n_groups')) {
     // A little extra message if the groups module is enabled.
     $groups = l10n_groups_get_groups();
-    $group_help = '<p>'. t('The <a href="@group">%language group</a> pages might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$langcode]->nid), '%language' => $languages[$langcode])) .'</p>';
+    if (isset($groups[$langcode])) {
+      $group_help = '<p>'. t('The <a href="@group">%language group</a> pages might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$langcode]->nid), '%language' => $languages[$langcode])) .'</p>';
+    }
   }
   $block = array(
     'title' => t('Contribute'),
@@ -227,7 +227,12 @@ function l10n_community_overview_project($uri = NULL) {
       array(
         array('data' => l($language .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array(), 'project='. $uri), 'class' => 'rowhead'),
       ),
-      theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1])
+      theme(
+        'l10n_community_progress_columns',
+        $num_source,
+        !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
+        !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
+      )
     );
   }
   $block['content'] = theme(

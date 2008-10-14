@@ -54,232 +54,242 @@ define('L10N_STATUS_TRANSLATED', 3);
  * all functionality can be presented in a view-only form, which
  * anonymous users should be able to browse.
  */
-function l10n_community_menu($may_cache) {
+function l10n_community_menu() {
   $items = array();
-  if ($may_cache) {
-    // Settings menu items.
-    $items[] = array(
-      'path' => 'admin/l10n_server',
-      'title' => t('Localization server'),
-      'description' => t('Configuration options for the localization server.'),
-      'position' => 'right',
-      'weight' => -5,
-      'callback' => 'l10n_community_settings_overview',
-      'access' => user_access('administer localization community')
-    );
-    $items[] = array(
-      'title' => t('Translation interface'),
-      'path' => 'admin/l10n_server/l10n_community',
-      'description' => t('Control the display of the translation interface.'),
-      'access' => user_access('administer localization community'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => 'l10n_community_settings_form',
-      'weight' => -5,
-    );
 
-    // Main menu items (cacheable). These are a small number of items, and
-    // they are always the same, so we are safe to cache them.
-    $items[] = array(
-      'title' => t('Translate'),
-      'path' => 'translate',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('welcome', 'l10n_community_welcome_page'),
-      'access' => user_access('access localization community'),
-    );
-    $items[] = array(
-      'title' => t('Overview'),
-      'path' => 'translate/overview',
-      'access' => user_access('access localization community'),
-      'type' => MENU_DEFAULT_LOCAL_TASK,
-      'weight' => -20,
-    );
-    $items[] = array(
-      'title' => t('Explore languages'),
-      'description' => t('Overview of languages and their translation status.'),
-      'path' => 'translate/languages',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('pages', 'l10n_community_explore_languages'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_LOCAL_TASK,
-      'weight' => -10,
-    );
-    $items[] = array(
-      'title' => t('Explore projects'),
-      'description' => t('Overview of projects and their translation status.'),
-      'path' => 'translate/projects',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('pages', 'l10n_community_explore_projects'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_LOCAL_TASK,
-      'weight' => -5,
-    );
-    $items[] = array(
-      'path' => 'translate/projects/autocomplete',
-      'title' => t('Project autocomplete'),
-      'callback' => 'l10n_community_projects_autocomplete',
-      'access' => user_access('access localization community'),
-      'type' => MENU_CALLBACK
-    );
-  }
+  // Settings menu items.
+  $items['admin/l10n_server'] = array(
+    'title' => 'Localization server',
+    'description' => 'Configuration options for the localization server.',
+    'page callback' => 'l10n_community_settings_overview',
+    'access arguments' => array('administer localization community'),
+    'position' => 'right',
+    'weight' => -5,
+  );
+  $items['admin/l10n_server/l10n_community'] = array(
+    'title' => 'Translation interface',
+    'description' => 'Control the display of the translation interface.',
+    'access arguments' => array('administer localization community'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_community_settings_form'),
+    'weight' => -5,
+  );
+
+  // Main menu items.
+  $items['translate'] = array(
+    'title' => 'Translate',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('welcome', 'l10n_community_welcome_page'),
+    'access arguments' => array('access localization community'),
+  );
+  $items['translate/overview'] = array(
+    'title' => 'Overview',
+    'access arguments' => array('access localization community'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -20,
+  );
+  $items['translate/languages'] = array(
+    'title' => 'Explore languages',
+    'description' => 'Overview of languages and their translation status.',
+    'page ecallback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('pages', 'l10n_community_explore_languages'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['translate/projects'] = array(
+    'title' => 'Explore projects',
+    'description' => 'Overview of projects and their translation status.',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('pages', 'l10n_community_explore_projects'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+  );
+  $items['translate/projects/autocomplete'] = array(
+    'title' => 'Project autocomplete',
+    'page callback' => 'l10n_community_projects_autocomplete',
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK
+  );
   
-  // Non-cachable menu items. These are numerous to generate for all languages and all projects,
-  // so we are not caching them, and only generate on demand, when they are in need.    
-  elseif (arg(0) == 'translate') {
-    // AJAX callbacks for easy translation management. These are expected to be
-    // used only onsite (not as remote API endpoints), so they have no versioning.
-    $items[] = array(
-      'title' => t('String details'),
-      'path' => 'translate/details',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('ajax', 'l10n_community_string_details'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_CALLBACK,
-    );
-    $items[] = array(
-      'title' => t('String suggestions'),
-      'path' => 'translate/suggestions',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('ajax', 'l10n_community_string_suggestions'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_CALLBACK,
-    );
-    $items[] = array(
-      'title' => t('Approve suggestion'),
-      'path' => 'translate/approve',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('ajax', 'l10n_community_string_approve'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_CALLBACK,
-    );
-    $items[] = array(
-      'title' => t('Decline suggestion'),
-      'path' => 'translate/decline',
-      'callback' => 'l10n_community_page_wrapper',
-      'callback arguments' => array('ajax', 'l10n_community_string_decline'),
-      'access' => user_access('access localization community'),
-      'type' => MENU_CALLBACK,
-    );
+  // AJAX callbacks for easy translation management. These are expected to be
+  // used only onsite (not as remote API endpoints), so they have no versioning.
+  $items['translate/details'] = array(
+    'title' => 'String details',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('ajax', 'l10n_community_string_details'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['translate/suggestions'] = array(
+    'title' => 'String suggestions',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('ajax', 'l10n_community_string_suggestions'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['translate/approve'] = array(
+    'title' => 'Approve suggestion',
+    'page ecallback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('ajax', 'l10n_community_string_approve'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['translate/decline'] = array(
+    'title' => 'Decline suggestion',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('ajax', 'l10n_community_string_decline'),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK,
+  );
     
-    if ((arg(1) == 'remote') && (arg(2) == '1.0') && ($langcode = arg(3))) {
-      // Makes it possible to submit translations remotely, especially from
-      // an l10n_client install. The user is required to have permissions
-      // to work with the given language, so practically a login is required,
-      // but the permissions are not checked here, so we can provide meaningful
-      // information to the user if something fails. The callback is versioned
-      // so that changes to the API can be tracked.
-      $items[] = array(
-        'title' => t('Remote translation submission'),
-        'path' => 'translate/remote/1.0/'. $langcode,
-        'callback' => 'l10n_community_page_wrapper',
-        'callback arguments' => array('ajax', 'l10n_community_string_remote', $langcode),
-        'access' => TRUE,
-        'type' => MENU_CALLBACK,
-      );
-    }
+  // Makes it possible to submit translations remotely, especially from
+  // an l10n_client install. The user is required to have permissions
+  // to work with the given language, so practically a login is required,
+  // but the permissions are not checked here, so we can provide meaningful
+  // information to the user if something fails. The callback is versioned
+  // so that changes to the API can be tracked.
+  $items['translate/remote/1.0/%l10n_community_language'] = array(
+    'title' => 'Remote translation submission',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('ajax', 'l10n_community_string_remote', 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
     
+  // As soon as we have a language code, we can translate.
+  $items['translate/languages/%l10n_community_language'] = array(
+    'title' => 'Translate',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('pages', 'l10n_community_overview_language', 2),
+    'access arguments' => array('access localization community'),
+  );
+  // Language overview.
+  $items['translate/languages/%l10n_community_language/overview'] = array(
+    'title' => 'Overview',
+    'access arguments' => array('access localization community'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -20,
+  );
+  // Tabs to translate, import and export projects.
+  $items['translate/languages/%l10n_community_language/view'] = array(
+    'title' => 'View',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('translate', 'l10n_community_translate_page', 2),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['translate/languages/%l10n_community_language/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('translate', 'l10n_community_translate_page', 2, 'edit'),
+    'access callback' => 'l10n_community_contribute_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -8,
+  );
+  $items['translate/languages/%l10n_community_language/import'] = array(
+    'title' => 'Import',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('import', 'l10n_community_import_page', 2),
+    'access callback' => 'l10n_community_contribute_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+  );
+  $items['translate/languages/%l10n_community_language/export'] = array(
+    'title' => 'Export',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('export', 'l10n_community_export_page', NULL, 2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+  );
+    
+  // We have a valid project name from the web address.
+  $items['translate/projects/%l10n_community_project'] = array(
+    'title callback' => 'l10n_community_page_title_project',
+    'title arguments' => array(2),
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('pages', 'l10n_community_overview_project', 2),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['translate/projects/%l10n_community_project/view'] = array(
+    'title' => 'Overview',
+    'access arguments' => array('access localization community'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['translate/projects/%l10n_community_project/export'] = array(
+    'title' => 'Export template',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('export', 'l10n_community_export_page', 2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['translate/projects/%l10n_community_project/errors'] = array(
+    'title' => 'Marker errors',
+    'page callback' => 'l10n_community_page_wrapper',
+    'page arguments' => array('pages', 'l10n_community_project_errors', 2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu loader function for %l10n_community_language to validate language code.
+ */
+function l10n_community_language_load($langcode) {
+  if (($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
+    return $langcode;
+  }
+  return FALSE;
+}
+
+/**
+ * Menu loader function for %l10n_community_project to validate project URI.
+ */
+function l10n_community_project_load($uri) {
+  if (($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
+    return $uri;
+  }
+  return FALSE;
+}
+
+/**
+ * Access callback for editing and import paths. Requires edit privileges for given language.
+ */
+function l10n_community_contribute_access($langcode) {
+  return user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE);
+}
+
+/**
+ * Title callback for project pages.
+ */
+function l10n_community_page_title_project($uri) {
+  if (($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
+    return $projects[$uri]->title;
+  }
+  return t('Translate');
+}
+
+/**
+ * Implementation of hook_init().
+ *
+ * Add stylesheets and block search engines from web application pages.
+ */
+function l10n_community_init() {
+  if (arg(0) == 'translate') {
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // For the translation overview pages. This is used to present admin page like panels.
     drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
     // Tell them that robots are not welcome here. This is a web app, not content.
     drupal_set_html_head('<meta name="robots" content="noindex, nofollow" />');
-
-    if (arg(1) == 'languages') {
-      // Either a language overview screen or the user already choose a language.
-      if (($langcode = arg(2)) && ($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
-        // As soon as we have a language code, we can translate.
-        $items[] = array(
-          'title' => t('Translate'),
-          'path' => 'translate/languages/'. $langcode,
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('pages', 'l10n_community_overview_language', $langcode),
-          'access' => user_access('access localization community'),
-          'type' => MENU_ITEM,
-        );
-        // Language overview.
-        $items[] = array(
-          'title' => t('Overview'),
-          'path' => 'translate/languages/'. $langcode .'/overview',
-          'type' => MENU_DEFAULT_LOCAL_TASK,
-          'weight' => -20,
-          'access' => user_access('access localization community'),
-        );
-        // Tabs to translate, import and export projects.
-        $items[] = array(
-          'title' => t('View'),
-          'path' => 'translate/languages/'. $langcode .'/view',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => -10,
-          'access' => user_access('access localization community'),
-        );
-        $items[] = array(
-          'title' => t('Edit'),
-          'path' => 'translate/languages/'. $langcode .'/edit',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('translate', 'l10n_community_translate_page', $langcode, 'edit'),
-          'type' => MENU_LOCAL_TASK,
-          'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
-          'weight' => -8,
-        );
-        $items[] = array(
-          'title' => t('Import'),
-          'path' => 'translate/languages/'. $langcode .'/import',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('import', 'l10n_community_import_page', $langcode),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => -5,
-          'access' => user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE),
-        );
-        $items[] = array(
-          'title' => t('Export'),
-          'path' => 'translate/languages/'. $langcode .'/export',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('export', 'l10n_community_export_page', NULL, $langcode),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => 0,
-        );
-      }
-    }
-    
-    elseif (arg(1) == 'projects') {
-      if (($uri = arg(2)) && ($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
-        // We have a valid project name from the web address.
-        $items[] = array(
-          'title' => $projects[$uri]->title,
-          'path' => 'translate/projects/'. $uri,
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('pages', 'l10n_community_overview_project', $uri),
-          'access' => user_access('access localization community'),
-          'type' => MENU_CALLBACK,
-        );
-        $items[] = array(
-          'title' => t('Overview'),
-          'path' => 'translate/projects/'. $uri .'/view',
-          'access' => user_access('access localization community'),
-          'type' => MENU_DEFAULT_LOCAL_TASK,
-          'weight' => -10,
-        );
-        $items[] = array(
-          'title' => t('Export template'),
-          'path' => 'translate/projects/'. $uri .'/export',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('export', 'l10n_community_export_page', $uri),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => 0,
-        );
-        $items[] = array(
-          'title' => t('Marker errors'),
-          'path' => 'translate/projects/'. $uri .'/errors',
-          'callback' => 'l10n_community_page_wrapper',
-          'callback arguments' => array('pages', 'l10n_community_project_errors', $uri),
-          'type' => MENU_LOCAL_TASK,
-          'weight' => 10,
-        );
-      }
-    }
   }
-  return $items;
 }
 
 /**
@@ -434,10 +444,8 @@ function l10n_community_user($op, &$edit, &$account, $category = NULL) {
  * This is the same admin block display function as in system.module
  */
 function l10n_community_settings_overview() {
-  $menu = menu_get_item(NULL, 'admin/l10n_server');
-  $content = system_admin_menu_block($menu);
-  $output = theme('admin_block_content', $content);
-  return $output;
+  include_once drupal_get_path('module', 'system') .'/system.admin.inc';
+  return system_admin_menu_block_page();
 }
 
 /**
@@ -491,10 +499,10 @@ function l10n_community_get_languages($key = NULL) {
   static $languages = NULL;
   
   if (!isset($languages)) {
-    $result = db_query("SELECT * FROM {locales_meta} WHERE locale != 'en' ORDER BY name ASC");
+    $result = db_query("SELECT * FROM {languages} WHERE language <> 'en' ORDER BY name ASC");
     $languages = array();
     while ($language = db_fetch_object($result)) {
-      $languages[$language->locale] = $language;
+      $languages[$language->language] = $language;
     }
   }
   
@@ -502,7 +510,7 @@ function l10n_community_get_languages($key = NULL) {
     // Build list of values with the specific key, if asked.
     $result = array();
     foreach ($languages as $language) {
-      $result[$language->locale] = $language->$key;
+      $result[$language->language] = $language->$key;
     }
     return $result;
   }
@@ -838,6 +846,41 @@ function l10n_community_filter_value($name) {
 // = Theme functions ===========================================================
 
 /**
+ * Implementation of hook_theme().
+ */
+function l10n_community_theme($existing, $type, $theme, $path) {
+  return array(
+    // l10n_community.module
+    'l10n_community_button' => array(
+      'arguments' => array('type' => NULL, 'class' => NULL, 'extras' => ''),
+    ),
+    'l10n_community_strings' => array(
+      'arguments' => array('items' => NULL, 'form' => TRUE),
+    ),
+    'l10n_community_copy_button' => array(
+      'arguments' => array(),
+    ),
+    // pages.inc
+    'l10n_community_progress_columns' => array(
+      'arguments' => array('sum' => NULL, 'translated' => NULL, 'has_suggestion' => NULL),
+    ),
+    'l10n_community_progress_headers' => array(
+      'arguments' => array('mainhead' => NULL),
+    ),
+    'l10n_community_table' => array(
+      'arguments' => array('header' => NULL, 'table' => NULL),
+    ),
+    // translate.inc
+    'l10n_community_filter_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'l10n_community_translate_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
+/**
  * Theme a textual button.
  *
  * Text values are centralized here so it is easy to change.
@@ -884,7 +927,7 @@ function theme_l10n_community_button($type, $class, $extras = '') {
  * Theme a list of translatable strings. Adds a copy button to each string
  * for quickly copying its source text into a translation form. (through ajax)
  */
-function theme_l10n_community_strings($items, $form = true) {
+function theme_l10n_community_strings($items, $form = TRUE) {
   $output = "<ul class='l10n-community-strings'>";
   foreach ($items as $item) {
     $output .= "<li class='clear-block'>";
@@ -900,11 +943,8 @@ function theme_l10n_community_strings($items, $form = true) {
 
 /**
  * Copy button for string values.
- *
- * @param $sid
- *   Source string ID.
  */
-function theme_l10n_community_copy_button($sid = 0) {
+function theme_l10n_community_copy_button() {
   return theme('l10n_community_button', 'edit', 'l10n-community-copy');
 }
 
@@ -940,12 +980,13 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
     $string
   );
 
+  $class = '';
   if (isset($sid) && isset($delta)) {
-    $class = "string-$sid-$delta";
+    $class = ' class="string-'. $sid . $delta .'"';
   }
   else if ($sid) {
-    $class = "string-$sid";
+    $class = ' class="string-'. $sid .'"';
   }
 
-  return "<div class='$class'><span class='string'>$string</span><span class='original hidden'>$original</span></div>";
+  return '<div'. $class .'><span class="string">'. $string .'</span><span class="original hidden">'. $original .'</span></div>';
 }

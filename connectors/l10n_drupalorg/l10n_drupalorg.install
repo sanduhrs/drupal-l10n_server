@@ -13,16 +13,32 @@ function l10n_drupalorg_install() {
   // to some degree already. See l10n_drupalorg_plurals().
   $languages = l10n_drupalorg_plurals();
   include_once 'includes/locale.inc';
-  foreach ($languages as $langcode => $data) {
+  $predefined =_locale_get_predefined_list();
+  foreach ($languages as $langcode => $plural_formula) {
     // Use artificial file name. Although this is not localizable, because this is only run once,
     // it is not considered to be a problem.
-    list($plurals, $formula) = _locale_import_parse_plural_forms($data[1], 'automatic install of '. $data[0]);
-    if (!$locale = db_result(db_query("SELECT locale FROM {locales_meta} WHERE locale = '%s'", $langcode))) {
-      db_query("INSERT INTO {locales_meta} (locale, name, enabled, plurals, formula) VALUES ('%s', '%s', %d, %d, '%s')", $langcode, $data[0], 1, $plurals, $formula);
+    list($plurals, $formula) = _locale_import_parse_plural_forms($plural_formula, 'automatic install of '. $predefined[$langcode][0]);
+    if (!$locale = db_result(db_query("SELECT language FROM {languages} WHERE language = '%s'", $langcode))) {
+      db_query(
+        "INSERT INTO {languages}
+         (language, name, native, direction, enabled, plurals, formula, domain, prefix, weight, javascript) VALUES
+         ('%s', '%s', '%s', %d, %d, %d, '%s', '%s', '%s', %d, '%s')",
+        $langcode,
+        $predefined[$langcode][0],
+        isset($predefined[$langcode][1]) ? $predefined[$langcode][1] : $predefined[$langcode][0],
+        isset($predefined[$langcode][2]) ? $predefined[$langcode][2] : LANGUAGE_LTR,
+        1,
+        $plurals,
+        $formula,
+        '',
+        $langcode,
+        0,
+        ''
+      );
     }
     else {
       // Update plural formula to the one we know works.
-      db_query("UPDATE {locales_meta} SET plurals = %d, formula = '%s' WHERE locale = '%s'", $plurals, $formula, $langcode);
+      db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, $langcode);
     }
   }
 }
@@ -48,80 +64,79 @@ function l10n_drupalorg_plurals() {
   $default = 'nplurals=2; plural=(n!=1);';
   $one = 'nplurals=1; plural=0;';
   return array(
-    'af' => array('Afrikaans', $default),
+    'af' => $default,
     // Wordforge says nplurals=4!?
-    'ar' => array('Arabic', 'nplurals=6; plural=n==1 ? 0 : n==0 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;'),
-    'bg' => array('Bulgarian', $default),
-    'bn' => array('Bengali', $default),
-    'bs' => array('Bosnian', 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);'),
+    'ar' => 'nplurals=6; plural=n==1 ? 0 : n==0 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;',
+    'bg' => $default,
+    'bn' => $default,
+    'bs' => 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
     // Wordforge has different rules!?
-    'ca' => array('Catalan', 'nplurals=2; plural=(n > 1);'),
+    'ca' => 'nplurals=2; plural=(n > 1);',
     // Wordforge has different rules!?
-    'cs' => array('Czech', 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);'),
-    'da' => array('Danish', $default),
-    'de' => array('German', $default),
+    'cs' => 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
+    'da' => $default,
+    'de' => $default,
     // Wordforge has nplurals=1, but this might fit us better.
-    'dz' => array('Dzongkha', $default),
-    'el' => array('Greek', $default),
-    'eo' => array('Esperanto', $default),
-    'es' => array('Spanish', $default),
-    'et' => array('Estonian', $default),
-    'eu' => array('Basque', $default),
+    'dz' => $default,
+    'el' => $default,
+    'eo' => $default,
+    'es' => $default,
+    'et' => $default,
+    'eu' => $default,
     // Wordforge has nplurals=1, but this might fit us better.
-    'fa' => array('Persian', $default),
-    'fi' => array('Finnish', $default),
-    'fo' => array('Faroese', $default),
-    'fr' => array('French', 'nplurals=2; plural=(n > 1);'),
-    'gl' => array('Galician', $default),
-    'gu' => array('Gujarati', $default),
-    'he' => array('Hebrew', $default),
-    'hi' => array('Hindi', $default),
-    'hr' => array('Croatian', 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;'),
+    'fa' => $default,
+    'fi' => $default,
+    'fo' => $default,
+    'fr' => 'nplurals=2; plural=(n > 1);',
+    'gl' => $default,
+    'gu' => $default,
+    'he' => $default,
+    'hi' => $default,
+    'hr' => 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;',
     // Wordforge has nplurals=1, but this might fit us better.
-    'hu' => array('Hungarian', $default),
+    'hu' => $default,
     // Wordforge has nplurals=1, but this might fit us better.
-    'id' => array('Indonesian', $default),
-    'is' => array('Icelandic', $default),
-    'it' => array('Italian', $default),
+    'id' => $default,
+    'is' => $default,
+    'it' => $default,
     // Wordforge has nplurals=1, but this might fit us better.
-    'ja' => array('Japaneese', $default),
-    'km' => array('Khmer', $default),
-    'kn' => array('Kannada', $default),
-    'ko' => array('Korean', $default),
-    'lt' => array('Lithuanian', 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2;'),
-    'lv' => array('Latvian', 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2;'),
-    'mk' => array('Macedonian', $default),
-    'mr' => array('Marathi', $default),
-    'ms' => array('Malay', $default),
-    'my' => array('Burmese', $default),
-    'nb' => array('Norvegian Bokmål', $default),
-    'nl' => array('Dutch', $default),
-    'nn' => array('Norwegian Nynorsk', $default),
+    'ja' => $default,
+    'km' => $default,
+    'kn' => $default,
+    'ko' => $default,
+    'lt' => 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2;',
+    'lv' => 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2;',
+    'mk' => $default,
+    'mr' => $default,
+    'ms' => $default,
+    'my' => $default,
+    'nb' => $default,
+    'nl' => $default,
+    'nn' => $default,
     // The 'no' code is superceeded by nb and nn
     //'no' => array('Norwegian', $default),
-    'np' => array('Nepali', $default),
-    'pl' => array('Polish', 'nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);'),
+    'ne' => $default,
+    'pl' => 'nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
     // Wordforge has different rules!?
-    'pt-br' => array('Brazilian Portuguese', $default),
-    'pt-pt' => array('Portuguese', $default),
+    'pt-br' => $default,
+    'pt-pt' => $default,
     // Wordforge has completely different rules with nplurals=3!?
-    'ro' => array('Romanian', $default),
-    'ru' => array('Russian', 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);'),
+    'ro' => $default,
+    'ru' => 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
     // This should not be there in CVS, needs cleanup!
     // 'ru-ru' => array(),
-    'sk' => array('Slovak', 'nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;'),
-    'sl' => array('Slovenian', 'nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);'),
-    'sq' => array('Albanian', $default),
+    'sk' => 'nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;',
+    'sl' => 'nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);',
+    'sq' => $default,
     // Wordforge has nplurals=4 here, and could be right, based on the .po file data?!?
-    'sr' => array('Serbian', $default),
-    'sv' => array('Swedish', $default),
-    'th' => array('Thai', $default),
-    'tr' => array('Turkish', $one),
-    'uk' => array('Ukrainian', 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;'),
-    // Why does this need the -uz suffix???
-    'uz-uz' => array('Uzbek', $default),
-    'vi' => array('Vietnamese', $one),
-    'zh-hans' => array('Chinese (simplified)', $one),
-    'zh-hant' => array('Chinese (traditional)', $one),
+    'sr' => $default,
+    'sv' => $default,
+    'th' => $default,
+    'tr' => $one,
+    'uk' => 'nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;',
+    'uz' => $default,
+    'vi' => $one,
+    'zh-hans' => $one,
+    'zh-hant' => $one,
   );
 }

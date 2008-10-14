@@ -64,7 +64,7 @@ function l10n_community_import_form($langcode, $perm) {
 /**
  * Process the locale import form submission.
  */
-function l10n_community_import_form_submit($form_id, &$form) {
+function l10n_community_import_form_submit($form, &$form_state) {
   // Save file in the local file system.
   if ($file = file_save_upload('file')) {
 
@@ -74,7 +74,7 @@ function l10n_community_import_form_submit($form_id, &$form) {
     }
 
     // Do the actual parsing on the local file.
-    if (l10n_community_import($file, $form['langcode'], $form['is_suggestion'])) {
+    if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'])) {
       // Get status report on what was done in the process.
       list($inserted, $updated, $unchanged, $suggested) = _l10n_community_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));

@@ -1,5 +1,6 @@
 ; $Id$
 name = "Localization community"
 description = A community interface for string translation
-dependencies = locale
+dependencies[] = locale
 package = "Localization server"
+core = 6.x
