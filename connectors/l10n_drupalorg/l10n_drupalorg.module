@@ -31,7 +31,7 @@ function l10n_drupalorg_menu() {
     'description' => 'Configure the drupal.org connector.',
     'access arguments' => array('administer localization community for drupal.org'),
     'page callback' => 'drupal_get_form',
-    'page arguments' => 'l10n_drupalorg_settings_form',
+    'page arguments' => array('l10n_drupalorg_settings_form'),
   );
   $items['admin/l10n_server/l10n_drupalorg/configure'] = array(
     'title' => 'Configure',
