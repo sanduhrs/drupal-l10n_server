@@ -215,15 +215,27 @@ function l10n_localpacks_scan($automated = FALSE) {
 function l10n_localpacks_save_data($project_uri, $project_title, $release_version, $filepath, $filedate) {
   // Save project information first.
   if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri))) {
-    // No need to update home_link here, as uri is not changed, and we base home_link on the uri.
-    db_query("UPDATE {l10n_community_project} SET title = '%s' WHERE uri = '%s'", $project_title, $project_uri);
+    if ($existing_project->connector_module == 'l10n_localpacks') {
+      // No need to update home_link here, as uri is not changed, and we base home_link on the uri.
+      db_query("UPDATE {l10n_community_project} SET title = '%s' WHERE uri = '%s' AND connector_module = 'l10n_localpacks'", $project_title, $project_uri);
+    }
+    else {
+      // Log error on existing project with another connector and skip the rest of this function.
+      $t_args = array('%uri' => $uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_localpacks');
+      watchdog('l10n_localpacks', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
+      drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
+      return;
+    }
   }
   else {
-    db_query("INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link) VALUES ('%s', '%s', 0, '%s')", $project_uri, $project_title, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''));
+    db_query(
+      "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module) VALUES ('%s', '%s', %d, '%s', '%s')",
+      $project_uri, $project_title, 0, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''), 'l10n_localpacks'
+    );
   }
   
   // Grab updated project data and save release information.
-  $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri));
+  $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s' AND connector_module = 'l10n_localpacks'", $project_uri));
   if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE pid = %d AND title = '%s'", $project->pid, $release_version))) {
     if ($filedate != $existing_release->file_date) {
       // New file with possibly new date for the same release (dev snapshot
