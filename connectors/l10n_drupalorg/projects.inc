@@ -41,6 +41,10 @@ function l10n_drupalorg_sync_projects() {
   foreach ($projects as $uri => $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $uri))) {
       if ($existing_project->connector_module == 'l10n_drupalorg') {
+        if ($existing_project->status == 0) {
+          // Skip this project if it is disabled.
+          continue;
+        }
         if ($project->title != $existing_project->title) {
           // Update if title is different (uri should not change, other data is
           // internal). Also set the parsed timestamp to the past, so we will
@@ -53,14 +57,14 @@ function l10n_drupalorg_sync_projects() {
         $t_args = array('%uri' => $uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_drupalorg');
         watchdog('l10n_drupalorg', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
         drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
-        return;
+        continue;
       }
     }
     else {
       // New project, not recorded before.
       db_query(
-        "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module) VALUES ('%s', '%s', %d, '%s', '%s')",
-        $uri, $project->title, 0, $project->link, 'l10n_drupalorg'
+        "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
+        $uri, $project->title, 0, $project->link, 'l10n_drupalorg', 1
       );
     }
   }

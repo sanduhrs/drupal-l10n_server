@@ -164,33 +164,41 @@ function l10n_localpacks_scan($automated = FALSE) {
     }        
   }
   
-  for ($i = 0; $i < variable_get('l10n_localpacks_limit', 1); $i++) { 
-    // Pick the release we did not update for the longest period, and parse the tarball.
-    $release = db_fetch_object(db_query_range("SELECT * FROM {l10n_community_release} ORDER BY last_parsed ASC", 0, 1));
+  $user_feedback = FALSE;
+  $results = db_query_range("SELECT * FROM {l10n_community_release} WHERE pid IN (SELECT pid FROM {l10n_community_project} WHERE connector_module = 'l10n_localpacks' AND status = 1) ORDER BY last_parsed ASC", 0, variable_get('l10n_localpacks_limit', 1));
+  while ($release = db_fetch_object($results)) {
     
-    // Only parse file if something changes since we last parsed it.
+    // Only parse file if something changed since we last parsed it.
     $file_name = $workdir .'/'. $release->download_link;
-    if (filemtime($file_name) > $release->last_parsed) {
-      include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
-      $result = l10n_community_parse_package($file_name, $release->rid);
-    }
-    else {
-      $result['message'] .= t('@release was already parsed, no need to scan again.', array('@release' => $release->download_link));
-      // Hackish update of last parsed time so other tarballs will get into the queue too.
-      // @todo: work on something better for this.
-      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
-    }
-    
-    if (!$automated) {
-      // User feedback, if not automated. Log messages are already done.
-      // @todo: these swallow all but the latest message. Needs fixing.
-      if (isset($result['error'])) {
-        drupal_set_message($result['error'], 'error');
+
+    if (file_exists($file_name)) {
+      if (filemtime($file_name) > $release->last_parsed) {
+        include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
+        $result = l10n_community_parse_package($file_name, $release->rid);
+
+        // User feedback, if not automated. Log messages are already done.
+        if (isset($result['error']) && !$automated) {
+          $user_feedback = TRUE;
+          drupal_set_message($result['error'], 'error');
+        }
+        elseif (isset($result['message']) && !$automated) {
+          $user_feedback = TRUE;
+          drupal_set_message($result['message']);
+        }
       }
-      if (isset($result['message'])) {
-        drupal_set_message($result['message']);
+      else {
+        if (!$automated) {
+          $user_feedback = TRUE;
+          drupal_set_message(t('@release was already parsed, no need to scan again.', array('@release' => $release->download_link)));
+        }
       }
     }
+    // Hackish update of last parsed time so other tarballs will get into the queue too.
+    // @todo: work on something better for this.
+    db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+  }
+  if (!$automated && !$user_feedback) {
+    drupal_set_message(t('No (new) local packages found to scan in %workdir.', array('%workdir' => $workdir)));
   }
   
   // Ensure that a Drupal page will be displayed with the messages.
@@ -216,6 +224,10 @@ function l10n_localpacks_save_data($project_uri, $project_title, $release_versio
   // Save project information first.
   if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project_uri))) {
     if ($existing_project->connector_module == 'l10n_localpacks') {
+      if ($existing_project->status == 0) {
+        // Skip this project if it is disabled.
+        return;
+      }
       // No need to update home_link here, as uri is not changed, and we base home_link on the uri.
       db_query("UPDATE {l10n_community_project} SET title = '%s' WHERE uri = '%s' AND connector_module = 'l10n_localpacks'", $project_title, $project_uri);
     }
@@ -229,8 +241,8 @@ function l10n_localpacks_save_data($project_uri, $project_title, $release_versio
   }
   else {
     db_query(
-      "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module) VALUES ('%s', '%s', %d, '%s', '%s')",
-      $project_uri, $project_title, 0, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''), 'l10n_localpacks'
+      "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
+      $project_uri, $project_title, 0, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''), 'l10n_localpacks', 1
     );
   }
   

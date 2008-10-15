@@ -62,6 +62,11 @@ function l10n_community_schema() {
         'type' => 'varchar',
         'length' => '50',
         'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => t('Status flag. 1 if new project releases should be looked for, 0 if new scanning and parsing is disabled.'),
+        'type' => 'int',
+        'not null' => TRUE,
       )
     ),
     'primary key' => array('pid'),
@@ -453,5 +458,18 @@ function l10n_community_update_6000() {
   // The same URI should not appear with multiple connector modules.
   db_add_unique_key($ret, 'l10n_community_project', 'l10n_community_project_uri_connector_module', array('uri', 'connector_module'));
 
+  return $ret;
+}
+
+/**
+ * Add support for enabled and disabled projects.
+ *
+ * Disabled projects will not participate in the scanning process.
+ */
+function l10n_community_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'l10n_community_project', 'status', array('type' => 'int', 'not null' => TRUE));
+  // Make all existing projects enabled.
+  $ret[] = update_sql("UPDATE {l10n_community_project} SET status = 1");
   return $ret;
 }
