@@ -75,7 +75,7 @@ function l10n_community_schema() {
       'l10n_community_project_uri' => array('uri')
     ),
     'unique keys' => array(
-      'l10n_community_project_uri_connector_module', array('uri', 'connector_module')
+      'l10n_community_project_uri_connector_module' => array('uri', 'connector_module')
     ),
   );
 
