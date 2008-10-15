@@ -225,15 +225,9 @@ function l10n_community_export_form_submit($form, &$form_state) {
  *   Look into possibly exporting suggestions as fuzzy translations.
  */
 function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL) {
-  // @todo: make this a hook_requirement implementation in Drupal 6.
-  if (!@include_once 'Archive/Tar.php') {
-    // Message to the user.
-    $message = t('The Archive/Tar.php PEAR extension could not be found on your server. This file is required for exporting translations.');
-    drupal_set_message($message);
-    // Message to watchdog for possible automated packaging. 
-    watchdog('l10n_community', $message);
-    return NULL;
-  }
+  // l10n_community_requirements() makes sure there is a status
+  // error if this is not installed.
+  include_once 'Archive/Tar.php';
   
   $project = l10n_community_get_projects($uri);
   if ($template) {
