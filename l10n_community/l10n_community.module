@@ -67,6 +67,43 @@ function l10n_community_menu() {
     'position' => 'right',
     'weight' => -5,
   );
+  $items['admin/l10n_server/projects'] = array(
+    'title' => 'Projects and releases',
+    'description' => 'Manage projects and releases handled by the server.',
+    'page callback' => 'l10n_community_admin_projects',
+    'file' => 'l10n_community.admin.inc',
+    'access arguments' => array('administer localization community'),
+  );
+  $items['admin/l10n_server/projects/overview'] = array(
+    'title' => 'Overview',
+    'access arguments' => array('administer localization community'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -20,
+  );
+  $items['admin/l10n_server/projects/cleanup'] = array(
+    'title' => 'Clean up',
+    'page callback' => 'l10n_community_admin_projects_cleanup',
+    'file' => 'l10n_community.admin.inc',
+    'access arguments' => array('administer localization community'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['admin/l10n_server/projects/delete/%l10n_community_project'] = array(
+    'title' => 'Delete project',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_community_admin_projects_delete', 4),
+    'file' => 'l10n_community.admin.inc',
+    'access arguments' => array('administer localization community'),
+    'type' => MENU_CALLBACK
+  );
+  $items['admin/l10n_server/projects/reset/%l10n_community_project'] = array(
+    'title' => 'Enable project',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_community_admin_projects_reset', 4),
+    'file' => 'l10n_community.admin.inc',
+    'access arguments' => array('administer localization community'),
+    'type' => MENU_CALLBACK
+  );
   $items['admin/l10n_server/l10n_community'] = array(
     'title' => 'Translation interface',
     'description' => 'Control the display of the translation interface.',
@@ -74,7 +111,7 @@ function l10n_community_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_community_settings_form'),
     'file' => 'l10n_community.admin.inc',
-    'weight' => -5,
+    'weight' => -10,
   );
 
   // Main menu items.
@@ -841,6 +878,10 @@ function l10n_community_theme($existing, $type, $theme, $path) {
       'arguments' => array('form' => NULL),
     ),
     'l10n_community_translate_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    // l10n_community.admin.inc
+    'l10n_community_admin_projects_form' => array(
       'arguments' => array('form' => NULL),
     ),
   );
