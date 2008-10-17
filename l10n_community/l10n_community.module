@@ -638,10 +638,11 @@ function l10n_community_get_projects($uri = NULL, $pager = NULL) {
  */
 function l10n_community_get_releases($uri, $parsed_only = TRUE) {
   $releases = array();
-  $query = "SELECT r.* FROM {l10n_community_release} r LEFT JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.uri = '%s' ORDER BY r.title";
+  $query = "SELECT r.* FROM {l10n_community_release} r LEFT JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.uri = '%s' ";
   if ($parsed_only) {
-    $query .= ' AND r.last_parsed > 0';
+    $query .= 'AND r.last_parsed > 0 ';
   }
+  $query .= 'ORDER BY r.title';
   $result = db_query($query, $uri);
   while ($release = db_fetch_object($result)) {
     $releases[$release->rid] = $release;
