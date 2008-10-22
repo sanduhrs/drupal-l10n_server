@@ -448,6 +448,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
       'l10n_suggestions_callback' => url('translate/suggestions/'. $language->language .'/'),
       'l10n_approve_callback' => url('translate/approve/'),
       'l10n_decline_callback' => url('translate/decline/'),
+      'l10n_form_token_path'  => variable_get('clean_url', '0') ? '?form_token=' : '&form_token='
     ),
     'setting'
   );

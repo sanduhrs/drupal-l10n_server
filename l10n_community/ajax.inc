@@ -63,8 +63,9 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
   $perm = l10n_community_get_permission($langcode);
   while ($suggestion = db_fetch_object($result)) {    
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
-    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this);" title="'. t('Approve suggestion.') .'"') : '';    
-    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this);" title="'. t('Decline suggestion.') .'"') : '';
+    $token = "'". drupal_get_token('l10n_server_'. $suggestion->tid .'_'. $suggestion->sid) ."'";
+    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Approve suggestion.') .'"') : '';    
+    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Decline suggestion.') .'"') : '';
     
     // Plural versions are shown in a short form.
     // Since we no longer store an additional copy of strings in JS
@@ -86,6 +87,24 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
 }
 
 /**
+ * Checks permission of current user to approve or decline $tid.
+ *
+ * @param $tid
+ *   Suggestion ID.
+ * @return
+ *   The suggestion object if validated $tid, user permissions and token.
+ */
+function l10n_community_string_ajax_suggestion($tid = 0) {
+  if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) &&
+      (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL) &&
+      !empty($_GET['form_token']) &&
+      drupal_valid_token($_GET['form_token'], 'l10n_server_'. $suggestion->tid .'_'. $suggestion->sid)) {
+    return $suggestion;
+  }
+  return FALSE;
+}
+
+/**
  * Records approval of a previous string suggestion.
  * 
  * This callback is invoked from JavaScript.
@@ -96,7 +115,7 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
 function l10n_community_string_approve($tid = 0) {
   global $user;
   
-  if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
+  if ($suggestion = l10n_community_string_ajax_suggestion($tid)) {
     // Mark existing translations and suggestions as inactive in this language.
     db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid = %d AND language = '%s'", $suggestion->sid, $suggestion->language);
     // Remove placeholder translation record (which was there if
@@ -121,7 +140,7 @@ function l10n_community_string_approve($tid = 0) {
  *   Suggestion ID.
  */
 function l10n_community_string_decline($tid = 0) {
-  if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) && (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL)) {
+  if ($suggestion = l10n_community_string_ajax_suggestion($tid)) {
     // Mark this suggestion as inactive.
     db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE tid = %d", $tid);
     // Let's see if we have any other suggestion remaining in this language.
@@ -136,54 +155,4 @@ function l10n_community_string_decline($tid = 0) {
   }
   print 'error';
   exit;
-}
-
-/**
- * Remote submission, no form exposed, so we get the data by POST.
- *
- * We try our best to inform the remote submitter of the error condition, if
- * it was not possible to save the translation for some reason.
- */
-function l10n_community_string_remote($langcode) {
-  global $user;
-  
-  // Output information about version of this interface.
-  echo '<!-- v1.0 Localization community remote translation interface -->';
-  
-  if (user_access('access localization community')) {
-    if (($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
-      if (l10n_community_get_permission($langcode) != L10N_PERM_NONE) {
-        if (!empty($_POST['source']) && !empty($_POST['target'])) {
-          if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", $_POST['source']))) {
-            // Always save this as suggestion.
-            l10n_community_target_save(
-              $sid, $_POST['target'], $langcode, $user->uid, TRUE,
-              $inserted, $updated, $unchanged, $suggested
-            );
-            // @todo: output JS to mark string as shared in l10n_client
-            // (eg. mark it blue instead of green for that request)
-          }
-          else {
-            echo '<script>alert("'. t("This source string does not exist on the localization server. Translation not shared.") .'");</script>';
-          }
-        }
-        else {
-          echo '<script>alert("'. t("No POST data with source and translation string. Translation not shared.") .'");</script>';
-        }
-      }
-      else {
-        echo '<script>alert("'. t("You don't have permission to submit suggestions for this language on the localization server. Translation not shared.") .'");</script>';
-      }
-    }
-    else {
-      echo '<script>alert("'. t("No such language set up on the localization server. Translation not shared.") .'");</script>';
-    }
-  }
-  else {
-    echo '<script>alert("'. t("You don't have permissions to access the localization server. Please log in on the server. Translation not shared.") .'");</script>';
-  }
-
-  // Get the iframe we were invoked from not to reload with page
-  // reloads (this is a hack dependent on how l10n_client works).
-  echo '<script>document.location="about:blank";</script>';
 }
