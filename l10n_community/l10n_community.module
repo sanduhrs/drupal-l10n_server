@@ -248,7 +248,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(NULL, 2),
     'file' => 'export.inc',
-    'access arguments' => array('access localization community'),
+    'access arguments' => array('export templates and translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );
@@ -273,14 +273,16 @@ function l10n_community_menu() {
     'title' => 'Export template',
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(2),
+    'access arguments' => array('export templates and translations'),
     'file' => 'export.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );
   $items['translate/projects/%l10n_community_project/errors'] = array(
-    'title' => 'Marker errors',
+    'title' => 'Parsing errors',
     'page callback' => 'l10n_community_project_errors',
     'page arguments' => array(2),
+    'access arguments' => array('access localization community'),
     'file' => 'pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
@@ -345,7 +347,7 @@ function l10n_community_init() {
  * Implementation of hook_perm().
  */
 function l10n_community_perm() {
-  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community');
+  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community', 'export templates and translations');
 }
 
 /**
