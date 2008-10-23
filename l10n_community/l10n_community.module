@@ -236,7 +236,7 @@ function l10n_community_menu() {
   $items['translate/languages/%l10n_community_language/import'] = array(
     'title' => 'Import',
     'page callback' => 'l10n_community_import_page',
-    'page arguments' => array(2),
+    'page arguments' => array(2, TRUE),
     'file' => 'import.inc',
     'access callback' => 'l10n_community_contribute_access',
     'access arguments' => array(2),
@@ -248,7 +248,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(NULL, 2),
     'file' => 'export.inc',
-    'access arguments' => array('export templates and translations'),
+    'access callback' => 'l10n_community_export_access',
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );
@@ -273,7 +273,7 @@ function l10n_community_menu() {
     'title' => 'Export template',
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(2),
-    'access arguments' => array('export templates and translations'),
+    'access callback' => 'l10n_community_export_access',
     'file' => 'export.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
@@ -313,9 +313,21 @@ function l10n_community_project_load($uri) {
 
 /**
  * Access callback for editing and import paths. Requires edit privileges for given language.
+ * 
+ * @param $langcode
+ *  Language code.
+ * @param $import
+ *  Boolean. Whether this is a gettext import operation.
  */
-function l10n_community_contribute_access($langcode) {
-  return user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE);
+function l10n_community_contribute_access($langcode, $import = FALSE) {
+  return user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE) && ($import ? user_access('import gettext files') : TRUE);
+}
+
+/**
+ * Access callback for exporting paths. Requires access and export privileges.
+ */
+function l10n_community_export_access() {
+  return user_access('access localization community') && user_access('export gettext templates and translations');
 }
 
 /**
@@ -347,7 +359,7 @@ function l10n_community_init() {
  * Implementation of hook_perm().
  */
 function l10n_community_perm() {
-  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community', 'export templates and translations');
+  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community', 'export gettext templates and translations', 'import gettext files');
 }
 
 /**
