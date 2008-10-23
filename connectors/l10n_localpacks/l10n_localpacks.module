@@ -126,7 +126,10 @@ function l10n_localpacks_scan($automated = FALSE) {
   // We look for projects in the working directory.
   $workdir = variable_get('l10n_localpacks_directory', '');
   
-  if (is_dir($workdir)) {
+  if (!is_dir($workdir)) {
+    drupal_set_message(t('The configured local packages directory (%workdir) cannot be found. <a href="@configure">Check your configuration</a>.', array('%workdir' => $workdir, '@configure' => url('admin/l10n_server/l10n_localpacks/configure'))));
+  }
+  else {
     // Packages are always .tar.gz files.
     $files = file_scan_directory($workdir, '.tar.gz$');
     if (count($files)) {
