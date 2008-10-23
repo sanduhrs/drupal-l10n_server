@@ -331,7 +331,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
     $form[$string->sid]['translation'] = array(
       '#type' => 'item',
       // Hide editing controls of translated stuff to save some space and guide user eyes.
-      '#prefix' => '<div id="l10n-community-wrapper-'. $string->sid .'"'. ($translated ? ' class="hidden"' : '') .'">',
+      '#prefix' => '<div id="l10n-community-wrapper-'. $string->sid .'"'. ($translated ? ' class="hidden"' : '') .'>',
       '#suffix' => '</div>',
     );
 
