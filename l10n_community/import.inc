@@ -29,7 +29,7 @@ function l10n_community_import_page($langcode) {
 /**
  * Translation import form.
  */
-function l10n_community_import_form($langcode, $perm) {
+function l10n_community_import_form($form_state, $langcode, $perm) {
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
   $form['langcode'] = array(
