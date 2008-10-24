@@ -34,22 +34,17 @@ function l10n_community_welcome_page() {
       format_plural($groups, '1 translation group', '@count translation groups'),
     );
   }
-  $users = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} GROUP BY uid_entered'));
-  $projects = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project}'));
-  $files = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
-  $strings = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-  $translations = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1'));
-  $suggestions = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
+  $stats_numbers = l10n_community_get_stats();
   $block = array(
     'title' => t('Quick stats'),
     'description' => t('Some facts about this community'),
     'content' => theme('item_list', array_merge($stats, array(
-      format_plural($users, '1 contributor', '@count contributors'),
-      format_plural($projects, '1 project managed', '@count projects managed'),
-      format_plural($files, '1 file scanned', '@count files scanned'),
-      format_plural($strings, '1 string to translate', '@count strings to translate'),
-      format_plural($translations, '1 translation recorded', '@count translations recorded'),
-      format_plural($suggestions, '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+      format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
+      format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
+      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
     ))),
   );
   $output .= theme('admin_block', $block);
