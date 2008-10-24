@@ -142,18 +142,16 @@ function l10n_community_overview_language($langcode = NULL) {
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 
-  $strings = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-  $translations = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
-  $suggestions = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
-  $users = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+  $stats_numbers = l10n_community_get_stats($langcode);
+
   $block = array(
     'title' => t('Progress status'),
     'description' => t('Status overview'),
     'content' => theme('item_list', array(
-      format_plural($users, '1 contributor', '@count contributors'),
-      format_plural($strings, '1 string to translate', '@count strings to translate'),
-      format_plural($translations, '1 translation recorded', '@count translations recorded'),
-      format_plural($suggestions, '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
     ))
   );
   $output .= theme('admin_block', $block);

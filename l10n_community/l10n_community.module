@@ -949,3 +949,63 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
 
   return "<div class='$class'><span class='string'>$string</span><span class='original hidden'>$original</span></div>";
 }
+
+/**
+ * Compute language community stats.
+ *
+ * @param $langcode
+ *   Compute statistics for this language.
+ */
+function l10n_community_get_stats($langcode = NULL) {
+  if (!empty($langcode)) {
+    // Compute based on langcode.
+    if ($stats = cache_get('l10n:stats:'. $langcode, 'cache')) {
+      return unserialize($stats->data);
+    }
+    else {
+      $stats = array();
+      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
+      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['suggestions'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['users'] = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+      
+      // Cache results for next time. Not setting a timestamp as cache validity
+      // time, we would like to retain control of recalculating these values.
+      cache_set('l10n:stats:'. $langcode, 'cache', serialize($stats), CACHE_PERMANENT);
+      return $stats;
+    }
+  }
+  else {
+    // General community statistics.
+    if ($stats = cache_get('l10n:stats', 'cache')) {
+      return unserialize($stats->data);
+    }
+    else {
+      $stats = array();
+      $stats['users'] = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} GROUP BY uid_entered'));
+      $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project}'));
+      $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
+      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
+      $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1'));
+      $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
+
+      // Cache results for next time. Not setting a timestamp as cache validity
+      // time, we would like to retain control of recalculating these values.
+      cache_set('l10n:stats', 'cache', serialize($stats), CACHE_PERMANENT);
+      return $stats;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_cron().
+ *
+ * Clear project and language stats every hour.
+ */
+function l10n_community_cron() {
+  $lastrun = variable_get('l10n_cron_stats', 1);
+  if (($_SERVER['REQUEST_TIME'] - $lastrun) > 3600) {
+    cache_clear_all('l10n:stats', 'cache', TRUE);
+    variable_set('l10n_cron_stats', $_SERVER['REQUEST_TIME']);
+  }
+}
