@@ -776,7 +776,7 @@ function l10n_community_trim($translation, $source) {
  * 
  * Used by both the save and import process.
  */
-function l10n_community_update_message($inserted, $updated, $unchanged, $suggested) {
+function l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates) {
   // Inform user about changes made.
   $message = array();
   if ($inserted) {
@@ -790,6 +790,9 @@ function l10n_community_update_message($inserted, $updated, $unchanged, $suggest
   }
   if ($unchanged) {
     $message[] = format_plural($unchanged, '1 translation unchanged', '@count translations unchanged');
+  }
+  if ($duplicates) {
+    $message[] = format_plural($duplicates, '1 duplicate translation not saved', '@count duplicate translations not saved');
   }
   if (count($message)) {
     drupal_set_message(join(', ', $message) .'.');
@@ -859,6 +862,13 @@ function l10n_community_project_uri_by_title($title) {
  */
 function l10n_community_filter_value($name) {
   return isset($_GET[$name]) ? $_GET[$name] : (isset($_SESSION['l10n_community'][$name]) ? $_SESSION['l10n_community'][$name] : NULL);
+}
+
+/**
+ * Check whether $suggestion is duplicate for $sid in $langcode.
+ */
+function l10n_community_is_duplicate($suggestion, $sid, $langcode) {
+  return (bool) db_result(db_query("SELECT s.sid FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.translation = '%s' AND t.is_active = 1 AND t.language = '%s' AND s.sid = %d", $suggestion, $langcode, $sid));
 }
 
 // = Theme functions ===========================================================
