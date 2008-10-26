@@ -31,28 +31,16 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   $perm = l10n_community_get_permission($langcode);
 
   // Build filter values for the form generation.
-  $uri = l10n_community_filter_value('project');
-  if (isset($uri)) {
-    $project = l10n_community_get_projects($uri);
-    $release = l10n_community_filter_value('release');
-    if (isset($release) && ($releases = l10n_community_get_releases($uri)) && !isset($releases[$release])) {
-      // Invalidate release selection if the project was changed.
-      $release = NULL;
+  $project = $release = NULL;
+  if (isset($_GET['project']) && ($project = l10n_community_get_projects($_GET['project']))) {
+    if (isset($_GET['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$_GET['release']])) {
+      // Allow to select this release, if belongs to current project.
+      $release = $_GET['release'];
     }
   }
-  else {
-    $project = NULL;
-    $release = NULL;
-  }
   // Thankfully L10N_STATUS_ALL is 0, so non-number bad data goes to no filter. 
-  $status  = intval(l10n_community_filter_value('status'));
-  $search  = (string) l10n_community_filter_value('search');
-  
-  // Remember cleaned data for future use.
-  $_SESSION['l10n_community']['project'] = $uri;
-  $_SESSION['l10n_community']['release'] = $release;
-  $_SESSION['l10n_community']['status'] = $status;
-  $_SESSION['l10n_community']['search'] = $search;
+  $status  = isset($_GET['status']) ? (int) $_GET['status'] : 0;
+  $search  = isset($_GET['search']) ? (string) $_GET['search'] : '';
   
   $output = drupal_get_form('l10n_community_filter_form', $project, $status, $release, $search);
   
@@ -63,13 +51,13 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   elseif ($perm == L10N_PERM_NONE || $mode == 'view') {
     // For users without permission to translate or suggest, display the view.
     drupal_set_title(t('@language translations', array('@language' => $languages[$langcode]->name)));
-    $output .= l10n_community_translate_view($strings, $languages[$langcode], $uri);
+    $output .= l10n_community_translate_view($strings, $languages[$langcode], $project);
   }
   else {
     // For users with some permission, display the form.
     drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
     drupal_set_title(t('Translate to @language', array('@language' => $languages[$langcode]->name)));
-    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $uri, $perm);
+    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $project, $perm);
   }
   return $output;
 }
@@ -89,12 +77,6 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
     L10N_STATUS_TRANSLATED     => t('Translated'),
   );
   
-  // Provide link to current page with filters intact for bookmarking.
-  $page = isset($_GET['page']) ? intval($_GET['page']) : 0;
-  $query = 'project='. urlencode(isset($project) ? $project->uri : '') .'&release='.
-           urlencode(isset($release) ? $release : 'all') .'&status='.
-           urlencode(isset($status) ? $status : L10N_STATUS_ALL) .'&search='.
-           urlencode(isset($search) ? $search : '') . ($page ? '&page='. $page : '');
   $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => isset($project) ? $project->title : '',
@@ -104,7 +86,7 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
     $form['project']['#type'] = 'select';
     $form['project']['#options'] = array('' => t('All'));
     foreach ($projects as $this_project) {
-      // title used to conform to the autocomplete behavior.
+      // Title used to conform to the autocomplete behavior.
       $form['project']['#options'][$this_project->title] = $this_project->title;
     }
   }
@@ -149,58 +131,48 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
     '#value' => t('Reset'),
     '#type' => 'submit',
   );
-  $form['link'] = array(
-    '#type' => 'markup',
-    '#value' => l(t('Link to this page'), $_GET['q'], array('attributes' => array('class' => 'permalink'), 'query' => $query)),
-  );
   $form['#theme'] = 'l10n_community_filter_form';
   return $form;
 }
 
 /**
  * Submission handler for filtering form.
- *
- * @todo
- *   Think about possibilities to permalink with specified filters.
  */
 function l10n_community_filter_form_submit($form, &$form_state) {
 
-  // Always reset filter values.
-  $_SESSION['l10n_community']['project'] = $_SESSION['l10n_community']['release'] = NULL;
-  $_SESSION['l10n_community']['status'] = 0;
-  $_SESSION['l10n_community']['search'] = '';
-
-  // Fill up with validated values, if we do filtering.
+  if ($form_state['values']['op'] == t('Reset')) {
+    // Just go with the redirection flow => removes URL params.
+    return;
+  }
+  
   if ($form_state['values']['op'] == t('Filter')) {
-    // Remember filters for later use, so translators don't need to
-    // reenter them, pagers keep their value and so on.
-    $query = array();
+    // Validate incoming data. The project needs to be resolved by title,
+    // so that we redirect with the proper uri value. Other validations 
+    // are just to make sure that the URL keeps being short, and the user 
+    // is not tricked into thinking a certain filter is applied, while 
+    // being invalid. These checks are done on input as well.
     if (!empty($form_state['values']['project'])) {
       if ($uri = l10n_community_project_uri_by_title($form_state['values']['project'])) {
-        // Project found so save.
-        $_SESSION['l10n_community']['project'] = $uri;
-        if (!empty($form_state['values']['release']) && ($releases = l10n_community_get_releases($uri)) && isset($releases[$form_state['values']['release']])) {
-          // Release number valid for project (might be changed independently). 
-          $_SESSION['l10n_community']['release'] = $form_state['values']['release'];
-        }
-        else {
-          $_SESSION['l10n_community']['release'] = NULL;
+        // Remember proper internal name based on title.
+        $form_state['values']['project'] = $uri;
+        if (!empty($form_state['values']['release']) && !(($releases = l10n_community_get_releases($uri)) && isset($releases[$form_state['values']['release']]))) {
+          // Such a release was not found for this project. Unset.
+          unset($form_state['values']['release']);
         }
       }
       else {
-        drupal_set_message(t('No project found with name %name. Reverted to filter to all projects.', array('%name' => $form_state['values']['project'])));
-        // Clear project and release selection.
+        // If project not found, release data is cleared.
+        unset($form_state['values']['release']);
       }
     }
-    if (!empty($form_state['values']['status'])) {
-      $_SESSION['l10n_community']['status'] = intval($form_state['values']['status']);
-    }
-    if (!empty($form_state['values']['search'])) {
-      $_SESSION['l10n_community']['search'] = $form_state['values']['search'];
-    }
+    $form_state['values']['status'] = (int) $form_state['values']['status'];
+
+    // Redirect keeping the relevant filters intact in the URL.
+    $form_state['redirect'] = array(
+      $_GET['q'], 
+      l10n_community_build_filter_array($form_state['values'])
+    );
   }
-  
-  // We keep staying on the same page.
 }
 
 // = Translation viewer ========================================================
@@ -212,10 +184,10 @@ function l10n_community_filter_form_submit($form, &$form_state) {
  *   Array of string objects to display on the page.
  * @param $language
  *   Language object corresponding to the page displayed.
- * @param $uri
- *   Project URI.
+ * @param $project
+ *   Project object.
  */
-function l10n_community_translate_view($strings = array(), $language = NULL, $uri = NULL) {
+function l10n_community_translate_view($strings = array(), $language = NULL, $project = NULL) {
   $output = '';
   $rows = array();
   foreach ($strings as $string) {
@@ -265,15 +237,19 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $ur
  *   Array of string objects to display.
  * @param $language
  *   Language object.
- * @param $uri
- *   Project URI.
+ * @param $project
+ *   Project object.
  * @param $perm
  *   Community permission level of user watching the page.
  */
-function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $uri = NULL, $perm = L10N_PERM_SUGGEST) {
+function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $project = NULL, $perm = L10N_PERM_SUGGEST) {
   
   $form = array(
-    '#tree' => TRUE
+    '#tree' => TRUE,
+    '#redirect' => array(
+      $_GET['q'], 
+      l10n_community_build_filter_array($_GET)
+    )
   );
   $form['pager_top'] = array(
     '#weight' => -10,
@@ -290,7 +266,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
   );
   $form['project'] = array(
     '#type' => 'value',
-    '#value' => $uri
+    '#value' => isset($project) ? $project->uri : NULL
   );
 
   foreach ($strings as $string) {
@@ -533,8 +509,8 @@ function theme_l10n_community_filter_form($form) {
       $row[] = drupal_render($element);
     }
   }
-  // Add permalink to table header
-  $labels[] = drupal_render($form['link']);
+  // Fill in the rest of the header above the buttons.
+  $labels[] = '';
   // Display the rest of the form in the last cell
   $row[] = drupal_render($form);
   return theme('table', $labels, array($row), array('class' => 'l10n-server-translate'));
@@ -691,4 +667,24 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
     $result[] = $string;
   }
   return $result;
+}
+
+/**
+ * Builds a simple array with only the keys allowed for filtering.
+ *
+ * @param $input
+ *   An array from $_GET or $form_state['values']
+ * @return
+ *  Filtered array with only the allowed keys and their values.
+ *  The values are not checked for accuracy.
+ */
+function l10n_community_build_filter_array($input) {
+  // Redirect keeping the relevant filters intact in the URL.
+  $filter = array();
+  foreach ($input as $key => $value) {
+    if (in_array($key, array('search', 'project', 'release', 'status'))) {
+      $filter[$key] = $value;
+    }
+  }
+  return $filter;
 }

@@ -857,13 +857,6 @@ function l10n_community_project_uri_by_title($title) {
 }
 
 /**
- * Override _SESSION filter values with _GET values and fall back to NULL.
- */
-function l10n_community_filter_value($name) {
-  return isset($_GET[$name]) ? $_GET[$name] : (isset($_SESSION['l10n_community'][$name]) ? $_SESSION['l10n_community'][$name] : NULL);
-}
-
-/**
  * Check whether $suggestion is duplicate for $sid in $langcode.
  */
 function l10n_community_is_duplicate($suggestion, $sid, $langcode) {
