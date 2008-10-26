@@ -72,10 +72,10 @@ function l10n_community_schema() {
     ),
     'primary key' => array('pid'),
     'indexes' => array(
-      'l10n_community_project_uri' => array('uri')
+      'uri' => array('uri')
     ),
     'unique keys' => array(
-      'l10n_community_project_uri_connector_module' => array('uri', 'connector_module')
+      'uri_connector_module' => array('uri', 'connector_module')
     ),
   );
 
@@ -319,9 +319,12 @@ function l10n_community_schema() {
     ),
     'primary key' => array('tid'),
     'indexes' => array(
-      'l10n_community_translation_is_active' => array('is_active'),
-      'l10n_community_translation_is_suggestion' => array('is_suggestion'),
-      'l10n_community_translation_language' => array('language'),
+      'is_active' => array('is_active'),
+      'is_suggestion' => array('is_suggestion'),
+      'language' => array('language'),
+      'suggestion_active' => array('is_suggestion', 'is_active'),
+      'uid_entered' => array('uid_entered'),
+      'sid_language_suggestion' => array('sid', 'language', 'is_suggestion'),
       'sid' => array('sid')
     ),
   );
@@ -472,5 +475,32 @@ function l10n_community_update_6001() {
   db_add_field($ret, 'l10n_community_project', 'status', array('type' => 'int', 'not null' => TRUE));
   // Make all existing projects enabled.
   $ret[] = update_sql("UPDATE {l10n_community_project} SET status = 1");
+  return $ret;
+}
+
+/**
+ * Add an index to the translations table to improve performance.
+ */
+function l10n_community_update_6002() {
+  $ret = array();
+  db_add_index($ret, 'l10n_community_translation', 'suggestion_active', array('is_suggestion', 'is_active'));
+  return $ret;
+}
+
+/**
+ * Add an index to the translations table to improve performance.
+ */
+function l10n_community_update_6003() {
+  $ret = array();
+  db_add_index($ret, 'l10n_community_translation', 'uid_entered', array('uid_entered'));
+  return $ret;
+}
+
+/**
+ * Add an index to the translations table to improve performance.
+ */
+function l10n_community_update_6004() {
+  $ret = array();
+  db_add_index($ret, 'l10n_community_translation', 'sid_language_suggestion', array('sid', 'language', 'is_suggestion'));
   return $ret;
 }
