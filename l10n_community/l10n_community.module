@@ -766,8 +766,7 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
  */
 function l10n_community_trim($translation, $source) {
   $matches = array();
-  $chars = '\n\s\r\t';
-  preg_match("/^([$chars]*).*[^$chars]([$chars]*)\$/", $source, $matches);
+  preg_match("/^(\s*).*\S(\s*)\$/s", $source, $matches);
   return $matches[1] . trim($translation) . $matches[2];
 }
 
