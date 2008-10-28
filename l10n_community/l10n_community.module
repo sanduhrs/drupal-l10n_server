@@ -1036,7 +1036,7 @@ function l10n_community_get_stats($langcode = NULL) {
       
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
-      cache_set('l10n:stats:'. $langcode, $stats, $cache, CACHE_PERMANENT);
+      cache_set('l10n:stats:'. $langcode, $stats, 'cache', CACHE_PERMANENT);
       return $stats;
     }
   }
