@@ -1047,7 +1047,7 @@ function l10n_community_get_stats($langcode = NULL) {
     }
     else {
       $stats = array();
-      $stats['users'] = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} GROUP BY uid_entered'));
+      $stats['users'] = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation}'));
       $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project}'));
       $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
