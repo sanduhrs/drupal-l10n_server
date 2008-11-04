@@ -38,12 +38,9 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
  */
 function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL) {
 
-  // Give precendence to project selected in the form.
   $hide_projects = FALSE;
   if (!isset($uri)) {
-    $uri = isset($_SESSION['l10n_community']['export_project']) ?
-           l10n_community_project_uri_by_title($_SESSION['l10n_community']['export_project']) :
-           l10n_community_filter_value('project');
+    $uri = !empty($form_state['values']['project']) ? $form_state['values']['project'] : (!empty($_GET['project']) ? $_GET['project'] : NULL);
   }
   else {
     // When project was preset from URL, disable the selector.
@@ -58,19 +55,20 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   if ($hide_projects) {
     $form['data']['project'] = array(
       '#type' => 'value',
+      // Value of $uri already verified in menu path handler.
       '#value' => $projects[$uri]->title,
     );
   }
   else {
     $form['data']['project'] = array(
-      '#title' => t('Choose a project'),
+      '#title' => t('Project'),
     );
     if (($count = count($projects)) <= 30) {
       // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
       $form['data']['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
       $form['data']['project']['#options'] = array();
       foreach ($projects as $project) {
-        // title used to conform to the autocomplete behavior.
+        // Title used to conform to the autocomplete behavior.
         $form['data']['project']['#options'][$project->title] = $project->title;
       }
     }
@@ -82,6 +80,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       );
     }
   }
+
   if (isset($projects[$uri])) {
     // Set this project as default value if identified.
     $form['data']['project']['#default_value'] = $projects[$uri]->title;
@@ -112,14 +111,14 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     // Only include the type selector if we are not presenting
     // a template export page (which does not have a language).
     $form['format']['type'] = array(
-      '#title' => t('Type of export'),
+      '#title' => t('Type'),
       '#type' => 'radios',
       '#options' => array('translation' => t('Translation'), 'template' => t('Translation template')),
       '#default_value' => 'translation',
       '#description' => t('Templates only contain the source (English) strings, translations are represented by empty placeholders.')
     );
     $form['format']['version'] = array(
-      '#title' => t('Format used'),
+      '#title' => t('Format'),
       '#type' => 'radios',
       '#options' => array('drupal-6' => t('Drupal 6 package format'), 'drupal-5' => t('Drupal 5 package format for autolocale module'), 'flat-package' => t('Flat package for CVS commit'), 'all-in-one' => t('All in one file')),
       '#default_value' => 'drupal-6',
@@ -152,15 +151,20 @@ function l10n_community_export_form_validate($form, &$form_state) {
  */
 function l10n_community_export_form_submit($form, &$form_state) {
 
-  // Set temporary storage used to remember project.
-  $_SESSION['l10n_community']['export_project'] = $form_state['values']['project'];
-  
+  // This was validated to work in the validation code.
+  $uri = !empty($form_state['values']['project']) ? l10n_community_project_uri_by_title($form_state['values']['project']) : NULL;
+  if (empty($uri)) {
+    form_set_error('project', t('Please select a project first.'));
+    return;
+  }
+
   if (empty($form_state['values']['release'])) {
-    form_set_error('release', t('You should choose a release.'));
+    form_set_error('release', t('Please choose a release or opt to export for all releases.'));
+    $form_state['redirect'] = array($_GET['q'], array('project' => $uri));
     return;
   }
   elseif ($form_state['values']['release'] != 'all') {
-    $releases = l10n_community_get_releases(l10n_community_project_uri_by_title($form_state['values']['project']));
+    $releases = l10n_community_get_releases($uri);
     if (!isset($releases[$form_state['values']['release']])) {
       form_set_error('release', t('Invalid release chosen.'));
       return;
@@ -174,16 +178,14 @@ function l10n_community_export_form_submit($form, &$form_state) {
   }
   $type = (isset($form_state['values']['type']) ? $form_state['values']['type'] : 'template');
 
-  // This was validated to work in the validation code.
-  $uri = l10n_community_project_uri_by_title($form_state['values']['project']);
-
   // Generate tarball or PO file and get file name.
   $export_result = l10n_community_export(
     $uri,
     ($form_state['values']['release'] == 'all' ? NULL : $form_state['values']['release']),
     $language,
     ($type != 'translation'),
-    $form_state['values']['version']
+    // If not set (exporting a template for a module), stick to all-in-one.
+    isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one'
   );
   
   if (isset($export_result) && is_array($export_result)) {
@@ -370,6 +372,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           }
         }
         foreach ($file_outputs as $filename) {
+          if (!isset($string_files[$filename])) {
+            // Prepare new file storage for use.
+            $string_files[$filename] = array('file' => '');
+          }
+          // Add to existing file storage.
           $string_files[$filename]['file'] .= $output ."\n";
           if (!$template) {
             $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
@@ -390,7 +397,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'value'       => $string->value,
         'translation' => isset($string->translation) ? $string->translation : '',
         'revisions'   => array($string->revision),
-        'changed'     => $string->time_approved,
+        'changed'     => isset($string->time_approved) ? $string->time_approved : 0,
         'type'        => $string->type,
       );
     }
