@@ -490,7 +490,7 @@ function l10n_community_block_help() {
 function l10n_community_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'view') {
     $languages = l10n_community_get_languages('name');
-    $result = db_query("SELECT COUNT(*) sum, language FROM {l10n_community_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
+    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_community_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
     $items = array();
     while ($row = db_fetch_object($result)) {
       $items[] = array('title' => l($languages[$row->language], 'translate/languages/'. $row->language), 'value' => format_plural($row->sum, '1 approved translation', '@count approved translations'));
