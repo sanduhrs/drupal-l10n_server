@@ -436,7 +436,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       $sums = array();
       if (!isset($id)) {
         // Simple count query if we are not filtering by project.
-        $count_sql = "SELECT COUNT(DISTINCT t.sid) translation_count, t.language, t.is_suggestion FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != '' GROUP BY t.language, t.is_suggestion";
+        $count_sql = "SELECT COUNT(DISTINCT sid) translation_count, language, is_suggestion FROM {l10n_community_translation} WHERE is_active = 1 AND translation != '' GROUP BY language, is_suggestion";
       }
       else {
         // Rather complex join if we also need to factor the project in.
