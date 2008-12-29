@@ -396,7 +396,6 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
-
       _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
 
       // Now fill in the new string values.
