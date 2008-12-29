@@ -205,64 +205,11 @@ function l10n_community_export_form_submit($form, &$form_state) {
 }
 
 /**
- * Generates the PO(T) files contents and wrap them in a tarball for a given
- * project.
- *
- * @param $uri
- *   Project URI.
- * @param $release
- *   Release number (rid) to generate tarball for, or NULL to generate
- *   with all releases considered.
- * @param $language
- *   Language object.
- * @param $template
- *   TRUE if templates should be exported, FALSE if translations.
- * @param $version
- *   Version to export with: 'drupal-6', 'drupal-5', 'flat-package' and
- *   'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
- *   directory structure generated, the others are suitable packages for the
- *   given Drupal version.
- *
- * @todo
- *   Look into possibly exporting suggestions as fuzzy translations.
+ * Helper function to store the export string.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL) {
-  // l10n_community_requirements() makes sure there is a status
-  // error if this is not installed.
-  include_once 'Archive/Tar.php';
-  
-  $project = l10n_community_get_projects($uri);
-  if ($template) {
-    // We are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
-    $sql_args = array($project->pid);
-  }
-  else {
-    // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
-    $sql_args = array($language->language, $project->pid);
-  }
-  
-  if (isset($release)) {
-    // Release restriction.
-    $sql_args[] = $release;
-    $sql .= ' AND r.rid = %d';
-    $releases = l10n_community_get_releases($uri, TRUE);
-    $release = $releases[$release];
-  }
-  
-  // Source strings will be repeated as many times as they appear, so to generate
-  // the export file properly, order by the source id.
-  $sql .= ' ORDER BY s.sid';
-  
-  $result = db_query($sql, $sql_args);
-  $previous_sid = 0;
-  $export_string = $string_files = array();
+function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string) {
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
-    
-  while ($string = db_fetch_object($result)) {
-    if ($string->sid != $previous_sid) {
-      // New string in the stream.
+
       if (!empty($export_string)) {
         
         // Location comments are constructed in fileone:1,2,5; filetwo:123,537
@@ -389,7 +336,69 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
           }
         }
       }
-      
+}
+
+/**
+ * Generates the PO(T) files contents and wrap them in a tarball for a given
+ * project.
+ *
+ * @param $uri
+ *   Project URI.
+ * @param $release
+ *   Release number (rid) to generate tarball for, or NULL to generate
+ *   with all releases considered.
+ * @param $language
+ *   Language object.
+ * @param $template
+ *   TRUE if templates should be exported, FALSE if translations.
+ * @param $version
+ *   Version to export with: 'drupal-6', 'drupal-5', 'flat-package' and
+ *   'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
+ *   directory structure generated, the others are suitable packages for the
+ *   given Drupal version.
+ *
+ * @todo
+ *   Look into possibly exporting suggestions as fuzzy translations.
+ */
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL) {
+  // l10n_community_requirements() makes sure there is a status
+  // error if this is not installed.
+  include_once 'Archive/Tar.php';
+  
+  $project = l10n_community_get_projects($uri);
+  if ($template) {
+    // We are exporting a template explicitly.
+    $sql = 'SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
+    $sql_args = array($project->pid);
+  }
+  else {
+    // We only export active translations, not suggestions.
+    $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
+    $sql_args = array($language->language, $project->pid);
+  }
+  
+  if (isset($release)) {
+    // Release restriction.
+    $sql_args[] = $release;
+    $sql .= ' AND r.rid = %d';
+    $releases = l10n_community_get_releases($uri, TRUE);
+    $release = $releases[$release];
+  }
+  
+  // Source strings will be repeated as many times as they appear, so to generate
+  // the export file properly, order by the source id.
+  $sql .= ' ORDER BY s.sid';
+  
+  $result = db_query($sql, $sql_args);
+  $previous_sid = 0;
+  $export_string = $string_files = array();
+    
+  while ($string = db_fetch_object($result)) {
+    if ($string->sid != $previous_sid) {
+      // New string in the stream.
+
+      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
+
       // Now fill in the new string values.
       $previous_sid = $string->sid;
       $export_string = array(
@@ -411,6 +420,10 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         $export_string['type'] = 0;
       }
     }
+  }
+  if ($previous_sid > 0) {
+    // Store the last string.
+    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
   }
   
   if (empty($string_files)) {
