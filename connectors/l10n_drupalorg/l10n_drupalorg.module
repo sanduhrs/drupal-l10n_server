@@ -60,6 +60,7 @@ function l10n_drupalorg_perm() {
  */
 function l10n_drupalorg_cron() {
   if (variable_get('l10n_drupalorg_cron', FALSE)) {
+    module_load_include('inc', 'l10n_drupalorg', 'l10n_drupalorg.admin');
     l10n_drupalorg_scan(TRUE);
   }
 }
