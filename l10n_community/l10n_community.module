@@ -183,21 +183,6 @@ function l10n_community_menu() {
     'type' => MENU_CALLBACK,
   );
     
-  // Makes it possible to submit translations remotely, especially from
-  // an l10n_client install. The user is required to have permissions
-  // to work with the given language, so practically a login is required,
-  // but the permissions are not checked here, so we can provide meaningful
-  // information to the user if something fails. The callback is versioned
-  // so that changes to the API can be tracked.
-  $items['translate/remote/1.0/%l10n_community_language'] = array(
-    'title' => 'Remote translation submission',
-    'page callback' => 'l10n_community_string_remote',
-    'page arguments' => array(3),
-    'file' => 'ajax.inc',
-    'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
-  );
-    
   // As soon as we have a language code, we can translate.
   $items['translate/languages/%l10n_community_language'] = array(
     'title' => 'Translate',
