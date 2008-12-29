@@ -14,7 +14,7 @@
 function l10n_community_explore_languages() {
   
   // Checking whether we have languages and strings.
-  if (!$languages = l10n_community_get_languages('name')) {
+  if (!$languages = l10n_community_get_languages()) {
     drupal_set_message(t('No languages to list.'), 'error');
     return '';
   }
@@ -33,12 +33,20 @@ function l10n_community_explore_languages() {
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
     $perm = l10n_community_get_permission($langcode);
-    $table[] = array_merge(
-      array(
-        array('data' => l($language .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
-      ),
-      isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1]) : theme('l10n_community_progress_columns', $num_source, 0, 0)
-    );
+    if (empty($language->plurals)) {
+      $table[] = array(
+        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
+        array('data' => t('Uninitialized plural formula. Please <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'))), 'colspan' => '3', 'class' => 'error')
+      );
+    }
+    else {
+      $table[] = array_merge(
+        array(
+          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
+        ),
+        isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1]) : theme('l10n_community_progress_columns', $num_source, 0, 0)
+      );
+    }
   }
   $header = theme('l10n_community_progress_headers', t('Language'));
   return theme('l10n_community_table', $header, $table);
@@ -203,7 +211,7 @@ function l10n_community_overview_project($uri = NULL) {
   }
   drupal_set_title(t('@project project translations', array('@project' => drupal_get_title())));
   
-  if (!$languages = l10n_community_get_languages('name')) {
+  if (!$languages = l10n_community_get_languages()) {
     drupal_set_message(t('No languages to list.'), 'error');
     return '';
   }
@@ -221,17 +229,25 @@ function l10n_community_overview_project($uri = NULL) {
   $table = array();
   foreach ($languages as $langcode => $language) {
     $perm = l10n_community_get_permission($langcode);
-    $table[] = array_merge(
-      array(
-        array('data' => l($language .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array(), 'project='. $uri), 'class' => 'rowhead'),
-      ),
-      theme(
-        'l10n_community_progress_columns',
-        $num_source,
-        !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
-        !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
-      )
-    );
+    if (empty($language->plurals)) {
+      $table[] = array(
+        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
+        array('data' => t('Uninitialized plural formula. Please <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'))), 'colspan' => '3', 'class' => 'error')
+      );
+    }
+    else {
+      $table[] = array_merge(
+        array(
+          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array(), 'project='. $uri), 'class' => 'rowhead'),
+        ),
+        theme(
+          'l10n_community_progress_columns',
+          $num_source,
+          !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
+          !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
+        )
+      );
+    }
   }
   $block['content'] = theme(
     'table',

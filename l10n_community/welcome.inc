@@ -87,34 +87,42 @@ function l10n_community_welcome_page() {
 
 function l10n_community_pick_go() {
   $form = array();
-  $languages = l10n_community_get_languages('name');
+  $languages = l10n_community_get_languages();
   $projects = l10n_community_get_projects();
   
-  if (!count($languages) || !count($projects)) {
-    $form['dummy'] = array('#type' => 'markup', '#value' => t('No languages defined or no projects scanned yet.'));
-    return $form;
+  // Drop languages without a plural formula from the options.
+  $language_list = array();
+  foreach ($languages as $langcode => $language) {
+    if (!empty($language->plurals)) {
+      $language_list[$langcode] = $language->name;
+    }
   }
 
-  if (count($languages) > 1) {
+  if (!count($language_list) || !count($projects)) {
+    $form['dummy'] = array('#type' => 'markup', '#value' => t('No languages with plural formulas defined or no projects scanned yet.'));
+    return $form;
+  }
+  
+  if (count($language_list) > 1) {
     // If more then one language.
     $form['langcode'] = array(
       // For three or less languages, display radio buttons, select otherwise.
-      '#type' => (count($languages) <= 3) ? 'radios' : 'select',
+      '#type' => (count($language_list) <= 3) ? 'radios' : 'select',
       '#title' => t('Pick a language'),
-      '#options' => array('' => t('All')) + l10n_community_get_languages('name'),
+      '#options' => array('' => t('All')) + $language_list,
       '#description' => t('Alternatively you can <a href="@explore">explore languages</a>.', array('@explore' => url('translate/languages')))
     );
   }
   else {
     // Only one language, store as form value.
-    list($language_code, $language_name) = each($languages);
+    list($language_code, $language_name) = each($language_list);
     $form['langcode'] = array(
       '#type' => 'value',
       '#value' => $language_code
     );
   }
   $form['project'] = array(
-    '#title' => (count($languages) > 1) ? t('And/or pick a project') : t('Pick a project for @language translation', array('@language' => $language_name)),
+    '#title' => (count($language_list) > 1) ? t('And/or pick a project') : t('Pick a project for @language translation', array('@language' => $language_name)),
     '#description' => t('Alternatively you can <a href="@explore">explore projects</a>.', array('@explore' => url('translate/projects')))
   );
   if (($count = count($projects)) <= 30) {

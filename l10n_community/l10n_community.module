@@ -280,7 +280,7 @@ function l10n_community_menu() {
  * Menu loader function for %l10n_community_language to validate language code.
  */
 function l10n_community_language_load($langcode) {
-  if (($languages = l10n_community_get_languages('name')) && isset($languages[$langcode])) {
+  if (($languages = l10n_community_get_languages()) && isset($languages[$langcode]) && !empty($languages[$langcode]->plurals)) {
     return $langcode;
   }
   return FALSE;
