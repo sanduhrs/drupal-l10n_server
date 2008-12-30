@@ -321,19 +321,14 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     foreach ($file_outputs as $filename) {
       if (!isset($string_files[$filename])) {
         // Prepare new file storage for use.
-        $string_files[$filename] = array('file' => '');
+        $string_files[$filename] = array('file' => '', 'changed' => 0, 'revisions' => array());
       }
       // Add to existing file storage.
       $string_files[$filename]['file'] .= $output ."\n";
       if (!$template) {
         $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
       }
-      if (isset($string_files[$filename]['revisions'])) {
-        $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
-      }
-      else {
-        $string_files[$filename]['revisions'] = array_unique($export_string['revisions']);
-      }
+      $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
     }
   }
 }
