@@ -247,8 +247,10 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
   $form = array(
     '#tree' => TRUE,
     '#redirect' => array(
-      $_GET['q'], 
-      l10n_community_build_filter_array($_GET)
+      $_GET['q'],
+      // Ensure that we keep all filter values, even the page number, so
+      // after submission, the same page can be shown.
+      l10n_community_build_filter_array($_GET, TRUE)
     )
   );
   $form['pager_top'] = array(
@@ -403,12 +405,6 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
       );
     }
   }
-  
-  // Keep being on the same pager page when the form is submitted.
-  $form['destination'] = array(
-    '#type' => 'hidden',
-    '#value' => $_GET['q'] . (isset($_GET['page']) ? '?page='. $_GET['page'] : ''),
-  );
   
   // Add all strings for copy-pasting and some helpers.
   drupal_add_js(
@@ -675,15 +671,21 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
  *
  * @param $input
  *   An array from $_GET or $form_state['values']
+ * @param $allow_pager
+ *   Allow page number to be kept in the array.
  * @return
  *  Filtered array with only the allowed keys and their values.
  *  The values are not checked for accuracy.
  */
-function l10n_community_build_filter_array($input) {
+function l10n_community_build_filter_array($input, $allow_pager = FALSE) {
   // Redirect keeping the relevant filters intact in the URL.
   $filter = array();
+  $allowed_keys = array('search', 'project', 'release', 'status');
+  if ($allow_pager) {
+    $allowed_keys[] = 'page';
+  }
   foreach ($input as $key => $value) {
-    if (in_array($key, array('search', 'project', 'release', 'status'))) {
+    if (in_array($key, $allowed_keys)) {
       $filter[$key] = $value;
     }
   }
