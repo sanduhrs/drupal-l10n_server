@@ -936,13 +936,16 @@ function theme_l10n_community_button($type, $class, $extras = '') {
 
 /**
  * Theme a list of translatable strings. Adds a copy button to each string
- * for quickly copying its source text into a translation form. (through ajax)
+ * for quickly copying its source text into a translation form.
  */
 function theme_l10n_community_strings($items, $form = TRUE) {
   $output = "<ul class='l10n-community-strings'>";
-  foreach ($items as $item) {
+  foreach ($items as $i => $item) {
     $output .= "<li class='clear-block'>";
-    if ($form) {
+    if ($form && ($i < 1)) {
+      // Only print copy button if we are displaying a form and on the first item.
+      // For plurals, only the first item will have the copy button, but will copy
+      // all the values into the form.
       $output .= "<div class='buttons'>". theme('l10n_community_copy_button') ."</div>";
     }
     $output .= "<div class='string'>". $item ."</div>";
@@ -993,7 +996,7 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
 
   $class = '';
   if (isset($sid) && isset($delta)) {
-    $class = ' class="string-'. $sid . $delta .'"';
+    $class = ' class="string-'. $sid .'-'. $delta .'"';
   }
   else if ($sid) {
     $class = ' class="string-'. $sid .'"';

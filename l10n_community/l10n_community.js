@@ -71,6 +71,14 @@ l10nCommunity.init = function() {
     $('#l10n-community-translate-form .l10n-suggestions').click(function() {
       // switch display panes
       var elem = this;
+      if ($(this).is(".active")) {
+        // Switch back to editing form if already clicked. Convenience feature,
+        // so that you don't need to move your mouse to switch back.
+        var parent = $(elem).parents('.translation');
+        var tool = $('.l10n-translate', parent);
+        l10nCommunity.switchPanes(tool, 'translate');
+        return;
+      }
       var sid = $(this).parents('.translation').attr('id').substring(6);
       $.get(Drupal.settings.l10n_suggestions_callback + sid, null, function(data) {
         $('#tpane-' + sid + ' .suggestions').empty().append(data);
@@ -89,34 +97,41 @@ l10nCommunity.init = function() {
 
 l10nCommunity.copyString = function(elem) {
   var item = $(elem).parents('li').find('div.string > div');
+  var parentlist = $(item).parents('ul.l10n-community-strings');
   var original = $('.original', item).html();
   var sid = item.attr('class').substring(7);
 
-  if (original.indexOf(";  ") > 0) {
-    // TODO: find a better delimiter to use in the DOM tree for separating
-    // plural variations.
-    // If we have the delimiter, suggestion has plurals, so we need to
-    // copy over the distinct strings to the distinct textareas.
+  if (sid.indexOf('-') > 0) {
+    // Copying orignal plural string or active plural translation. We should
+    // get the original sid prefix and then copy the strings to the textareas.
+    sid = sid.split('-');
+    sid = sid[0];
+    for (i = 0; i < Drupal.settings.l10n_num_plurals; i++) {
+      $('#l10n-community-translation-'+ sid +'-'+ i).val($('.string-'+ sid +'-'+ i +' .original', parentlist).html());
+    }
+  }
+  else if (original.indexOf(";  ") > 0)  {
+    // Copying plural suggestions from the suggestion list. This has the special
+    // ";  " delimiter (which we suppose does not exist in source strings).
     var strings = original.split(";  ");
     for (string in strings) {
       $('#l10n-community-translation-'+ sid +'-'+ string).val(strings[string]);
     }
   }
   else {
-    // Otherwise standard string.
+    // Otherwise simple string. Just copy over the original string.
     $('#l10n-community-translation-' + sid).val(original);
   }
 
-  // If sid is for a plural variant, we need to trim off the variant ID
-  if (sid.indexOf('-')) {
-    sid = sid.split('-');
-    sid = sid[0];
-  }
-
+  // Show the editing controls.
   $('#l10n-community-wrapper-' + sid).show();
   
-  /* Switch to translate pane */
-  var parent = $(elem).parents('.translation');
+  // Switch to translate pane. The pane is in the translation column, so
+  // if we are in the source column, we need to switch columns.
+  var parent = $(elem).parents('td.source, td.translation');
+  if (parent.get(0).className == 'source') {
+    parent = $(parent.get(0)).siblings();
+  }
   var tool = $('.l10n-translate', parent);
   l10nCommunity.switchPanes(tool, 'translate');
 }
