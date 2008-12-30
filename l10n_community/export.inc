@@ -210,132 +210,132 @@ function l10n_community_export_form_submit($form, &$form_state) {
 function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string) {
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
 
-      if (!empty($export_string)) {
-        
-        // Location comments are constructed in fileone:1,2,5; filetwo:123,537
-        // format, where the numbers represent the line numbers of source
-        // occurances in the respective source files.
-        $comment = array();
-        foreach ($export_string['comment'] as $path => $lines) {
-          $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
-        }
-        $comment = '#: '. join('; ', $comment) ."\n";
+  if (!empty($export_string)) {
+    
+    // Location comments are constructed in fileone:1,2,5; filetwo:123,537
+    // format, where the numbers represent the line numbers of source
+    // occurances in the respective source files.
+    $comment = array();
+    foreach ($export_string['comment'] as $path => $lines) {
+      $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
+    }
+    $comment = '#: '. join('; ', $comment) ."\n";
 
-        // File location is dependent on export format and string location.
-        if ($version == 'all-in-one') {
-          // Fold all strings into this one file.
-          $filename = 'general';
-        }
-        elseif ((strpos($comment, '.info') && $uri == 'drupal') || count(array_keys($export_string['comment'])) > 1) {
-          // An .info file string in Drupal core (which is folded into
-          // general.po, so that later the module screen has all module info
-          // translated for the admin). Or appeared in more then one file, so
-          // goes to general.po for that reason.
-          
-          // Note that some modules like ubercart might not have their
-          // root module in the root folder, so this needs to be rethought.
-          $filename = ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
-        }
-        else {
-          // Putting into a file named after the specific directory.
-          $filename = dirname(preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment']))));
-          if (empty($filename) || $filename == '.') {
-            $filename = ($version != 'flat-package' ? ($po_folder .'/') : '') .'root';
-          }
-          elseif ($version != 'flat-package') {
-            $filename .= '/'. $po_folder .'/'. str_replace('/', '-', $filename);
-          }
-          else {
-            $filename = str_replace('/', '-', $filename);
-          }
-        }
-        
-        // Temporary hack to make the core exports put the system module
-        // files to the right place. See http://drupal.org/node/212594
-        // This should be solved more elegantly with a knowledge on the
-        // non-module files (non-info file based directories in Drupal 6)
-        // and a default location for each project.
-        if (!in_array($version, array('flat-package', 'all-in-one')) && ($uri == 'drupal')) {
-          $system_files = array(
-            $po_folder .'/general',
-            "includes/$po_folder/includes",
-            "misc/$po_folder/misc"
-          );
-          if (in_array($filename, $system_files)) {
-            $filename = "modules/system/$po_folder/". basename($filename);
-          }
-        }
-        
-        // Append extension.
-        $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
-        
-        if (strpos($export_string['value'], "\0") !== FALSE) {
-          // This is a string with plural variants.
-          list($singular, $plural) = explode("\0", $export_string['value']); 
-          $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
-          if (!$template && !empty($export_string['translation'])) {
-            // Export translations we have.
-            foreach (explode("\0", $export_string['translation']) as $id => $value) {
-              $output .= 'msgstr['. $id .'] '. _l10n_community_export_string($value);
-            }
-          }
-          elseif (isset($language)) {
-            // Empty msgstrs based on plural formula for language. Could be
-            // a plural without translation or a template generated for a
-            // specific language.
-            for ($pi = 0; $pi < $language->plurals; $pi++) {
-              $output .= 'msgstr['. $pi .'] ""'."\n";
-            }
-          }
-          else {
-            // Translation template without language, assume two msgstrs.
-            $output .= 'msgstr[0] ""'."\n";
-            $output .= 'msgstr[1] ""'."\n";
-          }
-        }
-        else {
-          // Simple string (and possibly translation pair).
-          $output = $comment .'msgid '. _l10n_community_export_string($export_string['value']);
-          if (!empty($export_string['translation'])) {
-            $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
-          }
-          else {
-            $output .= 'msgstr ""'."\n";
-          }
-        }
-
-        $file_outputs = array($filename);
-        if ($export_string['type'] != 2 /* POTX_STRING_RUNTIME */ && $version != 'all-in-one') {
-          // Not runtime-only, so make sure we try to have an installer entry.
-          $file_outputs[] = ($uri == 'drupal' ?
-            (($version == 'flat-package') ?
-              ('installer'. ($template ? '.pot' : '.po')) :
-              ('profiles/default/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
-            ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->language .'.po')))
-          );
-          if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
-            // Installer-only, remove runtime entry.
-            $file_outputs = array($file_outputs[1]);
-          }
-        }
-        foreach ($file_outputs as $filename) {
-          if (!isset($string_files[$filename])) {
-            // Prepare new file storage for use.
-            $string_files[$filename] = array('file' => '');
-          }
-          // Add to existing file storage.
-          $string_files[$filename]['file'] .= $output ."\n";
-          if (!$template) {
-            $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
-          }
-          if (isset($string_files[$filename]['revisions'])) {
-            $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
-          }
-          else {
-            $string_files[$filename]['revisions'] = array_unique($export_string['revisions']);
-          }
+    // File location is dependent on export format and string location.
+    if ($version == 'all-in-one') {
+      // Fold all strings into this one file.
+      $filename = 'general';
+    }
+    elseif ((strpos($comment, '.info') && $uri == 'drupal') || count(array_keys($export_string['comment'])) > 1) {
+      // An .info file string in Drupal core (which is folded into
+      // general.po, so that later the module screen has all module info
+      // translated for the admin). Or appeared in more then one file, so
+      // goes to general.po for that reason.
+      
+      // Note that some modules like ubercart might not have their
+      // root module in the root folder, so this needs to be rethought.
+      $filename = ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
+    }
+    else {
+      // Putting into a file named after the specific directory.
+      $filename = dirname(preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment']))));
+      if (empty($filename) || $filename == '.') {
+        $filename = ($version != 'flat-package' ? ($po_folder .'/') : '') .'root';
+      }
+      elseif ($version != 'flat-package') {
+        $filename .= '/'. $po_folder .'/'. str_replace('/', '-', $filename);
+      }
+      else {
+        $filename = str_replace('/', '-', $filename);
+      }
+    }
+    
+    // Temporary hack to make the core exports put the system module
+    // files to the right place. See http://drupal.org/node/212594
+    // This should be solved more elegantly with a knowledge on the
+    // non-module files (non-info file based directories in Drupal 6)
+    // and a default location for each project.
+    if (!in_array($version, array('flat-package', 'all-in-one')) && ($uri == 'drupal')) {
+      $system_files = array(
+        $po_folder .'/general',
+        "includes/$po_folder/includes",
+        "misc/$po_folder/misc"
+      );
+      if (in_array($filename, $system_files)) {
+        $filename = "modules/system/$po_folder/". basename($filename);
+      }
+    }
+    
+    // Append extension.
+    $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
+    
+    if (strpos($export_string['value'], "\0") !== FALSE) {
+      // This is a string with plural variants.
+      list($singular, $plural) = explode("\0", $export_string['value']); 
+      $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
+      if (!$template && !empty($export_string['translation'])) {
+        // Export translations we have.
+        foreach (explode("\0", $export_string['translation']) as $id => $value) {
+          $output .= 'msgstr['. $id .'] '. _l10n_community_export_string($value);
         }
       }
+      elseif (isset($language)) {
+        // Empty msgstrs based on plural formula for language. Could be
+        // a plural without translation or a template generated for a
+        // specific language.
+        for ($pi = 0; $pi < $language->plurals; $pi++) {
+          $output .= 'msgstr['. $pi .'] ""'."\n";
+        }
+      }
+      else {
+        // Translation template without language, assume two msgstrs.
+        $output .= 'msgstr[0] ""'."\n";
+        $output .= 'msgstr[1] ""'."\n";
+      }
+    }
+    else {
+      // Simple string (and possibly translation pair).
+      $output = $comment .'msgid '. _l10n_community_export_string($export_string['value']);
+      if (!empty($export_string['translation'])) {
+        $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
+      }
+      else {
+        $output .= 'msgstr ""'."\n";
+      }
+    }
+
+    $file_outputs = array($filename);
+    if ($export_string['type'] != 2 /* POTX_STRING_RUNTIME */ && $version != 'all-in-one') {
+      // Not runtime-only, so make sure we try to have an installer entry.
+      $file_outputs[] = ($uri == 'drupal' ?
+        (($version == 'flat-package') ?
+          ('installer'. ($template ? '.pot' : '.po')) :
+          ('profiles/default/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
+        ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->language .'.po')))
+      );
+      if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
+        // Installer-only, remove runtime entry.
+        $file_outputs = array($file_outputs[1]);
+      }
+    }
+    foreach ($file_outputs as $filename) {
+      if (!isset($string_files[$filename])) {
+        // Prepare new file storage for use.
+        $string_files[$filename] = array('file' => '');
+      }
+      // Add to existing file storage.
+      $string_files[$filename]['file'] .= $output ."\n";
+      if (!$template) {
+        $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
+      }
+      if (isset($string_files[$filename]['revisions'])) {
+        $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
+      }
+      else {
+        $string_files[$filename]['revisions'] = array_unique($export_string['revisions']);
+      }
+    }
+  }
 }
 
 /**
