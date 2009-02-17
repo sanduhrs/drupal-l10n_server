@@ -61,7 +61,7 @@ function l10n_community_welcome_page() {
   $block = array(
     'title' => t('Contribute'),
     'description' => t('Suggest, translate, review'),
-    'content' => '<dl class="admin-list">'. $content .'</dl>'
+    'content' => '<div class="admin-list">'. $content .'</div>'
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 

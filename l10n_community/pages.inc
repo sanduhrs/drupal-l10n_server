@@ -89,7 +89,7 @@ function l10n_community_explore_projects() {
     'l10n_community_table',
     theme('l10n_community_progress_headers', t('Project')),
     $table,
-    array('id' => 'l10n-community-overview')
+    array('class' => 'l10n-community-overview')
   );
   $output .= theme('pager', NULL, $pager_setting, 0);
   return $output;
@@ -253,7 +253,7 @@ function l10n_community_overview_project($uri = NULL) {
     'table',
     theme('l10n_community_progress_headers', t('Language')),
     $table,
-    array('id' => 'l10n-community-overview')
+    array('class' => 'l10n-community-overview')
   ) .'<div class="clearing"></div>';
   $output .=  theme('admin_block', $block);
 
@@ -403,12 +403,12 @@ function theme_l10n_community_progress_headers($mainhead) {
  */
 function theme_l10n_community_table($header, $table) {
   if (($row_count = count($table)) > 1) {
-    $output = theme('table', $header, array_slice($table, 0, ceil($row_count/2)), array('id' => 'l10n-community-overview'));
-    $output .= theme('table', $header, array_slice($table, ceil($row_count/2)), array('id' => 'l10n-community-overview'));
+    $output = theme('table', $header, array_slice($table, 0, ceil($row_count/2)), array('class' => 'l10n-community-overview'));
+    $output .= theme('table', $header, array_slice($table, ceil($row_count/2)), array('class' => 'l10n-community-overview'));
     return $output;
   }
   else {
-    return theme('table', $header, $table, array('id' => 'l10n-community-overview'));
+    return theme('table', $header, $table, array('class' => 'l10n-community-overview'));
   }
 }
 

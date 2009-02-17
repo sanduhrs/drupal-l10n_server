@@ -5,15 +5,15 @@ div.admin .admin-panel-contribute {
   margin-bottom: 2em;
   padding-bottom: 0.3em;
 }
-table#l10n-community-overview {
+table.l10n-community-overview {
   width: 45%;
   margin-left: 1em;
   float: left;
 }
-table#l10n-community-overview td {
+table.l10n-community-overview td {
   vertical-align: middle;
 }
-div.admin table#l10n-community-overview {
+div.admin table.l10n-community-overview {
   width: auto;
 }
 div.admin .form-submit {
@@ -24,10 +24,10 @@ div.admin form {
 }
 
 /* Overview navigation tables for projects and languages */
-#l10n-community-overview td, #l10n-community-overview thead th {
+.l10n-community-overview td, .l10n-community-overview thead th {
   text-align: center;
 }
-#l10n-community-overview td.rowhead, #l10n-community-overview thead th.rowhead {
+.l10n-community-overview td.rowhead, .l10n-community-overview thead th.rowhead {
   text-align: left;
 }
 .l10n-community-progress {
