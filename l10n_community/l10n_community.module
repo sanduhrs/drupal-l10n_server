@@ -847,7 +847,8 @@ function l10n_community_project_uri_by_title($title) {
  * Check whether $suggestion is duplicate for $sid in $langcode.
  */
 function l10n_community_is_duplicate($suggestion, $sid, $langcode) {
-  return (bool) db_result(db_query("SELECT s.sid FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.translation = '%s' AND t.is_active = 1 AND t.language = '%s' AND s.sid = %d", $suggestion, $langcode, $sid));
+  // Use BINARY matching to avoid marking case-corrections as duplicate.
+  return (bool) db_result(db_query("SELECT s.sid FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.translation = BINARY '%s' AND t.is_active = 1 AND t.language = '%s' AND s.sid = %d", $suggestion, $langcode, $sid));
 }
 
 // = Theme functions ===========================================================
