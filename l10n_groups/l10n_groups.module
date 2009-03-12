@@ -34,7 +34,7 @@ function l10n_groups_perm() {
  *   Figure out how to support formal/informal differences, local language versions and so on.
  *   These might need to maintain a diff, not a full translation, so we need to think about this.
  */
-function l10n_grops_form_alter(&$form, &$form_state, $form_id) {
+function l10n_groups_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'l10n_group_node_form' && empty($form['l10n_group_language']['#value']) && empty($form['l10n_group_language']['#options'])) {
     drupal_set_message(t("All available languages have groups now. You cannot create another group until a new language is added on the administration interface."), 'error');
     $form['submit']['#disabled'] = TRUE;
