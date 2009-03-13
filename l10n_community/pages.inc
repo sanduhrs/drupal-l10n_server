@@ -238,7 +238,7 @@ function l10n_community_overview_project($uri = NULL) {
     else {
       $table[] = array_merge(
         array(
-          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array(), 'project='. $uri), 'class' => 'rowhead'),
+          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array('query' => 'project='. $uri)), 'class' => 'rowhead'),
         ),
         theme(
           'l10n_community_progress_columns',
