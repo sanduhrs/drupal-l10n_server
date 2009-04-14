@@ -263,8 +263,10 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
     
     // If the comment array for this value contains the ', fuzzy' flag, then
     // mark this as a suggestion import in all cases. 
-    $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#'])); 
-    
+    if (!empty($value['#']) {
+      $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#'])); 
+    }
+
     // We use BINARY matching here to avoid case insensitively matching
     // strings like 'operations' and 'Operations'.
     if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE BINARY value = '%s'", $value['msgid']))) {
