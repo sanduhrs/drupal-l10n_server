@@ -9,5 +9,12 @@ collaborate on translating projects to different languages, especially for
 Drupal. It is inspired by Launchpad Rosetta (https://launchpad.net/rosetta) 
 but is highly adapted to Drupal needs.
 
-We have the code developed for Drupal 5.x right now, check out that branch 
-for more information.
+Code availability
+--------------------------------------------------------------------------------
+
+There is no code available in the HEAD of this module. Depending on your 
+Drupal core version, look into the DRUPAL-6 branch or the DRUPAL-5
+branch of the module. The DRUPAL-5 branch is not supported anymore.
+
+http://drupal.org/node/321 has information on checking out specific
+branches of modules.
