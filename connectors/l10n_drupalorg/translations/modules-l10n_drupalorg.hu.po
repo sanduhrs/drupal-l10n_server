@@ -1,0 +1,73 @@
+# Hungarian translation of l10n_server (all releases)
+# Copyright (c) 2009 by the Hungarian translation team
+# Generated from files:
+#  l10n_drupalorg.admin.inc,v 1.1.2.1 2008/10/15 15:04:09 goba
+#  projects.inc,v 1.1.2.6.2.2 2008/10/15 15:04:09 goba
+#  l10n_drupalorg.module,v 1.1.2.8.2.4 2008/10/15 15:04:09 goba
+#  l10n_drupalorg.info,v 1.1.2.4.2.1 2008/10/14 22:13:49 goba
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: l10n_server (all releases)\n"
+"POT-Creation-Date: 2009-05-15 22:04+0200\n"
+"PO-Revision-Date: 2008-11-24 12:39+0100\n"
+"Language-Team: Hungarian\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.admin.inc:26
+msgid "Disabled"
+msgstr "Tiltott"
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.admin.inc:18
+msgid ""
+"The number of projects to scan on a manual or cron run. Scanning is "
+"synchronous, so you need to wait for the download to complete and "
+"Drupal to extract and parse the tarball content. If everything goes "
+"well, detailed data about the project and its releases, files, and "
+"translatable strings will be inserted into the database and become "
+"available for translation."
+msgstr ""
+
+#: connectors/l10n_drupalorg/projects.inc:133
+msgid "File %file already exists."
+msgstr "%file fájl már létezik."
+
+#: connectors/l10n_drupalorg/projects.inc:138
+msgid "Unable to download and save %download_link file."
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.module:20
+msgid ""
+"The drupal.org localization community connector watches for new "
+"releases of projects at drupal.org, downloads the new packages and "
+"extracts their translatable strings. Here you can set up the limits of "
+"how these operations are performed. The <a href=\"@scan_link\">Scan "
+"tab</a> allows you to initiate a manual scan."
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.module:55
+msgid "administer localization community for drupal.org"
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.module:30
+msgid "Connector for drupal.org"
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.module:31
+msgid "Configure the drupal.org connector."
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.info:0
+msgid "Localization community for drupal.org"
+msgstr ""
+
+#: connectors/l10n_drupalorg/l10n_drupalorg.info:0
+msgid ""
+"Maintains a copy of project and release listings, extracts "
+"translateable strings from project files. WARNING: don't use when "
+"setting up your own Localization server!"
+msgstr ""
+
