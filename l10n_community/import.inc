@@ -263,7 +263,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
     
     // If the comment array for this value contains the ', fuzzy' flag, then
     // mark this as a suggestion import in all cases. 
-    if (!empty($value['#']) {
+    if (!empty($value['#'])) {
       $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#'])); 
     }
 
