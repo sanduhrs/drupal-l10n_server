@@ -343,9 +343,10 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
           $description = ($perm == L10N_PERM_SUGGEST) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
         }
         
-        // Include a textarea for each plural variant.
+        // Include editing area for each plural variant.
         $form[$string->sid]['translation']['value'][$i] = array(
-          '#type' => strlen($string_parts[$i]) > 45 ? 'textarea' : 'textfield',
+          // Use textarea for long and multiline strings.
+          '#type' => ((strlen($string_parts[$i]) > 45) || (count(explode("\n", $string_parts[$i])) > 1)) ? 'textarea' : 'textfield',
           '#description' => $description,
           '#rows' => 1,
           '#id' => 'l10n-community-translation-'. $target,
@@ -363,7 +364,8 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
         );
       }
       $form[$string->sid]['translation']['value'] = array(
-        '#type' => strlen($string->value) > 45 ? 'textarea' : 'textfield',
+        // Use textarea for long and multiline strings.
+        '#type' => ((strlen($string->value) > 45) || (count(explode("\n", $string->value)) > 1)) ? 'textarea' : 'textfield',
         // Provide accurate title based on previous data and permission.
         '#description' => $translated ? (($perm == L10N_PERM_SUGGEST) ? t('Add a new suggestion') : t('Add a new translation')) : (($perm == L10N_PERM_SUGGEST) ? t('Suggestion') : ''),
         '#rows' => 4,
