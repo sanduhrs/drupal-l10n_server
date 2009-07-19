@@ -191,6 +191,10 @@ table.l10n-server-translate label.option {
       background: url(images/icon_toolbox.gif) right -20px no-repeat;
     }
 
+ul.l10n-community-strings {
+  margin: 0;
+}
+
 ul.l10n-community-strings li {
   padding-left: 20px;
 }

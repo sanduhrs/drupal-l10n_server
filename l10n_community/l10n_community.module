@@ -901,6 +901,9 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     'l10n_community_translate_form' => array(
       'arguments' => array('form' => NULL),
     ),
+    'l10n_community_in_context' => array(
+      'arguments' => array('source' => NULL),
+    ),
     // l10n_community.admin.inc
     'l10n_community_admin_projects_form' => array(
       'arguments' => array('form' => NULL),
@@ -987,11 +990,8 @@ function theme_l10n_community_copy_button() {
  *
  * @param $string
  *   Source string to translate.
- * @param $context
- *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is 
- *   the default, if the code does not specify a context otherwise.
  */
-function l10n_community_format_text($string, $context = NULL, $sid = NULL, $delta = NULL) {
+function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
   static $path = NULL, $title = NULL;
   
   if (!isset($path)) {
@@ -1022,11 +1022,7 @@ function l10n_community_format_text($string, $context = NULL, $sid = NULL, $delt
     $class = ' class="string-'. $sid .'"';
   }
   
-  if (!empty($context)) {
-    $context = '<div class="string-context">'. t('in context: @context', array('@context' => $context)) .'</div>';
-  }
-
-  return '<div'. $class .'><span class="string">'. $string .'</span>'. $context .'<span class="original hidden">'. $original .'</span></div>';
+  return '<div'. $class .'><span class="string">'. $string .'</span><span class="original hidden">'. $original .'</span></div>';
 }
 
 /**

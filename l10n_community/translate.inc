@@ -208,9 +208,11 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $pr
       $source = theme('item_list', array_map('l10n_community_format_text', explode(chr(0), $string->value)), '');
     }
     else {
-      $source = l10n_community_format_text($string->value, $string->context);
+      $source = l10n_community_format_text($string->value);
     }
+    $source .= theme('l10n_community_in_context', $string);
     $row[] = array('data' => $source, 'class' => 'source');
+    
     // Translation display.
     if (!empty($string->translation)) {
       if (strpos(chr(0), $string->value) !== FALSE) {
@@ -306,9 +308,10 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
     // the index of the plural being displayed.
     $string_parts = explode(chr(0), $string->value);
     foreach ($string_parts as $delta => &$part) {
-      $part = l10n_community_format_text($part, NULL, $string->sid, (count($string_parts) > 1) ? $delta : NULL);
+      $part = l10n_community_format_text($part, $string->sid, (count($string_parts) > 1) ? $delta : NULL);
     }
     $source = theme('l10n_community_strings', $string_parts);
+    $source .= theme('l10n_community_in_context', $string);
 
     $form[$string->sid]['source'] = array(
       '#type' => 'item',
@@ -332,7 +335,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
         $string_parts = array();
         for ($i = 0; $i < $language->plurals; $i++) {
           $target = $string->sid .'-'. $i;
-          $string_parts[] = l10n_community_format_text($translations[$i], NULL, $string->sid, $i);
+          $string_parts[] = l10n_community_format_text($translations[$i], $string->sid, $i);
         }
         $form[$string->sid]['translation_existing'] = array(
           '#type' => 'item',
@@ -370,7 +373,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
       if ($translated) {
         $form[$string->sid]['translation_existing'] = array(
           '#type' => 'item',
-          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, NULL, $string->sid))),
+          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, $string->sid))),
         );
       }
       $form[$string->sid]['translation']['value'] = array(
@@ -564,6 +567,19 @@ function theme_l10n_community_translate_form($form) {
   $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
   $output .= drupal_render($form);
   return $output;
+}
+
+/**
+ * Theme context information for source strings.
+ * 
+ * @param $string
+ *   Source string object (based on l10n_community_string columns).
+ */
+function theme_l10n_community_in_context($string) {
+  if (!empty($string->context)) {
+    return '<div class="string-context">'. t('in context: @context', array('@context' => $string->context)) .'</div>';
+  }
+  return '';
 }
 
 // = API functions =============================================================
