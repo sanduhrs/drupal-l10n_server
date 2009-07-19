@@ -23,49 +23,48 @@ function l10n_community_uninstall() {
  * Implementation of hook_schema().
  */
 function l10n_community_schema() {
-  $t = get_t();
   $schema = array();
   
   $schema['l10n_community_project'] = array(
-    'description' => $t('Projects for which translation is running on the server.'),
+    'description' => 'Projects for which translation is running on the server.',
     'fields' => array(
       'pid' => array(
-        'description' => $t('Internal numeric identifier for a project.'),
+        'description' => 'Internal numeric identifier for a project.',
         'type' => 'serial',
         'not null' => TRUE,
         'disp-width' => '11'
       ),
       'uri' => array(
-        'description' => $t('A unique short name to identify the project nicely in paths.'),
+        'description' => 'A unique short name to identify the project nicely in paths.',
         'type' => 'varchar',
         'length' => '50',
         'not null' => TRUE
       ),
       'title' => array(
-        'description' => $t('Human readable name for project used on the interface.'),
+        'description' => 'Human readable name for project used on the interface.',
         'type' => 'varchar',
         'length' => '128',
         'not null' => TRUE
       ),
       'home_link' => array(
-        'description' => $t('Link to project home page.'),
+        'description' => 'Link to project home page.',
         'type' => 'text',
         'not null' => TRUE
       ),
       'last_parsed' => array(
-        'description' => $t('Unix timestamp of last time project was parsed.'),
+        'description' => 'Unix timestamp of last time project was parsed.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'connector_module' => array(
-        'description' => $t('Connector module for this project, such as l10n_localpacks or l10n_drupalorg.'),
+        'description' => 'Connector module for this project, such as l10n_localpacks or l10n_drupalorg.',
         'type' => 'varchar',
         'length' => '50',
         'not null' => TRUE,
       ),
       'status' => array(
-        'description' => $t('Status flag. 1 if new project releases should be looked for, 0 if new scanning and parsing is disabled.'),
+        'description' => 'Status flag. 1 if new project releases should be looked for, 0 if new scanning and parsing is disabled.',
         'type' => 'int',
         'not null' => TRUE,
       )
@@ -80,45 +79,45 @@ function l10n_community_schema() {
   );
 
   $schema['l10n_community_release'] = array(
-    'description' => $t('The releases we handle for each project.'),
+    'description' => 'The releases we handle for each project.',
     'fields' => array(
       'rid' => array(
-        'description' => $t('Internal numeric identifier for a release.'),
+        'description' => 'Internal numeric identifier for a release.',
         'type' => 'serial',
         'not null' => TRUE,
         'disp-width' => '11'
       ),
       'pid' => array(
-        'description' => $t('Reference to the {l10n_community_project}.pid of the parent project.'),
+        'description' => 'Reference to the {l10n_community_project}.pid of the parent project.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'title' => array(
-        'description' => $t('Human readable name for release used on the interface.'),
+        'description' => 'Human readable name for release used on the interface.',
         'type' => 'varchar',
         'length' => '128',
         'not null' => TRUE
       ),
       'download_link' => array(
-        'description' => $t('Link to download this release.'),
+        'description' => 'Link to download this release.',
         'type' => 'text',
         'not null' => TRUE
       ),
       'file_date' => array(
-        'description' => $t('Unix timestamp with release file date. Used to identify file changes.'),
+        'description' => 'Unix timestamp with release file date. Used to identify file changes.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'file_hash' => array(
-        'description' => $t('Hash of file for easy identification of changed files.'),
+        'description' => 'Hash of file for easy identification of changed files.',
         'type' => 'varchar',
         'length' => '32',
         'not null' => FALSE
       ),
       'last_parsed' => array(
-        'description' => $t('Unix timestamp of last parsing time for this release package.'),
+        'description' => 'Unix timestamp of last parsing time for this release package.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
@@ -131,20 +130,22 @@ function l10n_community_schema() {
   );
 
   $schema['l10n_community_error'] = array(
-    'description' => $t('Errors found while parsing release packages. Although we find errors in the release files, we store error notes on a release level, to make them easily accessible without the need for extraneous detail.'),
+    'description' => 'Errors found while parsing release packages. Although we find errors in the release files, we store error notes on a release level, to make them easily accessible without the need for extraneous detail.',
     'fields' => array(
       'eid' => array(
-        'description' => $t('Internal numeric identifier for an error.'),
+        'description' => 'Internal numeric identifier for an error.',
         'type' => 'serial',
         'not null' => TRUE,
-        'disp-width' => '11'),
+        'disp-width' => '11'
+      ),
       'rid' => array(
-        'description' => $t('Reference to the {l10n_community_release}.rid of the affected release.'),
+        'description' => 'Reference to the {l10n_community_release}.rid of the affected release.',
         'type' => 'int',
         'not null' => FALSE,
-        'disp-width' => '11'),
+        'disp-width' => '11'
+      ),
       'value' => array(
-        'description' => $t('Text of the error message.'),
+        'description' => 'Text of the error message.',
         'type' => 'text',
         'not null' => TRUE
       )
@@ -234,7 +235,7 @@ function l10n_community_schema() {
         'disp-width' => '11'
       ),
       'value' => array(
-        'description' => $t('The actual translatable string. For strings with multiple plural versions, we store them as the same translatable with a \0 separator (unlike Drupal itself), because it is easier to match translations with them (for multiple plural versions) this way, and we can force people to translate both at once.'),
+        'description' => 'The actual translatable string. For strings with multiple plural versions, we store them as the same translatable with a \0 separator (unlike Drupal itself), because it is easier to match translations with them (for multiple plural versions) this way, and we can force people to translate both at once.',
         'type' => 'text',
         'not null' => TRUE
       )
@@ -245,72 +246,72 @@ function l10n_community_schema() {
   $schema['l10n_community_translation'] = array(
     'fields' => array(
       'tid' => array(
-        'description' => $t('Internal numeric identifier for a translation.'),
+        'description' => 'Internal numeric identifier for a translation.',
         'type' => 'serial',
         'not null' => TRUE,
         'disp-width' => '11'
       ),
       'sid' => array(
-        'description' => $t('Reference to the {l10n_community_string}.sid which is being translated.'),
+        'description' => 'Reference to the {l10n_community_string}.sid which is being translated.',
         'type' => 'int',
         'not null' => TRUE,
         'disp-width' => '11'
       ),
       'language' => array(
-        'description' => $t('Reference to the {languages}.language to which the string is being translated.'),
+        'description' => 'Reference to the {languages}.language to which the string is being translated.',
         'type' => 'varchar',
         'length' => '12',
         'not null' => TRUE
       ),
       'translation' => array(
-        'description' => $t('The actual translation or suggestion.'),
+        'description' => 'The actual translation or suggestion.',
         'type' => 'text',
         'not null' => TRUE
       ),
       'uid_entered' => array(
-        'description' => $t('Reference to the {users}.uid who entered this translation or suggestion.'),
+        'description' => 'Reference to the {users}.uid who entered this translation or suggestion.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'uid_approved' => array(
-        'description' => $t('Reference to the {users}.uid who approved this translation or suggestion.'),
+        'description' => 'Reference to the {users}.uid who approved this translation or suggestion.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'time_entered' => array(
-        'description' => $t('Unix timestamp of time when the translation or suggestion was entered.'),
+        'description' => 'Unix timestamp of time when the translation or suggestion was entered.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'time_approved' => array(
-        'description' => $t('Unix timestamp of time when the translation or suggestion was approved.'),
+        'description' => 'Unix timestamp of time when the translation or suggestion was approved.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'has_suggestion' => array(
-        'description' => $t('Cached flag of whether there is at least one other row in the table where is_suggestion = 1, is_active = 1 and sid and language is the same as this one. Only applicable to rows where is_suggestion = 0.'),
+        'description' => 'Cached flag of whether there is at least one other row in the table where is_suggestion = 1, is_active = 1 and sid and language is the same as this one. Only applicable to rows where is_suggestion = 0.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'is_suggestion' => array(
-        'description' => $t('Flag of whether this is a suggestion (1) or not (0). If 0, *_approved fields should also be 0.'),
+        'description' => 'Flag of whether this is a suggestion (1) or not (0). If 0, *_approved fields should also be 0.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'is_active' => array(
-        'description' => $t('Flag of whether this is an active (1) suggestion or translation. Older suggestions and translations are kept (0). Unprocessed suggestions and active translations have this as 1.'),
+        'description' => 'Flag of whether this is an active (1) suggestion or translation. Older suggestions and translations are kept (0). Unprocessed suggestions and active translations have this as 1.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
