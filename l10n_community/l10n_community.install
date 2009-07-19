@@ -157,28 +157,28 @@ function l10n_community_schema() {
   );
 
   $schema['l10n_community_file'] = array(
-    'description' => $t('Information on files found and parsed in a release.'),
+    'description' => 'Information on files found and parsed in a release.',
     'fields' => array(
       'fid' => array(
-        'description' => $t('Internal numeric identifier for a file.'),
+        'description' => 'Internal numeric identifier for a file.',
         'type' => 'serial',
         'not null' => TRUE,
         'disp-width' => '11'
       ),
       'rid' => array(
-        'description' => $t('Reference to the {l10n_community_release}.rid of the parent release.'),
+        'description' => 'Reference to the {l10n_community_release}.rid of the parent release.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'location' => array(
-        'description' => $t('Path to the file within the release package.'),
+        'description' => 'Path to the file within the release package.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE
       ),
       'revision' => array(
-        'description' => $t('CVS revision number extracted for reuse in exports.'),
+        'description' => 'CVS revision number extracted for reuse in exports.',
         'type' => 'varchar',
         'length' => '255',
         'not null' => TRUE
@@ -191,29 +191,29 @@ function l10n_community_schema() {
   );
 
   $schema['l10n_community_line'] = array(
-    'description' => $t('Information on occurances of strings on lines of specific files.'),
+    'description' => 'Information on occurances of strings on lines of specific files.',
     'fields' => array(
       'fid' => array(
-        'description' => $t('Reference to the {l10n_community_file}.fid of the parent file.'),
+        'description' => 'Reference to the {l10n_community_file}.fid of the parent file.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'lineno' => array(
-        'description' => $t('Number of line where the string occurance was found.'),
+        'description' => 'Number of line where the string occurance was found.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
       ),
       'type' => array(
-        'description' => $t('Type of occurance. Possible values are constants POTX_STRING_INSTALLER, POTX_STRING_RUNTIME or POTX_STRING_BOTH.'),
+        'description' => 'Type of occurance. Possible values are constants POTX_STRING_INSTALLER, POTX_STRING_RUNTIME or POTX_STRING_BOTH.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
       'sid' => array(
-        'description' => $t('Reference to the {l10n_community_string}.sid found on this line.'),
+        'description' => 'Reference to the {l10n_community_string}.sid found on this line.',
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
@@ -226,10 +226,10 @@ function l10n_community_schema() {
   );
 
   $schema['l10n_community_string'] = array(
-    'description' => $t('Value of translatable strings found.'),
+    'description' => 'Value of translatable strings found.',
     'fields' => array(
       'sid' => array(
-        'description' => $t('Internal numeric identifier for a source string.'),
+        'description' => 'Internal numeric identifier for a source string.',
         'type' => 'serial',
         'not null' => TRUE,
         'disp-width' => '11'
@@ -238,7 +238,7 @@ function l10n_community_schema() {
         'description' => 'The actual translatable string. For strings with multiple plural versions, we store them as the same translatable with a \0 separator (unlike Drupal itself), because it is easier to match translations with them (for multiple plural versions) this way, and we can force people to translate both at once.',
         'type' => 'text',
         'not null' => TRUE
-      )
+      ),
     ),
     'primary key' => array('sid'),
   );
