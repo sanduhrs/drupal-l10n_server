@@ -41,10 +41,11 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   // Thankfully L10N_STATUS_ALL is 0, so non-number bad data goes to no filter. 
   $status  = isset($_GET['status']) ? (int) $_GET['status'] : 0;
   $search  = isset($_GET['search']) ? (string) $_GET['search'] : '';
+  $context = isset($_GET['context']) ? (string) $_GET['context'] : 'all';
   
-  $output = drupal_get_form('l10n_community_filter_form', $project, $status, $release, $search);
+  $output = drupal_get_form('l10n_community_filter_form', $project, $status, $release, $search, $context);
   
-  $strings = l10n_community_get_strings($languages[$langcode]->language, $project, $status, $release, $search, 10);
+  $strings = l10n_community_get_strings($languages[$langcode]->language, $project, $status, $release, $search, $context, 10);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
   }
@@ -67,7 +68,7 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
 /**
  * Translate form filter.
  */
-function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10N_STATUS_ALL, $release = 'all', $search  = '') {
+function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10N_STATUS_ALL, $release = 'all', $search  = '', $context = 'all') {
   $projects = l10n_community_get_projects();
 
   $status_options = array(
@@ -112,6 +113,15 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
     );
   }
   
+  if (count($contexts = l10n_community_get_contexts()) > 1) {
+    $form['context'] = array(
+     '#title' => t('Context'),
+      '#type' => 'select',
+      '#options' => array('all' => t('All')) + $contexts,
+      '#default_value' => $context,
+    );
+  }
+
   $form['status'] = array(
     '#title' => t('Status'),
     '#type' => 'select',
@@ -198,7 +208,7 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $pr
       $source = theme('item_list', array_map('l10n_community_format_text', explode(chr(0), $string->value)), '');
     }
     else {
-      $source = l10n_community_format_text($string->value);
+      $source = l10n_community_format_text($string->value, $string->context);
     }
     $row[] = array('data' => $source, 'class' => 'source');
     // Translation display.
@@ -296,7 +306,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
     // the index of the plural being displayed.
     $string_parts = explode(chr(0), $string->value);
     foreach ($string_parts as $delta => &$part) {
-      $part = l10n_community_format_text($part, $string->sid, (count($string_parts) > 1) ? $delta : NULL);
+      $part = l10n_community_format_text($part, NULL, $string->sid, (count($string_parts) > 1) ? $delta : NULL);
     }
     $source = theme('l10n_community_strings', $string_parts);
 
@@ -322,7 +332,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
         $string_parts = array();
         for ($i = 0; $i < $language->plurals; $i++) {
           $target = $string->sid .'-'. $i;
-          $string_parts[] = l10n_community_format_text($translations[$i], $string->sid, $i);
+          $string_parts[] = l10n_community_format_text($translations[$i], NULL, $string->sid, $i);
         }
         $form[$string->sid]['translation_existing'] = array(
           '#type' => 'item',
@@ -360,7 +370,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
       if ($translated) {
         $form[$string->sid]['translation_existing'] = array(
           '#type' => 'item',
-          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, $string->sid))),
+          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, NULL, $string->sid))),
         );
       }
       $form[$string->sid]['translation']['value'] = array(
@@ -500,7 +510,7 @@ function theme_l10n_community_filter_form($form) {
   $row = array(); // table content
   $labels = array(); // table header labels
   // Only display these elements in distinct table cells
-  $elements = array('project', 'release', 'status', 'search');
+  $elements = array('project', 'release', 'context', 'status', 'search');
   foreach ($form as $id => &$element) {
     if (in_array($id, $elements)) {
       $labels[] = $element['#title'];
@@ -574,26 +584,29 @@ function theme_l10n_community_translate_form($form) {
  *   Use NULL to not filter on releases.
  * @param $search
  *   Substring to search for in all source and translation strings.
+ * @param $context
+ *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is 
+ *   the default, if the code does not specify a context otherwise.
  * @param $pager
  *   Number of strings to be returned in a pager. Should be NULL if
  *   no pager should be used.
  * @return
  *   An array of string records from database.
  */
-function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_STATUS_ALL, $release = NULL, $search = NULL, $pager = NULL) {
+function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_STATUS_ALL, $release = NULL, $search = NULL, $context = NULL, $pager = NULL) {
   
   $sql = $sql_count = '';
   $sql_args = array();
   
   if (!isset($project)) {
     // No project based filtering.
-    $sql = "SELECT DISTINCT s.sid, s.value, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
+    $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
     $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
     $sql_args = array($langcode);
   }
   else {
     // Project based filtering and language based filtering built in.
-    $sql = "SELECT DISTINCT s.sid, s.value, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
+    $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
     $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
     $sql_args = array($langcode, $project->pid);
   }
@@ -648,6 +661,15 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
       break;
   }
   
+  // Context based filtering.
+  if (isset($context) && $context != 'all') {
+    // We use 'none' for no context, so '' can be the defaut (for all contexts). 
+    $sql_args[] = $context == 'none' ? '' : $context;
+    $context_sql = " AND s.context = '%s'";
+    $sql .= $context_sql;
+    $sql_count .= $context_sql;
+  }
+  
   // Morph "WHERE AND" to "WHERE" and remove closing "WHERE". The first appears
   // if there was no project filtering but further filtering was made. The
   // second appears if only language filtering was used.
@@ -682,7 +704,7 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
 function l10n_community_build_filter_array($input, $allow_pager = FALSE) {
   // Redirect keeping the relevant filters intact in the URL.
   $filter = array();
-  $allowed_keys = array('search', 'project', 'release', 'status');
+  $allowed_keys = array('search', 'project', 'release', 'context', 'status');
   if ($allow_pager) {
     $allowed_keys[] = 'page';
   }

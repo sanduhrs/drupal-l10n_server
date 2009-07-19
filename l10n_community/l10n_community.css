@@ -87,6 +87,11 @@ table.l10n-server-translate td {
   table.l10n-server-translate td.source {
     padding:10px 5px;
   }
+  
+  table.l10n-server-translate .string-context {
+    color: #777;
+    font-size: 0.8em;
+  }
 
   table.l10n-server-translate td.translation {
     padding:0px;

@@ -668,6 +668,22 @@ function l10n_community_get_errors($uri) {
 }
 
 /**
+ * Get all contexts from the database.
+ *
+ * @return
+ *   Array of context values.
+ */
+function l10n_community_get_contexts() {
+  $contexts = array();
+  $query = "SELECT DISTINCT context FROM {l10n_community_string} ORDER BY context";
+  $result = db_query($query);
+  while ($context = db_fetch_object($result)) {
+    $contexts[empty($context->context) ? 'none' : $context->context] = empty($context->context) ? t('No context') : $context->context;
+  }
+  return $contexts;
+}
+
+/**
  * Save a translated string into database.
  *
  * @param $sid
@@ -971,8 +987,11 @@ function theme_l10n_community_copy_button() {
  *
  * @param $string
  *   Source string to translate.
+ * @param $context
+ *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is 
+ *   the default, if the code does not specify a context otherwise.
  */
-function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
+function l10n_community_format_text($string, $context = NULL, $sid = NULL, $delta = NULL) {
   static $path = NULL, $title = NULL;
   
   if (!isset($path)) {
@@ -1002,8 +1021,12 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
   else if ($sid) {
     $class = ' class="string-'. $sid .'"';
   }
+  
+  if (!empty($context)) {
+    $context = '<div class="string-context">'. t('in context: @context', array('@context' => $context)) .'</div>';
+  }
 
-  return '<div'. $class .'><span class="string">'. $string .'</span><span class="original hidden">'. $original .'</span></div>';
+  return '<div'. $class .'><span class="string">'. $string .'</span>'. $context .'<span class="original hidden">'. $original .'</span></div>';
 }
 
 /**

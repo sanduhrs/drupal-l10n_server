@@ -164,6 +164,9 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
  *
  * @param $value
  *   String value to store.
+ * @param $context
+ *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is 
+ *   the default, if the code does not specify a context otherwise.
  * @param $file
  *   Name of file the string occured in.
  * @param $line
@@ -172,7 +175,7 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
  *   String type: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
  *   or POTX_STRING_BOTH.
  */
-function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $string_type = 2 /*POTX_STRING_RUNTIME*/) {
+function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL, $line = 0, $string_type = 2 /*POTX_STRING_RUNTIME*/) {
   static $files = array();
   
   // Strip all slashes from string.
@@ -188,10 +191,10 @@ function l10n_community_save_string($value = NULL, $file = NULL, $line = 0, $str
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s'", $value))) {
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s' AND context = '%s'", $value, $context))) {
       // String does not exist.
-      db_query("INSERT INTO {l10n_community_string} (value) VALUES ('%s')", $value);
-      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s'", $value));
+      db_query("INSERT INTO {l10n_community_string} (value, context) VALUES ('%s', '%s')", $value, $context);
+      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s' AND context = '%s'", $value, $context));
     }
     if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $files[$file], $sid, $line, $string_type))) {
       // Location does not exist with this string.

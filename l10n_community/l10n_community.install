@@ -239,6 +239,13 @@ function l10n_community_schema() {
         'type' => 'text',
         'not null' => TRUE
       ),
+      'context' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The context this string applies to. Only applicable to some strings in Drupal 7 and its modules.',
+      ),
     ),
     'primary key' => array('sid'),
   );
@@ -355,23 +362,38 @@ function l10n_community_requirements($phase) {
   }
   
   if (module_exists('potx')) {
-    // If potx is already installed and enabled, check its version by looking at
-    // the specific API piece which lets us fingerprint the right version.
-    // The 2.x branch introduced potx_status() in place of _potx_status().
-
-    include_once drupal_get_path('module', 'potx') .'/potx.inc';
-    $requirements['l10n_community_potx'] = array(
-      'title' => $t('Translation template extractor'),
-      'value' => $t('Localization Server compatible version'),
-    );
-    if (!function_exists('potx_status')) {
-      $requirements['l10n_community_potx']['description'] = $t('The Translation template extractor should be from the 6.x-2.x branch to be compatible with Localization Server.');
-      $requirements['l10n_community_potx']['severity'] = REQUIREMENT_ERROR;
-      $requirements['l10n_community_potx']['value'] = $t('Not compatible with Localization Server');
-    }
+    $requirements['l10n_community_potx'] = l10n_community_require_potx_with_context();
   }
   
   return $requirements;
+}
+
+/**
+ * Check that potx supports context.
+ *
+ * In its own function, so potx can itself cross-check that l10n_server is
+ * up to date in its API use.
+ */
+function l10n_community_require_potx_with_context() {
+  // If potx is already installed and enabled, check its version by looking at
+  // the specific API piece which lets us fingerprint the right version.
+  // The 3.x branch introduced _potx_find_t_calls_with_context().
+
+  // Ensure translations don't break at install time.
+  $t = get_t();
+  
+  include_once drupal_get_path('module', 'potx') .'/potx.inc';
+  $requirement = array(
+    'title' => $t('Translation template extractor'),
+    'value' => $t('Localization Server compatible version'),
+  );
+  if (!function_exists('_potx_find_t_calls_with_context')) {
+    $requirement['description'] = $t('The Translation template extractor should be from the 6.x-3.x branch to be compatible with this Localization Server.');
+    $requirement['severity'] = REQUIREMENT_ERROR;
+    $requirement['value'] = $t('Not compatible with Localization Server');
+  }
+  
+  return $requirement;
 }
 
 // -- Drupal 5 updates ---------------------------------------------------------
@@ -503,5 +525,14 @@ function l10n_community_update_6003() {
 function l10n_community_update_6004() {
   $ret = array();
   db_add_index($ret, 'l10n_community_translation', 'sid_language_suggestion', array('sid', 'language', 'is_suggestion'));
+  return $ret;
+}
+
+/**
+ * Add the context column to the source string table for Drupal 7 support.
+ */
+function l10n_community_update_6005() {
+  $ret = array();
+  db_add_field($ret, 'l10n_community_string', 'context', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
   return $ret;
 }
