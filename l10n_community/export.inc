@@ -273,6 +273,9 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       // This is a string with plural variants.
       list($singular, $plural) = explode("\0", $export_string['value']); 
       $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
+      if (!empty($export_string['context'])) {
+        $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
+      }
       if (!$template && !empty($export_string['translation'])) {
         // Export translations we have.
         foreach (explode("\0", $export_string['translation']) as $id => $value) {
@@ -296,6 +299,9 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     else {
       // Simple string (and possibly translation pair).
       $output = $comment .'msgid '. _l10n_community_export_string($export_string['value']);
+      if (!empty($export_string['context'])) {
+        $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
+      }
       if (!empty($export_string['translation'])) {
         $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
       }
@@ -363,12 +369,12 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $project = l10n_community_get_projects($uri);
   if ($template) {
     // We are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
+    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
     $sql_args = array($project->pid);
   }
   else {
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
     $sql_args = array($language->language, $project->pid);
   }
   
@@ -398,6 +404,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       $export_string = array(
         'comment'     => array($string->location => array($string->lineno)),
         'value'       => $string->value,
+        'context'     => $string->context,
         'translation' => isset($string->translation) ? $string->translation : '',
         'revisions'   => array($string->revision),
         'changed'     => isset($string->time_approved) ? $string->time_approved : 0,

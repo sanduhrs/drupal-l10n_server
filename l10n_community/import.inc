@@ -89,11 +89,12 @@ function l10n_community_import_form_submit($form, &$form_state) {
 /**
  * Parses a Gettext Portable Object file and saves strings.
  *
- * Modified version of _locale_import_po() from locale.inc:
+ * Modified version of Drupal 7's _locale_import_read_po():
  *   - does not support in-memory import ($op parameter)
  *   - calls _l10n_community_import_one_string() to save string
  *   - support storage of strings as suggestions
  *   - algorithm untouched
+ *   - uses Drupal 7 code to support msgctxt parsing
  *
  * @param $file
  *   Drupal file object corresponding to the PO file to import.
@@ -118,6 +119,10 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
 
   while (!feof($fd)) {
     $line = fgets($fd, 10*1024); // A line should not be this long
+    if ($lineno == 0) {
+      // The first line might come with a UTF-8 BOM, which should be removed.
+      $line = str_replace("\xEF\xBB\xBF", '', $line);
+    }
     $lineno++;
     $line = trim(strtr($line, array("\\\n" => "")));
 
@@ -162,14 +167,32 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
       $line = trim(substr($line, 5));
       $quoted = _locale_import_parse_quoted($line);
       if ($quoted === FALSE) {
-        _locale_import_message('The translation file %filename contains a syntax error on line %line.', $file,  $lineno);
+        _locale_import_message('The translation file %filename contains a syntax error on line %line.', $file, $lineno);
         return FALSE;
       }
       $current["msgid"] = $quoted;
       $context = "MSGID";
     }
+    elseif (!strncmp("msgctxt", $line, 7)) {
+      if ($context == "MSGSTR") {   // End current entry, start a new one
+        _l10n_community_import_one_string($current, $langcode, $is_suggestion);
+        $current = array();
+      }
+      elseif (!empty($current["msgctxt"])) { // Already in this context? Parse error
+        _locale_import_message('The translation file %filename contains an error: "msgctxt" is unexpected on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $line = trim(substr($line, 7));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('The translation file %filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgctxt"] = $quoted;
+      $context = "MSGCTXT";
+    }
     elseif (!strncmp("msgstr[", $line, 7)) {
-      if (($context != "MSGID") && ($context != "MSGID_PLURAL") && ($context != "MSGSTR_ARR")) { // Must come after msgid, msgid_plural, or msgstr[]
+      if (($context != "MSGID") && ($context != "MSGCTXT") && ($context != "MSGID_PLURAL") && ($context != "MSGSTR_ARR")) { // Must come after msgid, msgxtxt, msgid_plural, or msgstr[]
         _locale_import_message('The translation file %filename contains an error: "msgstr[]" is unexpected on line %line.', $file, $lineno);
         return FALSE;
       }
@@ -189,7 +212,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
       $context = "MSGSTR_ARR";
     }
     elseif (!strncmp("msgstr", $line, 6)) {
-      if ($context != "MSGID") {   // Should come just after a msgid block
+      if (($context != "MSGID") && ($context != "MSGCTXT")) {   // Should come just after a msgid or msgctxt block
         _locale_import_message('The translation file %filename contains an error: "msgstr" is unexpected on line %line.', $file, $lineno);
         return FALSE;
       }
@@ -211,6 +234,9 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
       if (($context == "MSGID") || ($context == "MSGID_PLURAL")) {
         $current["msgid"] .= $quoted;
       }
+      elseif ($context == "MSGCTXT") {
+        $current["msgctxt"] .= $quoted;
+      }
       elseif ($context == "MSGSTR") {
         $current["msgstr"] .= $quoted;
       }
@@ -225,7 +251,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
   }
 
   // End of PO file, flush last entry
-  if (($context == "MSGSTR") || ($context == "MSGSTR_ARR")) {
+  if (!empty($current) && !empty($current['msgstr'])) {
     _l10n_community_import_one_string($current, $langcode, $is_suggestion);
   }
   elseif ($context != "COMMENT") {
@@ -266,10 +292,13 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
     if (!empty($value['#'])) {
       $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#'])); 
     }
+    
+    // If context was not set, set to empty.
+    $value['msgctxt'] = !empty($value['msgctxt']) ? $value['msgctxt'] : '';
 
     // We use BINARY matching here to avoid case insensitively matching
     // strings like 'operations' and 'Operations'.
-    if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE BINARY value = '%s'", $value['msgid']))) {
+    if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE BINARY value = '%s' AND context = '%s'", $value['msgid'], $value['msgctxt']))) {
       // We have this source string (otherwise we don't save anything).
       $translation = db_fetch_object(db_query("SELECT translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
       
