@@ -108,15 +108,7 @@ function l10n_groups_access($op, $node, $account) {
  */
 function l10n_groups_form(&$node) {
   $form = array();
-  // Create a list of languages on the site having no translation group.
-  $groups = db_query('SELECT language FROM {l10n_groups_group}');
-  $languages = l10n_community_get_languages('name');
-  while ($group = db_fetch_object($groups)) {
-    if ($languages[$group->language]) {
-      unset($languages[$group->language]);
-    }
-  }
-  
+
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Group name'),
@@ -125,17 +117,31 @@ function l10n_groups_form(&$node) {
     '#weight' => -10,
     '#required' => TRUE
   );
+  $languages = l10n_community_get_languages('name');
+
   if (!empty($node->l10n_group_language)) {
     // Already attached to a language, not possible to modify.
-    $form['l10n_group_language'] = array(
+    $form['l10n_group_language_display'] = array(
       '#type' => 'item',
       '#title' => t('Language'),
       '#description' => t('The language managed by this group. This cannot be modified.'),
+      '#value' => $languages[$node->l10n_group_language],
+      '#weight' => -5,
+    );
+    // Store the language value for hook_update.
+    $form['l10n_group_language'] = array(
+      '#type' => 'hidden',
       '#value' => $node->l10n_group_language,
-      '#weight' => -5
     );
   }
   else {
+    // Create a list of languages on the site having no translation group.
+    $groups = db_query('SELECT language FROM {l10n_groups_group}');
+    while ($group = db_fetch_object($groups)) {
+      if ($languages[$group->language]) {
+        unset($languages[$group->language]);
+      }
+    }
     // Not yet attached to a language.
     $form['l10n_group_language'] = array(
       '#type' => 'select',
