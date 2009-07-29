@@ -346,8 +346,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   if ($sum == 0) {
     // We handle a project without any source strings available for translation.
     return array(
-      t('n/a'),
-      t('No data available.'),
+      array('data' => t('No data available yet.'), 'colspan' => 3),
     );
   }
 
