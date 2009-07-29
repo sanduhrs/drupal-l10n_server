@@ -16,15 +16,19 @@ function l10n_project_sync() {
   db_set_active('projects');
   
   // Get all projects - published, unpublished equally, so we can update project
-  // status on our copy for projects which were previously published. Don't use
-  // {} wrapping in query, since it is a different DB and it does not use
-  // prefixes anyway.
+  // status on our copy for projects which were previously published. Only get
+  // projects however, where there were any releases. We only parse releases,
+  // so there is no point to have data from other projects. Also, drupal.org
+  // has some pseudo-projects for the webmasters or infrastructure team to 
+  // maintain issues queues, which are also only identifiable by looking at
+  // the list of releases. Don't use {} wrapping in query, since it is a 
+  // different DB and it does not use prefixes anyway.
   $result = db_query(
     "SELECT DISTINCT pp.nid, pp.uri, n.title, n.status 
      FROM project_projects pp INNER JOIN 
           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
           node n ON pp.nid = n.nid 
-     ORDER BY by pp.nid"
+     ORDER BY pp.nid"
   );
   
   // Fill in an array, so we can go back to our database and add in these
