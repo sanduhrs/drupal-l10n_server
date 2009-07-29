@@ -73,17 +73,15 @@ function l10n_community_explore_projects() {
   $table = array();
   $string_counts = l10n_community_get_string_count('projects');
   foreach ($projects as $project) {
-    if (isset($string_counts[$project->pid])) {
-      list($title, $uri, $sum, $translated, $suggested) = $string_counts[$project->pid];
-      $table[] = array_merge(
-        array(
-          array('data' => l($project->title, 'translate/projects/'. $uri), 'class' => 'rowhead'), 
-        ),
-        // Multiply summary count by languages handled, so we get an
-        // accurate picture of completeness.
-        theme('l10n_community_progress_columns', ($sum * $language_count), $translated, $suggested)
-      );
-    }
+    list($title, $uri, $sum, $translated, $suggested) = isset($string_counts[$project->pid]) ? $string_counts[$project->pid] : array($project->title, $project->uri, 0, 0, 0);
+    $table[] = array_merge(
+      array(
+        array('data' => l($title, 'translate/projects/'. $uri), 'class' => 'rowhead'), 
+      ),
+      // Multiply summary count by languages handled, so we get an
+      // accurate picture of completeness.
+      theme('l10n_community_progress_columns', ($sum * $language_count), $translated, $suggested)
+    );
   }
   $output .= theme(
     'l10n_community_table',
@@ -346,8 +344,7 @@ function l10n_community_project_errors($uri = NULL) {
  */
 function theme_l10n_community_progress_columns($sum, $translated, $has_suggestion) {
   if ($sum == 0) {
-    // Handle (sort of debug) special case when we handle a project without any
-    // source strings available for translation.
+    // We handle a project without any source strings available for translation.
     return array(
       t('n/a'),
       t('No data available.'),
