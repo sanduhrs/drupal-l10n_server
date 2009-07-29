@@ -16,14 +16,14 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   );
   
   // Set a matching title with the translation page.
-  $project = l10n_community_get_projects($uri);
+  $project = l10n_community_get_projects(array('uri' => $uri));
   if (isset($langcode)) {
     $languages = l10n_community_get_languages();
     drupal_set_title(t('Export @language translations', array('@language' => $languages[$langcode]->name)));
     $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
   }
   else {
-    $project = l10n_community_get_projects($uri);
+    $project = l10n_community_get_projects(array('uri' => $uri));
     drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
     $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
   }
@@ -366,7 +366,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   // error if this is not installed.
   include_once 'Archive/Tar.php';
   
-  $project = l10n_community_get_projects($uri);
+  $project = l10n_community_get_projects(array('uri' => $uri));
   if ($template) {
     // We are exporting a template explicitly.
     $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';

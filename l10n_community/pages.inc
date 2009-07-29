@@ -62,7 +62,7 @@ function l10n_community_explore_projects() {
   $pager_setting = variable_get('l10n_community_project_per_page', 10);
 
   $output = '';
-  if (!$projects = l10n_community_get_projects(NULL, $pager_setting)) {
+  if (!$projects = l10n_community_get_projects(array('pager' => $pager_setting))) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
@@ -220,7 +220,7 @@ function l10n_community_overview_project($uri = NULL) {
     'title' => t('Translations overview'),
     'description' => t('Overall status of translations'),
   );
-  $project = l10n_community_get_projects($uri);
+  $project = l10n_community_get_projects(array('uri' => $uri));
   $num_source = l10n_community_get_string_count('project', $project->pid);
   $string_counts = l10n_community_get_string_count('languages', $project->pid);
 

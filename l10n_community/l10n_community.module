@@ -569,21 +569,26 @@ function l10n_community_get_permission($langcode, $account = NULL) {
 /**
  * Provides a list of projects from the database, ordered by uri.
  *
- * @param $uri
- *   Project URI, if requesting information about one project only.
- *   If not specified, information about all projects is returned.
- * @param $pager
- *   Number of projects to return a pager query result with. If NULL,
- *   all projects are returned.
+ * @param $options
+ *   Associative array of options
+ *    - 'uri': Project URI, if requesting information about one project only.
+ *      If not specified, information about all projects is returned.
+ *    - 'pager': Number of projects to return a pager query result with. If 
+ *      NULL, no pager is used.
+ *    - 'all': If not specified, unpublished projects are excluded (default).
+ *      If TRUE, even unpublished projects are returned (for admin pages).
  * @return
  *   An associative array keyed with project uris.
  */
-function l10n_community_get_projects($uri = NULL, $pager = NULL) {
+function l10n_community_get_projects($options) {
   static $projects = array();
   
-  if (isset($pager)) {
+  // Consider returning all projects or just published ones.
+  $published = (empty($options['all']) ? 'WHERE status = 1 ' : '');
+
+  if (isset($options['pager'])) {
     // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_community_project} ORDER BY uri', $pager, 0, NULL);
+    $results = pager_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri', $pager, 0, NULL);
     $pager_results = array();
     while ($project = db_fetch_object($results)) {
       $pager_results[$project->uri] = $project;
@@ -593,22 +598,22 @@ function l10n_community_get_projects($uri = NULL, $pager = NULL) {
     return $pager_results;
   }
   else {
-    if (isset($uri)) {
+    if (isset($options['uri'])) {
       // A specific project was asked for.
-      if (isset($projects[$uri])) {
+      if (isset($projects[$options['uri']])) {
         // Can be served from the local cache.
-        return $projects[$uri];
+        return $projects[$options['uri']];
       }
       // Not found in cache, so query and cache before returning.
-      $result = db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $uri);
+      $result = db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $options['uri']);
       if ($project = db_fetch_object($result)) {
-        $projects[$uri] = $project;
+        $projects[$options['uri']] = $project;
         return $project;
       }
     }
     else {
       // A list of *all* projects was asked for.
-      $results = db_query('SELECT * FROM {l10n_community_project} ORDER BY uri');
+      $results = db_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri');
       while ($project = db_fetch_object($results)) {
         $projects[$project->uri] = $project;
       }
@@ -837,7 +842,7 @@ function l10n_community_is_supported_version($path) {
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
-    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%')", $string, 0, 10);
+    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1", $string, 0, 10);
     while ($project = db_fetch_object($result)) {
       $matches[$project->title] = check_plain($project->title);
    }
@@ -1052,7 +1057,7 @@ function l10n_community_get_stats($langcode = NULL) {
     else {
       $stats = array();
       $stats['users'] = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation}'));
-      $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project}'));
+      $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project} WHENE status = 1'));
       $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
       $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1'));

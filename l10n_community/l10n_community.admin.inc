@@ -44,7 +44,7 @@ function l10n_community_settings_form() {
  * Menu callback for projects administration listing.
  */
 function l10n_community_admin_projects() {
-  if (!$projects = l10n_community_get_projects(NULL, L10N_COMMUNITY_ADMIN_PROJECTS_PER_PAGE)) {
+  if (!$projects = l10n_community_get_projects(array('pager' => L10N_COMMUNITY_ADMIN_PROJECTS_PER_PAGE, 'all' => TRUE))) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
@@ -140,7 +140,7 @@ function l10n_community_admin_projects_form_submit($form, &$form_state) {
  * Form callback to display a confirm form for deleting projects.
  */
 function l10n_community_admin_projects_delete(&$form_state, $project_uri) {
-  $project = l10n_community_get_projects($project_uri);
+  $project = l10n_community_get_projects(array('uri' => $project_uri));
   $form = array(
     'project' => array(
       '#type' => 'value',
@@ -165,7 +165,7 @@ function l10n_community_admin_projects_delete_submit($form, &$form_state) {
  * Form callback to display a confirm form for resetting projects.
  */
 function l10n_community_admin_projects_reset(&$form_state, $project_uri) {
-  $project = l10n_community_get_projects($project_uri);
+  $project = l10n_community_get_projects(array('uri' => $project_uri));
   $form = array(
     'project' => array(
       '#type' => 'value',

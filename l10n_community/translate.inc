@@ -32,7 +32,7 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
 
   // Build filter values for the form generation.
   $project = $release = NULL;
-  if (isset($_GET['project']) && ($project = l10n_community_get_projects($_GET['project']))) {
+  if (isset($_GET['project']) && ($project = l10n_community_get_projects(array('uri' => $_GET['project'])))) {
     if (isset($_GET['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$_GET['release']])) {
       // Allow to select this release, if belongs to current project.
       $release = $_GET['release'];
