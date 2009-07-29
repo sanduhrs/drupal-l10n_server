@@ -1,0 +1,21 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Localization community local project module integration
+ *
+ *   Maintains a copy of project and release listings based on a local database
+ *   of drupal.org. Requires the project database to be accessible via the
+ *   'projects' database set in settings.php.
+ */
+
+// = Core hooks ================================================================
+
+/**
+ * Implementation of hook_cron().
+ */
+function l10n_project_cron() {
+  module_load_include('inc', 'l10n_project', 'l10n_project.sync');
+  l10n_project_sync();
+}

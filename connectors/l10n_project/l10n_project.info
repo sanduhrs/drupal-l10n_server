@@ -1,0 +1,7 @@
+; $Id$
+name = "Localization community local project module integration"
+description = "Used on localize.drupal.org to maintain copies of project and release lists with the drupal.org project database"
+dependencies[] = l10n_community
+dependencies[] = potx
+package = "Localization server"
+core = 6.x
