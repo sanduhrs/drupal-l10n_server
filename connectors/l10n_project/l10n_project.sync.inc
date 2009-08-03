@@ -7,6 +7,11 @@
  */
  
 /**
+ * The term ID for translations on Drupal.org.
+ */
+define('L10N_PROJECT_TRANSLATION_TID', 29); 
+
+/**
  * Syncronize the project list from the drupal.org database.
  */
 function l10n_project_sync() {
@@ -15,6 +20,23 @@ function l10n_project_sync() {
   // the projects database.
   db_set_active('projects');
   
+  // Got the limited list of translation projects first to exclude from the
+  // upcoming query. We cannot join on the term_node table there, since we
+  // can have nodes with multiple terms, so just adding 
+  // tid != L10N_PROJECT_TRANSLATION_TID would not help, the project would 
+  // still match on other terms. 
+  $result = db_query(
+    "SELECT DISTINCT pp.nid 
+     FROM project_projects pp INNER JOIN 
+          term_node tn ON tn.nid = pp.nid
+     WHERE tn.tid = %d", L10N_PROJECT_TRANSLATION_TID
+  );
+  $exclude_projects = array();
+  while ($project = db_fetch_object($result)) {
+    // Cast to int to make sure we are secure.
+    $exclude_projects[] = (int) $project->nid;  
+  }
+
   // Get all projects - published, unpublished equally, so we can update project
   // status on our copy for projects which were previously published. Only get
   // projects however, where there were any releases. We only parse releases,
@@ -27,7 +49,8 @@ function l10n_project_sync() {
     "SELECT DISTINCT pp.nid, pp.uri, n.title, n.status 
      FROM project_projects pp INNER JOIN 
           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
-          node n ON pp.nid = n.nid 
+          node n ON pp.nid = n.nid
+     WHERE pp.nid NOT IN (". join(', ', $exclude_projects) .")
      ORDER BY pp.nid"
   );
   
@@ -69,4 +92,21 @@ function l10n_project_sync() {
       );
     }
   }
+  
+  /*
+  // Go back to projects database for releases.
+  db_set_active('projects');
+
+  // Get a list of all releases for all projects ever released.
+  // @todo: actually, we should only get the latest releases for all projects
+  // in all branches  
+  $result = db_query("
+    SELECT pp.nid, prn.version, f.filepath, f.timestamp, prf.filehash, n.status
+    FROM project_projects pp INNER JOIN 
+         project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN 
+         node n ON pp.nid = n.nid INNER JOIN
+         project_release_file prf ON prn.nid = prf.nid INNER JOIN
+         files f ON prf.fid = f.fid"
+  );
+  */
 }
