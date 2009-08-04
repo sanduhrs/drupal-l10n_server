@@ -382,7 +382,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Release restriction.
     $sql_args[] = $release;
     $sql .= ' AND r.rid = %d';
-    $releases = l10n_community_get_releases($uri, TRUE);
+    $releases = l10n_community_get_releases($uri);
     $release = $releases[$release];
   }
   
