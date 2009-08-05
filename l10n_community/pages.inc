@@ -252,7 +252,7 @@ function l10n_community_overview_project($uri = NULL) {
     theme('l10n_community_progress_headers', t('Language')),
     $table,
     array('class' => 'l10n-community-overview')
-  ) .'<div class="clearing"></div>';
+  ) .'<div class="clear-block"></div>';
   $output .=  theme('admin_block', $block);
 
   $output .= '</div><div class="right clear-block">';

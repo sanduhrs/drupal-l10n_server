@@ -88,7 +88,7 @@ function l10n_community_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
-  $items['admin/l10n_server/projects/delete/%l10n_community_project'] = array(
+  $items['admin/l10n_server/projects/delete/%l10n_community_project_admin'] = array(
     'title' => 'Delete project',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_community_admin_projects_delete', 4),
@@ -96,10 +96,18 @@ function l10n_community_menu() {
     'access arguments' => array('administer localization community'),
     'type' => MENU_CALLBACK
   );
-  $items['admin/l10n_server/projects/reset/%l10n_community_project'] = array(
+  $items['admin/l10n_server/projects/reset/%l10n_community_project_admin'] = array(
     'title' => 'Enable project',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_community_admin_projects_reset', 4),
+    'file' => 'l10n_community.admin.inc',
+    'access arguments' => array('administer localization community'),
+    'type' => MENU_CALLBACK
+  );
+  $items['admin/l10n_server/projects/releases/%l10n_community_project_admin'] = array(
+    'title' => 'Releases',
+    'page callback' => 'l10n_community_admin_releases',
+    'page arguments' => array(4),
     'file' => 'l10n_community.admin.inc',
     'access arguments' => array('administer localization community'),
     'type' => MENU_CALLBACK
@@ -291,6 +299,16 @@ function l10n_community_language_load($langcode) {
  */
 function l10n_community_project_load($uri) {
   if (($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
+    return $uri;
+  }
+  return FALSE;
+}
+
+/**
+ * Menu loader function for %l10n_community_project_admin to validate project URI.
+ */
+function l10n_community_project_load_admin($uri) {
+  if (($projects = l10n_community_get_projects(array('all' => TRUE))) && isset($projects[$uri])) {
     return $uri;
   }
   return FALSE;
@@ -905,6 +923,9 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     ),
     // l10n_community.admin.inc
     'l10n_community_admin_projects_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+    'l10n_community_admin_releases_form' => array(
       'arguments' => array('form' => NULL),
     ),
   );

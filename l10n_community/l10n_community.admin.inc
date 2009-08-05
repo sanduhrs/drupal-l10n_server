@@ -83,6 +83,9 @@ function l10n_community_admin_projects_form(&$form_state, $projects) {
       'delete' => array(
         '#value' => $orphans ? '' : l(t('Delete'), 'admin/l10n_server/projects/delete/'. $project->uri),
       ),
+      'releases' => array(
+        '#value' => l(t('View releases'), 'admin/l10n_server/projects/releases/'. $project->uri),
+      ),
     );
   }
   $form['submit'] = array(
@@ -108,11 +111,12 @@ function theme_l10n_community_admin_projects_form($form) {
     $table[] = array(
       drupal_render($project_element['title']),
       drupal_render($project_element['status']),
+      drupal_render($project_element['releases']),
       drupal_render($project_element['reset']),
-      drupal_render($project_element['delete'])
+      drupal_render($project_element['delete']),
     );
   }
-  $headers = array(t('Project'), t('Enabled'), array('data' => t('Operations'), 'colspan' => 2));
+  $headers = array(t('Project'), t('Enabled'), array('data' => t('Operations'), 'colspan' => 3));
   $output .= theme('table', $headers, $table);
   $output .= $pager;
   $output .= drupal_render($form);
@@ -147,7 +151,7 @@ function l10n_community_admin_projects_delete(&$form_state, $project_uri) {
       '#value' => $project,
     ),
   );
-  return confirm_form($form, t('Are you sure you would like to delete project %project from the Localization Server?', array('%project' => $project->title)), 'admin/l10n_server/projects', t('This would remove all data associated with the project, including releases, files, parsing errors, and all source strings and translations which are not applicable to remaining projects. Always make database backups. This action cannot be undone.'));
+  return confirm_form($form, t('Are you sure you would like to delete project %project from this Localization Server?', array('%project' => $project->title)), 'admin/l10n_server/projects', t('This would remove all data associated with the project, including releases, files, parsing errors, and all source strings and translations which are not applicable to remaining projects. Always make database backups. This action cannot be undone.'));
 }
 
 /**
@@ -172,7 +176,7 @@ function l10n_community_admin_projects_reset(&$form_state, $project_uri) {
       '#value' => $project,
     ),
   );
-  return confirm_form($form, t('Are you sure you would like to start over with the project %project from the Localization Server?', array('%project' => $project->title)), 'admin/l10n_server/projects', t('This would remove almost all data associated with the project: releases, files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. If you clean up the database before this project is parsed again, source strings and translations will be lost. Always make database backups. This action cannot be undone.'));
+  return confirm_form($form, t('Are you sure you would like to start over with the project %project on this Localization Server?', array('%project' => $project->title)), 'admin/l10n_server/projects', t('This would remove almost all data associated with the project: releases, files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. If you clean up the database before this project is parsed again, source strings and translations will be lost. Always make database backups. This action cannot be undone.'));
 }
 
 /**
@@ -182,6 +186,85 @@ function l10n_community_admin_projects_reset_submit($form, &$form_state) {
   l10n_community_delete_project($form_state['values']['project']->pid, TRUE);
   drupal_set_message(t('Project data for %project was deleted from the Localization Server. Make sure to parse this project again before deleting a project or cleaning up the database, or you will loose existing translation data.', array('%project' => $form_state['values']['project']->title)));
   $form_state['redirect'] = 'admin/l10n_server/projects';
+}
+
+// = Show list of releases for a project =======================================
+
+/**
+ * Menu callback for projects administration listing.
+ */
+function l10n_community_admin_releases($project_uri) {
+  $project = l10n_community_get_projects(array('uri' => $project_uri));
+  if (!$project_releases = l10n_community_get_releases($project_uri, FALSE)) {
+    drupal_set_message(t('No releases found for this project.'), 'error');
+    return '';
+  }
+  drupal_set_title(t('Releases of project @project', array('@project' => $project->title)));
+  return drupal_get_form('l10n_community_admin_releases_form', $project_releases);
+}
+
+
+/**
+ * Display a form with list of releases for a given project.
+ *
+ * @todo
+ *   Just a list at the moment. Make it a form with useful tools.
+ */
+function l10n_community_admin_releases_form(&$form_state, $project_releases) {
+  $form = array(
+    'releases' => array(
+      '#tree' => TRUE,
+    ),
+  );
+  
+  foreach ($project_releases as $release) {
+    $form['releases'][$release->rid] = array(
+      'title' => array(
+        '#value' => $release->title,
+      ),
+      'download_link' => array(
+        '#value' => l(basename($release->download_link), $release->download_link),
+      ),
+      'file_date' => array(
+        '#value' => $release->file_date,
+      ),
+      'is_parsed' => array(
+        '#type' => 'checkbox',
+        '#disabled' => TRUE,
+        '#default_value' => (bool) $release->last_parsed,
+      ),
+      'last_parsed' => array(
+        '#value' => format_date($release->last_parsed),
+      ),
+    );
+  }
+  
+  $form['#theme'] = 'l10n_community_admin_releases_form';
+  return $form;
+}
+
+/**
+ * Form theme for release administration listing.
+ */
+function theme_l10n_community_admin_releases_form($form) {
+  $table = array();
+  foreach ($form['releases'] as $rid => &$release_element) {
+    if (!is_int($rid)) {
+      // Skip non-project elements.
+      continue;
+    }
+    $table[] = array(
+      drupal_render($release_element['is_parsed']),
+      drupal_render($release_element['title']),
+      drupal_render($release_element['download_link']),
+      drupal_render($release_element['file_date']),
+      drupal_render($release_element['last_parsed']),
+    );
+  }
+  $headers = array(array('data' => t('Release'), 'colspan' => 2), t('Download link'), t('File date'), t('Last parsed'));
+  $output .= theme('table', $headers, $table);
+  $output .= drupal_render($form);
+  return $output;
 }
 
 // = Source strings cleanup ====================================================

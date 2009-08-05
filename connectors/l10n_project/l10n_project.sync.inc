@@ -15,6 +15,14 @@ define('L10N_PROJECT_TRANSLATION_TID', 29);
  * Syncronize the project list from the drupal.org database.
  */
 function l10n_project_sync() {
+    
+  /*include_once 'includes/locale.inc';
+  list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
+  db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
+  return;
+      
+  db_query('DELETE FROM l10n_community_project');
+  db_query('DELETE FROM l10n_community_release');*/
   
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
@@ -93,7 +101,6 @@ function l10n_project_sync() {
     }
   }
   
-  /*
   // Go back to projects database for releases.
   db_set_active('projects');
 
@@ -101,12 +108,40 @@ function l10n_project_sync() {
   // @todo: actually, we should only get the latest releases for all projects
   // in all branches  
   $result = db_query("
-    SELECT pp.nid, prn.version, f.filepath, f.timestamp, prf.filehash, n.status
+    SELECT prn.nid, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN 
          project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN 
          node n ON pp.nid = n.nid INNER JOIN
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
-         files f ON prf.fid = f.fid"
+         files f ON prf.fid = f.fid INNER JOIN
+         node nn ON prn.nid = nn.nid"
   );
-  */
+  
+  // Fill in an array, so we can go back to our database and add in these
+  // details.
+  $releases = array();
+  while ($relase = db_fetch_object($result)) {
+    $releases[] = $release;
+  }
+  
+  // Switch back to our local database.
+  db_set_active();
+  
+  // Record all releases in our local database.
+  foreach ($releases as $release) {
+    $download_link = 'http://ftp.drupal.org/' . $release->filepath;
+    if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
+      // @todo: what happens with our release data, when file changes?
+      //        need a "reindex" column or something like that
+      // @todo: what happens to unpublished releases? drop data outright? 
+    }
+    elseif (!empty($release->status)) {
+      // New published release, not recorded before.
+      db_query(
+        "INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
+        $release->nid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
+      );
+    }
+  }
+
 }
