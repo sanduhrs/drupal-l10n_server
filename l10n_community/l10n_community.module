@@ -307,7 +307,7 @@ function l10n_community_project_load($uri) {
 /**
  * Menu loader function for %l10n_community_project_admin to validate project URI.
  */
-function l10n_community_project_load_admin($uri) {
+function l10n_community_project_admin_load($uri) {
   if (($projects = l10n_community_get_projects(array('all' => TRUE))) && isset($projects[$uri])) {
     return $uri;
   }

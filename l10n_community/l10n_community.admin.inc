@@ -195,11 +195,11 @@ function l10n_community_admin_projects_reset_submit($form, &$form_state) {
  */
 function l10n_community_admin_releases($project_uri) {
   $project = l10n_community_get_projects(array('uri' => $project_uri));
+  drupal_set_title(t('Releases of project @project', array('@project' => $project->title)));
   if (!$project_releases = l10n_community_get_releases($project_uri, FALSE)) {
     drupal_set_message(t('No releases found for this project.'), 'error');
     return '';
   }
-  drupal_set_title(t('Releases of project @project', array('@project' => $project->title)));
   return drupal_get_form('l10n_community_admin_releases_form', $project_releases);
 }
 
