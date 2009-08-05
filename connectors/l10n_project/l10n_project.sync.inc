@@ -15,14 +15,16 @@ define('L10N_PROJECT_TRANSLATION_TID', 29);
  * Syncronize the project list from the drupal.org database.
  */
 function l10n_project_sync() {
-    
+
+  //return;
   /*include_once 'includes/locale.inc';
   list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
   db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
-  return;
+  return;*/
       
-  db_query('DELETE FROM l10n_community_project');
-  db_query('DELETE FROM l10n_community_release');*/
+  db_query('TRUNCATE l10n_community_project');
+  db_query('TRUNCATE l10n_community_release');
+  $last_sync = 0; //variable_get('l10n_project_last_sync', 0);
   
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
@@ -66,7 +68,7 @@ function l10n_project_sync() {
   // details.
   $projects = array();
   while ($project = db_fetch_object($result)) {
-    $projects[] = $project;
+    $projects[$project->uri] = $project;
   }
   
   // Switch back to our local database.
@@ -86,7 +88,7 @@ function l10n_project_sync() {
       else {
         // Log error on existing project with another connector and skip the
         // rest of this function.
-        $t_args = array('%uri' => $uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_project');
+        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_project');
         watchdog('l10n_drupalorg', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
         drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
         continue;
@@ -98,29 +100,40 @@ function l10n_project_sync() {
         "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
         $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_project', $project->status
       );
+      // Save last insert ID for release update code.
+      $project->pid = db_last_insert_id('l10n_community_project', 'pid');
+      $projects[$project->uri] = $project;
     }
   }
   
   // Go back to projects database for releases.
   db_set_active('projects');
 
-  // Get a list of all releases for all projects ever released.
-  // @todo: actually, we should only get the latest releases for all projects
-  // in all branches  
+  // Get a list of 'stable' releases for all projects ever released.
+  // In our definition, a release is stable if it is not to be rebuilt
+  // periodically. Periodically rebuilt releases blow up our database (when
+  // changed), so we keep away from them.
+  
+  // Also, only sync releases which are at most one day older then our last
+  // sync date. This ensures time zone issues and releases published while the
+  // previous cron run will not be a problem, but we only look at a relatively
+  // small list of releases at any given time. 
   $result = db_query("
-    SELECT prn.nid, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
+    SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN 
          project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN 
          node n ON pp.nid = n.nid INNER JOIN
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
          files f ON prf.fid = f.fid INNER JOIN
-         node nn ON prn.nid = nn.nid"
+         node nn ON prn.nid = nn.nid
+    WHERE prn.rebuild = 0 AND prn.version_extra != 'dev' AND f.timestamp > %d",
+    $last_sync - 60*60*24
   );
   
   // Fill in an array, so we can go back to our database and add in these
   // details.
   $releases = array();
-  while ($relase = db_fetch_object($result)) {
+  while ($release = db_fetch_object($result)) {
     $releases[] = $release;
   }
   
@@ -131,17 +144,17 @@ function l10n_project_sync() {
   foreach ($releases as $release) {
     $download_link = 'http://ftp.drupal.org/' . $release->filepath;
     if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
-      // @todo: what happens with our release data, when file changes?
-      //        need a "reindex" column or something like that
       // @todo: what happens to unpublished releases? drop data outright? 
     }
     elseif (!empty($release->status)) {
       // New published release, not recorded before.
       db_query(
         "INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
-        $release->nid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
+        $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
       );
     }
   }
-
+  
+  // Set last sync time to limit number of releases to look at next time.
+  variable_set('l10n_project_last_sync', time());
 }

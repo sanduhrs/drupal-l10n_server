@@ -226,15 +226,13 @@ function l10n_community_admin_releases_form(&$form_state, $project_releases) {
         '#value' => l(basename($release->download_link), $release->download_link),
       ),
       'file_date' => array(
-        '#value' => $release->file_date,
+        '#value' => format_date($release->file_date),
       ),
       'is_parsed' => array(
-        '#type' => 'checkbox',
-        '#disabled' => TRUE,
-        '#default_value' => (bool) $release->last_parsed,
+        '#value' => empty($release->last_parsed) ? '' : theme('image', 'misc/watchdog-ok.png', t('parsed'), t('parsed')),
       ),
       'last_parsed' => array(
-        '#value' => format_date($release->last_parsed),
+        '#value' => (empty($release->last_parsed) ? t('n/a') : format_date($release->last_parsed)),
       ),
     );
   }
