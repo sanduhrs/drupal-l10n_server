@@ -13,9 +13,55 @@
 // = Core hooks ================================================================
 
 /**
+ * Implementation of hook_menu().
+ */
+function l10n_project_menu() {
+  $items = array();
+  $items['admin/l10n_server/l10n_project'] = array(
+    'title' => 'Local project module integration',
+    'description' => 'Configure the project module integration and parsing.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_project_settings_form'),
+    'access arguments' => array('administer localization community local project module integration'),
+  );
+  return $items;
+}
+
+/**
+ * Implementation of hook_perm().
+ */
+function l10n_project_perm() {
+  return array('administer localization community local project module integration');
+}
+
+/**
  * Implementation of hook_cron().
  */
 function l10n_project_cron() {
-  module_load_include('inc', 'l10n_project', 'l10n_project.sync');
-  l10n_project_sync();
+  if (variable_get('l10n_project_cron', 0)) {
+    module_load_include('inc', 'l10n_project', 'l10n_project.sync');
+    l10n_project_sync();
+  }
+}
+
+// = Settings ==================================================================
+
+/**
+ * Settings form callback.
+ */
+function l10n_project_settings_form() {
+  $form['l10n_project_cron'] = array(
+    '#title' => t('Scan new projects on every cron run'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('l10n_project_cron', 0),
+    '#description' => t('It is advised to set up a regular cron run to parse new package files.'),
+  );
+  $form['l10n_project_limit'] = array(
+    '#title' => t('Number of releases to scan at once'),
+    '#description' => t('The number of releases to scan on a cron run. Scanning is synchronous, so you need to wait for Drupal to extract and parse the tarball content.'),
+    '#type' => 'select',
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20)),
+    '#default_value' => variable_get('l10n_project_limit', 1),
+  );
+  return system_settings_form($form);
 }
