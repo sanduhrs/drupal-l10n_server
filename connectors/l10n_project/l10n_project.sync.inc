@@ -17,14 +17,6 @@ define('L10N_PROJECT_TRANSLATION_TID', 29);
 function l10n_project_sync() {
 
   //return;
-  /*include_once 'includes/locale.inc';
-  list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
-  db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
-  return;*/
-      
-  db_query('TRUNCATE l10n_community_project');
-  db_query('TRUNCATE l10n_community_release');
-  $last_sync = 0; //variable_get('l10n_project_last_sync', 0);
   
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
@@ -109,15 +101,12 @@ function l10n_project_sync() {
   // Go back to projects database for releases.
   db_set_active('projects');
 
-  // Get a list of 'stable' releases for all projects ever released.
-  // In our definition, a release is stable if it is not to be rebuilt
-  // periodically. Periodically rebuilt releases blow up our database (when
-  // changed), so we keep away from them.
-  
-  // Also, only sync releases which are at most one day older then our last
+  // Only sync releases which are at most one day older then our last
   // sync date. This ensures time zone issues and releases published while the
   // previous cron run will not be a problem, but we only look at a relatively
-  // small list of releases at any given time. 
+  // small list of releases at any given time. We only sync tagged releases,
+  // which will not get rebuilt later anytime. 
+  $last_sync = variable_get('l10n_project_last_sync', 0);
   $result = db_query("
     SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN 
@@ -126,7 +115,7 @@ function l10n_project_sync() {
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
          files f ON prf.fid = f.fid INNER JOIN
          node nn ON prn.nid = nn.nid
-    WHERE prn.rebuild = 0 AND prn.version_extra != 'dev' AND f.timestamp > %d",
+    WHERE prn.rebuild = 0 AND f.timestamp > %d",
     $last_sync - 60*60*24
   );
   
@@ -158,3 +147,117 @@ function l10n_project_sync() {
   // Set last sync time to limit number of releases to look at next time.
   variable_set('l10n_project_last_sync', time());
 }
+
+  /*
+  ARCHIVED CODE for initial project release syncup.
+
+  include_once 'includes/locale.inc';
+  list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
+  db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
+  return;
+      
+  db_query('TRUNCATE l10n_community_project');
+  db_query('TRUNCATE l10n_community_release');
+
+  // Go back to projects database for releases.
+  db_set_active('projects');
+  $releases = array();
+
+  // List of contrib branches in the database which have releases.
+  $release_branches = array(
+    'DRUPAL-5--0-%',
+    'DRUPAL-5--1-%',
+    'DRUPAL-5--2-%',
+    'DRUPAL-5--3-%',
+    'DRUPAL-5--4-%',
+    'DRUPAL-5--5-%',
+    'DRUPAL-5--6-%',
+    'DRUPAL-5--7-%',
+    'DRUPAL-5--8-%',
+    'DRUPAL-5--9-%',
+    'DRUPAL-5--10-%',
+    'DRUPAL-5--11-%',
+
+    'DRUPAL-6--0-%',
+    'DRUPAL-6--1-%',
+    'DRUPAL-6--2-%',
+    'DRUPAL-6--3-%',
+    'DRUPAL-6--4-%',
+    'DRUPAL-6--5-%',
+    'DRUPAL-6--6-%',
+    'DRUPAL-6--7-%',
+    'DRUPAL-6--8-%',
+    'DRUPAL-6--9-%',
+    'DRUPAL-6--10-%',
+
+    'DRUPAL-7--0-%',
+    'DRUPAL-7--1-%',
+    'DRUPAL-7--2-%',
+    'DRUPAL-7--3-%',
+    'DRUPAL-7--4-%',
+  );
+  foreach ($release_branches as $branch) {
+    $result = db_query("
+      SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
+      FROM project_projects pp INNER JOIN 
+           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN 
+           node n ON pp.nid = n.nid INNER JOIN
+           project_release_file prf ON prn.nid = prf.nid INNER JOIN
+           files f ON prf.fid = f.fid INNER JOIN
+           node nn ON prn.nid = nn.nid
+      WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s'
+      ORDER BY prn.nid ASC",
+      $branch
+    );
+  
+    // Fill in an array, so we can go back to our database and add in these
+    // details.
+    while ($release = db_fetch_object($result)) {
+      $releases[$release->uri][$branch] = $release;
+    }
+  }
+  
+  $release_branches = array(
+    'DRUPAL-5%',
+    'DRUPAL-6%',
+  );
+  foreach ($release_branches as $branch) {
+    $result = db_query("
+      SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
+      FROM project_projects pp INNER JOIN 
+           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN 
+           node n ON pp.nid = n.nid INNER JOIN
+           project_release_file prf ON prn.nid = prf.nid INNER JOIN
+           files f ON prf.fid = f.fid INNER JOIN
+           node nn ON prn.nid = nn.nid
+      WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s' AND pp.nid = 3060
+      ORDER BY prn.nid ASC",
+      $branch
+    );
+  
+    // Fill in an array, so we can go back to our database and add in these
+    // details.
+    while ($release = db_fetch_object($result)) {
+      $releases[$release->uri][$branch] = $release;
+    }
+  }
+
+  // Switch back to our local database.
+  db_set_active();
+
+  // Record all releases in our local database.
+  foreach ($releases as $uri => $project_releases) {
+    foreach ($project_releases as $release) {
+      $download_link = 'http://ftp.drupal.org/' . $release->filepath;
+      /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
+        // @todo: what happens to unpublished releases? drop data outright? 
+      }
+      else if (!empty($release->status)) {
+        // New published release, not recorded before.
+        db_query(
+          "INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
+          $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
+        );
+      }
+    }
+  }*/
