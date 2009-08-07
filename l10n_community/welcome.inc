@@ -41,6 +41,7 @@ function l10n_community_welcome_page() {
     'content' => theme('item_list', array_merge($stats, array(
       format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
       format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
+      format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') .' ('. format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') .')',
       format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
       format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
       format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
