@@ -11,13 +11,49 @@
  */
 define('L10N_PROJECT_TRANSLATION_TID', 29); 
 
+// == Front end functionality ==================================================
+
+function l10n_project_batch_parse_form() {
+  return array(
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => 'Parse 100 releases in a batch process',
+    ),
+  );
+}
+
+function l10n_project_batch_parse_form_submit() {
+  $batch = array(
+    'operations' => array(
+      array('l10n_project_batch_operation', array()),
+    ),
+    'title' => t('Processing releases'),
+    'init_message' => t('First release is being selected'),
+    'progress_message' => t('Parsed @current out of @total.'),
+    'error_message' => t('Parsing process has encountered an error.'),
+  );
+  batch_set($batch);
+}
+
+function l10n_project_batch_operation(&$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['max'] = 10;
+  }
+  watchdog('l10n_project', 'batch called');
+  if ($context['sandbox']['progress'] < $context['sandbox']['max']) {
+    $context['sandbox']['progress']++;
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+}
+
+// == Backend functionality ====================================================
+
 /**
  * Syncronize the project list from the drupal.org database.
  */
 function l10n_project_sync() {
 
-  //return;
-  
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
   db_set_active('projects');
@@ -146,65 +182,51 @@ function l10n_project_sync() {
   
   // Set last sync time to limit number of releases to look at next time.
   variable_set('l10n_project_last_sync', time());
-  
-  l10n_project_pick_and_parse();
 }
 
 /**
  * Pick the configured number of releases, download and parse.
  */
-function l10n_project_pick_and_parse() {
+function l10n_project_pick_and_parse($release) {
   // This could take a long time.
   @set_time_limit(0);
 
-  // Pick the oldest releases we did not parse yet.
-  $result = db_query_range("
-    SELECT r.* 
-    FROM {l10n_community_project} p INNER JOIN 
-         {l10n_community_release} r ON p.pid = r.pid 
-    WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC", 
-    0, variable_get('l10n_project_limit', 1)
-  );
-  $return = array();
-  while ($release = db_fetch_object($result)) {
-    
-    $filename = basename($release->download_link);
-    $file = file_directory_temp() .'/'. $filename;
+  $filename = basename($release->download_link);
+  $file = file_directory_temp() .'/'. $filename;
 
-    // Check filename for a limited set of allowed chars. Help make sure
-    // that all the command line code later is not exploited.
-    if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
-      $error_arguments = array('%file' => $file);
-      $error_t = t('Filename %file contains malicious characters.', $error_arguments);
-      $error = 'Filename %file contains malicious characters.';
-    }
-  
-    // Nothing to do if already downloaded.
-    elseif (file_exists($file)) {
-      $error_arguments = array('%file' => $file);
-      $error_t = t('File %file already exists.', $error_arguments);
-      $error = 'File %file already exists.';
-      unlink($file);
-    }
-  
-    // Download the tar.gz file from drupal.org and save it in the local filesystem.
-    elseif (!(($contents = drupal_http_request($release->download_link)) && file_put_contents($file, $contents->data))) {
-      $error_arguments = array('%download_link' => $release->download_link);
-      $error_t = t('Unable to download and save %download_link file.', $error_arguments);
-      $error = 'Unable to download and save %download_link file.';
-    }
+  // Check filename for a limited set of allowed chars. Help make sure
+  // that all the command line code later is not exploited.
+  if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
+    $error_arguments = array('%file' => $file);
+    $error_t = t('Filename %file contains malicious characters.', $error_arguments);
+    $error = 'Filename %file contains malicious characters.';
+  }
 
-    // Extract and parse the local file and remove the tarball.
-    else {
-      $return[] = l10n_project_parse_package($file, $release->rid);
-      // Clear stats cache, so new data shows up.
-      cache_clear_all('l10n:stats', 'cache');
-    }
+  // Nothing to do if already downloaded.
+  elseif (file_exists($file)) {
+    $error_arguments = array('%file' => $file);
+    $error_t = t('File %file already exists.', $error_arguments);
+    $error = 'File %file already exists.';
+    unlink($file);
+  }
 
-    if ($error) {
-      watchdog('l10n_project', $error, $error_arguments, WATCHDOG_ERROR);
-      $return[]['error'] = $error_t;
-    }
+  // Download the tar.gz file from drupal.org and save it in the local filesystem.
+  elseif (!(($contents = drupal_http_request($release->download_link)) && file_put_contents($file, $contents->data))) {
+    $error_arguments = array('%download_link' => $release->download_link);
+    $error_t = t('Unable to download and save %download_link file.', $error_arguments);
+    $error = 'Unable to download and save %download_link file.';
+  }
+
+  // Extract and parse the local file and remove the tarball.
+  else {
+    $return = l10n_project_parse_package($file, $release->rid);
+    // Clear stats cache, so new data shows up.
+    cache_clear_all('l10n:stats', 'cache');
+  }
+
+  if ($error) {
+    watchdog('l10n_project', $error, $error_arguments, WATCHDOG_ERROR);
+    $return['error'] = $error_t;
   }
   return $return;
 }

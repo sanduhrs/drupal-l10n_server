@@ -24,6 +24,20 @@ function l10n_project_menu() {
     'page arguments' => array('l10n_project_settings_form'),
     'access arguments' => array('administer localization community local project module integration'),
   );
+  $items['admin/l10n_server/l10n_project/configure'] = array(
+    'title' => 'Configure',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/l10n_server/l10n_project/scan'] = array(
+    'title' => 'Batch parse releases',
+    'access arguments' => array('administer localization community local project module integration'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_project_batch_parse_form'),
+    'file' => 'l10n_project.sync.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
   return $items;
 }
 
@@ -41,6 +55,19 @@ function l10n_project_cron() {
   if (variable_get('l10n_project_cron', 0)) {
     module_load_include('inc', 'l10n_project', 'l10n_project.sync');
     l10n_project_sync();
+
+    // Pick the oldest releases we did not parse yet.
+    $result = db_query_range("
+      SELECT r.* 
+      FROM {l10n_community_project} p INNER JOIN 
+           {l10n_community_release} r ON p.pid = r.pid 
+      WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC", 
+      0, variable_get('l10n_project_limit', 1)
+    );
+    $return = array();
+    while ($release = db_fetch_object($result)) {
+      l10n_project_pick_and_parse($release);
+    }
   }
 }
 
