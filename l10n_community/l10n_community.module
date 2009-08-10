@@ -129,19 +129,12 @@ function l10n_community_menu() {
     'file' => 'welcome.inc',
     'access arguments' => array('access localization community'),
   );
-  $items['translate/overview'] = array(
-    'title' => 'Overview',
-    'access arguments' => array('access localization community'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -20,
-  );
   $items['translate/languages'] = array(
     'title' => 'Explore languages',
     'description' => 'Overview of languages and their translation status.',
     'page callback' => 'l10n_community_explore_languages',
     'file' => 'pages.inc',
     'access arguments' => array('access localization community'),
-    'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
   $items['translate/projects'] = array(
@@ -150,7 +143,6 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_explore_projects',
     'file' => 'pages.inc',
     'access arguments' => array('access localization community'),
-    'type' => MENU_LOCAL_TASK,
     'weight' => -5,
   );
   $items['translate/projects/autocomplete'] = array(
