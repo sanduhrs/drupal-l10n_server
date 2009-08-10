@@ -345,7 +345,8 @@ function l10n_project_exec($cmd) {
   $output = array();
   exec("$cmd 2>&1", $output, $rval);
   if ($rval) {
-    watchdog('l10n_project', "%cmd failed with status !rval" .'<pre>'. implode("\n", array_map('htmlspecialchars', $output) .'</pre>'), array('%cmd' => $cmd, '!rval' => $rval), WATCHDOG_ERROR);
+    $output = htmlspecialchars(is_array($output) ? implode("\n", $output) : $output);
+    watchdog('l10n_project', '%cmd failed with status !rval<pre>'. $output .'</pre>', array('%cmd' => $cmd, '!rval' => $rval), WATCHDOG_ERROR);
     return FALSE;
   }
   return TRUE;
