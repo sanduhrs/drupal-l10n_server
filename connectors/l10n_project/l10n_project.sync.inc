@@ -7,44 +7,68 @@
  */
  
 /**
+ * Amount of releases parsed in a batch.
+ */
+define('L10N_PROJECT_BATCH_PARSE_AMOUNT', 50);
+
+/**
  * The term ID for translations on Drupal.org.
  */
 define('L10N_PROJECT_TRANSLATION_TID', 29); 
 
 // == Front end functionality ==================================================
 
+/**
+ * Form to initiate batch parsing of projects to speed up catching-up.
+ *
+ * @see l10n_project_batch_parse_form_submit()
+ * @ingroup forms
+ */
 function l10n_project_batch_parse_form() {
   return array(
     'submit' => array(
       '#type' => 'submit',
-      '#value' => 'Parse 100 releases in a batch process',
+      '#value' => t('Parse @count releases in a batch process', array('@count' => L10N_PROJECT_BATCH_PARSE_AMOUNT)),
     ),
   );
 }
 
+/**
+ * Form submit handler to l10n_project_batch_parse_form().
+ *
+ * @see l10n_project_batch_parse_form()
+ */
 function l10n_project_batch_parse_form_submit() {
+  // Pick the oldest releases we did not parse yet.
+  $operations = array();
+  $result = db_query_range("
+    SELECT r.* 
+    FROM {l10n_community_project} p INNER JOIN 
+         {l10n_community_release} r ON p.pid = r.pid 
+    WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC", 
+    0, L10N_PROJECT_BATCH_PARSE_AMOUNT
+  );
+  while ($release = db_fetch_object($result)) {
+    $operations[] = array('l10n_project_batch_operation', array($release));
+  }
+
   $batch = array(
-    'operations' => array(
-      array('l10n_project_batch_operation', array()),
-    ),
+    'operations' => $operations,
     'title' => t('Processing releases'),
     'init_message' => t('First release is being selected'),
     'progress_message' => t('Parsed @current out of @total.'),
     'error_message' => t('Parsing process has encountered an error.'),
+    'file' => drupal_get_path('module', 'l10n_project') .'/l10n_project.sync.inc',
   );
   batch_set($batch);
 }
 
-function l10n_project_batch_operation(&$context) {
-  if (!isset($context['sandbox']['progress'])) {
-    $context['sandbox']['progress'] = 0;
-    $context['sandbox']['max'] = 10;
-  }
-  watchdog('l10n_project', 'batch called');
-  if ($context['sandbox']['progress'] < $context['sandbox']['max']) {
-    $context['sandbox']['progress']++;
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
-  }
+/**
+ * Batch operations function for processing a project release.
+ */
+function l10n_project_batch_operation($release, &$context) {
+  // Parse the release we were given.
+  l10n_project_pick_and_parse($release);
 }
 
 // == Backend functionality ====================================================
