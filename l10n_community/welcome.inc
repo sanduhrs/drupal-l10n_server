@@ -170,7 +170,8 @@ function l10n_community_pick_go_submit($form, &$form_state) {
   if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
-      drupal_goto('translate/languages/'. $form_state['values']['langcode'], 'project='. $uri);
+      $action = l10n_community_contribute_access($form_state['values']['langcode']) ? 'edit' : 'view';
+      drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/'. $action, 'project='. $uri);
     }
     else {
       drupal_goto('translate/projects/'. $uri);
