@@ -130,6 +130,7 @@ function l10n_project_sync() {
   foreach ($projects as $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project->uri))) {
       if ($existing_project->connector_module == 'l10n_project') {
+        $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) || 
             ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
@@ -191,6 +192,11 @@ function l10n_project_sync() {
   
   // Record all releases in our local database.
   foreach ($releases as $release) {
+    if (!isset($projects[$release->uri]->pid)) {
+      // Not a project the upper project list knows about (eg. a translation).
+      continue;
+    }
+    
     $download_link = 'http://ftp.drupal.org/' . $release->filepath;
     if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
       // @todo: what happens to unpublished releases? drop data outright? 
