@@ -39,7 +39,12 @@ function l10n_project_batch_parse_form() {
  * @see l10n_project_batch_parse_form()
  */
 function l10n_project_batch_parse_form_submit() {
-  // Pick the oldest releases we did not parse yet.
+  // First sync the project and release list. We need to do this before 
+  // initializing the batch, so we can have a fresh project list, and a better
+  // chance to pick new releases.
+  l10n_project_sync();
+  
+  // Then pick the oldest releases we did not parse yet.
   $operations = array();
   $result = db_query_range("
     SELECT r.* 
