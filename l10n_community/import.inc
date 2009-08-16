@@ -21,7 +21,7 @@ function l10n_community_import_page($langcode) {
   drupal_set_breadcrumb(
     array(
       l(t('Home'), NULL),
-      l(t('Translate projects'), 'translate'))    
+      l(t('Translate projects'), 'translate'))
   );
   return drupal_get_form('l10n_community_import_form', $langcode, $perm);
 }
@@ -36,7 +36,7 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
     '#type' => 'value',
     '#value' => $langcode,
   );
-  
+
   $form['file'] = array(
     '#type' => 'file',
     '#title' => t('Translation file'),
@@ -85,7 +85,7 @@ function l10n_community_import_form_submit($form, &$form_state) {
     drupal_set_message(t('File to import not found.'), 'error');
   }
 }
- 
+
 /**
  * Parses a Gettext Portable Object file and saves strings.
  *
@@ -105,7 +105,7 @@ function l10n_community_import_form_submit($form, &$form_state) {
  */
 function l10n_community_import($file, $langcode, $is_suggestion) {
   include_once 'includes/locale.inc';
-  
+
   $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
   if (!$fd) {
     _locale_import_message('The translation import failed, because the file %filename could not be read.', $file);
@@ -258,7 +258,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
     _locale_import_message('The translation file %filename ended unexpectedly at line %line.', $file, $lineno);
     return FALSE;
   }
-  
+
   return TRUE;
 }
 
@@ -274,7 +274,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
  */
 function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_suggestion = FALSE) {
   global $user;
-  
+
   static $inserted = 0;
   static $updated = 0;
   static $unchanged = 0;
@@ -286,13 +286,13 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
   }
   elseif (!empty($value['msgid']) && !empty($value['msgstr'])) {
     // We only save non-empty translations/suggestions.
-    
+
     // If the comment array for this value contains the ', fuzzy' flag, then
-    // mark this as a suggestion import in all cases. 
+    // mark this as a suggestion import in all cases.
     if (!empty($value['#'])) {
-      $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#'])); 
+      $is_suggestion = ($is_suggestion ? TRUE : in_array(', fuzzy', $value['#']));
     }
-    
+
     // If context was not set, set to empty.
     $value['msgctxt'] = !empty($value['msgctxt']) ? $value['msgctxt'] : '';
 
@@ -301,7 +301,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
     if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE BINARY value = '%s' AND context = '%s'", $value['msgid'], $value['msgctxt']))) {
       // We have this source string (otherwise we don't save anything).
       $translation = db_fetch_object(db_query("SELECT translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
-      
+
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 
@@ -312,7 +312,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
         // to be a suggestion instead. This allows conflict issues to be resolved.
         $is_suggestion = TRUE;
       }
-      
+
       if ($is_suggestion || !$translation) {
         l10n_community_target_save($sid, $value['msgstr'], $langcode, $user->uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
       }

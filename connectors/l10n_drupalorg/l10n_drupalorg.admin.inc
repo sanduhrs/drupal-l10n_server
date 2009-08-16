@@ -44,21 +44,21 @@ function l10n_drupalorg_settings_form() {
 function l10n_drupalorg_scan($automated = FALSE) {
   include_once 'projects.inc';
   include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
-  
+
   // Always update full project list.
   l10n_drupalorg_sync_projects();
-  
+
   // Pick the projects we did not update for the longest period and sync fresh release list.
   $result = db_query_range("SELECT * FROM {l10n_community_project} WHERE connector_module = 'l10n_drupalorg' AND status = 1 ORDER BY last_parsed ASC", 0, variable_get('l10n_drupalorg_limit', 1));
   while ($project = db_fetch_object($result)) {
     l10n_drupalorg_sync_releases($project);
-    
+
     // Pick the release we did not update for the longest period, and sync the tarball.
     // We should only look for releases with downloads. Placeholder releases for later
     // versions should not be considered.
     $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.pid = %d AND r.download_link != '' ORDER BY r.last_parsed ASC", $project->pid, 0, 1));
     $result = l10n_drupalorg_sync_files($release);
-    
+
     if (!$automated) {
       // User feedback, if not automated. Log messages are already done.
       if (isset($result['error'])) {
@@ -69,7 +69,7 @@ function l10n_drupalorg_scan($automated = FALSE) {
       }
     }
   }
-  
+
   // Ensure that a Drupal page will be displayed with the messages.
   return '';
 }

@@ -5,7 +5,7 @@
  * @file
  *   Localization community for drupal.org.
  *
- *   Maintains a copy of project and release listings, extracts translatable 
+ *   Maintains a copy of project and release listings, extracts translatable
  *   strings from project files.
  */
 

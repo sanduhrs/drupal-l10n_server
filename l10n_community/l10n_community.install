@@ -9,14 +9,14 @@
  * Implementation of hook_install().
  */
 function l10n_community_install() {
-  drupal_install_schema('l10n_community');  
+  drupal_install_schema('l10n_community');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function l10n_community_uninstall() {
-  drupal_uninstall_schema('l10n_community');  
+  drupal_uninstall_schema('l10n_community');
 }
 
 /**
@@ -24,7 +24,7 @@ function l10n_community_uninstall() {
  */
 function l10n_community_schema() {
   $schema = array();
-  
+
   $schema['l10n_community_project'] = array(
     'description' => 'Projects for which translation is running on the server.',
     'fields' => array(
@@ -336,7 +336,7 @@ function l10n_community_schema() {
       'sid' => array('sid')
     ),
   );
-  
+
   return $schema;
 }
 
@@ -347,7 +347,7 @@ function l10n_community_requirements($phase) {
   $requirements = array();
   // Ensure translations don't break at install time.
   $t = get_t();
-  
+
   // Look for Tar library used for compression and uncompression.
   $tar_library = @file_get_contents('Archive/Tar.php', TRUE);
   $tar_available = !empty($tar_library);
@@ -360,11 +360,11 @@ function l10n_community_requirements($phase) {
     $requirements['l10n_community_tar']['severity'] = REQUIREMENT_ERROR;
     $requirements['l10n_community_tar']['value'] = $t('Not available');
   }
-  
+
   if (module_exists('potx')) {
     $requirements['l10n_community_potx'] = l10n_community_require_potx_with_context();
   }
-  
+
   return $requirements;
 }
 
@@ -381,7 +381,7 @@ function l10n_community_require_potx_with_context() {
 
   // Ensure translations don't break at install time.
   $t = get_t();
-  
+
   include_once drupal_get_path('module', 'potx') .'/potx.inc';
   $requirement = array(
     'title' => $t('Translation template extractor'),
@@ -392,7 +392,7 @@ function l10n_community_require_potx_with_context() {
     $requirement['severity'] = REQUIREMENT_ERROR;
     $requirement['value'] = $t('Not compatible with Localization Server');
   }
-  
+
   return $requirement;
 }
 
@@ -414,7 +414,7 @@ function l10n_community_update_5000() {
  * Add DEFAULT 0 to integer fields we not always fill in.
  */
 function l10n_community_update_5001() {
-  $default_to_zero = array('uid_entered', 'uid_approved', 'time_entered', 'time_approved', 'has_suggestion', 'is_suggestion', 'is_active');  
+  $default_to_zero = array('uid_entered', 'uid_approved', 'time_entered', 'time_approved', 'has_suggestion', 'is_suggestion', 'is_active');
   $ret = array();
   foreach ($default_to_zero as $column) {
     $ret[] = update_sql('ALTER TABLE {l10n_community_translation} CHANGE '. $column .' '. $column .' INTEGER NOT NULL DEFAULT 0');
@@ -465,7 +465,7 @@ function l10n_community_update_6000() {
 
   // Add connector_module column for use as a clue for modules to tap onto their projects.
   db_add_field($ret, 'l10n_community_project', 'connector_module', array('type' => 'varchar', 'length' => '50', 'not null' => TRUE));
-  
+
   if (!module_exists('l10n_drupalorg') && !module_exists('l10n_localpacks')) {
     // Inform users if no known connector modules were turned on.
     drupal_set_message("Neither l10n_drupalorg nor l10n_localpacks modules were turned on, while the updates ran. The newly updated Localization Server requires knowledge of connector modules associated to projects. If you run your own connector module, please update the database with the module's internal name.");

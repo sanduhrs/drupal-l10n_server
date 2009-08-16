@@ -12,7 +12,7 @@
  * Translation status overview for all languages.
  */
 function l10n_community_explore_languages() {
-  
+
   // Checking whether we have languages and strings.
   if (!$languages = l10n_community_get_languages()) {
     drupal_set_message(t('No languages to list.'), 'error');
@@ -22,7 +22,7 @@ function l10n_community_explore_languages() {
     drupal_set_message(t('No strings to translate.'), 'error');
     return '';
   }
-  
+
   // Generate listing of all languages with summaries. The list of languages
   // is relatively "short", compared to projects, so we don't need a pager here.
   $groups = array();
@@ -76,7 +76,7 @@ function l10n_community_explore_projects() {
     list($title, $uri, $sum, $translated, $suggested) = isset($string_counts[$project->pid]) ? $string_counts[$project->pid] : array($project->title, $project->uri, 0, 0, 0);
     $table[] = array_merge(
       array(
-        array('data' => l($title, 'translate/projects/'. $uri), 'class' => 'rowhead'), 
+        array('data' => l($title, 'translate/projects/'. $uri), 'class' => 'rowhead'),
       ),
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
@@ -113,10 +113,10 @@ function l10n_community_overview_language($langcode = NULL) {
     drupal_set_message(t('No language selected.'), 'error');
     return '';
   }
-  
+
   $languages = l10n_community_get_languages('name');
   drupal_set_title(t('@language overview', array('@language' => $languages[$langcode])));
-  
+
   $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
 
   $has_posts = FALSE;
@@ -182,7 +182,7 @@ function l10n_community_overview_language($langcode = NULL) {
 
 
   $output .= '</div></div>';
-  
+
   return $output;
 }
 
@@ -208,7 +208,7 @@ function l10n_community_overview_project($uri = NULL) {
     return '';
   }
   drupal_set_title(t('@project project translations', array('@project' => drupal_get_title())));
-  
+
   if (!$languages = l10n_community_get_languages()) {
     drupal_set_message(t('No languages to list.'), 'error');
     return '';
@@ -272,10 +272,10 @@ function l10n_community_overview_project($uri = NULL) {
       $num_parsed++;
     }
   }
-  
+
   // Get information on errors.
   $num_errors = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid LEFT JOIN {l10n_community_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri));
-  
+
   $block = array(
     'title' => t('@project summary', array('@project' => $project->title)),
     'description' => t('Some details we know about this project'),
@@ -304,14 +304,14 @@ function l10n_community_project_errors($uri = NULL) {
     return '';
   }
   drupal_set_title(t('@project project errors', array('@project' => drupal_get_title())));
-  
+
   if (!$errors = l10n_community_get_errors($uri)) {
     drupal_set_message(t('No marker errors found in any of the parsed releases of this project.'));
     return '';
   }
-  
+
   $output = '';
-  $releases = l10n_community_get_releases($uri);  
+  $releases = l10n_community_get_releases($uri);
   foreach ($releases as $release) {
     $output .= '<h3>'. $release->title .'</h3>';
     if (!isset($errors[$release->rid])) {
@@ -358,7 +358,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
     // suggestions are not in the bar as they overlap with both translated and
     // untranslated strings, so we cannot display them here.
   );
-  
+
   // Visual summary with a progress bar.
   $bar = '<div class="l10n-community-progress">';
   foreach ($status as $key => $values) {
@@ -367,7 +367,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
     }
   }
   $bar .= '</div>';
-  
+
   return array(
     $bar,
     ($sum - $translated),
@@ -438,11 +438,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
     case 'all':
       // Return a count of all strings.
       return db_result(db_query("SELECT COUNT(sid) FROM {l10n_community_string}"));
-    
+
     case 'project':
       // Return a count of all strings in this project, id required.
       return db_result(db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d', $id));
-    
+
     case 'languages':
       // Summeries based on language codes, restricted to a specific project if $id is set.
       $sums = array();
@@ -466,10 +466,10 @@ function l10n_community_get_string_count($type, $id = NULL) {
       }
       return $sums;
       break;
-    
+
     case 'projects':
       // Get summaries by projects. Restricted to a specific language, if $id is set.
-      
+
       // First get the count of strings available for translation.
       $sums = $count_args = array();
       $result = db_query("SELECT COUNT(DISTINCT s.sid) AS string_count, p.pid, p.title, p.uri FROM {l10n_community_project} p INNER JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid GROUP BY p.pid;");

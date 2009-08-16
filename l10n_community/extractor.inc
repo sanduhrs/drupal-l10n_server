@@ -39,7 +39,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
   // is unique, we can append '_dir', and it will still be unique.
   $temp_name = tempnam(file_directory_temp(), 'l10n_community_');
   $temp_path = $temp_name .'_dir';
-    
+
   // Nothing to do if the file is not there or the extraction folder is taken.
   if (!file_exists($package_file)) {
     $error = t('Package to parse (%file) does not exist.', array('%file' => $package_file));
@@ -47,7 +47,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
   elseif (is_dir($temp_path)) {
     $error = t('Temporary directory %path already exists.', array('%path' => $temp_path));
   }
-  
+
   // Extract the local file to the temporary directory.
   else {
     $obj = new Archive_Tar($package_file);
@@ -65,16 +65,16 @@ function l10n_community_parse_package($package_file, $release_rid) {
       foreach ($files as $name) {
         _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file', $version);
       }
-      
+
       // Delete the extracted files.
       l10n_community_rmdir_recursive($temp_path);
-      
+
       // Record changes of the scanned project in the database.
       $message = t('Contents of %filename have been scanned.', array('%filename' => $package_file));
 
       // Parsed this releases files.
       db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release_rid);
-      
+
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
       // the error messages as text. We assume no other messages are added while
@@ -88,7 +88,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
       }
     }
   }
-  
+
   // Remove temporary file we used to reserve the name for the directory.
   unlink($temp_name);
 
@@ -103,7 +103,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
     watchdog('l10n_community', $message);
     $return['message'] = $message;
   }
-  
+
   return $return;
 }
 
@@ -127,7 +127,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
 function l10n_community_save_file($revision = NULL, $file = NULL) {
   static $rid = 0;
   static $files = array();
-  
+
   if (!isset($file)) {
     // We get the release number for the files.
     $rid = $revision;
@@ -165,7 +165,7 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
  * @param $value
  *   String value to store.
  * @param $context
- *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is 
+ *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
  *   the default, if the code does not specify a context otherwise.
  * @param $file
  *   Name of file the string occured in.
@@ -177,15 +177,15 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
  */
 function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL, $line = 0, $string_type = 2 /*POTX_STRING_RUNTIME*/) {
   static $files = array();
-  
+
   // Strip all slashes from string.
   $value = stripcslashes($value);
-  
+
   if (!isset($files[$file])) {
     // Get file ID for saving, locally cache.
     $files[$file] = l10n_community_save_file(NULL, $file);
   }
-  
+
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$file])) {
     // A \0 separator in the string means we deal with a string with plural variants.

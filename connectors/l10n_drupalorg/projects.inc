@@ -77,17 +77,17 @@ function l10n_drupalorg_sync_projects() {
  *   Project object.
  */
 function l10n_drupalorg_sync_releases($project) {
- 
+
   // Request the update XML file with releases for this project.
   $xml = drupal_http_request(L10N_DRUPALORG_SYNC_URL .'/'. $project->uri .'/all');
   if (!$xml->data) {
     // No data, keep our lists.
     continue;
   }
-  
+
   $parser = new l10n_drupalorg_project_xml_parser;
   $releases = $parser->parse(array($xml->data));
-  
+
   if (isset($releases[$project->uri]['releases'])) {
     // We have releases to work with.
     foreach ($releases[$project->uri]['releases'] as $release) {
@@ -109,7 +109,7 @@ function l10n_drupalorg_sync_releases($project) {
       }
     }
   }
-  
+
   // Parsed this projects releases.
   db_query("UPDATE {l10n_community_project} SET last_parsed = %d WHERE pid = %d", time(), $project->pid);
 }
@@ -123,16 +123,16 @@ function l10n_drupalorg_sync_releases($project) {
 function l10n_drupalorg_sync_files($release) {
   // This could take a long time.
   @set_time_limit(0);
-  
+
   $filename = basename($release->download_link);
   $file = file_directory_temp() .'/'. $filename;
   $return = array();
-  
+
   // Nothing to do if already downloaded.
   if (file_exists($file)) {
     $error = t('File %file already exists.', array('%file' => $file));
   }
-  
+
   // Download the tar.gz file from drupal.org and save it in the local filesystem.
   elseif (!(($contents = drupal_http_request($release->download_link)) && file_put_contents($file, $contents->data))) {
     $error = t('Unable to download and save %download_link file.', array('%download_link' => $release->download_link));

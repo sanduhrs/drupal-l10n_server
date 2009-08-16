@@ -12,13 +12,13 @@ l10nCommunity.switchPanes = function(elem, id) {
           if (once == 0) {
             once = 1;
             $(this).parents('.translation').find('.'+id).slideDown('fast');
-          }          
+          }
         });
       }
     });
   }
   $(elem).parents('.toolbox').find('span.l10n-button').removeClass('active');
-  $(elem).addClass('active');  
+  $(elem).addClass('active');
 }
 
 /**
@@ -26,7 +26,7 @@ l10nCommunity.switchPanes = function(elem, id) {
  */
 l10nCommunity.init = function() {
   // Only attempt to register events if form exists
-  if ($('#l10n-community-translate-form').size() > 0) {  
+  if ($('#l10n-community-translate-form').size() > 0) {
     // When the copy button is clicked, copy the original string value to the
     // translation field for the given strings. Relations are maintained with
     // the string ideitifiers.
@@ -44,12 +44,12 @@ l10nCommunity.init = function() {
       $(this).parents('.translation').find('input.form-text, textarea').val('');
     });
 
-  
+
     $('#l10n-community-translate-form .l10n-translate').click(function() {
       // switch display panes
       l10nCommunity.switchPanes(this, 'translate');
     });
-  
+
     $('#l10n-community-translate-form .l10n-lookup').click(function() {
       // switch display panes
       var elem = this;
@@ -125,7 +125,7 @@ l10nCommunity.copyString = function(elem) {
 
   // Show the editing controls.
   $('#l10n-community-wrapper-' + sid).show();
-  
+
   // Switch to translate pane. The pane is in the translation column, so
   // if we are in the source column, we need to switch columns.
   var parent = $(elem).parents('td.source, td.translation');

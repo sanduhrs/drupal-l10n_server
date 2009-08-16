@@ -97,7 +97,7 @@ function l10n_localpacks_settings_form() {
     '#type' => 'checkbox',
     '#default_value' => variable_get('l10n_localpacks_home_link', 0),
     '#description' => t('Assigns http://drupal.org/project/<em>project</em> type home links to projects. These home links are used to guide users to the home pages of the projects. The setting only affects newly parsed packages.'),
-  );  
+  );
   return system_settings_form($form);
 }
 
@@ -125,7 +125,7 @@ function l10n_localpacks_scan($automated = FALSE) {
 
   // We look for projects in the working directory.
   $workdir = variable_get('l10n_localpacks_directory', '');
-  
+
   if (!is_dir($workdir)) {
     drupal_set_message(t('The configured local packages directory (%workdir) cannot be found. <a href="@configure">Check your configuration</a>.', array('%workdir' => $workdir, '@configure' => url('admin/l10n_server/l10n_localpacks/configure'))));
   }
@@ -134,21 +134,21 @@ function l10n_localpacks_scan($automated = FALSE) {
     $files = file_scan_directory($workdir, '.tar.gz$');
     if (count($files)) {
       foreach ($files as $path => $file) {
-        
+
         if (!l10n_community_is_supported_version($path)) {
-          // Skip files for unsupported versions. 
+          // Skip files for unsupported versions.
           continue;
         }
-        
+
         // Get rid of $workdir prefix on file names, eg.
         // files/Drupal/drupal-4.6.7.tar.gz or
         // files/Ubercart/ubercart-5.x-1.0-alpha8.tar.gz.
         $path = $package = trim(preg_replace('!(^'. preg_quote($workdir, '!') .')(.+)\.tar\.gz!', '\2', $path), '/');
-        
+
         $project_title = '';
         if (strpos($path, '/')) {
           // We have a slash, so this package is in a subfolder.
-          // Eg. Drupal/drupal-4.6.7 or Ubercart/ubercart-5.x-1.0-alpha8. 
+          // Eg. Drupal/drupal-4.6.7 or Ubercart/ubercart-5.x-1.0-alpha8.
           // Grab the directory name as project title.
           list($project_title, $package) = explode('/', $path);
         }
@@ -164,13 +164,13 @@ function l10n_localpacks_scan($automated = FALSE) {
           $result['error'] = t('File name should have project codename and version number included separated with hyphen, such as drupal-5.2.tar.gz.');
         }
       }
-    }        
+    }
   }
-  
+
   $user_feedback = FALSE;
   $results = db_query_range("SELECT * FROM {l10n_community_release} WHERE pid IN (SELECT pid FROM {l10n_community_project} WHERE connector_module = 'l10n_localpacks' AND status = 1) ORDER BY last_parsed ASC", 0, variable_get('l10n_localpacks_limit', 1));
   while ($release = db_fetch_object($results)) {
-    
+
     // Only parse file if something changed since we last parsed it.
     $file_name = $workdir .'/'. $release->download_link;
 
@@ -203,7 +203,7 @@ function l10n_localpacks_scan($automated = FALSE) {
   if (!$automated && !$user_feedback) {
     drupal_set_message(t('No (new) local packages found to scan in %workdir.', array('%workdir' => $workdir)));
   }
-  
+
   // Ensure that a Drupal page will be displayed with the messages.
   return '';
 }
@@ -248,7 +248,7 @@ function l10n_localpacks_save_data($project_uri, $project_title, $release_versio
       $project_uri, $project_title, 0, (variable_get('l10n_localpacks_home_link', 0) ? ('http://drupal.org/project/'. $project_uri) : ''), 'l10n_localpacks', 1
     );
   }
-  
+
   // Grab updated project data and save release information.
   $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s' AND connector_module = 'l10n_localpacks'", $project_uri));
   if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE pid = %d AND title = '%s'", $project->pid, $release_version))) {

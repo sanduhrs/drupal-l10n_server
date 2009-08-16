@@ -14,7 +14,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
     l(t('Home'), NULL),
     l(t('Translate'), 'translate'),
   );
-  
+
   // Set a matching title with the translation page.
   $project = l10n_community_get_projects(array('uri' => $uri));
   if (isset($langcode)) {
@@ -46,7 +46,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     // When project was preset from URL, disable the selector.
     $hide_projects = TRUE;
   }
-  
+
   $projects = l10n_community_get_projects();
   $form['data'] = array(
     '#type' => 'fieldset',
@@ -84,7 +84,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   if (isset($projects[$uri])) {
     // Set this project as default value if identified.
     $form['data']['project']['#default_value'] = $projects[$uri]->title;
-  
+
     $releases = l10n_community_get_releases($uri);
     $release_options = array('all' => t('All'));
     foreach ($releases as $rid => $this_release) {
@@ -170,7 +170,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
       return;
     }
   }
-  
+
   $language = NULL;
   if (isset($form_state['values']['langcode'])) {
     $languages = l10n_community_get_languages();
@@ -187,7 +187,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
     // If not set (exporting a template for a module), stick to all-in-one.
     isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one'
   );
-  
+
   if (isset($export_result) && is_array($export_result)) {
     // If we got an array back from the export build, tear that into pieces.
     list($mime_type, $file_name, $serve_name) = $export_result;
@@ -196,7 +196,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
     header('Content-Type: '. $mime_type);
     echo file_get_contents($file_name);
     unlink($file_name);
-    die();  
+    die();
   }
   else {
     // Messages should already be recorded about any build errors.
@@ -211,7 +211,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
 
   if (!empty($export_string)) {
-    
+
     // Location comments are constructed in fileone:1,2,5; filetwo:123,537
     // format, where the numbers represent the line numbers of source
     // occurances in the respective source files.
@@ -231,7 +231,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       // general.po, so that later the module screen has all module info
       // translated for the admin). Or appeared in more then one file, so
       // goes to general.po for that reason.
-      
+
       // Note that some modules like ubercart might not have their
       // root module in the root folder, so this needs to be rethought.
       $filename = ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
@@ -249,7 +249,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
         $filename = str_replace('/', '-', $filename);
       }
     }
-    
+
     // Temporary hack to make the core exports put the system module
     // files to the right place. See http://drupal.org/node/212594
     // This should be solved more elegantly with a knowledge on the
@@ -265,13 +265,13 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
         $filename = "modules/system/$po_folder/". basename($filename);
       }
     }
-    
+
     // Append extension.
     $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
-    
+
     if (strpos($export_string['value'], "\0") !== FALSE) {
       // This is a string with plural variants.
-      list($singular, $plural) = explode("\0", $export_string['value']); 
+      list($singular, $plural) = explode("\0", $export_string['value']);
       $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
@@ -365,7 +365,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
   include_once 'Archive/Tar.php';
-  
+
   $project = l10n_community_get_projects(array('uri' => $uri));
   if ($template) {
     // We are exporting a template explicitly.
@@ -377,7 +377,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
     $sql_args = array($language->language, $project->pid);
   }
-  
+
   if (isset($release)) {
     // Release restriction.
     $sql_args[] = $release;
@@ -385,15 +385,15 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $releases = l10n_community_get_releases($uri);
     $release = $releases[$release];
   }
-  
+
   // Source strings will be repeated as many times as they appear, so to generate
   // the export file properly, order by the source id.
   $sql .= ' ORDER BY s.sid';
-  
+
   $result = db_query($sql, $sql_args);
   $previous_sid = 0;
   $export_string = $string_files = array();
-    
+
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
@@ -426,7 +426,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Store the last string.
     _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
   }
-  
+
   if (empty($string_files)) {
     // No strings were found.
     if (isset($release)) {
@@ -437,14 +437,14 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     }
     // Message to the user.
     drupal_set_message($message);
-    // Message to watchdog for possible automated packaging. 
+    // Message to watchdog for possible automated packaging.
     watchdog('l10n_community', $message);
     return NULL;
   }
 
   // Generate a 'unique' temporary filename for this package.
   $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $uri);
-  
+
   if ($version != 'all-in-one') {
     // Generate tgz file with all files added.
     $tar = new Archive_Tar($tempfile, 'gz');
@@ -456,7 +456,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     else {
       $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $fileinfo['revisions']) ."\n";
     }
-    
+
     $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
     if (!$template) {
       $header = '# '. $language->name .' translation of '. $release_title ."\n";
