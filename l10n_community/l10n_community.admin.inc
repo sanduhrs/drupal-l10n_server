@@ -44,7 +44,7 @@ function l10n_community_settings_form() {
  * Menu callback for projects administration listing.
  */
 function l10n_community_admin_projects() {
-  if (!$projects = l10n_community_get_projects(array('pager' => L10N_COMMUNITY_ADMIN_PROJECTS_PER_PAGE, 'all' => TRUE))) {
+  if (!$projects = l10n_community_get_projects(array('pager' => L10N_COMMUNITY_ADMIN_PROJECTS_PER_PAGE, 'all' => TRUE))) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
@@ -66,7 +66,7 @@ function l10n_community_admin_projects_form(&$form_state, $projects) {
   $form['projects'] = array(
     '#tree' => TRUE,
   );
-  
+
   $table = array();
   foreach ($projects as $project) {
     $form['projects'][$project->pid] = array(
@@ -92,7 +92,7 @@ function l10n_community_admin_projects_form(&$form_state, $projects) {
     '#type' => 'submit',
     '#value' => t('Save changes')
   );
-  
+
   $form['#theme'] = 'l10n_community_admin_projects_form';
   return $form;
 }
@@ -120,7 +120,7 @@ function theme_l10n_community_admin_projects_form($form) {
   $output .= theme('table', $headers, $table);
   $output .= $pager;
   $output .= drupal_render($form);
-  
+
   if ($form['orphans']['#value']) {
     drupal_set_message(format_plural($form['orphans']['#value'], 'There is @count source string orphaned.', 'There are @count source strings orphaned.') .' '. t('Deleting projects will not be available until you <a href="@cleanup">clean up the database</a> or rescan projects (within connectors you use) if you have started over with some of them.', array('@cleanup' => url('admin/l10n_server/projects/cleanup'))));
   }
@@ -216,7 +216,7 @@ function l10n_community_admin_releases_form(&$form_state, $project_releases) {
       '#tree' => TRUE,
     ),
   );
-  
+
   foreach ($project_releases as $release) {
     $form['releases'][$release->rid] = array(
       'title' => array(
@@ -236,7 +236,7 @@ function l10n_community_admin_releases_form(&$form_state, $project_releases) {
       ),
     );
   }
-  
+
   $form['#theme'] = 'l10n_community_admin_releases_form';
   return $form;
 }
