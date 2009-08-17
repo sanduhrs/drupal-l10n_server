@@ -221,10 +221,10 @@ function l10n_community_menu() {
   $items['translate/languages/%l10n_community_language/import'] = array(
     'title' => 'Import',
     'page callback' => 'l10n_community_import_page',
-    'page arguments' => array(2, TRUE),
+    'page arguments' => array(2),
     'file' => 'import.inc',
     'access callback' => 'l10n_community_contribute_access',
-    'access arguments' => array(2),
+    'access arguments' => array(2, TRUE),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
   );
