@@ -376,7 +376,10 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       switch ($delta) {
         case 'help':
-          return l10n_community_block_help();
+          if (user_access('access localization community')) {
+            return l10n_community_block_help();
+          }
+          return;
       }
   }
 }
@@ -385,7 +388,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
  * Help block.
  */
 function l10n_community_block_help() {
-  global $user;
+  global $user, $theme_key;
 
   $block = array(
     'subject' => t('Translation help'),
@@ -394,7 +397,8 @@ function l10n_community_block_help() {
 
   switch ($_GET['q']) {
     case 'translate':
-      $block['content'] = '<p>'. t('Welcome to the translation server. This block will show you tips and advice throughout the application.') . ($user->uid ? ' '. t('Once you are familiar with the system, feel free to disable help in <a href="@user-page">your user settings</a>.', array('@user-page' => url('user/'. $user->uid .'/edit'))) : '') .'</p>';
+      $customizable = db_result(db_query("SELECT custom FROM {blocks} WHERE theme = '%s' AND module = 'l10n_community' AND delta = 'help'", $theme_key));
+      $block['content'] = '<p>'. t('Welcome to the translation server. This block will show you tips and advice throughout the application.') . (($user->uid && $customizable) ? ' '. t('Once you are familiar with the system, feel free to disable help in <a href="@user-page">your user settings</a>.', array('@user-page' => url('user/'. $user->uid .'/edit'))) : '') .'</p>';
       return $block;
 
     // Help text for language overview page.
