@@ -246,6 +246,7 @@ function l10n_community_admin_releases_form(&$form_state, $project_releases) {
  */
 function theme_l10n_community_admin_releases_form($form) {
   $table = array();
+  $output = '';
   foreach ($form['releases'] as $rid => &$release_element) {
     if (!is_int($rid)) {
       // Skip non-project elements.
