@@ -36,7 +36,7 @@ function l10n_community_explore_languages() {
     if (empty($language->plurals)) {
       $table[] = array(
         array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'))), 'colspan' => '3', 'class' => 'error')
+        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
       );
     }
     else {
@@ -230,7 +230,7 @@ function l10n_community_overview_project($uri = NULL) {
     if (empty($language->plurals)) {
       $table[] = array(
         array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'))), 'colspan' => '3', 'class' => 'error')
+        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
       );
     }
     else {
