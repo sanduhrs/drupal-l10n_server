@@ -481,15 +481,19 @@ function l10n_community_block_help() {
  * Implementation of hook_user().
  */
 function l10n_community_user($op, &$edit, &$account, $category = NULL) {
-  if ($op == 'view') {
+  if ($op == 'view' && user_access('access localization community')) {
     $languages = l10n_community_get_languages('name');
     $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_community_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
     $items = array();
     while ($row = db_fetch_object($result)) {
-      $items[] = array('title' => l($languages[$row->language], 'translate/languages/'. $row->language), 'value' => format_plural($row->sum, '1 approved translation', '@count approved translations'));
+      $items[] = array('#type' => 'user_profile_item', '#title' => l(t($languages[$row->language]), 'translate/languages/'. $row->language), '#value' => format_plural($row->sum, '1 approved translation', '@count approved translations'));
     }
     if ($items) {
-      return array(t('Localization contributions') => $items);
+      $account->content['l10n_server_contributions'] = array(
+        '#type' => 'user_profile_category',
+        '#title' => t('Localization contributions'),
+      );
+      $account->content['l10n_server_contributions'] += $items;
     }
   }
 }
