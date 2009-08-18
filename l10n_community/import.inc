@@ -54,6 +54,19 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
     $form['is_suggestion']['#value'] = 1;
   }
 
+  if (($import_account = variable_get('l10n_community_import_user', '')) && ($account = user_load(array('name' => $import_account)))) {
+    // If available, let the user import with attribution to a bulk import user.
+    $form['attribute_to_import_account'] = array(
+      '#title' => t('Attribute to %name', array('%name' => $import_account)),
+      '#type' => 'checkbox',
+      '#description' => t('If the imported translations were worked on by a team of people, it is common curtesy, to attribute them to this user to ensure you do not claim credit for work of the whole team.'),
+    );
+    $form['import_uid'] = array(
+      '#type' => 'value',
+      '#value' => $account->uid,
+    );
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import')
@@ -65,6 +78,8 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
  * Process the locale import form submission.
  */
 function l10n_community_import_form_submit($form, &$form_state) {
+  global $user;
+  
   // Save file in the local file system.
   if ($file = file_save_upload('file')) {
 
@@ -72,9 +87,15 @@ function l10n_community_import_form_submit($form, &$form_state) {
     if (!ini_get('safe_mode')) {
       @set_time_limit(240);
     }
+    
+    // Calculate the uid to use for attribution.
+    $uid = $user->uid;
+    if (!empty($form_state['values']['attribute_to_import_account'])) {
+      $uid = $form_state['values']['import_uid'];
+    }
 
     // Do the actual parsing on the local file.
-    if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'])) {
+    if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'], $uid)) {
       // Get status report on what was done in the process.
       list($inserted, $updated, $unchanged, $suggested) = _l10n_community_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));
@@ -102,8 +123,10 @@ function l10n_community_import_form_submit($form, &$form_state) {
  *   Language code.
  * @param $is_suggestion
  *   Strings uploaded are to be saved as suggestions (TRUE or FALSE).
+ * @param $uid
+ *   User id used to save attribution information.
  */
-function l10n_community_import($file, $langcode, $is_suggestion) {
+function l10n_community_import($file, $langcode, $is_suggestion, $uid) {
   include_once 'includes/locale.inc';
 
   $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
@@ -131,7 +154,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
         $current["#"][] = substr($line, 1);
       }
       elseif (($context == "MSGSTR") || ($context == "MSGSTR_ARR")) { // End current entry, start a new one
-        _l10n_community_import_one_string($current, $langcode, $is_suggestion);
+        _l10n_community_import_one_string($current, $langcode, $is_suggestion, $uid);
         $current = array();
         $current["#"][] = substr($line, 1);
         $context = "COMMENT";
@@ -157,7 +180,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
     }
     elseif (!strncmp("msgid", $line, 5)) {
       if ($context == "MSGSTR") {   // End current entry, start a new one
-        _l10n_community_import_one_string($current, $langcode, $is_suggestion);
+        _l10n_community_import_one_string($current, $langcode, $is_suggestion, $uid);
         $current = array();
       }
       elseif ($context == "MSGID") { // Already in this context? Parse error
@@ -175,7 +198,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
     }
     elseif (!strncmp("msgctxt", $line, 7)) {
       if ($context == "MSGSTR") {   // End current entry, start a new one
-        _l10n_community_import_one_string($current, $langcode, $is_suggestion);
+        _l10n_community_import_one_string($current, $langcode, $is_suggestion, $uid);
         $current = array();
       }
       elseif (!empty($current["msgctxt"])) { // Already in this context? Parse error
@@ -252,7 +275,7 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
 
   // End of PO file, flush last entry
   if (!empty($current) && !empty($current['msgstr'])) {
-    _l10n_community_import_one_string($current, $langcode, $is_suggestion);
+    _l10n_community_import_one_string($current, $langcode, $is_suggestion, $uid);
   }
   elseif ($context != "COMMENT") {
     _locale_import_message('The translation file %filename ended unexpectedly at line %line.', $file, $lineno);
@@ -271,8 +294,10 @@ function l10n_community_import($file, $langcode, $is_suggestion) {
  *   Language to store the string in.
  * @param $is_suggestion
  *   TRUE if the string to store is a suggestion, FALSE otherwise.
+ * @param $uid
+ *   User id used to save attribution information.
  */
-function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_suggestion = FALSE) {
+function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_suggestion = FALSE, $uid = NULL) {
   global $user;
 
   static $inserted = 0;
@@ -287,6 +312,10 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
   elseif (!empty($value['msgid']) && !empty($value['msgstr'])) {
     // We only save non-empty translations/suggestions.
 
+    if (empty($uid)) {
+      $uid = $user->uid;
+    }
+    
     // If the comment array for this value contains the ', fuzzy' flag, then
     // mark this as a suggestion import in all cases.
     if (!empty($value['#'])) {
@@ -314,7 +343,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
       }
 
       if ($is_suggestion || !$translation) {
-        l10n_community_target_save($sid, $value['msgstr'], $langcode, $user->uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
+        l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
       }
       else {
         // We certainly did not update this one.

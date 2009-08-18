@@ -67,12 +67,24 @@ function l10n_community_menu() {
     'position' => 'right',
     'weight' => -5,
   );
+  
+  $items['admin/l10n_server/l10n_community'] = array(
+    'title' => 'General settings',
+    'description' => 'Set up general settings for the localization server.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_community_settings_form'),
+    'access arguments' => array('administer localization community'),
+    'file' => 'l10n_community.admin.inc',
+    'weight' => -10,
+  );
+
   $items['admin/l10n_server/projects'] = array(
     'title' => 'Projects and releases',
     'description' => 'Manage projects and releases handled by the server.',
     'page callback' => 'l10n_community_admin_projects',
     'file' => 'l10n_community.admin.inc',
     'access arguments' => array('administer localization community'),
+    'weight' => -8,
   );
   $items['admin/l10n_server/projects/overview'] = array(
     'title' => 'Overview',
@@ -111,15 +123,6 @@ function l10n_community_menu() {
     'file' => 'l10n_community.admin.inc',
     'access arguments' => array('administer localization community'),
     'type' => MENU_CALLBACK
-  );
-  $items['admin/l10n_server/l10n_community'] = array(
-    'title' => 'Translation interface',
-    'description' => 'Control the display of the translation interface.',
-    'access arguments' => array('administer localization community'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('l10n_community_settings_form'),
-    'file' => 'l10n_community.admin.inc',
-    'weight' => -10,
   );
 
   // Main menu items.

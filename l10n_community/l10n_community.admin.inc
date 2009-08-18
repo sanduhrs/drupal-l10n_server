@@ -35,6 +35,13 @@ function l10n_community_settings_form() {
     '#options' => drupal_map_assoc(array(4, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40)),
     '#default_value' => variable_get('l10n_community_project_per_page', 10),
   );
+  $form['l10n_community_import_user'] = array(
+    '#title' => t('User associated with bulk imports'),
+    '#description' => t('The user associated with imports of Gettext files which have been translated by a team, so assigning the current user importing them would not be appropriate.'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('l10n_community_import_user', ''),
+    '#autocomplete_path' => 'user/autocomplete',
+  );
   return system_settings_form($form);
 }
 
