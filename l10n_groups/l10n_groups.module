@@ -22,7 +22,16 @@ define('L10N_MODEL_CONTROLLED', 1);
  * Implementation of hook_perm().
  */
 function l10n_groups_perm() {
-  return array('administer localization groups');
+  return array(
+    // @todo: administer permission not actually used for anything ATM
+    // used to apply to all the node permissions below, but not anymore
+    'administer localization groups',
+    'create localization group',
+    'delete any localization group',
+    'delete own localization group',
+    'edit any localization group',
+    'edit own localization group',
+  );
 }
 
 /**
@@ -99,8 +108,28 @@ function l10n_groups_load(&$node) {
  *   Group admins should be able to edit their group nodes. Look into how others do it.
  */
 function l10n_groups_access($op, $node, $account) {
-  // Users can always see the translation group page, but only few can delete/edit.
-  return ($op == 'view') ? TRUE : user_access('administer localization groups', $account);
+  switch ($op) {
+
+    case 'view':
+      // Let everyone see localization groups who can access l10n_community.
+      return user_access('access localization community', $account);
+      break;
+      
+    case 'create':
+      return user_access('create localization group', $account);
+      break;
+      
+    case 'update':
+      // Update $op to 'edit' so we can reuse in permission name.
+      $op = 'edit';
+      // Intentionally no break.
+    
+    case 'delete':
+      return user_access($op .' any localization group', $account) || (user_access($op .' own localization group', $account) && ($account->uid == $node->uid));
+      break;
+  }
+  
+  return FALSE;
 }
 
 /**
