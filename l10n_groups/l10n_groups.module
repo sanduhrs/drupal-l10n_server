@@ -50,6 +50,24 @@ function l10n_groups_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+/**
+ * Implementation of hook_init().
+ *
+ * Tell organic groups we are on a group page if under a group's area
+ * on the translation pages.
+ */
+function l10n_groups_init() {
+  if (user_access('access localization community') && (arg(0) == 'translate') && (arg(1) == 'languages')) {
+    // If under a localization path URL for a language, look up group.
+    $groups = l10n_groups_get_groups();
+    if (isset($groups[$langcode = arg(2)])) {
+      // Set group context and ask for og details block.
+      $node = node_load($groups[$langcode]->nid);
+      og_set_group_context($node);
+    }
+  }
+}
+
 // = Organic groups node type ==================================================
 
 /**
@@ -183,12 +201,12 @@ function l10n_groups_form(&$node) {
   }
   $form['l10n_group_model'] = array(
     '#type' => 'radios',
-    '#title' => t('Permission model'),
+    '#title' => t('Localization permission model'),
     '#description' => t('Whether different types of group members have different permissions.'),
     '#default_value' => isset($node->l10n_group_model) ? $node->l10n_group_model : L10N_MODEL_OPEN,
     '#options' => array(
-      L10N_MODEL_OPEN => t('Open. Everybody is equal, all members can suggest and approve translations.'), 
-      L10N_MODEL_CONTROLLED => t('Controlled. Members can only suggest translations, group administrators can approve them.'),
+      L10N_MODEL_OPEN => t('Open: everybody is equal, all members can suggest and approve translations.'), 
+      L10N_MODEL_CONTROLLED => t('Controlled: members can only suggest translations, group administrators can approve them.'),
     ),
     '#weight' => -3
   );
