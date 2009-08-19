@@ -57,15 +57,15 @@ function l10n_drupalorg_scan($automated = FALSE) {
     // We should only look for releases with downloads. Placeholder releases for later
     // versions should not be considered.
     $release = db_fetch_object(db_query_range("SELECT r.* FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.pid = %d AND r.download_link != '' ORDER BY r.last_parsed ASC", $project->pid, 0, 1));
-    $result = l10n_drupalorg_sync_files($release);
+    $release_result = l10n_drupalorg_sync_files($release);
 
     if (!$automated) {
       // User feedback, if not automated. Log messages are already done.
-      if (isset($result['error'])) {
-        drupal_set_message($result['error'], 'error');
+      if (isset($release_result['error'])) {
+        drupal_set_message($release_result['error'], 'error');
       }
-      if (isset($result['message'])) {
-        drupal_set_message($result['message']);
+      if (isset($release_result['message'])) {
+        drupal_set_message($release_result['message']);
       }
     }
   }
