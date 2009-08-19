@@ -925,7 +925,7 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
     $title = t('line break');
   }
 
-  $original = $string;
+  $original = check_plain($string);
   
   // Replace all newline chars in the string with an indicator image.
   $string = str_replace(

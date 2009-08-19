@@ -89,7 +89,7 @@ l10nCommunity.init = function() {
 
 l10nCommunity.copyString = function(elem) {
   var item = $(elem).parents('li').find('div.string > div');
-  var original = $('.original', item).html();
+  var original = $('.original', item).text();
   var sid = item.attr('class').substring(7);
 
   if (original.indexOf(";  ") > 0) {
