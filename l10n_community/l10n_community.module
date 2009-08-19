@@ -516,7 +516,13 @@ function l10n_community_user($op, &$edit, &$account, $category = NULL) {
  * Add helpers to let people handle plural formula setup and correction easier.
  */
 function l10n_community_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id == 'locale_translate_import_form') {
+  if (in_array($form_id, array('system_themes_form', 'system_modules'))) {
+    // On the system themes and modules forms, set up a memory of the current 
+    // properties of languages and restore after the import batch was run.
+    $form['#submit'][] = 'l10n_community_batch_restore_plurals';
+  }
+  
+  elseif ($form_id == 'locale_translate_import_form') {
     // Protect the plural forms when importing, going against Drupal's
     // default behavior. The number of plurals is important for the user
     // interface of ours. This is implemented ugly as hell, but Drupal does
@@ -574,6 +580,32 @@ function l10n_community_form_alter(&$form, $form_state, $form_id) {
     );
     $form['#validate'][] = 'l10n_community_custom_plural_formula_validate';
     $form['#submit'][] = 'l10n_community_custom_plural_formula_submit';
+  }
+}
+
+/**
+ * Submission handler to run after theme or module changes.
+ */
+function l10n_community_batch_restore_plurals($form, &$form_state) {
+  $languages = language_list();
+  $batch = array(
+    'operations' => array(
+      array('l10n_community_batch_restore_operation', array($languages)),
+    ),
+    'title' => t('Restoring plural forms'),
+    'init_message' => t('In progress'),
+    'progress_message' => t('Done.'),
+    'error_message' => t('Restoring process has encountered an error.'),
+  );
+  batch_set($batch);
+}
+
+/**
+ * Batch operations function for restoring all plural information.
+ */
+function l10n_community_batch_restore_operation($languages, &$context) {
+  foreach ($languages as $language) {
+    db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $language->plurals, $language->formula, $language->language);
   }
 }
 
