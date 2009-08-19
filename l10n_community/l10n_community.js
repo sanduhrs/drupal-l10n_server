@@ -98,7 +98,7 @@ l10nCommunity.init = function() {
 l10nCommunity.copyString = function(elem) {
   var item = $(elem).parents('li').find('div.string > div');
   var parentlist = $(item).parents('ul.l10n-community-strings');
-  var original = $('.original', item).html();
+  var original = $('.original', item).text();
   var sid = item.attr('class').substring(7);
 
   if (sid.indexOf('-') > 0) {
@@ -107,7 +107,7 @@ l10nCommunity.copyString = function(elem) {
     sid = sid.split('-');
     sid = sid[0];
     for (i = 0; i < Drupal.settings.l10n_num_plurals; i++) {
-      $('#l10n-community-translation-'+ sid +'-'+ i).val($('.string-'+ sid +'-'+ i +' .original', parentlist).html());
+      $('#l10n-community-translation-'+ sid +'-'+ i).val($('.string-'+ sid +'-'+ i +' .original', parentlist).text());
     }
   }
   else if (original.indexOf(";  ") > 0)  {
