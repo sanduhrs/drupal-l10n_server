@@ -1075,7 +1075,8 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
   else {
     // No active translation exists.
     if ($suggestion) {
-      // No translation yet -> INSERT empty placeholder so we can track suggestions.
+      // No translation yet -> INSERT empty placeholder so we can track 
+      // suggestions. We track and exclude these by translation = '' later.
       db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, has_suggestion, is_active) VALUES (%d, '', '%s', 0, %d, 1, 1)", $sid, $langcode, time());
       db_query("INSERT INTO {l10n_community_translation} (sid, language, translation, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $langcode, $translation, $uid, time());
       $suggested++;
@@ -1374,9 +1375,9 @@ function l10n_community_get_stats($langcode = NULL) {
     else {
       $stats = array();
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s' AND translation != ''", $langcode));
       $stats['suggestions'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
-      $stats['users'] = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['users'] = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s' AND translation != ''", $langcode));
 
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
@@ -1391,13 +1392,13 @@ function l10n_community_get_stats($langcode = NULL) {
     }
     else {
       $stats = array();
-      $stats['users'] = (int) db_result(db_query('SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation}'));
+      $stats['users'] = (int) db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE translation != ''"));
       $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project} WHERE status = 1'));
       $stats['releases_parsed'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_release} WHERE last_parsed != 0'));
       $stats['releases_queue'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_release} WHERE last_parsed = 0'));
       $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-      $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1'));
+      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND translation != ''"));
       $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
 
       // Cache results for next time. Not setting a timestamp as cache validity
