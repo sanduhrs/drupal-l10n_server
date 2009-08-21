@@ -212,7 +212,7 @@ function l10n_community_menu() {
   );
   // Tabs to translate, import and export projects.
   $items['translate/languages/%l10n_community_language/view'] = array(
-    'title' => 'View',
+    'title' => 'Browse',
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
@@ -221,7 +221,7 @@ function l10n_community_menu() {
     'weight' => -10,
   );
   $items['translate/languages/%l10n_community_language/edit'] = array(
-    'title' => 'Edit',
+    'title' => 'Translate',
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2, 'edit'),
     'file' => 'translate.inc',
