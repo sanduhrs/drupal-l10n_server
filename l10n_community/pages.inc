@@ -49,7 +49,7 @@ function l10n_community_explore_languages() {
     }
   }
   $header = theme('l10n_community_progress_headers', t('Language'));
-  return theme('l10n_community_table', $header, $table);
+  return theme('l10n_community_table', $header, $table) .'<div class="clear-block"></div>';
 }
 
 /**
@@ -90,7 +90,7 @@ function l10n_community_explore_projects() {
     array('class' => 'l10n-community-overview')
   );
   $output .= theme('pager', NULL, $pager_setting, 0);
-  return $output;
+  return $output .'<div class="clear-block"></div>';
 }
 
 /**
