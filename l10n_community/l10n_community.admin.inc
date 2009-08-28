@@ -27,6 +27,8 @@ function l10n_community_settings_overview() {
  * Settings form callback.
  */
 function l10n_community_settings_form() {
+  $projects = l10n_community_get_projects();
+
   $form = array();
   $form['l10n_community_project_per_page'] = array(
     '#title' => t('Number of projects to display per page'),
@@ -42,6 +44,28 @@ function l10n_community_settings_form() {
     '#default_value' => variable_get('l10n_community_import_user', ''),
     '#autocomplete_path' => 'user/autocomplete',
   );
+  $form['l10n_community_highlighted_project'] = array(
+    '#title' => t('Highlight project on the welcome page'),
+    '#description' => t('Pick a project which will be highlighted on the welcome page, so progress of all translation teams can be seen instantly.'),
+    '#default_value' => variable_get('l10n_community_highlighted_project', ''),
+  );
+  if (($count = count($projects)) <= 30) {
+    // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
+    $form['l10n_community_highlighted_project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+    $form['l10n_community_highlighted_project']['#options'] = array('' => t('None'));
+    foreach ($projects as $project) {
+      // title used to conform to the autocomplete behavior.
+      $form['l10n_community_highlighted_project']['#options'][$project->title] = $project->title;
+    }
+  }
+  else {
+    // Autocomplete field for more then 30 projects.
+    $form['l10n_community_highlighted_project'] += array(
+      '#type' => 'textfield',
+      '#autocomplete_path' => 'translate/projects/autocomplete',
+    );
+    $form['l10n_community_highlighted_project']['#description'] .= ' '. t('Can be set to empty string to not pick any project.');
+  }
   return system_settings_form($form);
 }
 

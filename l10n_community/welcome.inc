@@ -50,22 +50,6 @@ function l10n_community_welcome_page() {
   );
   $output .= theme('admin_block', $block);
 
-  $output .= '</div><div class="right clear-block">';
-  $content = '';
-  if (!$GLOBALS['user']->uid) {
-    // Only display account creation task if not logged in.
-    $content = '<p>'. t('You can view the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>', array('@register' => url('user'))) .'</p>';
-  }
-
-  $content .= drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>';
-
-  $block = array(
-    'title' => t('Contribute'),
-    'description' => t('Suggest, translate, review'),
-    'content' => '<div class="admin-list">'. $content .'</div>'
-  );
-  $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
-
   $items = array(
     array('title' => t('Translator\'s guide'), 'path' => 'http://drupal.org/translators', 'description' => t('Documentation for translators on drupal.org.')),
     array('title' => t('Translations group'), 'path' => 'http://groups.drupal.org/translations', 'description' => t('Translations group at groups.drupal.org.')),
@@ -82,6 +66,29 @@ function l10n_community_welcome_page() {
     'content' => '<dl class="admin-list">'. $content .'</dl>'
   );
   $output .= theme('admin_block', $block);
+
+  $output .= '</div><div class="right clear-block">';
+  $content = '';
+  if (!$GLOBALS['user']->uid) {
+    // Only display account creation task if not logged in.
+    $content = '<p>'. t('You can view the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>', array('@register' => url('user'))) .'</p>';
+  }
+
+  $content .= drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>';
+
+  $block = array(
+    'title' => t('Contribute'),
+    'description' => t('Suggest, translate, review'),
+    'content' => '<div class="admin-list">'. $content .'</div>'
+  );
+  $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
+  
+  if (($highlight_project = variable_get('l10n_community_highlighted_project', '')) && ($project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", array($highlight_project))))) {
+    // Display progress status of the highlighted project.
+    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+    $output .= l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project'));
+  }
+
   $output .= '</div></div>';
   return $output;
 }

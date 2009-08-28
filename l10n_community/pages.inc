@@ -216,45 +216,9 @@ function l10n_community_overview_project($uri = NULL) {
 
   $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
 
-  $block = array(
-    'title' => t('Translations overview'),
-    'description' => t('Overall status of translations'),
-  );
   $project = l10n_community_get_projects(array('uri' => $uri));
-  $num_source = l10n_community_get_string_count('project', $project->pid);
-  $string_counts = l10n_community_get_string_count('languages', $project->pid);
-
-  $table = array();
-  foreach ($languages as $langcode => $language) {
-    $perm = l10n_community_get_permission($langcode);
-    if (empty($language->plurals)) {
-      $table[] = array(
-        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
-      );
-    }
-    else {
-      $table[] = array_merge(
-        array(
-          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array('query' => 'project='. $uri)), 'class' => 'rowhead'),
-        ),
-        theme(
-          'l10n_community_progress_columns',
-          $num_source,
-          !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
-          !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
-        )
-      );
-    }
-  }
-  $block['content'] = theme(
-    'table',
-    theme('l10n_community_progress_headers', t('Language')),
-    $table,
-    array('class' => 'l10n-community-overview')
-  ) .'<div class="clear-block"></div>';
-  $output .=  theme('admin_block', $block);
-
+  $output .= l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'));
+  
   $output .= '</div><div class="right clear-block">';
 
   $block = array(
@@ -263,6 +227,8 @@ function l10n_community_overview_project($uri = NULL) {
     'content' => '<p class="info">'. t('Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages.') .'</p>'
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
+
+  $num_source = l10n_community_get_string_count('project', $project->pid);
 
   // Get information on releases, and the number of parsed ones.
   $releases = l10n_community_get_releases($uri, FALSE);
@@ -290,6 +256,50 @@ function l10n_community_overview_project($uri = NULL) {
   $output .= theme('admin_block', $block);
   $output .= '</div></div>';
   return $output;
+}
+
+/**
+ * Reusable renderer for language status per project.
+ */
+function l10n_community_language_progress_for_project($project, $languages, $title, $description) {
+  $block = array(
+    'title' => $title,
+    'description' => $description,
+  );
+  $num_source = l10n_community_get_string_count('project', $project->pid);
+  $string_counts = l10n_community_get_string_count('languages', $project->pid);
+
+  $table = array();
+  foreach ($languages as $langcode => $language) {
+    $perm = l10n_community_get_permission($langcode);
+    if (empty($language->plurals)) {
+      $table[] = array(
+        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
+        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
+      );
+    }
+    else {
+      $table[] = array_merge(
+        array(
+          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/view', array('query' => 'project='. $project->uri)), 'class' => 'rowhead'),
+        ),
+        theme(
+          'l10n_community_progress_columns',
+          $num_source,
+          !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
+          !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
+        )
+      );
+    }
+  }
+  $block['content'] = theme(
+    'table',
+    theme('l10n_community_progress_headers', t('Language')),
+    $table,
+    array('class' => 'l10n-community-overview')
+  ) .'<div class="clear-block"></div>';
+  
+  return theme('admin_block', $block);
 }
 
 /**
