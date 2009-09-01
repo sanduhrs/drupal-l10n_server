@@ -71,13 +71,17 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
 function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10N_STATUS_ALL, $release = 'all', $search  = '', $context = 'all') {
   $projects = l10n_community_get_projects();
 
-  $status_options = array(
-    L10N_STATUS_ALL            => t('All'),
+  $translation_options = array(
+    L10N_STATUS_ALL            => t('<Any>'),
     L10N_STATUS_UNTRANSLATED   => t('Untranslated'),
-    L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
     L10N_STATUS_TRANSLATED     => t('Translated'),
   );
-
+  $suggestion_options = array(
+    L10N_STATUS_ALL            => t('<Any>'),
+    L10N_STATUS_NO_SUGGESTION  => t('Has no suggestion'),
+    L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
+  );
+  
   $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => isset($project) ? $project->title : '',
@@ -124,10 +128,19 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
 
   $form['status'] = array(
     '#title' => t('Status'),
-    '#type' => 'select',
-    '#options' => $status_options,
-    '#default_value' => $status,
+    '#tree' => TRUE,
   );
+  $form['status']['translation'] = array(
+    '#type' => 'select',
+    '#options' => $translation_options,
+    '#default_value' => $status & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED),
+  );
+  $form['status']['suggestion'] = array(
+    '#type' => 'select',
+    '#options' => $suggestion_options,
+    '#default_value' => $status & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION),
+  );
+
   $form['search'] = array(
     '#title' => t('Contains'),
     '#type' => 'textfield',
@@ -175,7 +188,7 @@ function l10n_community_filter_form_submit($form, &$form_state) {
         unset($form_state['values']['release']);
       }
     }
-    $form_state['values']['status'] = (int) $form_state['values']['status'];
+    $form_state['values']['status'] = ((int) $form_state['values']['status']['translation']) | ((int) $form_state['values']['status']['suggestion']);
 
     // Redirect keeping the relevant filters intact in the URL.
     $form_state['redirect'] = array(
@@ -645,37 +658,31 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
     $sql_count .= $release_sql;
   }
 
-  // Restriction based on string status.
-  switch ($status) {
-    case L10N_STATUS_UNTRANSLATED:
-      // We are doing a LEFT JOIN especially to look into the case, when we have nothing
-      // to match in the translation table, but we still have the string. (We get our
-      // records in the result set in this case). The translation field is empty or
-      // NULL in this case, as we are not allowing NULL there and only saving an empty
-      // translation if there are suggestions but no translation yet.
-      $status_sql = " AND (t.translation is NULL OR t.translation = '')";
-      $sql .= $status_sql;
-      $sql_count .= $status_sql;
-      break;
-    case L10N_STATUS_TRANSLATED:
-      $status_sql = " AND t.translation != ''";
-      $sql .= $status_sql;
-      $sql_count .= $status_sql;
-      break;
-    case L10N_STATUS_HAS_SUGGESTION:
-      // Note that we are not searching in the suggestions themselfs, only
-      // the source and active translation values. The user interface underlines
-      // that we are  looking for strings which have suggestions, not the
-      // suggestions themselfs.
-      $status_sql = " AND t.has_suggestion = 1";
-      $sql .= $status_sql;
-      $sql_count .= $status_sql;
-      break;
-    case L10N_STATUS_ALL:
-    default:
-      // Leave query alone on this case.
-      break;
+  // Restriction based on string status by translation / suggestions.
+  $status_sql = '';
+  if ($status & L10N_STATUS_UNTRANSLATED) {
+    // We are doing a LEFT JOIN especially to look into the case, when we have nothing
+    // to match in the translation table, but we still have the string. (We get our
+    // records in the result set in this case). The translation field is empty or
+    // NULL in this case, as we are not allowing NULL there and only saving an empty
+    // translation if there are suggestions but no translation yet.
+    $status_sql .= " AND (t.translation is NULL OR t.translation = '')";
+  } 
+  elseif ($status & L10N_STATUS_TRANSLATED) {
+    $status_sql .= " AND t.translation != ''";
   }
+  if ($status & L10N_STATUS_HAS_SUGGESTION) {
+    // Note that we are not searching in the suggestions themselfs, only
+    // the source and active translation values. The user interface underlines
+    // that we are  looking for strings which have suggestions, not the
+    // suggestions themselfs.
+    $status_sql .= " AND t.has_suggestion = 1";
+  }
+  elseif ($status & L10N_STATUS_NO_SUGGESTION) {
+    $status_sql .= " AND t.has_suggestion = 0";
+  }
+  $sql .= $status_sql;
+  $sql_count .= $status_sql;
 
   // Context based filtering.
   if (isset($context) && $context != 'all') {
