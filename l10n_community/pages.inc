@@ -504,7 +504,9 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'top-people':
       // Get summaries of people having most active translations per language.
-      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_community_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = '%s' GROUP BY t.uid_entered ORDER BY sum DESC", $id, 0, 10);
+      // Skip anonymous since that is used for placeholders when there was
+      // no prior translations for a suggestion.
+      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_community_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = '%s' AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", $id, 0, 10);
       $accounts = array();
       while ($account = db_fetch_object($result)) {
         $accounts[] = $account;
