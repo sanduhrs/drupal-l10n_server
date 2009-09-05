@@ -1180,7 +1180,7 @@ function l10n_community_is_supported_version($path) {
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
-    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1", $string, 0, 10);
+    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1 ORDER BY title", $string, 0, 100);
     while ($project = db_fetch_object($result)) {
       $matches[$project->title] = check_plain($project->title);
    }
