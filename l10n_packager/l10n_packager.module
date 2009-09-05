@@ -40,7 +40,7 @@ function l10n_packager_form_alter(&$form, $form_state, $form_id) {
  * Export languages in a simple XML format for remote use.
  */
 function l10n_packager_export() {
-  $languages = language_list();
+  $languages = language_list('language', TRUE);
   $xml = simplexml_load_string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<languages></languages>");
 
   foreach ($languages as $language) {
