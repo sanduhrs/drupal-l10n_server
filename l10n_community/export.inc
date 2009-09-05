@@ -124,6 +124,12 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       '#default_value' => 'drupal-6',
       '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming in packages. Temporarily, as long as you need to use CVS to distribute translations the flat package helps you generate a package for committing to Drupal.org. Additionally, for testing, spell checking and smaller modules, you can also export in one file without packaging as well. It is not advised to use big .po files for importing in Drupal though, as it might lead to incomplete imports. Use packages for usage with Drupal importing."),
     );
+    $form['format']['compact'] = array(
+      '#title' => t('Compact files'),
+      '#description' => t('Compact files will not include the list of files being used to parse the translatable strings. Locations comments mentioning the filenames and line numbers are also skipped and translations are not separated by a newline. This saves a considerable amount of file size for distribution, but will not look nice if you would like to edit with a simple text editor.'),
+      '#type' => 'checkbox',
+      '#default_value' => 0,
+    );
   }
   $form['submit'] = array(
     '#type' => 'submit',
@@ -185,7 +191,8 @@ function l10n_community_export_form_submit($form, &$form_state) {
     $language,
     ($type != 'translation'),
     // If not set (exporting a template for a module), stick to all-in-one.
-    isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one'
+    isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one',
+    $form_state['values']['compact']
   );
 
   if (isset($export_result) && is_array($export_result)) {
@@ -207,7 +214,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
 /**
  * Helper function to store the export string.
  */
-function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string) {
+function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string, $compact = FALSE) {
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
 
   if (!empty($export_string)) {
@@ -272,7 +279,10 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     if (strpos($export_string['value'], "\0") !== FALSE) {
       // This is a string with plural variants.
       list($singular, $plural) = explode("\0", $export_string['value']);
-      $output = $comment .'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
+      if (!$compact) {
+        $output = $comment;
+      }
+      $output .= 'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
@@ -298,7 +308,10 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     }
     else {
       // Simple string (and possibly translation pair).
-      $output = $comment .'msgid '. _l10n_community_export_string($export_string['value']);
+      if (!$compact) {
+        $output = $comment;
+      }
+      $output .= 'msgid '. _l10n_community_export_string($export_string['value']);
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
@@ -330,7 +343,10 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
         $string_files[$filename] = array('file' => '', 'changed' => 0, 'revisions' => array());
       }
       // Add to existing file storage.
-      $string_files[$filename]['file'] .= $output ."\n";
+      $string_files[$filename]['file'] .= $output;
+      if (!$compact) {
+        $string_files[$filename]['file'] .= "\n";
+      }
       if (!$template) {
         $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
       }
@@ -357,11 +373,14 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  *   'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
  *   directory structure generated, the others are suitable packages for the
  *   given Drupal version.
+ * @param $compact
+ *   A compact export will skip outputting the comments, superfluous 
+ *   newlines and the list of files. TRUE or FALSE.
  *
  * @todo
  *   Look into possibly exporting suggestions as fuzzy translations.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL) {
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
   include_once 'Archive/Tar.php';
@@ -397,7 +416,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
-      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
+      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact);
 
       // Now fill in the new string values.
       $previous_sid = $string->sid;
@@ -424,7 +443,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   }
   if ($previous_sid > 0) {
     // Store the last string.
-    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string);
+    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact);
   }
 
   if (empty($string_files)) {
@@ -450,11 +469,16 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $tar = new Archive_Tar($tempfile, 'gz');
   }
   foreach ($string_files as $filename => $fileinfo) {
-    if (count($fileinfo['revisions']) == 1) {
-      $file_list = '# Generated from file: '. $fileinfo['revisions'][0] ."\n";
+    if (!$compact) {
+      if (count($fileinfo['revisions']) == 1) {
+        $file_list = '# Generated from file: '. $fileinfo['revisions'][0] ."\n";
+      }
+      else {
+        $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $fileinfo['revisions']) ."\n";
+      }
     }
     else {
-      $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $fileinfo['revisions']) ."\n";
+      $file_list = '';
     }
 
     $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
