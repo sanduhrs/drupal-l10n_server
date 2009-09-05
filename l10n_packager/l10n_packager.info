@@ -1,0 +1,4 @@
+; $Id$
+name = "Localizacion packager"
+package = "Localization server"
+core = 6.x
