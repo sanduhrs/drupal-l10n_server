@@ -1,4 +1,6 @@
 ; $Id$
 name = "Localizacion packager"
+description = "Language export and packaging tools for the localization server"
 package = "Localization server"
+dependencies[] = l10n_community
 core = 6.x
