@@ -22,6 +22,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
     $this->u_auth = $this->drupalCreateUser(array('access localization community'));
+    $this->u_admin = $this->drupalCreateUser(array('administer languages'));
   }
 
   /**
@@ -32,12 +33,60 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalLogin($this->u_anon);
     $this->drupalGet('translate');
     $this->assertNoText(t('Quick stats'), t('Welcome screen not visible to non-priviledged user.'));
+    $this->drupalGet('user/logout');
     
     // Priviledged users should have access to the welcome screen. 
-    $this->drupalGet('user/logout');
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate');
     $this->assertText(t('Quick stats'), t('Welcome screen visible to priviledged user.'));
+    $this->drupalGet('user/logout');
+  }
+
+  /**
+   * Test basic functionality on languages screen.
+   */
+  public function testLanguages() {
+    // Non-priviledged users should not have access to the welcome screen. 
+    $this->drupalLogin($this->u_auth);
+    $this->drupalGet('translate/languages');
+    $this->assertText(t('No languages to list.'), t('Language list empty on start.'));
+    $this->drupalGet('user/logout');
+    
+    // Add a language to the environment.
+    $this->addLanguage();
+    
+    // Check that l10n_server now gives us a different error.
+    $this->drupalLogin($this->u_auth);
+    $this->drupalGet('translate/languages');
+    $this->assertText(t('No strings to translate.'), t('Language now recognized, but still no strings to translate.'));
+    $this->drupalGet('user/logout');
+  }
+  
+  /**
+   * Helper function to add a language. Used by other tests.
+   */
+  private function addLanguage() {
+    // Add a language.
+    $this->drupalLogin($this->u_admin);
+    $edit = array('langcode' => 'hu');
+    $this->drupalPost('admin/settings/language/add', $edit, t('Add language'));
+    $this->assertText('Hungarian', t('Hungarian language added to system.'));
+    $this->assertText(t('Hungarian'), t('Hungarian language added to system.'));
+    $this->drupalGet('user/logout');
+  }
+  
+  /**
+   * Debug functionality until simpletest built-in debugging is backported.
+   */
+  private function outputScreenContents($description, $basename) {
+    // This is a hack to get a directory that won't be cleaned up by simpletest
+    $file_dir = file_directory_path() .'/../simpletest_output_pages';
+    if (!is_dir($file_dir)) {
+      mkdir($file_dir, 0777, TRUE);
+    }
+    $output_path = "$file_dir/$basename.". $this->randomName(10) .'.html';
+    $rv = file_put_contents($output_path, $this->drupalGetContent());
+    $this->pass("$description: ". l('Contents of result page', $output_path));
   }
 
 }
