@@ -1,0 +1,43 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ *   Tests to ensure that the localization server works as intended.
+ */
+
+class L10nServerTestCase extends DrupalWebTestCase {
+  
+  public static function getInfo() {
+    return array(
+      'name' => t('Localization server'),
+      'description' => t('Ensure that the localization server functions properly.'),
+      'group' => t('Localization server'),
+    );
+  }
+
+  public function setUp() {
+    // Set up required modules for l10n_community.
+    parent::setUp('locale', 'potx', 'l10n_community');
+    // Prepare users on different permission levels.
+    $this->u_anon = $this->drupalCreateUser();
+    $this->u_auth = $this->drupalCreateUser(array('access localization community'));
+  }
+
+  /**
+   * Test accessibility of welcome screen.
+   */
+  public function testWelcome() {
+    // Non-priviledged users should not have access to the welcome screen. 
+    $this->drupalLogin($this->u_anon);
+    $this->drupalGet('translate');
+    $this->assertNoText(t('Quick stats'), t('Welcome screen not visible to non-priviledged user.'));
+    
+    // Priviledged users should have access to the welcome screen. 
+    $this->drupalGet('user/logout');
+    $this->drupalLogin($this->u_auth);
+    $this->drupalGet('translate');
+    $this->assertText(t('Quick stats'), t('Welcome screen visible to priviledged user.'));
+  }
+
+}
