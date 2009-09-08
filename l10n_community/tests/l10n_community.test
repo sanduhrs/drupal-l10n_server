@@ -40,6 +40,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit['l10n_localpacks_directory'] = $this->temp_path;
     $this->drupalPost('admin/l10n_server/l10n_localpacks', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
+    
+    $this->package_files = $this->project_names = array();
   }
   
   /**
@@ -79,19 +81,29 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('user/logout');
   
     // Add and parse a project in the environment.
-    $this->addProject();
+    $this->addProject(5);
+    $this->addProject(6);
+    $this->addProject(7);
 
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate/languages');
-    $this->assertText('Hungarian', t('With project in place, language list is visible.'));
+    $this->assertText('Hungarian', t('With projects in place, language list is visible.'));
 
     $this->drupalGet('translate/projects');
-    $this->assertText($this->project_name, t('With project in place, project list is shown.'));
+    foreach ($this->project_names as $api => $name) {
+      $this->assertText($name, t('@project name is shown on project page.', array('@project' => $name)));
+    }
 
-    $this->drupalGet('translate/projects/'. $this->project_name);
-    $this->assertText('Hungarian', t('Language shows up on project page.'));
-    $this->assertText(t('1 release known'), t('One release known on project.'));
-    $this->assertText(t('1 release parsed'), t('One release parsed on project.'));
+    foreach ($this->project_names as $api => $name) {
+      $this->drupalGet('translate/projects/'. $name);
+      $this->assertText('Hungarian', t('Language shows up on project page.'));
+      $this->assertText(t('1 release known'), t('One release known on project.'));
+      $this->assertText(t('1 release parsed'), t('One release parsed on project.'));
+      //$this->outputScreenContents();
+    
+      $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=50&project='. $name));
+      //$this->outputScreenContents();
+    }
   }
   
   /**
@@ -107,31 +119,40 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('user/logout');
   }
   
-  private function addProject() {
+  private function addProject($api_version = 6) {
     include_once 'Archive/Tar.php';
     // Follow the required file name format, so the package connector finds it.
-    $this->package_file = tempnam($this->temp_path, 'l10n_test') .'-6.x-3.5.tar.gz';
+    $this->package_files[$api_version] = ($package_file = tempnam($this->temp_path, 'l10n_test') .'-'. $api_version . '.x-3.5.tar.gz');
     // Store project name as start of filename.
-    list($this->project_name) = explode('-', basename($this->package_file));
-    $tar = new Archive_Tar($this->package_file, 'gz');
-    // Add the file as a string, so we can control its placement/name.
-    $tar->addString('l10n_test.module', file_get_contents(drupal_get_path('module', 'l10n_community') .'/tests/l10n_test.module'));
-    $this->assertTrue(file_exists($this->package_file), t('Test package created.'));
-    $this->assertTrue(filesize($this->package_file) > 0, t('Test package contains data.'));
-    $this->pass('Temporary file at '. $this->package_file);
-    $this->pass('List of package: '. var_export($tar->listContent(), TRUE));
+    list($project_name) = explode('-', basename($package_file));
+    $this->project_names[$api_version] = $project_name;
+    $tar = new Archive_Tar($package_file, 'gz');
+    
+    // Add the files as strings, so we can control their placement/name.
+    $tar->addString('potx_test_'. $api_version .'.module', file_get_contents(drupal_get_path('module', 'potx') .'/tests/potx_test_'. $api_version .'.module'));
+    // Add .info file tailored to the module filename (although this is not
+    // important for potx, just to be clear about identification).
+    $tar->addString('potx_test_'. $api_version .'.info', file_get_contents(drupal_get_path('module', 'potx') .'/tests/potx_test_6.info'));
+    // Add .js file regardless of api version. Although Drupal 5 parsing should
+    // not pick this up, this packaging allows us to test for that exactly.
+    $tar->addString('potx_test_'. $api_version .'.js', file_get_contents(drupal_get_path('module', 'potx') .'/tests/potx_test.js'));
+    
+    $this->assertTrue(file_exists($package_file), t('Test package created.'));
+    $this->assertTrue(filesize($package_file) > 0, t('Test package contains data.'));
+    $this->pass('Temporary file at '. $package_file);
+    $this->pass('List of package files: '. var_export($tar->listContent(), TRUE));
 
     // Login as admin and get this package parsed.
     $this->drupalLogin($this->u_admin);
     $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
-    $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $this->package_file)), t('Contents of project tarball parsed.'));
+    $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $package_file)), t('Contents of project tarball parsed.'));
     $this->drupalGet('user/logout');
    }
   
   /**
    * Debug functionality until simpletest built-in debugging is backported.
    */
-  private function outputScreenContents($description, $basename) {
+  private function outputScreenContents($description = 'output', $basename = 'output') {
     // This is a hack to get a directory that won't be cleaned up by simpletest
     $file_dir = file_directory_path() .'/../simpletest_output_pages';
     if (!is_dir($file_dir)) {
