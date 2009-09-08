@@ -18,13 +18,30 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   public function setUp() {
     // Set up required modules for l10n_community.
-    parent::setUp('locale', 'potx', 'l10n_community');
+    parent::setUp('locale', 'potx', 'l10n_community', 'l10n_localpacks');
+
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
     $this->u_auth = $this->drupalCreateUser(array('access localization community'));
-    $this->u_admin = $this->drupalCreateUser(array('administer languages'));
-  }
+    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization community', 'administer localization community for local packages'));
 
+    // Set up temporary directory for our work. Because this is inside the
+    // simpletest controlled file path, it will be cleaned up later.
+    $this->temp_path = file_directory_path() .'/l10n_community_test';
+    if (!is_dir($this->temp_path)) {
+      mkdir($this->temp_path);
+    }
+    else {
+      simpletest_clean_temporary_directory(file_directory_path() .'/l10n_community_test');
+    }
+    
+    // Set local package directory, so we can work with this.
+    $this->drupalLogin($this->u_admin);
+    $edit['l10n_localpacks_directory'] = $this->temp_path;
+    $this->drupalPost('admin/l10n_server/l10n_localpacks', $edit, t('Save configuration'));
+    $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
+  }
+  
   /**
    * Test accessibility of welcome screen.
    */
@@ -45,7 +62,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
   /**
    * Test basic functionality on languages screen.
    */
-  public function testLanguages() {
+  public function testLanguagesProjects() {
     // Non-priviledged users should not have access to the welcome screen. 
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate/languages');
@@ -60,6 +77,21 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('translate/languages');
     $this->assertText(t('No strings to translate.'), t('Language now recognized, but still no strings to translate.'));
     $this->drupalGet('user/logout');
+  
+    // Add and parse a project in the environment.
+    $this->addProject();
+
+    $this->drupalLogin($this->u_auth);
+    $this->drupalGet('translate/languages');
+    $this->assertText('Hungarian', t('With project in place, language list is visible.'));
+
+    $this->drupalGet('translate/projects');
+    $this->assertText($this->project_name, t('With project in place, project list is shown.'));
+
+    $this->drupalGet('translate/projects/'. $this->project_name);
+    $this->assertText('Hungarian', t('Language shows up on project page.'));
+    $this->assertText(t('1 release known'), t('One release known on project.'));
+    $this->assertText(t('1 release parsed'), t('One release parsed on project.'));
   }
   
   /**
@@ -74,6 +106,27 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertText(t('Hungarian'), t('Hungarian language added to system.'));
     $this->drupalGet('user/logout');
   }
+  
+  private function addProject() {
+    include_once 'Archive/Tar.php';
+    // Follow the required file name format, so the package connector finds it.
+    $this->package_file = tempnam($this->temp_path, 'l10n_test') .'-6.x-3.5.tar.gz';
+    // Store project name as start of filename.
+    list($this->project_name) = explode('-', basename($this->package_file));
+    $tar = new Archive_Tar($this->package_file, 'gz');
+    // Add the file as a string, so we can control its placement/name.
+    $tar->addString('l10n_test.module', file_get_contents(drupal_get_path('module', 'l10n_community') .'/tests/l10n_test.module'));
+    $this->assertTrue(file_exists($this->package_file), t('Test package created.'));
+    $this->assertTrue(filesize($this->package_file) > 0, t('Test package contains data.'));
+    $this->pass('Temporary file at '. $this->package_file);
+    $this->pass('List of package: '. var_export($tar->listContent(), TRUE));
+
+    // Login as admin and get this package parsed.
+    $this->drupalLogin($this->u_admin);
+    $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
+    $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $this->package_file)), t('Contents of project tarball parsed.'));
+    $this->drupalGet('user/logout');
+   }
   
   /**
    * Debug functionality until simpletest built-in debugging is backported.
