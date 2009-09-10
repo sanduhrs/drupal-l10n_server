@@ -47,16 +47,9 @@ div.admin form {
 }
 
 /* String search filtering form */
-#l10n-community-filter-form {
+#l10n-community-filter-form,
+#l10n-community-moderate-filter-form {
   white-space:nowrap;
-}
-
-#l10n-community-filter-form a.permalink {
-  font-size:90%;
-}
-
-#l10n-community-filter-form .form-text {
-  width: 10em !important;
 }
 
 /* Emphasized replaceable parts of translatables */
@@ -88,7 +81,7 @@ table.l10n-server-translate td {
     padding:10px 5px;
   }
 
-  table.l10n-server-translate .string-context {
+  table .string-context {
     color: #777;
     font-size: 0.8em;
   }

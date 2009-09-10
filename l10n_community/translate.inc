@@ -30,35 +30,23 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   $languages = l10n_community_get_languages();
   $perm = l10n_community_get_permission($langcode);
 
-  // Build filter values for the form generation.
-  $project = $release = NULL;
-  if (isset($_GET['project']) && ($project = l10n_community_get_projects(array('uri' => $_GET['project'])))) {
-    if (isset($_GET['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$_GET['release']])) {
-      // Allow to select this release, if belongs to current project.
-      $release = $_GET['release'];
-    }
-  }
-  // Thankfully L10N_STATUS_ALL is 0, so non-number bad data goes to no filter.
-  $status  = isset($_GET['status']) ? (int) $_GET['status'] : 0;
-  $search  = isset($_GET['search']) ? (string) $_GET['search'] : '';
-  $context = isset($_GET['context']) ? (string) $_GET['context'] : 'all';
+  $filters = l10n_community_build_filter_values($_GET);
+  $output = drupal_get_form('l10n_community_filter_form', $filters);
 
-  $output = drupal_get_form('l10n_community_filter_form', $project, $status, $release, $search, $context);
-
-  $strings = l10n_community_get_strings($languages[$langcode]->language, $project, $status, $release, $search, $context, 10);
+  $strings = l10n_community_get_strings($languages[$langcode]->language, $filters, $filters['limit']);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
   }
   elseif ($perm == L10N_PERM_NONE || $mode == 'view') {
     // For users without permission to translate or suggest, display the view.
     drupal_set_title(t('@language translations', array('@language' => $languages[$langcode]->name)));
-    $output .= l10n_community_translate_view($strings, $languages[$langcode], $project);
+    $output .= l10n_community_translate_view($strings, $languages[$langcode], $filters);
   }
   else {
     // For users with some permission, display the form.
     drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
     drupal_set_title(t('Translate to @language', array('@language' => $languages[$langcode]->name)));
-    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $project, $perm);
+    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $filters, $perm);
   }
   return $output;
 }
@@ -67,8 +55,13 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
 
 /**
  * Translate form filter.
+ *
+ * @param $filters
+ *   Array of filter options.
+ * @param $limited
+ *   Return limited set of filters (no suggestion filters).
  */
-function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10N_STATUS_ALL, $release = 'all', $search  = '', $context = 'all') {
+function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
   $projects = l10n_community_get_projects();
 
   $translation_options = array(
@@ -84,15 +77,15 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
   
   $form['project'] = array(
     '#title' => t('Project'),
-    '#default_value' => isset($project) ? $project->title : '',
+    '#default_value' => isset($filters['project']) ? $filters['project']->title : '',
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
     $form['project']['#type'] = 'select';
     $form['project']['#options'] = array('' => t('All'));
-    foreach ($projects as $this_project) {
+    foreach ($projects as $project) {
       // Title used to conform to the autocomplete behavior.
-      $form['project']['#options'][$this_project->title] = $this_project->title;
+      $form['project']['#options'][$project->title] = $project->title;
     }
   }
   else {
@@ -100,20 +93,21 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
     $form['project'] += array(
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/projects/autocomplete',
+      '#size' => 10,
     );
   }
 
-  if (isset($project)) {
-    $releases = l10n_community_get_releases($project->uri);
+  if (isset($filters['project'])) {
+    $releases = l10n_community_get_releases($filters['project']->uri);
     $release_options = array('all' => t('All'));
-    foreach ($releases as $rid => $this_release) {
-      $release_options[$rid] = $this_release->title;
+    foreach ($releases as $rid => $release) {
+      $release_options[$rid] = $release->title;
     }
     $form['release'] = array(
       '#title' => t('Release'),
       '#type' => 'select',
       '#options' => $release_options,
-      '#default_value' => isset($release) ? $release : 'all',
+      '#default_value' => isset($filters['release']) ? $filters['release'] : 'all',
     );
   }
 
@@ -122,7 +116,7 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
      '#title' => t('Context'),
       '#type' => 'select',
       '#options' => array('all' => t('All')) + $contexts,
-      '#default_value' => $context,
+      '#default_value' => $filters['context'],
     );
   }
 
@@ -133,19 +127,40 @@ function l10n_community_filter_form(&$form_state, $project = NULL, $status = L10
   $form['status']['translation'] = array(
     '#type' => 'select',
     '#options' => $translation_options,
-    '#default_value' => $status & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED),
+    '#default_value' => $filters['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED),
   );
-  $form['status']['suggestion'] = array(
-    '#type' => 'select',
-    '#options' => $suggestion_options,
-    '#default_value' => $status & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION),
+  if (!$limited) {
+    $form['status']['suggestion'] = array(
+      '#type' => 'select',
+      '#options' => $suggestion_options,
+      '#default_value' => $filters['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION),
+    );
+  }
+
+  $form['author']= array(
+    '#type' => 'textfield',
+    '#title' => t('Submitted by'),
+    '#maxlength' => 60,
+    '#autocomplete_path' => 'user/autocomplete',
+    '#default_value' => isset($filters['author']) ? $filters['author']->name : '',
+    '#size' => 15,
   );
 
   $form['search'] = array(
     '#title' => t('Contains'),
     '#type' => 'textfield',
-    '#default_value' => $search,
+    '#default_value' => $filters['search'],
+    '#size' => 20,
   );
+
+  $form['limit'] = array(
+    '#type' => 'select',
+    '#title' => t('Limit'),
+    '#default_value' => isset($filters['limit']) ? $filters['limit'] : 10,
+    '#options' => drupal_map_assoc(array(5, 10, 20, 30)),
+    '#default_value' => $filters['limit'],
+  );
+
   $form['submit'] = array(
     '#value' => t('Filter'),
     '#type' => 'submit',
@@ -169,32 +184,16 @@ function l10n_community_filter_form_submit($form, &$form_state) {
   }
 
   if ($form_state['values']['op'] == t('Filter')) {
-    // Validate incoming data. The project needs to be resolved by title,
-    // so that we redirect with the proper uri value. Other validations
-    // are just to make sure that the URL keeps being short, and the user
-    // is not tricked into thinking a certain filter is applied, while
-    // being invalid. These checks are done on input as well.
-    if (!empty($form_state['values']['project'])) {
-      if ($uri = l10n_community_project_uri_by_title($form_state['values']['project'])) {
-        // Remember proper internal name based on title.
-        $form_state['values']['project'] = $uri;
-        if (!empty($form_state['values']['release']) && !(($releases = l10n_community_get_releases($uri)) && isset($releases[$form_state['values']['release']]))) {
-          // Such a release was not found for this project. Unset.
-          unset($form_state['values']['release']);
-        }
-      }
-      else {
-        // If project not found, release data is cleared.
-        unset($form_state['values']['release']);
+    $filters = l10n_community_build_filter_values($form_state['values']);
+    // Replace some values by their string representation.
+    foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
+      if (!empty($filters[$name])) {
+        $filters[$name] = $filters[$name]->$key;
       }
     }
-    $form_state['values']['status'] = ((int) $form_state['values']['status']['translation']) | ((int) $form_state['values']['status']['suggestion']);
 
     // Redirect keeping the relevant filters intact in the URL.
-    $form_state['redirect'] = array(
-      $_GET['q'],
-      l10n_community_build_filter_array($form_state['values'])
-    );
+    $form_state['redirect'] = array($_GET['q'], $filters);
   }
 }
 
@@ -207,22 +206,16 @@ function l10n_community_filter_form_submit($form, &$form_state) {
  *   Array of string objects to display on the page.
  * @param $language
  *   Language object corresponding to the page displayed.
- * @param $project
- *   Project object.
+ * @param $filters
+ *   Filters used to present this listing view.
  */
-function l10n_community_translate_view($strings = array(), $language = NULL, $project = NULL) {
+function l10n_community_translate_view($strings = array(), $language = NULL, $filters = array()) {
   $output = '';
   $rows = array();
   foreach ($strings as $string) {
     $row = array();
     // Source display
-    // Multiple source strings if we deal with plurals.
-    if (strpos($string->value, "\0") !== FALSE) {
-      $source = theme('item_list', array_map('l10n_community_format_text', explode(chr(0), $string->value)), '');
-    }
-    else {
-      $source = l10n_community_format_text($string->value);
-    }
+    $source = l10n_community_format_string($string->value);
     $source .= theme('l10n_community_in_context', $string);
     $row[] = array('data' => $source, 'class' => 'source');
 
@@ -246,9 +239,9 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $pr
     }
     $rows[] = $row;
   }
-  $output .= theme('pager', NULL, 10, 0);
+  $output .= ($pager = theme('pager', NULL, $filters['limit'], 0));
   $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
-  $output .= theme('pager', NULL, 10, 0);
+  $output .= $pager;
   $output = "<div id='l10n-community-translate-view'>". $output ."</div>";
   return $output;
 }
@@ -262,29 +255,30 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $pr
  *   Array of string objects to display.
  * @param $language
  *   Language object.
- * @param $project
- *   Project object.
+ * @param $filters
+ *   Filters used to present this editing view.
  * @param $perm
  *   Community permission level of user watching the page.
  */
-function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $project = NULL, $perm = L10N_PERM_SUGGEST) {
+function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $filters = array(), $perm = L10N_PERM_SUGGEST) {
+
+  if (isset($_GET['page'])) {
+    // Ensure that we keep all filter values, even the page number, so
+    // after submission, the same page can be shown.
+    $filters['page'] = (int) $_GET['page'];
+  }
 
   $form = array(
     '#tree' => TRUE,
-    '#redirect' => array(
-      $_GET['q'],
-      // Ensure that we keep all filter values, even the page number, so
-      // after submission, the same page can be shown.
-      l10n_community_build_filter_array($_GET, TRUE)
-    )
+    '#redirect' => array($_GET['q'], $filters)
   );
   $form['pager_top'] = array(
     '#weight' => -10,
-    '#value' => theme('pager', NULL, 10, 0)
+    '#value' => ($pager = theme('pager', NULL, $filters['limit'], 0)),
   );
   $form['pager_bottom'] = array(
     '#weight' => 10,
-    '#value' => theme('pager', NULL, 10, 0)
+    '#value' => $pager,
   );
   // Keep language code and URI in form for further reference.
   $form['langcode'] = array(
@@ -520,13 +514,12 @@ function l10n_community_translate_form_submit($form, &$form_state) {
 
 /**
  * Theme function for l10n_community_filter_form.
- * Arranges elements in a condensed fashion in a table.
  */
 function theme_l10n_community_filter_form($form) {
-  $row = array(); // table content
-  $labels = array(); // table header labels
+  $row = array();
+  $labels = array();
   // Only display these elements in distinct table cells
-  $elements = array('project', 'release', 'context', 'status', 'search');
+  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit');
   foreach ($form as $id => &$element) {
     if (in_array($id, $elements)) {
       $labels[] = $element['#title'];
@@ -538,7 +531,7 @@ function theme_l10n_community_filter_form($form) {
   $labels[] = '';
   // Display the rest of the form in the last cell
   $row[] = drupal_render($form);
-  return theme('table', $labels, array($row), array('class' => 'l10n-server-translate'));
+  return theme('table', $labels, array($row), array('class' => 'l10n-server-filter'));
 }
 
 /**
@@ -602,32 +595,33 @@ function theme_l10n_community_in_context($string) {
  *
  * @param $langcode
  *   Language code to use for the lookup.
- * @param $project
- *   Project object to look up strings for.
- * @param $status
- *   Filter strings by status. See L10N_STATUS_ALL,
- *   L10N_STATUS_UNTRANSLATED, L10N_STATUS_HAS_SUGGESTION and
- *   L10N_STATUS_TRANSLATED.
- * @param $release
- *   Release id of the particular project release to filter with.
- *   Use NULL to not filter on releases.
- * @param $search
- *   Substring to search for in all source and translation strings.
- * @param $context
- *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
- *   the default, if the code does not specify a context otherwise.
+ * @param $filters
+ *   - 'project'
+ *     Project object to look up strings for.
+ *   - 'status'
+ *     Filter strings by status. See L10N_STATUS_ALL,
+ *     L10N_STATUS_UNTRANSLATED, L10N_STATUS_HAS_SUGGESTION and
+ *     L10N_STATUS_TRANSLATED.
+ *   - 'release'
+ *     Release id of the particular project release to filter with.
+ *     Use NULL to not filter on releases.
+ *   - 'search'
+ *     Substring to search for in all source and translation strings.
+ *   - 'context'
+ *     From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
+ *     the default, if the code does not specify a context otherwise.
  * @param $pager
  *   Number of strings to be returned in a pager. Should be NULL if
  *   no pager should be used.
  * @return
  *   An array of string records from database.
  */
-function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_STATUS_ALL, $release = NULL, $search = NULL, $context = NULL, $pager = NULL) {
+function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
 
   $sql = $sql_count = '';
   $sql_args = array();
 
-  if (!isset($project)) {
+  if (!isset($filters['project'])) {
     // No project based filtering.
     $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
     $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
@@ -637,22 +631,30 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
     // Project based filtering and language based filtering built in.
     $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
     $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
-    $sql_args = array($langcode, $project->pid);
+    $sql_args = array($langcode, $filters['project']->pid);
   }
 
-  if (!empty($search)) {
+  // Add submitted by condition
+  if (!empty($filters['author'])) {
+    $search_sql = " AND t.uid_entered = %d";
+    $sql .= $search_sql;
+    $sql_count .= $search_sql;
+    $sql_args[] = $filters['author']->uid;
+  }
+
+  if (!empty($filters['search'])) {
     // Search in the source or target strings.
-    $sql_args[] = $search;
-    $sql_args[] = $search;
+    $sql_args[] = $filters['search'];
+    $sql_args[] = $filters['search'];
     $search_sql = " AND (s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
     $sql .= $search_sql;
     $sql_count .= $search_sql;
   }
 
-  if (isset($release) && $release != 'all') {
+  if (isset($filters['release']) && $filters['release'] != 'all') {
     // Release restriction.
-    $sql_args[] = $release;
-    $sql_args[] = $release;
+    $sql_args[] = $filters['release'];
+    $sql_args[] = $filters['release'];
     $release_sql = ' AND r.rid = %d';
     $sql .= $release_sql;
     $sql_count .= $release_sql;
@@ -660,7 +662,7 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
 
   // Restriction based on string status by translation / suggestions.
   $status_sql = '';
-  if ($status & L10N_STATUS_UNTRANSLATED) {
+  if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
     // We are doing a LEFT JOIN especially to look into the case, when we have nothing
     // to match in the translation table, but we still have the string. (We get our
     // records in the result set in this case). The translation field is empty or
@@ -668,26 +670,26 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
     // translation if there are suggestions but no translation yet.
     $status_sql .= " AND (t.translation is NULL OR t.translation = '')";
   } 
-  elseif ($status & L10N_STATUS_TRANSLATED) {
+  elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
     $status_sql .= " AND t.translation != ''";
   }
-  if ($status & L10N_STATUS_HAS_SUGGESTION) {
+  if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
     // Note that we are not searching in the suggestions themselfs, only
     // the source and active translation values. The user interface underlines
     // that we are  looking for strings which have suggestions, not the
     // suggestions themselfs.
     $status_sql .= " AND t.has_suggestion = 1";
   }
-  elseif ($status & L10N_STATUS_NO_SUGGESTION) {
-    $status_sql .= " AND t.has_suggestion = 0";
+  elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
+    $status_sql .= " AND ((t.has_suggestion IS NULL) OR (t.has_suggestion = 0))";
   }
   $sql .= $status_sql;
   $sql_count .= $status_sql;
 
   // Context based filtering.
-  if (isset($context) && $context != 'all') {
+  if (isset($filters['context']) && $filters['context'] != 'all') {
     // We use 'none' for no context, so '' can be the defaut (for all contexts).
-    $sql_args[] = $context == 'none' ? '' : $context;
+    $sql_args[] = $filters['context'] == 'none' ? '' : $filters['context'];
     $context_sql = " AND s.context = '%s'";
     $sql .= $context_sql;
     $sql_count .= $context_sql;
@@ -714,26 +716,44 @@ function l10n_community_get_strings($langcode, $project = NULL, $status = L10N_S
 }
 
 /**
- * Builds a simple array with only the keys allowed for filtering.
+ * Check and sanitize arguments and build filter array.
  *
- * @param $input
- *   An array from $_GET or $form_state['values']
- * @param $allow_pager
- *   Allow page number to be kept in the array.
- * @return
- *  Filtered array with only the allowed keys and their values.
- *  The values are not checked for accuracy.
+ * @param $params
+ *   Associative array with unsanitized values.
+ * @param $suggestions
+ *   Whether we build the filters for the suggestions (TRUE) or not (FALSE).
  */
-function l10n_community_build_filter_array($input, $allow_pager = FALSE) {
-  // Redirect keeping the relevant filters intact in the URL.
-  $filter = array();
-  $allowed_keys = array('search', 'project', 'release', 'context', 'status');
-  if ($allow_pager) {
-    $allowed_keys[] = 'page';
+function l10n_community_build_filter_values($params, $suggestions = FALSE) {
+  $project = $release = NULL;
+
+  // Convert array representation of flags to one integer.
+  if (isset($params['status']) && is_array($params['status'])) {
+    if (isset($params['status']['suggestion'])) {
+      $params['status'] = ((int) $params['status']['translation']) | ((int) $params['status']['suggestion']);
+    }
+    else {
+      $params['status'] = (int) $params['status']['translation'];
+    }
   }
-  foreach ($input as $key => $value) {
-    if (in_array($key, $allowed_keys)) {
-      $filter[$key] = $value;
+
+  $filter = array(
+    'project' => NULL,
+    'status' => isset($params['status']) ? (int) $params['status'] : L10N_STATUS_ALL,
+    'release' => 'all',
+    'search' => !empty($params['search']) ? (string) $params['search'] : '',
+    'author' => !empty($params['author']) && ($account = user_load(array('name' => $params['author']))) ? $account : NULL,
+    // Dropdown, validated by form API.
+    'context' => isset($params['context']) ? (string) $params['context'] : 'all',
+    'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30))) ? (int) $params['limit'] : 10,
+  );
+  
+  // The project can be a dropdown or text field depending on number of 
+  // projects. So we need to sanitize its value. 
+  if (isset($params['project']) && ($project = l10n_community_get_projects(array('uri' => $params['project'])))) {
+    $filter['project'] = $project;
+    if (isset($params['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$params['release']])) {
+      // Allow to select this release, if belongs to current project only.
+      $filter['release'] = $params['release'];
     }
   }
   return $filter;

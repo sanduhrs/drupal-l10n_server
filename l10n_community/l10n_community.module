@@ -235,6 +235,16 @@ function l10n_community_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => -8,
   );
+  $items['translate/languages/%l10n_community_language/moderate'] = array(
+    'title' => 'Moderate',
+    'page callback' => 'l10n_community_moderate_page',
+    'page arguments' => array(2),
+    'file' => 'moderate.inc',
+    'access callback' => 'l10n_community_moderation_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -6,
+  );
   $items['translate/languages/%l10n_community_language/import'] = array(
     'title' => 'Import',
     'page callback' => 'l10n_community_import_page',
@@ -340,6 +350,13 @@ function l10n_community_contribute_access($langcode, $import = FALSE) {
  */
 function l10n_community_export_access() {
   return user_access('access localization community') && user_access('export gettext templates and translations');
+}
+
+/**
+ * Access to the moderation screen.
+ */
+function l10n_community_moderation_access($langcode) {
+  return user_access('access localization community') && (l10n_community_get_permission($langcode) == L10N_PERM_ALL);
 }
 
 /**
@@ -1248,6 +1265,10 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     'l10n_community_admin_releases_form' => array(
       'arguments' => array('form' => NULL),
     ),
+    // moderate.inc
+    'l10n_community_moderation_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
   );
 }
 
@@ -1323,6 +1344,22 @@ function theme_l10n_community_copy_button() {
 }
 
 /**
+ * Format string for display. Takes plurals into account.
+ */
+function l10n_community_format_string($value, $rich_markup = TRUE) {
+  if (strpos($value, "\0") !== FALSE) {
+    $items = explode(chr(0), $value);
+    foreach ($items as &$item) {
+      $item = l10n_community_format_text($item, NULL, NULL, $rich_markup);
+    }
+    return theme('item_list', $items);
+  }
+  else {
+    return l10n_community_format_text($value, NULL, NULL, $rich_markup);
+  }
+}
+
+/**
  * Format translatable strings with custom icons.
  *
  * We emphasize some parts of strings, so those are easy to recognize.
@@ -1330,8 +1367,14 @@ function theme_l10n_community_copy_button() {
  *
  * @param $string
  *   Source string to translate.
+ * @param $sid
+ *   Source string ID.
+ * @param $delta
+ *   Sequence ID of plural version if $string is a plural variant.
+ * @param $rich_markup
+ *   Whether to output rich markup (used for the translaton UI).
  */
-function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
+function l10n_community_format_text($string, $sid = NULL, $delta = NULL, $rich_markup = TRUE) {
   static $path = NULL, $title = NULL;
 
   if (!isset($path)) {
@@ -1339,30 +1382,32 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL) {
     $title = t('line break');
   }
 
-  $original = check_plain($string);
-
   // Replace all newline chars in the string with an indicator image.
-  $string = str_replace(
+  $formatted = str_replace(
     array("\n", "\\\\n"),
     '<img src="'. $path .'/images/newline.png" alt="'. $title .'" title="'. $title .'" /><br />',
     check_plain($string)
   );
   // Make all %, ! and @ marked pladeholders emphasized.
-  $string = preg_replace(
+  $formatted = preg_replace(
     '~((%|!|@)[0-9a-zA-Z_-]+)~',
     '<em class="l10n-community-marker">\\1</em>',
-    $string
+    $formatted
   );
 
-  $class = '';
-  if (isset($sid) && isset($delta)) {
-    $class = ' class="string-'. $sid .'-'. $delta .'"';
+  if ($rich_markup) {
+    $class = '';
+    if (isset($sid) && isset($delta)) {
+      $class = ' class="string-'. $sid .'-'. $delta .'"';
+    }
+    else if ($sid) {
+      $class = ' class="string-'. $sid .'"';
+    }
+    return '<div'. $class .'><span class="string">'. $formatted .'</span><span class="original hidden">'. check_plain($string) .'</span></div>';
   }
-  else if ($sid) {
-    $class = ' class="string-'. $sid .'"';
+  else {
+    return '<span class="string">'. $formatted .'</span>';
   }
-
-  return '<div'. $class .'><span class="string">'. $string .'</span><span class="original hidden">'. $original .'</span></div>';
 }
 
 /**
