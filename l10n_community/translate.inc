@@ -530,7 +530,7 @@ function theme_l10n_community_filter_form($form) {
   // Fill in the rest of the header above the buttons.
   $labels[] = '';
   // Display the rest of the form in the last cell
-  $row[] = drupal_render($form);
+  $row[] = array('data' => drupal_render($form), 'class' => 'last');
   return theme('table', $labels, array($row), array('class' => 'l10n-server-filter'));
 }
 

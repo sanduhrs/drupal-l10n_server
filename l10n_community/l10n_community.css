@@ -51,6 +51,12 @@ div.admin form {
 #l10n-community-moderate-filter-form {
   white-space:nowrap;
 }
+table.l10n-server-filter {
+  width: 100%;
+}
+table.l10n-server-filter td.last {
+  text-align: right;
+}
 
 /* Emphasized replaceable parts of translatables */
 em.l10n-community-marker {
