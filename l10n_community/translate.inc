@@ -267,6 +267,12 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
     // after submission, the same page can be shown.
     $filters['page'] = (int) $_GET['page'];
   }
+  // Replace some values by their string representation for URL redirects.
+  foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
+    if (!empty($filters[$name])) {
+      $filters[$name] = $filters[$name]->$key;
+    }
+  }
 
   $form = array(
     '#tree' => TRUE,
