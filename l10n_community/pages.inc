@@ -239,8 +239,8 @@ function l10n_community_overview_project($uri = NULL) {
     }
   }
 
-  // Get information on errors.
-  $num_errors = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid LEFT JOIN {l10n_community_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri));
+  // Get information on warnings.
+  $num_warnings = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid LEFT JOIN {l10n_community_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri));
 
   $block = array(
     'title' => t('@project summary', array('@project' => $project->title)),
@@ -250,7 +250,7 @@ function l10n_community_overview_project($uri = NULL) {
       format_plural(count($releases), '1 release known', '@count releases known'),
       format_plural($num_parsed, '1 release parsed', '@count releases parsed'),
       format_plural($num_source, '1 source string in total', '@count source strings in total'),
-      ($num_errors == 0 ? t('No marker error found') : format_plural($num_errors, '1 marker error found', '@count marker errors found')),
+      ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings')),
     ))
   );
   $output .= theme('admin_block', $block);
@@ -303,20 +303,20 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
 }
 
 /**
- * Displays a page with marker errors for a given project.
+ * Displays a page with source code warnings for a given project.
  *
  * @param $uri
  *   Project URI.
  */
-function l10n_community_project_errors($uri = NULL) {
+function l10n_community_project_warnings($uri = NULL) {
   if (!isset($uri)) {
     drupal_set_message(t('No project selected.'), 'error');
     return '';
   }
-  drupal_set_title(t('@project project errors', array('@project' => drupal_get_title())));
+  drupal_set_title(t('@project project source code warnings', array('@project' => drupal_get_title())));
 
-  if (!$errors = l10n_community_get_errors($uri)) {
-    drupal_set_message(t('No marker errors found in any of the parsed releases of this project.'));
+  if (!$warnings = l10n_community_get_warnings($uri)) {
+    drupal_set_message(t('No source code warnings recorded for any of the parsed releases of this project.'));
     return '';
   }
 
@@ -324,11 +324,11 @@ function l10n_community_project_errors($uri = NULL) {
   $releases = l10n_community_get_releases($uri);
   foreach ($releases as $release) {
     $output .= '<h3>'. $release->title .'</h3>';
-    if (!isset($errors[$release->rid])) {
-      $output .= '<p>'. t('No errors found in this release.') .'</p>';
+    if (!isset($warnings[$release->rid])) {
+      $output .= '<p>'. t('No source code warnings recorded for this release.') .'</p>';
     }
     else {
-      $output .= theme('item_list', $errors[$release->rid]);
+      $output .= theme('item_list', $warnings[$release->rid]);
     }
   }
   return $output;

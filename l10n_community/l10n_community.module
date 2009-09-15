@@ -59,6 +59,9 @@ function l10n_community_help($path, $arg) {
   if ($path == 'admin/build/translate/import') {
     return '<strong>'. t('Localization server protects the plural formulas already set up, so plural formulas are not updated with imports. Editing plural formulas is possible on <a href="@language-config">the language configuration screens</a>.', array('@language-config' => url('admin/settings/language'))) .'</strong>';
   }
+  elseif (($arg[0] == 'translate') && ($arg[1] == 'projects') && ($arg[3] == 'warnings')) {
+    return t('Source code parsing warnings listed here might indicate but not neccessarily mean misuse of the APIs our source code parser looks at. <a href="@url">Detailed explanation and a cheat sheet of the localization API</a> can be found in the Drupal.org handbooks.', array('@url' => 'http://drupal.org/node/322729'));
+  }
 }
 
 /**
@@ -290,9 +293,9 @@ function l10n_community_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );
-  $items['translate/projects/%l10n_community_project/errors'] = array(
-    'title' => 'Parsing errors',
-    'page callback' => 'l10n_community_project_errors',
+  $items['translate/projects/%l10n_community_project/warnings'] = array(
+    'title' => 'Source code warnings',
+    'page callback' => 'l10n_community_project_warnings',
     'page arguments' => array(2),
     'access arguments' => array('access localization community'),
     'file' => 'pages.inc',
@@ -1003,21 +1006,21 @@ function l10n_community_get_releases($uri, $parsed_only = TRUE) {
 }
 
 /**
- * Get all errors for a project grouped by release.
+ * Get all source code warnings for a project grouped by release.
  *
  * @param $uri
- *   Project code to look up errors for.
+ *   Project code to look up warnings for.
  * @return
- *   Array of array lists of errors. The outer array is indexed by release id.
+ *   Array of array lists of warnings. The outer array is indexed by release id.
  */
-function l10n_community_get_errors($uri) {
-  $errors = array();
-  // Inner JOIN used, so if no errors are found, no rows are returned.
+function l10n_community_get_warnings($uri) {
+  $warnings = array();
+  // Inner JOIN used, so if no warnings are found, no rows are returned.
   $result = db_query("SELECT e.rid, e.value FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri);
-  while ($error = db_fetch_object($result)) {
-    $errors[$error->rid][] = $error->value;
+  while ($warning = db_fetch_object($result)) {
+    $warnings[$warning->rid][] = $warning->value;
   }
-  return $errors;
+  return $warnings;
 }
 
 /**
