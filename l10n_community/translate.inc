@@ -84,8 +84,8 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     $form['project']['#type'] = 'select';
     $form['project']['#options'] = array('' => t('All'));
     foreach ($projects as $project) {
-      // Title used to conform to the autocomplete behavior.
-      $form['project']['#options'][$project->title] = $project->title;
+      // URI used to shorten the lookup cycle in filter sanitization.
+      $form['project']['#options'][$project->uri] = $project->title;
     }
   }
   else {
@@ -93,7 +93,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     $form['project'] += array(
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/projects/autocomplete',
-      '#size' => 10,
+      '#size' => 20,
     );
   }
 
@@ -755,11 +755,21 @@ function l10n_community_build_filter_values($params, $suggestions = FALSE) {
   
   // The project can be a dropdown or text field depending on number of 
   // projects. So we need to sanitize its value. 
-  if (isset($params['project']) && ($project = l10n_community_get_projects(array('uri' => $params['project'])))) {
-    $filter['project'] = $project;
-    if (isset($params['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$params['release']])) {
-      // Allow to select this release, if belongs to current project only.
-      $filter['release'] = $params['release'];
+  if (isset($params['project'])) {
+    // Try to load project by uri or title, but give URI priority. URI is used
+    // to shorten the URL and have simple redirects. Title is used if the
+    // filter form was submitted, but that one is simplified to the URI on
+    // redirect to make the URL shorter.
+    $project = l10n_community_get_projects(array('uri' => $params['project']));
+    if (empty($project)) {
+      $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $params['project']));
+    }
+    if (!empty($project)) {
+      $filter['project'] = $project;
+      if (isset($params['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$params['release']])) {
+        // Allow to select this release, if belongs to current project only.
+        $filter['release'] = $params['release'];
+      }
     }
   }
   return $filter;
