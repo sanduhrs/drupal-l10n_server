@@ -7,10 +7,10 @@
  */
 
 class L10nServerTestCase extends DrupalWebTestCase {
-  
+
   private $version_base = '3.5';
   private $version_js = '5.7';
-  
+
   public static function getInfo() {
     return array(
       'name' => t('Localization server'),
@@ -40,27 +40,27 @@ class L10nServerTestCase extends DrupalWebTestCase {
     else {
       simpletest_clean_temporary_directory(file_directory_path() .'/l10n_community_test');
     }
-    
+
     // Set local package directory, so we can work with this.
     $this->drupalLogin($this->u_admin);
     $edit['l10n_localpacks_directory'] = $this->temp_path;
     $this->drupalPost('admin/l10n_server/l10n_localpacks', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
-    
+
     $this->project_names = array();
   }
-  
+
   /**
    * Test accessibility of welcome screen.
    */
   public function testWelcome() {
-    // Non-priviledged users should not have access to the welcome screen. 
+    // Non-priviledged users should not have access to the welcome screen.
     $this->drupalLogin($this->u_anon);
     $this->drupalGet('translate');
     $this->assertNoText(t('Quick stats'), t('Welcome screen not visible to non-priviledged user.'));
     $this->drupalGet('user/logout');
-    
-    // Priviledged users should have access to the welcome screen. 
+
+    // Priviledged users should have access to the welcome screen.
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate');
     $this->assertText(t('Quick stats'), t('Welcome screen visible to priviledged user.'));
@@ -71,21 +71,21 @@ class L10nServerTestCase extends DrupalWebTestCase {
    * Test languages and projects and basic project addition.
    */
   public function testLanguagesProjects() {
-    // Non-priviledged users should not have access to the welcome screen. 
+    // Non-priviledged users should not have access to the welcome screen.
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate/languages');
     $this->assertText(t('No languages to list.'), t('Language list empty on start.'));
     $this->drupalGet('user/logout');
-    
+
     // Add a language to the environment.
     $this->addLanguage();
-    
+
     // Check that l10n_server now gives us a different error.
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate/languages');
     $this->assertText(t('No strings to translate.'), t('Language now recognized, but still no strings to translate.'));
     $this->drupalGet('user/logout');
-  
+
     // Add and parse projects in the environment.
     $this->addProject(5);
     $this->addProject(6);
@@ -113,9 +113,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
         $this->assertText(t('1 release parsed'), t('One release parsed on project.'));
       }
     }
-    
+
     // PROJECTS ====
-    
+
     // Check that the base list of strings are there.
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30'));
     $this->assertMsgID('This is a test string.');
@@ -165,7 +165,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 20);
 
     // RELEASES ====
-    
+
     // No JS release should not have JS strings.
     $rid = db_result(db_query("SELECT rid FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-". $this->version_base . "'", $this->project_names[6]));
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&project='. $this->project_names[6] .'&release='. $rid));
@@ -181,7 +181,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 22);
 
     // CONTEXT ====
-    
+
     // Filtering for context in general works.
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&context=Test%20context'));
     $this->assertMsgIDContext('Test string in context', 'Test context');
@@ -199,7 +199,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('No strings found with this filter. Try adjusting the filter options.'));
 
     // SEARCH ====
-    
+
     // Filtering for text contained works.
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&search=is%20a'));
     $this->assertMsgID('This is a test string.');
@@ -219,14 +219,14 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 2);
 
     // LOOKUP ====
-    
+
     $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
     $this->drupalGet('translate/details/hu/'. $sid);
     $this->assertRaw('<em>'. $this->project_names[5] .':</em> 5.x-'. $this->version_js .' (1)');
     $this->assertRaw('<em>'. $this->project_names[6] .':</em> 6.x-'. $this->version_js .' (1), 6.x-'. $this->version_base .' (1)');
     $this->assertRaw('<em>'. $this->project_names[7] .':</em> 7.x-'. $this->version_js .' (1)');
   }
-  
+
   /**
    * Test submitting suggestions.
    */
@@ -243,7 +243,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertMsgID('This is a test string.');
 
     // SUBMIT SUGGESTIONS ====
-    
+
     // Add suggestions for four strings.
     $edit = array();
     $sid1 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
@@ -268,7 +268,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('@count new suggestions added.', array('@count' => 2)));
 
     // CHECK SUGGESTIONS ====
-    
+
     $this->drupalGet('translate/suggestions/hu/'. $sid1);
     $this->assertMsgID('This is a test string. suggestion');
     $this->assertMsgID('This is a test string. suggestion-2');
@@ -291,7 +291,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw('by <em>'. $this->u_member_1->name .'</em>');
 
     // CHECK LISTINGS ====
-    
+
     $this->drupalGet('translate/languages/hu/edit', array('query' => 'limit=30'));
     $this->assertCount('<td class="source"', 25);
 
@@ -305,13 +305,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     $this->drupalGet('user/logout');
     $this->drupalLogin($this->u_moderator);
-    
+
     $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30'));
     $this->assertCount('<input type="checkbox"', 6);
     $this->assertRaw('This is a test string. suggestion');
     $this->assertRaw('Test string in context. suggestion-1');
     $this->assertRaw('Test string in context. suggestion-2');
-    
+
     $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&project='. $this->project_names[6]));
     $this->assertCount('<input type="checkbox"', 4);
     $this->assertRaw('This is a test string. suggestion');
@@ -323,12 +323,12 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw('This is a test string. suggestion');
     $this->assertNoRaw('Test string in context. suggestion-1');
     $this->assertRaw('Test string in context. suggestion-2');
-    
+
     $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&context=Test%20context'));
     $this->assertCount('<input type="checkbox"', 2);
     $this->assertRaw('Test string in context. suggestion-2');
     $this->assertRaw('Test string in context. suggestion-3');
-    
+
     $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&search=is%20a'));
     $this->assertCount('<input type="checkbox"', 2);
     $this->assertRaw('This is a test string. suggestion');
@@ -353,7 +353,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<input type="checkbox"', 3);
     $this->assertText(t('@count suggestions have been approved.', array('@count' => 2)));
     $this->assertNoRaw('This is a test string. suggestion-2');
-    
+
     // Add 2 new suggestions and 1 translation for the fun of testing.
     $edit = array();
     $edit[$sid1 .'[translation][value]'] = 'This is a test string. suggestion-3';
@@ -371,7 +371,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit[$sid3 .'[translation][value]'] = 'Test string in context. suggestion-5';
     $edit[$sid3 .'[translation][is_suggestion]'] = 1;
     $this->drupalPost('translate/languages/hu/edit', $edit, t('Save translations'), array('query' => 'limit=30'));
-    
+
     // Three strings should have translations.
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=2'));
     $this->assertMsgID('This is a test string.');
@@ -427,7 +427,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertText(t('@count suggestions have been declined.', array('@count' => 2)));
 
     // INDIVIDUAL DECLINE ====
-    
+
     $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
     $this->drupalGet('translate/suggestions/hu/'. $sid3);
     $this->assert((bool) preg_match("!". $tid .",". $sid3 .", this, '([a-z0-9]+)'!", $this->content, $found), t('Found token for decline action.'));
@@ -439,7 +439,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<input type="checkbox"', 3);
 
     // INDIVIDUAL APPROVE ====
-    
+
     $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
     $this->drupalGet('translate/suggestions/hu/'. $sid3);
     $this->assert((bool) preg_match("!". $tid .",". $sid3 .", this, '([a-z0-9]+)'!", $this->content, $found), t('Found token for approve action.'));
@@ -452,7 +452,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<input type="checkbox"', 1);
     $this->assertRaw('This is a test string. suggestion-3');
   }
-  
+
   /**
    * Look for a string appearance on the page for $raw.
    */
@@ -464,10 +464,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
       $message = t('String "@raw" not found', array('@raw' => $raw));
     }
     $found = strpos($this->content, '<span class="original hidden">'. $raw .'</span>');
-    $found = $match ? ($found !== FALSE) : ($found === FALSE); 
+    $found = $match ? ($found !== FALSE) : ($found === FALSE);
     return $this->assert($found, $message);
   }
-  
+
   /**
    * Look for a singular/plural string appearance on the page for $raw.
    */
@@ -518,15 +518,15 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertText(t('Hungarian'), t('Hungarian language added to system.'));
     $this->drupalGet('user/logout');
   }
-  
+
   /**
    * Add a project with the given API version.
    */
   private function addProject($api_version = 6, $include_js = TRUE) {
     include_once 'Archive/Tar.php';
-    
-    $version = $api_version .'.x-'. ($include_js ?  $this->version_js : $this->version_base); 
-    
+
+    $version = $api_version .'.x-'. ($include_js ?  $this->version_js : $this->version_base);
+
     // Follow the required file name format, so the package connector finds it.
     // Include api version name in file basename too (before version string),
     // to ensure that it is easier to debug what strings appear where.
@@ -540,7 +540,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     }
     $package_file = $temp_file .'-'. $version .'.tar.gz';
     $tar = new Archive_Tar($package_file, 'gz');
-    
+
     // Add the files as strings, so we can control their placement/name.
     $tar->addString('potx_test_'. $api_version .'.module', file_get_contents(drupal_get_path('module', 'potx') .'/tests/potx_test_'. $api_version .'.module'));
     // Add .info file tailored to the module filename (although this is not
@@ -551,7 +551,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
       // not pick this up, this packaging allows us to test for that exactly.
       $tar->addString('potx_test_'. $api_version .'.js', file_get_contents(drupal_get_path('module', 'potx') .'/tests/potx_test.js'));
     }
-    
+
     $this->assertTrue(file_exists($package_file), t('Test package created.'));
     $this->assertTrue(filesize($package_file) > 0, t('Test package contains data.'));
     $this->pass('Temporary file at '. $package_file);
@@ -562,8 +562,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
     $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $package_file)), t('Contents of project tarball parsed.'));
     $this->drupalGet('user/logout');
-   }
-  
+  }
+
   /**
    * Debug functionality until simpletest built-in debugging is backported.
    */

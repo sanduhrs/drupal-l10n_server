@@ -1100,7 +1100,7 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
   else {
     // No active translation exists.
     if ($suggestion) {
-      // No translation yet -> INSERT empty placeholder so we can track 
+      // No translation yet -> INSERT empty placeholder so we can track
       // suggestions. We track and exclude these by translation = '' later.
       db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, has_suggestion, is_active) VALUES (%d, '', '%s', 0, %d, 1, 1)", $sid, $langcode, time());
       db_query("INSERT INTO {l10n_community_translation} (sid, language, translation, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $langcode, $translation, $uid, time());
@@ -1203,7 +1203,7 @@ function l10n_community_projects_autocomplete($string = '') {
     $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1 ORDER BY title", $string, 0, 100);
     while ($project = db_fetch_object($result)) {
       $matches[$project->title] = check_plain($project->title);
-   }
+    }
   }
   print drupal_to_js($matches);
   exit();
@@ -1403,7 +1403,7 @@ function l10n_community_format_text($string, $sid = NULL, $delta = NULL, $rich_m
     if (isset($sid) && isset($delta)) {
       $class = ' class="string-'. $sid .'-'. $delta .'"';
     }
-    else if ($sid) {
+    elseif ($sid) {
       $class = ' class="string-'. $sid .'"';
     }
     return '<div'. $class .'><span class="string">'. $formatted .'</span><span class="original hidden">'. check_plain($string) .'</span></div>';

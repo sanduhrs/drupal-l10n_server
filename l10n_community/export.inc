@@ -145,7 +145,7 @@ function l10n_community_export_form_validate($form, &$form_state) {
   if (empty($form_state['values']['project'])) {
     form_set_error('project', t('You should choose a project, submit the form and choose a release.'));
   }
-  else if (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
+  elseif (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
     form_set_error('project', t('Invalid project chosen.'));
     $form_state['values']['project'] = '';
   }
@@ -374,7 +374,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  *   directory structure generated, the others are suitable packages for the
  *   given Drupal version.
  * @param $compact
- *   A compact export will skip outputting the comments, superfluous 
+ *   A compact export will skip outputting the comments, superfluous
  *   newlines and the list of files. TRUE or FALSE.
  *
  * @todo

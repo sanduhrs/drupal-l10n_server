@@ -218,7 +218,7 @@ function l10n_community_overview_project($uri = NULL) {
 
   $project = l10n_community_get_projects(array('uri' => $uri));
   $output .= l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'));
-  
+
   $output .= '</div><div class="right clear-block">';
 
   $block = array(
@@ -298,7 +298,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     $table,
     array('class' => 'l10n-community-overview')
   ) .'<div class="clear-block"></div>';
-  
+
   return theme('admin_block', $block);
 }
 
