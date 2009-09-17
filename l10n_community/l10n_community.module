@@ -302,6 +302,26 @@ function l10n_community_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
+  
+  // Development helpers.
+  if (module_exists('devel_generate')) {
+    $items['admin/generate/languages'] = array(
+      'title' => 'Generate languages',
+      'description' => 'Generate a given number of languages.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('l10n_server_generate_languages_form'),
+      'access arguments' => array('administer localization community'),
+      'file' => 'devel.inc',
+    );
+    $items['admin/generate/translations'] = array(
+      'title' => 'Generate translations and suggestions',
+      'description' => 'Generate a given number of translations and suggestions.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('l10n_server_generate_translations_form'),
+      'access arguments' => array('administer localization community'),
+      'file' => 'devel.inc',
+    );
+  }
 
   return $items;
 }
