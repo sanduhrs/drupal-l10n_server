@@ -110,9 +110,11 @@ function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
   $languages = language_list();
   $limit = (int) $count * 0.75;
   foreach ($languages as $language) {
-    $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-    $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-    db_query("INSERT INTO {l10n_community_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_community_string} LIMIT 0, %d", $language->language, $uid1, $uid2, time(), time(), $limit);
+    if ($language->language != 'en') {
+      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
+      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
+      db_query("INSERT INTO {l10n_community_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_community_string} LIMIT 0, %d", $language->language, $uid1, $uid2, time(), time(), $limit);
+    }
   }
   drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));
 }
