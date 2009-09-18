@@ -388,19 +388,19 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $project = l10n_community_get_projects(array('uri' => $uri));
   if ($template) {
     // We are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d';
+    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE f.pid = %d';
     $sql_args = array($project->pid);
   }
   else {
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE r.pid = %d";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE f.pid = %d";
     $sql_args = array($language->language, $project->pid);
   }
 
   if (isset($release)) {
     // Release restriction.
     $sql_args[] = $release;
-    $sql .= ' AND r.rid = %d';
+    $sql .= ' AND f.rid = %d';
     $releases = l10n_community_get_releases($uri);
     $release = $releases[$release];
   }

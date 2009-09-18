@@ -14,10 +14,10 @@
  *
  * @param $package_file
  *   Path to the package file to be extracted and parsed.
- * @param $release_rid
- *   Release ID.
+ * @param $release
+ *   Release object.
  */
-function l10n_community_parse_package($package_file, $release_rid) {
+function l10n_community_parse_package($package_file, $release) {
   if (!ini_get('safe_mode')) {
     // This could take a long time.
     @set_time_limit(0);
@@ -60,7 +60,7 @@ function l10n_community_parse_package($package_file, $release_rid) {
     else {
       // Get all source files and save strings with our callback for this release.
       $files = _potx_explore_dir($temp_path);
-      l10n_community_save_file($release_rid);
+      l10n_community_save_file(array($release->pid, $release->rid));
       $version = l10n_community_detect_major_version($package_file);
       foreach ($files as $name) {
         _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file', $version);
@@ -73,17 +73,17 @@ function l10n_community_parse_package($package_file, $release_rid) {
       $message = t('Contents of %filename have been scanned.', array('%filename' => $package_file));
 
       // Parsed this releases files.
-      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release_rid);
+      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
 
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
       // the error messages as text. We assume no other messages are added while
       // importing, so we can safely use drupal_get_message() to grab our errors.
-      db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release_rid);
+      db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release->rid);
       $messages = drupal_get_messages('error');
       if (isset($messages['error']) && is_array($messages['error'])) {
         foreach ($messages['error'] as $error_message) {
-          db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release_rid, $error_message);
+          db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
         }
       }
     }
@@ -113,28 +113,29 @@ function l10n_community_parse_package($package_file, $release_rid) {
  * with), if $revision is not given.
  *
  * This is called:
- *  - before any file parsing with ($rid, NULL)
+ *  - before any file parsing with (array($pid, $rid), NULL)
  *  - just as a new file is found by potx with ($revision, $file)
  *  - just as a new string is found by our own callback with (NULL, $file)
  *
  * @param $revision
  *   CVS revision information about $file. If not given, the recorded
- *   fid of $file will be returned.
+ *   fid of $file will be returned in an array with ($pid, $rid, $fid).
  * @param $file
- *   File location in package. If not given, $revision is taken as a
- *   release id to use to store the file list.
+ *   File location in package. If not given, $revision is taken as an array
+ *   with project and release id to use to store the file list.
  */
 function l10n_community_save_file($revision = NULL, $file = NULL) {
+  static $pid = 0;
   static $rid = 0;
   static $files = array();
 
   if (!isset($file)) {
     // We get the release number for the files.
-    $rid = $revision;
+    list($pid, $rid) = $revision;
   }
   elseif (!isset($revision)) {
     // We return data for a specific file.
-    return $files[$file];
+    return array($pid, $rid, $files[$file]);
   }
   else {
     if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_community_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
@@ -146,7 +147,7 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
     }
     else {
       // New file in this release.
-      db_query("INSERT INTO {l10n_community_file} (rid, location, revision) VALUES(%d, '%s', '%s')", $rid, $file, $revision);
+      db_query("INSERT INTO {l10n_community_file} (pid, rid, location, revision) VALUES(%d, '%s', '%s')", $pid, $rid, $file, $revision);
       $fid = db_result(db_query("SELECT fid FROM {l10n_community_file} WHERE rid = %d and location = '%s'", $rid, $file));
     }
     $files[$file] = $fid;
@@ -188,6 +189,9 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
 
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$file])) {
+    // Explode files array to pid, rid and fid.
+    list($pid, $rid, $fid) = $files[$file];
+    
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
@@ -196,9 +200,9 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
       db_query("INSERT INTO {l10n_community_string} (value, context) VALUES ('%s', '%s')", $value, $context);
       $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s' AND context = '%s'", $value, $context));
     }
-    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $files[$file], $sid, $line, $string_type))) {
+    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
       // Location does not exist with this string.
-      db_query("INSERT INTO {l10n_community_line} (fid, sid, lineno, type) VALUES (%d, %d, %d, %d)", $files[$file], $sid, $line, $string_type);
+      db_query("INSERT INTO {l10n_community_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type);
     }
   }
 }

@@ -140,7 +140,7 @@ function l10n_drupalorg_sync_files($release) {
 
   // Extract and parse the local file and remove the tarball.
   else {
-    $return = l10n_community_parse_package($file, $release->rid);
+    $return = l10n_community_parse_package($file, $release);
     unlink($file);
   }
 

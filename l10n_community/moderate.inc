@@ -162,16 +162,14 @@ function l10n_community_get_suggestions($langcode, $filters) {
   $project = $filters['project'];
   if ($release || $project) {
     $join[] = "INNER JOIN {l10n_community_line} l ON ts.sid = l.sid";
-    $join[] = "INNER JOIN {l10n_community_file} f ON f.fid = l.fid";    
     // If we have a release we ignore the project
     if ($release) {
       // Release restriction.
       $where_args[] = $release;
-      $where[] = 'f.rid = %d';
+      $where[] = 'l.rid = %d';
     }  
     elseif ($project) {
-      $join[] = "INNER JOIN {l10n_community_release} r ON f.rid = r.rid";
-      $where[] = "r.pid = %d";
+      $where[] = "l.pid = %d";
       $where_args[] = $project->pid;
     }
   }
@@ -207,9 +205,9 @@ function l10n_community_get_suggestions($langcode, $filters) {
 
   // Build the queries
   $sql_args = array_merge($join_args, $where_args);
-  $sql_where = implode(' ', $join) . ' WHERE ' . implode(' AND ', $where);
-  $sql = $select . ' ' . $sql_where;
-  $sql_count = $select_count . ' ' . $sql_where;
+  $sql_where = implode(' ', $join) .' WHERE '. implode(' AND ', $where);
+  $sql = $select .' '. $sql_where;
+  $sql_count = $select_count .' '. $sql_where;
 
   $strings = pager_query($sql, $filters['limit'], 0, $sql_count, $sql_args);
   $result = array();

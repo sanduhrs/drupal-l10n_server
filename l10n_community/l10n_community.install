@@ -165,6 +165,12 @@ function l10n_community_schema() {
         'not null' => TRUE,
         'disp-width' => '11'
       ),
+      'pid' => array(
+        'description' => 'Reference to the {l10n_community_project}.pid of the parent project.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
       'rid' => array(
         'description' => 'Reference to the {l10n_community_release}.rid of the parent release.',
         'type' => 'int',
@@ -193,6 +199,18 @@ function l10n_community_schema() {
   $schema['l10n_community_line'] = array(
     'description' => 'Information on occurances of strings on lines of specific files.',
     'fields' => array(
+      'pid' => array(
+        'description' => 'Reference to the {l10n_community_project}.pid of the parent project.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
+      'rid' => array(
+        'description' => 'Reference to the {l10n_community_release}.rid of the parent release.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'disp-width' => '11'
+      ),
       'fid' => array(
         'description' => 'Reference to the {l10n_community_file}.fid of the parent file.',
         'type' => 'int',
@@ -221,7 +239,9 @@ function l10n_community_schema() {
     ),
     'indexes' => array(
       'fid' => array('fid'),
-      'sid' => array('sid')
+      'sid' => array('sid'),
+      'pid' => array('pid'),
+      'rid' => array('rid'),
     ),
   );
 
@@ -534,5 +554,38 @@ function l10n_community_update_6004() {
 function l10n_community_update_6005() {
   $ret = array();
   db_add_field($ret, 'l10n_community_string', 'context', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
+  return $ret;
+}
+
+/**
+ * Denormalize data in order to improve performance: Push project ID to file table.
+ */
+function l10n_community_update_6006() {
+  $ret = array();
+
+  db_add_field($ret, 'l10n_community_file', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
+
+  $q = db_query("SELECT rid, pid FROM {l10n_community_release}");
+  while ($release = db_fetch_object($q)) {
+    db_query("UPDATE {l10n_community_file} SET pid = %d WHERE rid = %d", $release->pid, $release->rid);
+  }
+  return $ret;
+}
+
+/**
+ * Denormalize data in order to improve performance: Push project and release ID to line table.
+ */
+function l10n_community_update_6007() {
+  $ret = array();
+
+  db_add_field($ret, 'l10n_community_line', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
+  db_add_field($ret, 'l10n_community_line', 'rid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
+  db_add_index($ret, 'l10n_community_line', 'pid', array('pid'));
+  db_add_index($ret, 'l10n_community_line', 'rid', array('rid'));
+
+  $q = db_query("SELECT fid, rid, pid FROM {l10n_community_file}");
+  while ($row = db_fetch_object($q)) {
+    db_query("UPDATE {l10n_community_line} SET pid = %d, rid = %d WHERE fid = %d", $row->pid, $row->rid, $row->fid);
+  }
   return $ret;
 }

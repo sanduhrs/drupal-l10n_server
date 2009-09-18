@@ -44,7 +44,7 @@ function l10n_community_explore_languages() {
         array(
           array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
         ),
-        isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, $string_counts[$langcode][0], $string_counts[$langcode][1]) : theme('l10n_community_progress_columns', $num_source, 0, 0)
+        isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, @$string_counts[$langcode]['translations'], @$string_counts[$langcode]['suggestions']) : theme('l10n_community_progress_columns', $num_source, 0, 0)
       );
     }
   }
@@ -73,14 +73,13 @@ function l10n_community_explore_projects() {
   $table = array();
   $string_counts = l10n_community_get_string_count('projects');
   foreach ($projects as $project) {
-    list($title, $uri, $sum, $translated, $suggested) = isset($string_counts[$project->pid]) ? $string_counts[$project->pid] : array($project->title, $project->uri, 0, 0, 0);
     $table[] = array_merge(
       array(
-        array('data' => l($title, 'translate/projects/'. $uri), 'class' => 'rowhead'),
+        array('data' => l($project->title, 'translate/projects/'. $project->uri), 'class' => 'rowhead'),
       ),
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
-      theme('l10n_community_progress_columns', ($sum * $language_count), $translated, $suggested)
+      theme('l10n_community_progress_columns', (@$string_counts[$project->pid]['count'] * $language_count), @$string_counts[$project->pid]['translations'], @$string_counts[$project->pid]['suggestions'])
     );
   }
   $output .= theme(
@@ -286,8 +285,8 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
         theme(
           'l10n_community_progress_columns',
           $num_source,
-          !empty($string_counts[$langcode][0]) ? $string_counts[$langcode][0] : 0,
-          !empty($string_counts[$langcode][1]) ? $string_counts[$langcode][1] : 0
+          @$string_counts[$langcode]['translations'],
+          @$string_counts[$langcode]['suggestions']
         )
       );
     }
@@ -451,56 +450,82 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'project':
       // Return a count of all strings in this project, id required.
-      return db_result(db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE r.pid = %d', $id));
+      return db_result(db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_community_line} l INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE l.pid = %d', $id));
 
     case 'languages':
-      // Summeries based on language codes, restricted to a specific project if $id is set.
-      $sums = array();
-      if (!isset($id)) {
-        // Simple count query if we are not filtering by project.
-        $count_sql = "SELECT COUNT(DISTINCT sid) AS translation_count, language, is_suggestion FROM {l10n_community_translation} WHERE is_active = 1 AND translation != '' GROUP BY language, is_suggestion";
+      if ($stats = cache_get('l10n:count:languages:'. $id, 'cache')) {
+        return $stats->data;
       }
       else {
-        // Rather complex join if we also need to factor the project in.
-        $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE r.pid = %d AND t.is_active = 1 AND t.translation != '' GROUP BY t.language, t.is_suggestion";
-      }
-      $result = db_query($count_sql, $id);
-      while ($row = db_fetch_object($result)) {
-        if (!isset($sums[$row->language])) {
-          // Set default zeroes for summaries.
-          $sums[$row->language] = array(0, 0);
+        // Summeries based on language codes, restricted to a specific project if $id is set.
+        $sums = array();
+        if (!isset($id)) {
+          // Simple count query if we are not filtering by project.
+          $count1_sql = "SELECT COUNT(sid) AS translation_count, language FROM {l10n_community_translation} WHERE is_active = 1 AND translation != '' AND is_suggestion = 0 GROUP BY language";
+          $count2_sql = "SELECT COUNT(sid) AS translation_count, language FROM {l10n_community_translation} WHERE has_suggestion = 1 GROUP BY language";
+          $count_args = array();
         }
-        // Fill in the 0 or 1 element based on whether we have a result
-        // for suggestions or translations.
-        $sums[$row->language][(int) $row->is_suggestion] = $row->translation_count;
+        else {
+          // More complex joins if we also need to factor the project in.
+          $count1_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE l.pid = %d AND t.is_active = 1 AND t.translation != '' AND t.is_suggestion = 0 GROUP BY t.language";
+          $count2_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE l.pid = %d AND t.has_suggestion = 1 GROUP BY t.language";
+          $count_args = array($id);
+        }
+        $result = db_query($count1_sql, $count_args);
+        while ($row = db_fetch_object($result)) {
+          $sums[$row->language]['translations'] = $row->translation_count;
+        }
+        $result = db_query($count2_sql, $count_args);
+        while ($row = db_fetch_object($result)) {
+          $sums[$row->language]['suggestions'] = $row->translation_count;
+        }
+        cache_set('l10n:count:languages:'. $id, $sums, 'cache', CACHE_PERMANENT);
+        return $sums;
       }
-      return $sums;
       break;
 
     case 'projects':
       // Get summaries by projects. Restricted to a specific language, if $id is set.
 
-      // First get the count of strings available for translation.
-      $sums = $count_args = array();
-      $result = db_query("SELECT COUNT(DISTINCT s.sid) AS string_count, p.pid, p.title, p.uri FROM {l10n_community_project} p INNER JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid GROUP BY p.pid;");
-      while ($row = db_fetch_object($result)) {
-        // Initialize remaining fields to zeroes too.
-        $sums[$row->pid] = array($row->title, $row->uri, $row->string_count, 0, 0);
+      // General community statistics.
+      if ($stats = cache_get('l10n:count:projects:'. $id, 'cache')) {
+        return $stats->data;
       }
-      // Get the count of distinct strings translated and suggestions per project.
-      $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, r.pid, t.is_suggestion FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.is_active = 1 AND t.translation != '' ";
-      if (isset($id)) {
-        // Limit to language if desired.
-        $count_sql .= "AND t.language = '%s' ";
-        $count_args[] = $id;
+      else {
+        // First get the count of strings available for translation.
+        $sums = $count_args = array();
+        $result = db_query("SELECT COUNT(DISTINCT s.sid) AS string_count, l.pid FROM {l10n_community_line} l INNER JOIN {l10n_community_string} s ON l.sid = s.sid GROUP BY l.pid");
+        while ($row = db_fetch_object($result)) {
+          $sums[$row->pid] = array('count' => $row->string_count);
+        }
+        // Get the count of distinct strings translated per project.
+        $count_sql = "SELECT COUNT(DISTINCT t.tid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE t.is_active = 1 AND t.translation != '' AND t.is_suggestion = 0 ";
+        if (isset($id)) {
+          // Limit to language if desired.
+          $count_sql .= "AND t.language = '%s' ";
+          $count_args[] = $id;
+        }
+        $count_sql .= 'GROUP BY l.pid';
+        $result = db_query($count_sql, $count_args);
+        while ($row = db_fetch_object($result)) {
+          $sums[$row->pid]['translations'] = $row->translation_count;
+        }
+        // Get the count of distinct strings having suggestions per project.
+        $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE t.has_suggestion = 1 ";
+        if (isset($id)) {
+          // Limit to language if desired.
+          $count_sql .= "AND t.language = '%s' ";
+          $count_args[] = $id;
+        }
+        $count_sql .= 'GROUP BY l.pid';
+        $result = db_query($count_sql, $count_args);
+        while ($row = db_fetch_object($result)) {
+          $sums[$row->pid]['translations'] = $row->translation_count;
+        }
+        cache_set('l10n:count:projects:'. $id, $sums, 'cache', CACHE_PERMANENT);
+        return $sums;
       }
-      $count_sql .= 'GROUP BY r.pid, t.is_suggestion ';
-      $result = db_query($count_sql, $count_args);
-      while ($row = db_fetch_object($result)) {
-        // Fill up the zero spots we added above with real data.
-        $sums[$row->pid][((int) $row->is_suggestion) + 3] = $row->translation_count;
-      }
-      return $sums;
+      break;
 
     case 'top-people':
       // Get summaries of people having most active translations per language.

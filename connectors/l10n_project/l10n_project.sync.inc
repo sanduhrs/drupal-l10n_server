@@ -220,7 +220,7 @@ function l10n_project_sync() {
 }
 
 /**
- * Pick the configured number of releases, download and parse.
+ * Download and parse the picked release.
  */
 function l10n_project_pick_and_parse($release) {
   // This could take a long time.
@@ -254,7 +254,7 @@ function l10n_project_pick_and_parse($release) {
 
   // Extract and parse the local file and remove the tarball.
   else {
-    $return = l10n_project_parse_package($file, $release->rid);
+    $return = l10n_project_parse_package($file, $release);
     // Clear stats cache, so new data shows up.
     cache_clear_all('l10n:stats', 'cache');
   }
@@ -271,10 +271,10 @@ function l10n_project_pick_and_parse($release) {
  *
  * @param $package_file
  *   Path to the package file to be extracted and parsed.
- * @param $release_rid
- *   Release ID.
+ * @param $release
+ *   Release object.
  */
-function l10n_project_parse_package($package_file, $release_rid) {
+function l10n_project_parse_package($package_file, $release) {
   $error = $message = '';
 
   // Potx module is already a dependency.
@@ -310,7 +310,7 @@ function l10n_project_parse_package($package_file, $release_rid) {
 
         // Get all source files and save strings with our callback for this release.
         $files = _potx_explore_dir($temp_path);
-        l10n_community_save_file($release_rid);
+        l10n_community_save_file(array($release->pid, $release->rid));
         $version = l10n_community_detect_major_version($package_file);
         foreach ($files as $name) {
           _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file', $version);
@@ -326,17 +326,17 @@ function l10n_project_parse_package($package_file, $release_rid) {
         $message = 'Contents of %filename have been scanned.';
 
         // Parsed this releases files.
-        db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release_rid);
+        db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
 
         // Update error list for this release. Although the errors are related to
         // files, we are not interested in the fine details, the file names are in
         // the error messages as text. We assume no other messages are added while
         // importing, so we can safely use drupal_get_message() to grab our errors.
-        db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release_rid);
+        db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release->rid);
         $messages = drupal_get_messages('error');
         if (isset($messages['error']) && is_array($messages['error'])) {
           foreach ($messages['error'] as $error_message) {
-            db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release_rid, $error_message);
+            db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
           }
         }
       }

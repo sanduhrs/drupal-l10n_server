@@ -83,7 +83,7 @@ function l10n_community_welcome_page() {
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 
-  if (($highlight_project = variable_get('l10n_community_highlighted_project', '')) && ($project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", array($highlight_project))))) {
+  if ($project = l10n_community_get_highlighted_project()) {
     // Display progress status of the highlighted project.
     include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
     $output .= l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project'));

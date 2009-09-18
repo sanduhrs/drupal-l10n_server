@@ -623,47 +623,49 @@ function theme_l10n_community_in_context($string) {
  *   An array of string records from database.
  */
 function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
-
+  $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
-  $sql_args = array();
 
-  if (!isset($filters['project'])) {
-    // No project based filtering.
-    $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE";
-    $sql_args = array($langcode);
-  }
-  else {
-    // Project based filtering and language based filtering built in.
-    $sql = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
-    $sql_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_release} r INNER JOIN {l10n_community_file} f ON r.rid = f.rid INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0 WHERE r.pid = %d";
-    $sql_args = array($langcode, $filters['project']->pid);
-  }
+  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s";
+  $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s";
+  $join[] = "LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0";
+  $join_args[] = $langcode;
 
   // Add submitted by condition
   if (!empty($filters['author'])) {
-    $search_sql = " AND t.uid_entered = %d";
-    $sql .= $search_sql;
-    $sql_count .= $search_sql;
-    $sql_args[] = $filters['author']->uid;
+    $where[] = "t.uid_entered = %d";
+    $where_args[] = $filters['author']->uid;
+  }
+
+  // Release restriction.
+  $release = empty($filters['release']) || $filters['release'] === 'all' ? NULL : $filters['release'];
+  $project = $filters['project'];
+  if ($release || $project) {
+    $join[] = "INNER JOIN {l10n_community_line} l ON s.sid = l.sid";
+    // If we have a release we ignore the project
+    if ($release) {
+      // Release restriction.
+      $where_args[] = $release;
+      $where[] = 'l.rid = %d';
+    }  
+    elseif ($project) {
+      $where[] = "l.pid = %d";
+      $where_args[] = $project->pid;
+    }
+  }
+
+  // Context based filtering.
+  if (isset($filters['context']) && $filters['context'] != 'all') {
+    // We use 'none' for no context, so '' can be the defaut (for all contexts).
+    $where_args[] = $filters['context'] == 'none' ? '' : $filters['context'];
+    $where[] = "s.context = '%s'";
   }
 
   if (!empty($filters['search'])) {
     // Search in the source or target strings.
-    $sql_args[] = $filters['search'];
-    $sql_args[] = $filters['search'];
-    $search_sql = " AND (s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
-    $sql .= $search_sql;
-    $sql_count .= $search_sql;
-  }
-
-  if (isset($filters['release']) && $filters['release'] != 'all') {
-    // Release restriction.
-    $sql_args[] = $filters['release'];
-    $sql_args[] = $filters['release'];
-    $release_sql = ' AND r.rid = %d';
-    $sql .= $release_sql;
-    $sql_count .= $release_sql;
+    $where_args[] = $filters['search'];
+    $where_args[] = $filters['search'];
+    $where[] = "(s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
   }
 
   // Restriction based on string status by translation / suggestions.
@@ -674,38 +676,27 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     // records in the result set in this case). The translation field is empty or
     // NULL in this case, as we are not allowing NULL there and only saving an empty
     // translation if there are suggestions but no translation yet.
-    $status_sql .= " AND (t.translation is NULL OR t.translation = '')";
+    $where[] = "(t.translation is NULL OR t.translation = '')";
   } 
   elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
-    $status_sql .= " AND t.translation != ''";
+    $where[] = "t.translation != ''";
   }
   if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
     // Note that we are not searching in the suggestions themselfs, only
     // the source and active translation values. The user interface underlines
     // that we are  looking for strings which have suggestions, not the
     // suggestions themselfs.
-    $status_sql .= " AND t.has_suggestion = 1";
+    $where[] = "t.has_suggestion = 1";
   }
   elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
-    $status_sql .= " AND ((t.has_suggestion IS NULL) OR (t.has_suggestion = 0))";
-  }
-  $sql .= $status_sql;
-  $sql_count .= $status_sql;
-
-  // Context based filtering.
-  if (isset($filters['context']) && $filters['context'] != 'all') {
-    // We use 'none' for no context, so '' can be the defaut (for all contexts).
-    $sql_args[] = $filters['context'] == 'none' ? '' : $filters['context'];
-    $context_sql = " AND s.context = '%s'";
-    $sql .= $context_sql;
-    $sql_count .= $context_sql;
+    $where[] = "((t.has_suggestion IS NULL) OR (t.has_suggestion = 0))";
   }
 
-  // Morph "WHERE AND" to "WHERE" and remove closing "WHERE". The first appears
-  // if there was no project filtering but further filtering was made. The
-  // second appears if only language filtering was used.
-  $sql = str_replace('WHERE AND', 'WHERE', preg_replace('!(WHERE$)!', '', $sql));
-  $sql_count = str_replace('WHERE AND', 'WHERE', preg_replace('!(WHERE$)!', '', $sql_count));
+  // Build the queries
+  $sql_args = array_merge($join_args, $where_args);
+  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
+  $sql = $select .' '. $sql_where;
+  $sql_count = $select_count .' '. $sql_where;
 
   // We either need a pager or a full result.
   if (isset($pager)) {

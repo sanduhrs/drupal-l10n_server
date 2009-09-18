@@ -349,15 +349,10 @@ function l10n_community_delete_project($pid, $skip_strings = FALSE) {
     $pid
   );
 
-  // Cascade delete all related entries in project, release, file and line.
-  db_query(
-    'DELETE p, r, f, l FROM {l10n_community_project} p
-     INNER JOIN {l10n_community_release} r ON p.pid = r.pid
-     INNER JOIN {l10n_community_file} f ON r.rid = f.rid
-     INNER JOIN {l10n_community_line} l ON f.fid = l.fid
-     WHERE p.pid = %d',
-    $pid
-  );
+  db_query('DELETE l FROM {l10n_community_line} l WHERE l.pid = %d', $pid);
+  db_query('DELETE f FROM {l10n_community_file} f WHERE f.pid = %d', $pid);
+  db_query('DELETE r FROM {l10n_community_release} r WHERE r.pid = %d', $pid);
+  db_query('DELETE p FROM {l10n_community_project} p WHERE p.pid = %d', $pid);
 
   if (!$skip_strings) {
     l10n_community_delete_orphans();

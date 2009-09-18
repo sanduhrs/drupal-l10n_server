@@ -1490,7 +1490,40 @@ function l10n_community_get_stats($langcode = NULL) {
 function l10n_community_cron() {
   $lastrun = variable_get('l10n_cron_stats', 1);
   if (($_SERVER['REQUEST_TIME'] - $lastrun) > 3600) {
-    cache_clear_all('l10n:stats', 'cache', TRUE);
+    l10n_community_cache_clear_all();
+    l10n_communiy_rebuild_stats();
     variable_set('l10n_cron_stats', $_SERVER['REQUEST_TIME']);
   }
+}
+
+/**
+ * Clear all l10n_community caches.
+ */
+function l10n_community_cache_clear_all() {
+  cache_clear_all('l10n:stats', 'cache', TRUE);
+  cache_clear_all('l10n:count', 'cache', TRUE);
+}
+
+/**
+ * Rebuild the most important stats for the site.
+ */
+function l10n_communiy_rebuild_stats() {
+  l10n_community_get_stats();
+  l10n_community_get_string_count('languages');
+  l10n_community_get_string_count('projects');
+  if ($project = l10n_community_get_highlighted_project()) {
+    l10n_community_get_string_count('languages', $project->pid);
+  }
+}
+
+/**
+ * Load and return the highlighted project if set and found.
+ */
+function l10n_community_get_highlighted_project() {
+  if ($highlight_project = variable_get('l10n_community_highlighted_project', '')) {
+    if ($project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $highlight_project))) {
+      return $project;
+    }
+  }
+  return NULL;
 }
