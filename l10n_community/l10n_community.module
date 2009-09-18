@@ -1509,6 +1509,7 @@ function l10n_community_cache_clear_all() {
  */
 function l10n_communiy_rebuild_stats() {
   l10n_community_get_stats();
+  include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
   l10n_community_get_string_count('languages');
   l10n_community_get_string_count('projects');
   if ($project = l10n_community_get_highlighted_project()) {
