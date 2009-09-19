@@ -147,7 +147,7 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
     }
     else {
       // New file in this release.
-      db_query("INSERT INTO {l10n_community_file} (pid, rid, location, revision) VALUES(%d, '%s', '%s')", $pid, $rid, $file, $revision);
+      db_query("INSERT INTO {l10n_community_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision);
       $fid = db_result(db_query("SELECT fid FROM {l10n_community_file} WHERE rid = %d and location = '%s'", $rid, $file));
     }
     $files[$file] = $fid;
