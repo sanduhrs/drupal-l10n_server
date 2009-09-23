@@ -462,13 +462,13 @@ function l10n_community_get_string_count($type, $id = NULL) {
         if (!isset($id)) {
           // Simple count query if we are not filtering by project.
           $count1_sql = "SELECT COUNT(sid) AS translation_count, language FROM {l10n_community_translation} WHERE is_active = 1 AND translation != '' AND is_suggestion = 0 GROUP BY language";
-          $count2_sql = "SELECT COUNT(sid) AS translation_count, language FROM {l10n_community_translation} WHERE has_suggestion = 1 GROUP BY language";
+          $count2_sql = "SELECT COUNT(sid) AS translation_count, language FROM {l10n_community_translation} WHERE has_suggestion = 1 AND is_active = 1 GROUP BY language";
           $count_args = array();
         }
         else {
           // More complex joins if we also need to factor the project in.
           $count1_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE l.pid = %d AND t.is_active = 1 AND t.translation != '' AND t.is_suggestion = 0 GROUP BY t.language";
-          $count2_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE l.pid = %d AND t.has_suggestion = 1 GROUP BY t.language";
+          $count2_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, t.language FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE l.pid = %d AND t.has_suggestion = 1 AND is_active = 1 GROUP BY t.language";
           $count_args = array($id);
         }
         $result = db_query($count1_sql, $count_args);
@@ -511,7 +511,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
           $sums[$row->pid]['translations'] = $row->translation_count;
         }
         // Get the count of distinct strings having suggestions per project.
-        $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE t.has_suggestion = 1 ";
+        $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_translation} t ON l.sid = t.sid WHERE t.has_suggestion = 1 AND is_active = 1 ";
         if (isset($id)) {
           // Limit to language if desired.
           $count_sql .= "AND t.language = '%s' ";
