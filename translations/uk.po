@@ -1,0 +1,1236 @@
+# Ukrainian translation of Localization server (all releases)
+# Copyright (c) 2009 by the Ukrainian translation team
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Localization server (all releases)\n"
+"POT-Creation-Date: 2009-09-28 11:55+0000\n"
+"PO-Revision-Date: 2009-09-28 17:59+0200\n"
+"Language-Team: Ukrainian <podarok@ua.fm>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=((((n%10)==1)&&((n%100)!=11))?(0):(((((n%10)>=2)&&((n%10)<=4))&&(((n%100)<10)||((n%100)>=20)))?(1):2));\n"
+"Last-Translator: podarok <podarok@ua.fm>\n"
+"X-Poedit-Language: Ukrainian\n"
+"X-Poedit-Country: UKRAINE\n"
+"X-Poedit-SourceCharset: utf-8\n"
+
+msgid "!icon Suggestion approved."
+msgstr "!icon Пропозиція затверджена"
+
+msgid "!name - 1 translation"
+msgid_plural "!name - @count translations"
+msgstr[0] "!name - @count переклад"
+msgstr[1] "!name - @count переклада"
+msgstr[2] "!name - @count перекладів"
+
+msgid "!newline_image represents a line break. Remember to include a line break in the same position in the translation. Beginning and ending line breaks are saved properly, even if you forget to include them."
+msgstr ""
+
+msgid "!percent translated"
+msgstr "!percent перекладено"
+
+msgid "!percent untranslated"
+msgstr "!percent без перекладу"
+
+msgid "1 approved translation"
+msgid_plural "@count approved translations"
+msgstr[0] "@count затверджений переклад"
+msgstr[1] "@count затверджених переклади"
+msgstr[2] "@count затверджених перекладів"
+
+msgid "1 contributor"
+msgid_plural "@count contributors"
+msgstr[0] "@count учасник"
+msgstr[1] "@count учасника"
+msgstr[2] "@count учасників"
+
+msgid "1 duplicate translation not saved"
+msgid_plural "@count duplicate translations not saved"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 file scanned"
+msgid_plural "@count files scanned"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 in queue"
+msgid_plural "@count in queue"
+msgstr[0] "@count в черзі"
+msgstr[1] "@count в черзі"
+msgstr[2] "@count в черзі"
+
+msgid "1 marker error found"
+msgid_plural "@count marker errors found"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 new suggestion added"
+msgid_plural "@count new suggestions added"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 new translation added"
+msgid_plural "@count new translations added"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 project managed"
+msgid_plural "@count projects managed"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 release in total"
+msgid_plural "@count releases in total"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 release known"
+msgid_plural "@count releases known"
+msgstr[0] "@count відома версія"
+msgstr[1] "@count відомі версії"
+msgstr[2] "@count відомих версій"
+
+msgid "1 release parsed"
+msgid_plural "@count releases parsed"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 source string in total"
+msgid_plural "@count source strings in total"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 string to translate"
+msgid_plural "@count strings to translate"
+msgstr[0] "@count рядок для перекладу"
+msgstr[1] "@count рядки для перекладу"
+msgstr[2] "@count рядків для перекладу"
+
+msgid "1 suggestion awaiting approval"
+msgid_plural "@count suggestions awaiting approval"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 translation group"
+msgid_plural "@count translation groups"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 translation recorded"
+msgid_plural "@count translations recorded"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 translation unchanged"
+msgid_plural "@count translations unchanged"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "1 translation updated"
+msgid_plural "@count translations updated"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "<a href=\"@group\">Subscribe to this group</a> if you would like to help out."
+msgstr ""
+
+msgid "<a href=\"@register\">Create an account or log in</a> and <a href=\"@group\">subscribe to this group</a> if you would like to help out."
+msgstr ""
+
+msgid "<strong>@formula</strong> used by %languages"
+msgstr ""
+
+msgid "<strong>Translated by:</strong><br /> %username at %date"
+msgstr ""
+
+msgid "@language overview"
+msgstr "статус @language"
+
+msgid "@language translations"
+msgstr ""
+
+msgid "@project project errors"
+msgstr ""
+
+msgid "@project project translations"
+msgstr ""
+
+msgid "@project summary"
+msgstr "звіт для @project"
+
+msgid "@release was already parsed, no need to scan again."
+msgstr ""
+
+msgid "A Gettext Portable Object (.po) file to upload."
+msgstr ""
+
+msgid "A community interface for string translation"
+msgstr ""
+
+msgid "A language community around Drupal project translations."
+msgstr ""
+
+msgid "About this interface"
+msgstr "Про цей інтерфейс"
+
+msgid "Add a new suggestion"
+msgstr "Додати нову пропозицію"
+
+msgid "Add a new translation"
+msgstr "Додати новий переклад"
+
+msgid "All"
+msgstr "Усе"
+
+msgid "All available languages have groups now. You cannot create another group until a new language is added on the administration interface."
+msgstr ""
+
+msgid "All in one file"
+msgstr "Все одним файлом"
+
+msgid "Alternatively you can <a href=\"@explore\">explore languages</a>."
+msgstr ""
+
+msgid "Alternatively you can <a href=\"@explore\">explore projects</a>."
+msgstr ""
+
+msgid "An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector."
+msgstr ""
+
+msgid "And/or pick a project"
+msgstr ""
+
+msgid "Anonymous"
+msgstr "Гість"
+
+msgid "Approve"
+msgstr "Погодити"
+
+msgid "Approve suggestion"
+msgstr "Прийняття пропозиції"
+
+msgid "Approve suggestion."
+msgstr "Прийняти пропозицію"
+
+msgid "Archive/Tar.php available"
+msgstr "Archive/Tar.php доступно"
+
+msgid "Are you sure you would like to clean up @count orphan?"
+msgid_plural "Are you sure you would like to clean up @count orphans?"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "Are you sure you would like to delete project %project from the Localization Server?"
+msgstr ""
+
+msgid "Are you sure you would like to delete project %project from this Localization Server?"
+msgstr ""
+
+msgid "Are you sure you would like to start over with the project %project from the Localization Server?"
+msgstr ""
+
+msgid "Are you sure you would like to start over with the project %project on this Localization Server?"
+msgstr ""
+
+msgid "As a fully empowered user, you can suggest translations as well as approve translations suggested by others. Export/import of Gettext translation files is also possible."
+msgstr ""
+
+msgid "As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible."
+msgstr ""
+
+msgid "Assign drupal.org home links to packages"
+msgstr "Назначати пакетам адреси проектів з drupal.org"
+
+msgid "Assigns http://drupal.org/project/<em>project</em> type home links to projects. These home links are used to guide users to the home pages of the projects. The setting only affects newly parsed packages."
+msgstr ""
+
+msgid "Attribute to %name"
+msgstr "Атрибут до %name"
+
+msgid "Batch parse releases"
+msgstr "Масова обробка версій"
+
+msgid "Because all project translations are shared, an imported file might provide translations for strings used in any project."
+msgstr ""
+
+msgid "Bookmarked filters"
+msgstr "Збережені фільтри"
+
+msgid "Check if the translations you import need discussion. If checked, all translations in the imported file will be saved as suggestions."
+msgstr ""
+
+msgid "Choose"
+msgstr "Вибір"
+
+msgid "Choose a language to dive in to suggest translations, approve suggestions, import and export."
+msgstr ""
+
+msgid "Choose a project"
+msgstr "Вибір проекту"
+
+msgid "Choose a project to explore."
+msgstr "Вибір проекту для огляду"
+
+msgid "Choose project"
+msgstr "Вибір проекту"
+
+msgid "Clean up"
+msgstr "Очистка"
+
+msgid "Clear"
+msgstr "Очистити"
+
+msgid "Community for Drupal translations"
+msgstr "Спільнота для перекладачів Друпал"
+
+msgid "Compression functionality"
+msgstr "Можливість архівування"
+
+msgid "Configuration options for the localization server."
+msgstr ""
+
+msgid "Configure"
+msgstr "Управління"
+
+msgid "Configure the drupal.org connector."
+msgstr "Налаштування зв'язку з drupal.org"
+
+msgid "Configure the project module integration and parsing."
+msgstr ""
+
+msgid "Configure where does the server look for files locally."
+msgstr ""
+
+msgid "Connector for drupal.org"
+msgstr "Зв'язок із drupal.org"
+
+msgid "Contains"
+msgstr "Містить"
+
+msgid "Contents of %filename have been scanned."
+msgstr ""
+
+msgid "Context"
+msgstr ""
+
+msgid "Contribute"
+msgstr "Участь"
+
+msgid "Control the display of the translation interface."
+msgstr ""
+
+msgid "Controlled. Members can only suggest translations, group administrators can approve them."
+msgstr ""
+
+msgid "Copy and paste this API key into your user account on the client host."
+msgstr ""
+
+msgid "Decline"
+msgstr "Відміна"
+
+msgid "Decline suggestion"
+msgstr "Відміна пропозиції"
+
+msgid "Decline suggestion."
+msgstr "Відкинути пропозицію"
+
+msgid "Delete"
+msgstr "Стерти"
+
+msgid "Delete project"
+msgstr "Стерти проект"
+
+msgid "Deleting projects will not be available until you <a href=\"@cleanup\">clean up the database</a> or rescan projects (within connectors you use) if you have started over with some of them."
+msgstr ""
+
+msgid "Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for import to Drupal or offline work."
+msgstr ""
+
+msgid "Disabled"
+msgstr "Вимкнено"
+
+msgid "Documentation for translators on drupal.org."
+msgstr ""
+
+msgid "Documentation, discussion spaces"
+msgstr ""
+
+msgid "Done."
+msgstr "Зроблено"
+
+msgid "Download link"
+msgstr "Адреса завантаження"
+
+msgid "Drupal 5 package format for autolocale module"
+msgstr ""
+
+msgid "Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming in packages. Temporarily, as long as you need to use CVS to distribute translations the flat package helps you generate a package for committing to Drupal.org. Additionally, for testing, spell checking and smaller modules, you can also export in one file without packaging as well. It is not advised to use big .po files for importing in Drupal though, as it might lead to incomplete imports. Use packages for usage with Drupal importing."
+msgstr ""
+
+msgid "Drupal 6 package format"
+msgstr "Формат пакету Друпал-6"
+
+msgid "Edit"
+msgstr "Редагувати"
+
+msgid "Enable project"
+msgstr "Увімкнути проект"
+
+msgid "Enabled"
+msgstr "Ввімкнений"
+
+msgid "Error on untaring %filename file."
+msgstr ""
+
+msgid "Error when parsing plural formula for number of forms: %formula. Invalid formula given."
+msgstr ""
+
+msgid "Error when parsing plural formula for use of forms: %formula. Invalid formula given."
+msgstr ""
+
+msgid "Error when parsing plural formula: %formula. Invalid formula given."
+msgstr ""
+
+msgid "Explore languages"
+msgstr "Огляд мов"
+
+msgid "Explore projects"
+msgstr "Огляд проектів"
+
+msgid "Export"
+msgstr "Експортувати"
+
+msgid "Export @language translations"
+msgstr "Вивантаження перекладів @language"
+
+msgid "Export @project translation templates"
+msgstr "Вивантаження шаблонів @language"
+
+msgid "Export template"
+msgstr "Експортувати шаблон"
+
+msgid "Export, translate, review"
+msgstr "Вивантаження, переклад, огляд"
+
+msgid "Exporting with all releases is useful for translators, but is not optimal to use for end users because unused data would clutter up their database, when files get imported. Export for all releases if you would like to provide a complete translation, and you work with a desktop tool."
+msgstr ""
+
+msgid "Extracts translateable strings from local package files."
+msgstr ""
+
+msgid "File %file already exists."
+msgstr "Файл %file вже наявний."
+
+msgid "File date"
+msgstr "Дата файлу"
+
+msgid "File name should have project codename and version number included separated with hyphen, such as drupal-5.2.tar.gz."
+msgstr ""
+
+msgid "File to import not found."
+msgstr "Файл не знайдено."
+
+msgid "Filename %file contains malicious characters."
+msgstr ""
+
+msgid "Filter"
+msgstr "Фільтрація"
+
+msgid "First release is being selected"
+msgstr ""
+
+msgid "Flat package for CVS commit"
+msgstr "Звичайний пакет для CVS"
+
+msgid "Format"
+msgstr "Формат"
+
+msgid "Format used"
+msgstr ""
+
+msgid "General settings"
+msgstr "Загальні налаштування"
+
+msgid "Get API key"
+msgstr ""
+
+msgid "Group name"
+msgstr "Ім'я групи"
+
+msgid "Handle remote string submissions."
+msgstr ""
+
+msgid "Handy links"
+msgstr "Зручні адреси"
+
+msgid "Has suggestion"
+msgstr "Має пропозицію"
+
+msgid "Home"
+msgstr "Головна"
+
+msgid "If the imported translations were worked on by a team of people, it is common curtesy, to attribute them to this user to ensure you do not claim credit for work of the whole team."
+msgstr ""
+
+msgid "Import"
+msgstr "Імпортувати"
+
+msgid "Import suggestions to @language"
+msgstr ""
+
+msgid "Import translations to @language"
+msgstr ""
+
+msgid "In progress"
+msgstr "В процесі"
+
+msgid "Incorrect plural formula format. Please check your sources again."
+msgstr ""
+
+msgid "Information"
+msgstr "Інформація"
+
+msgid "Invalid project chosen."
+msgstr "Обрано некоректний проект"
+
+msgid "Invalid release chosen."
+msgstr "Обрано помилкову версію"
+
+msgid "It is advised to set up a regular cron run to parse new package files, instead of hitting the Scan tab manually."
+msgstr ""
+
+msgid "It is advised to set up a regular cron run to parse new package files."
+msgstr ""
+
+msgid "Language"
+msgstr "Мова"
+
+msgid "Language not allowed for remote submission."
+msgstr ""
+
+msgid "Last parsed"
+msgstr "Востаннє перечитано"
+
+msgid "Link to this page"
+msgstr ""
+
+msgid "Local package connector"
+msgstr ""
+
+msgid "Local packages directory"
+msgstr ""
+
+msgid "Local project module integration"
+msgstr ""
+
+msgid "Localization Server compatible version"
+msgstr ""
+
+msgid "Localization Server project changes saved."
+msgstr ""
+
+msgid "Localization community"
+msgstr ""
+
+msgid "Localization community for drupal.org"
+msgstr ""
+
+msgid "Localization community for local packages"
+msgstr ""
+
+msgid "Localization community local project module integration"
+msgstr ""
+
+msgid "Localization contributions"
+msgstr ""
+
+msgid "Localization groups"
+msgstr "Групи перекладів"
+
+msgid "Localization remote API"
+msgstr ""
+
+msgid "Localization server"
+msgstr "Сервер перекладів"
+
+msgid "Localization server protects the plural formulas already set up, so plural formulas are not updated with imports. Editing plural formulas is possible on <a href=\"@language-config\">the language configuration screens</a>."
+msgstr ""
+
+msgid "Mailing list"
+msgstr "Поштова конференція"
+
+msgid "Maintains a copy of project and release listings, extracts translateable strings from project files. WARNING: don't use when setting up your own Localization server!"
+msgstr ""
+
+msgid "Manage projects and releases handled by the server."
+msgstr ""
+
+msgid "Marker errors"
+msgstr "Відмічені помилки"
+
+msgid "Name of the translation group."
+msgstr ""
+
+msgid "New suggestion for variant #%d"
+msgstr ""
+
+msgid "New translation for variant #%d"
+msgstr ""
+
+msgid "Newline marker"
+msgstr ""
+
+msgid "No (new) local packages found to scan in %workdir."
+msgstr ""
+
+msgid "No context"
+msgstr ""
+
+msgid "No data available yet."
+msgstr "Дані ще відсутні"
+
+msgid "No data available."
+msgstr "Відсутні дані"
+
+msgid "No errors found in this release."
+msgstr ""
+
+msgid "No language selected."
+msgstr "Не обрано мову"
+
+msgid "No languages defined or no projects scanned yet."
+msgstr ""
+
+msgid "No languages to list."
+msgstr "В списку немає мов"
+
+msgid "No languages with plural formulas defined or no projects scanned yet."
+msgstr ""
+
+msgid "No link available"
+msgstr "Відсутня адреса"
+
+msgid "No marker error found"
+msgstr ""
+
+msgid "No marker errors found in any of the parsed releases of this project."
+msgstr ""
+
+msgid "No project found with name %name. Reverted to filter to all projects."
+msgstr ""
+
+msgid "No project selected."
+msgstr "Не обрано проект"
+
+msgid "No projects found."
+msgstr "Не знайдено проектів"
+
+msgid "No releases found for this project."
+msgstr "Не знайдено версій для цього проекту"
+
+msgid "No strings found with this filter. Try adjusting the filter options."
+msgstr ""
+
+msgid "No strings to translate."
+msgstr "Відсутні строки для перекладу"
+
+msgid "No suggestions found."
+msgstr "Не знайдено пропозиції"
+
+msgid "Nobody contributed to this translation yet."
+msgstr ""
+
+msgid "Not allowed to submit translations in this language remotely."
+msgstr ""
+
+msgid "Not available"
+msgstr "Недоступно"
+
+msgid "Not compatible with Localization Server"
+msgstr ""
+
+msgid "Number of projects displayed per page in overviews. It is not advised to change this setting on live sites, as it changes what is displayed on each page, so links will break to existing project listings."
+msgstr ""
+
+msgid "Number of projects to display per page"
+msgstr ""
+
+msgid "Number of projects to scan at once"
+msgstr ""
+
+msgid "Number of releases to scan at once"
+msgstr ""
+
+msgid "Once you are familiar with the system, feel free to disable help in <a href=\"@user-page\">your user settings</a>."
+msgstr ""
+
+msgid "Open. Everybody is equal, all members can suggest and approve translations."
+msgstr ""
+
+msgid "Operations"
+msgstr "Дії"
+
+msgid "Organic groups mapper for the localization server. Each language team is a group."
+msgstr ""
+
+msgid "Organic groups mapping for localization server"
+msgstr ""
+
+msgid "Orphan strings and their translations were removed."
+msgstr ""
+
+msgid "Outstanding suggestions:"
+msgstr ""
+
+msgid "Overall status"
+msgstr "Загальний стан"
+
+msgid "Overall status of translations"
+msgstr "Загальний статус перекладу"
+
+msgid "Overview"
+msgstr "Огляд"
+
+msgid "Overview of languages and their translation status."
+msgstr ""
+
+msgid "Overview of projects and their translation status."
+msgstr ""
+
+msgid "Package to parse (%file) does not exist."
+msgstr ""
+
+msgid "Parse @count releases in a batch process"
+msgstr ""
+
+msgid "Parsed @current out of @total."
+msgstr ""
+
+msgid "Parsing errors"
+msgstr "Помилки перечитування"
+
+msgid "Parsing process has encountered an error."
+msgstr ""
+
+msgid "People with most approved translations"
+msgstr ""
+
+msgid "Permission model"
+msgstr ""
+
+msgid "Permission model for this translation group. Can be L10N_MODEL_OPEN or L10N_MODEL_CONTROLLED."
+msgstr ""
+
+msgid "Pick a language"
+msgstr "Вибір мови"
+
+msgid "Pick a project for @language translation"
+msgstr ""
+
+msgid "Please choose a release or opt to export for all releases."
+msgstr ""
+
+msgid "Please log in first to generate your Localization Server API key."
+msgstr ""
+
+msgid "Please select a project first."
+msgstr ""
+
+msgid "Plural formula"
+msgstr "Формула множини"
+
+msgid "Plural formula cannot be automatically determined for the language added. Please <a href=\"@language-edit\">edit the language</a> and specify the plural formula manually."
+msgstr ""
+
+msgid "Processing releases"
+msgstr "Обробка версій"
+
+msgid "Progress status"
+msgstr "Стан поступу"
+
+msgid "Project"
+msgstr "Проект"
+
+msgid "Project autocomplete"
+msgstr ""
+
+msgid "Project data for %project was deleted from the Localization Server. Make sure to parse this project again before deleting a project or cleaning up the database, or you will loose existing translation data."
+msgstr ""
+
+msgid "Project home"
+msgstr "Домашня сторінка проекту"
+
+msgid "Projects and releases"
+msgstr "Проекти та версії"
+
+msgid "Provides an XML-RPC server interface to handle remote translation submissions."
+msgstr ""
+
+msgid "Quick stats"
+msgstr "Швидка статистика"
+
+msgid "References {language}.language, pointing to the language of this translation group."
+msgstr ""
+
+msgid "References {node}.nid, pointing to the organic group node for this translation group."
+msgstr ""
+
+msgid "Release"
+msgstr "Версія"
+
+msgid "Releases"
+msgstr "Версії"
+
+msgid "Releases of project @project"
+msgstr "Версії проекту @project"
+
+msgid "Remote translation submission"
+msgstr ""
+
+msgid "Reset"
+msgstr "Повернути"
+
+msgid "Restoring plural forms"
+msgstr "Відновлення форм множини"
+
+msgid "Restoring process has encountered an error."
+msgstr ""
+
+msgid "Review, translate, import"
+msgstr "Огляд, переклад, втягування"
+
+msgid "Save"
+msgstr "Зберегти"
+
+msgid "Save changes"
+msgstr "Зберегти зміни"
+
+msgid "Save suggestions"
+msgstr "Збереження пропозицій"
+
+msgid "Save translations"
+msgstr "Зберегти переклади"
+
+msgid "Scan"
+msgstr "Сканувати"
+
+msgid "Scan new projects on every cron run"
+msgstr ""
+
+msgid "Select a language and/or a project."
+msgstr ""
+
+msgid "Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages."
+msgstr ""
+
+msgid "Set up general settings for the localization server."
+msgstr ""
+
+msgid "Show detailed information."
+msgstr "Відображення додаткової інформації"
+
+msgid "Some details we know about this project"
+msgstr ""
+
+msgid "Some facts about this community"
+msgstr ""
+
+msgid "Source Text"
+msgstr "Початковий текст"
+
+msgid "Source data"
+msgstr "Початкові дані"
+
+msgid "Start over"
+msgstr "Почати знову"
+
+msgid "Status"
+msgstr "Статус"
+
+msgid "Status overview"
+msgstr "Огляд стяну"
+
+msgid "Store as suggestions"
+msgstr "Зберегти як пропозиції"
+
+msgid "String details"
+msgstr "Деталі рядка"
+
+msgid "String suggestions"
+msgstr "Пропозиції рядків"
+
+msgid "Submitted translation from client."
+msgstr ""
+
+msgid "Submitted translation with wrong parameters or signature."
+msgstr ""
+
+msgid "Suggest, translate, review"
+msgstr "Пропозиція, переклад, огляд"
+
+msgid "Suggestion"
+msgstr "Пропозиція"
+
+msgid "Suggestion declined."
+msgstr ""
+
+msgid "Suggestion for discussion"
+msgstr "Пропозиція для обговорення"
+
+msgid "Suggestion for variant #%d"
+msgstr ""
+
+msgid "Suggestions"
+msgstr "Варіанти"
+
+msgid "Templates only contain the source (English) strings, translations are represented by empty placeholders."
+msgstr ""
+
+msgid "Temporary directory %path already exists."
+msgstr ""
+
+msgid "Test support for a specific API version."
+msgstr ""
+
+msgid "The %project was deleted from the Localization Server."
+msgstr ""
+
+msgid "The <a href=\"@group\">%language group</a> pages might provide you with more information, translation suggestions and guidelines."
+msgstr ""
+
+msgid "The Archive/Tar.php PEAR extension could not be found on your server. This file is required for exporting translations."
+msgstr ""
+
+msgid "The Archive/Tar.php PEAR extension could not be found on your server. This file is required for extracting translatable text from packages."
+msgstr ""
+
+msgid "The PEAR library Archive/Tar.php is missing. Please <a href=\"@pear\">obtain PEAR</a> or a copy of this file and put it on the include path."
+msgstr ""
+
+msgid "The Translation template extractor should be from the 6.x-3.x branch to be compatible with this Localization Server."
+msgstr ""
+
+msgid "The configured local packages directory (%workdir) cannot be found. <a href=\"@configure\">Check your configuration</a>."
+msgstr ""
+
+msgid "The directory on the local file system to be scanned for packages. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Drupal/drupal-6.0.tar.gz is from project \"Drupal\" in version 6.0, while og-5.x-2.0-alpha1 is project \"og\" in version 5.x-2.0-alpha1."
+msgstr ""
+
+msgid "The directory specified to be used for scanning is not found."
+msgstr ""
+
+msgid "The drupal.org localization community connector watches for new projects at drupal.org, downloads the new packages and extracts their translatable strings. Here you can set up the limits of how these operations are performed. The <a href=\"@scan_link\">Scan tab</a> allows you to initiate a manual scan."
+msgstr ""
+
+msgid "The drupal.org localization community connector watches for new releases of projects at drupal.org, downloads the new packages and extracts their translatable strings. Here you can set up the limits of how these operations are performed. The <a href=\"@scan_link\">Scan tab</a> allows you to initiate a manual scan."
+msgstr ""
+
+msgid "The language managed by this group. Languages not shown here are either not active on the site, or already have a translation group."
+msgstr ""
+
+msgid "The language managed by this group. This cannot be modified."
+msgstr ""
+
+msgid "The local package connector for localization community looks at a local directory and handles packages you upload there, making them available for localization on the web interface. Set up the properties of that directory here. The <a href=\"@scan_link\">Scan tab</a> allows you to initiate a manual scan on files in the directory, but it is advised to set up cron to check for new packages periodically."
+msgstr ""
+
+msgid "The number of projects to scan on a manual or cron run. Scanning is synchronous, so you need to wait for Drupal to extract and parse the tarball content."
+msgstr ""
+
+msgid "The number of projects to scan on a manual or cron run. Scanning is synchronous, so you need to wait for the download to complete and Drupal to extract and parse the tarball content. If everything goes well, detailed data about the project and its releases, files, and translatable strings will be inserted into the database and become available for translation."
+msgstr ""
+
+msgid "The number of releases to scan on a cron run. Scanning is synchronous, so you need to wait for Drupal to extract and parse the tarball content."
+msgstr ""
+
+msgid "The plural formula for this language in the format used in .po files. Either check a pre-existing .po file or see <a href=\"http://translate.sourceforge.net/wiki/l10n/pluralforms\">the wordforge plural forms list</a>. Some known examples:"
+msgstr ""
+
+msgid "The plural formula in use with this language is %formula."
+msgstr ""
+
+msgid "The translation file %filename contains a syntax error on line %line."
+msgstr "Файл перекладу %filename містить синтаксичну помилку у рядку номер %line."
+
+msgid "The translation file %filename contains an error: \"msgctxt\" is unexpected on line %line."
+msgstr ""
+
+msgid "The translation file %filename contains an error: \"msgid\" is unexpected on line %line."
+msgstr "Файл перекладу %filename істить помилку: неочікуване \"msgid\" у рядку %line."
+
+msgid "The translation file %filename contains an error: \"msgid_plural\" was expected but not found on line %line."
+msgstr "Файл локалізації  %filename містить помилку: очікується \"msgid_plural\" , але не знайдено в рядку %line."
+
+msgid "The translation file %filename contains an error: \"msgstr\" is unexpected on line %line."
+msgstr "Файл перекладу %filename істить помилку: неочікуване \"msgstr\" у рядку %line."
+
+msgid "The translation file %filename contains an error: \"msgstr\" was expected but not found on line %line."
+msgstr "Файл перекладу %filename містить помилку: очікуване \"msgstr\" не знайдено у рядку  %line."
+
+msgid "The translation file %filename contains an error: \"msgstr[]\" is unexpected on line %line."
+msgstr "Файл перекладу %filename істить помилку: неочікуване \"msgstr[]\" у рядку %line."
+
+msgid "The translation file %filename contains an error: there is an unexpected string on line %line."
+msgstr "Файл перекладу %filename істить помилку: неочікуваний текст у рядку %line."
+
+msgid "The translation file %filename ended unexpectedly at line %line."
+msgstr "Файл перекладу %filename неочікувано закінчився на рядку %line."
+
+msgid "The translation import failed, because the file %filename could not be read."
+msgstr "Імпорт перекладу не зроблений, оскільки неможливо прочитати файл %filename."
+
+msgid "The translation was successfully imported."
+msgstr ""
+
+msgid "The user associated with imports of Gettext files which have been translated by a team, so assigning the current user importing them would not be appropriate."
+msgstr ""
+
+msgid "There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module."
+msgstr ""
+
+msgid "There are no strings in any releases of %project to export."
+msgstr ""
+
+msgid "There are no strings in the %release release of %project to export."
+msgstr ""
+
+msgid "There is @count source string orphaned."
+msgid_plural "There are @count source strings orphaned."
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+msgid "There is at least one orphan source string in your database. Orphan source strings are not tied to any release of a project managed on your Localization Server. It might be safe to remove these if you are not in the middle of rescanning some projects. Always make database backups. This action cannot be undone."
+msgstr ""
+
+msgid "There was an error approving this suggestion. You might not have permission or the suggestion id was invalid."
+msgstr ""
+
+msgid "There was an error declining this suggestion. You might not have permission or the suggestion id was invalid."
+msgstr ""
+
+msgid "This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about Drupal projects, such as modules, themes and install profiles; with their respective releases. This means that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release."
+msgstr ""
+
+msgid "This page shows a list of all languages and their overall translation status (accumulated for all releases). Exporting translation works for all languages. Importing your translations is only possible to languages where you have sufficient privileges to do so."
+msgstr ""
+
+msgid "This would remove all data associated with the project, including releases, files, parsing errors, and all source strings and translations which are not applicable to remaining projects. Always make database backups. This action cannot be undone."
+msgstr ""
+
+msgid "This would remove almost all data associated with the project: releases, files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. If you clean up the database before this project is parsed again, source strings and translations will be lost. Always make database backups. This action cannot be undone."
+msgstr ""
+
+msgid "Top contributors"
+msgstr "Найактивніші учасники"
+
+msgid "Translate"
+msgstr "Переклад"
+
+msgid "Translate projects"
+msgstr "Переклад проектів"
+
+msgid "Translate to @language"
+msgstr "Переклад для @language"
+
+msgid "Translated"
+msgstr "Перекладено"
+
+msgid "Translation"
+msgstr "Переклад"
+
+msgid "Translation file"
+msgstr "Файл перекладу"
+
+msgid "Translation for variant #%d"
+msgstr ""
+
+msgid "Translation group"
+msgstr ""
+
+msgid "Translation help"
+msgstr "Довідка перекладача"
+
+msgid "Translation interface"
+msgstr ""
+
+msgid "Translation template"
+msgstr "Шаблон перекладу"
+
+msgid "Translation template extractor"
+msgstr "Для витягування шаблонів локалізації"
+
+msgid "Translations"
+msgstr "Переклади"
+
+msgid "Translations group"
+msgstr "Група перекладачів"
+
+msgid "Translations group at groups.drupal.org."
+msgstr ""
+
+msgid "Translations overview"
+msgstr "Огляд перекладу"
+
+msgid "Translator's guide"
+msgstr "Документація перекладача"
+
+msgid "Translators mailing list hosted at drupal.org."
+msgstr ""
+
+msgid "Type"
+msgstr "Тип"
+
+msgid "Type of export"
+msgstr "Тип вивантаження"
+
+msgid "Unable to download and save %download_link file."
+msgstr ""
+
+msgid "Unauthorized or blocked user attempted submission."
+msgstr ""
+
+msgid "Uninitialized plural formula. Please <a href=\"@import-url\">import a valid interface translation</a> for Drupal in this language."
+msgstr ""
+
+msgid "Uninitialized plural formula. Please set up the plural formula in <a href=\"@language-config\">the langauge configuration</a> or alternatively <a href=\"@import-url\">import a valid interface translation</a> for Drupal in this language."
+msgstr ""
+
+msgid "Untranslated"
+msgstr "Не перекладено"
+
+msgid "Used in:"
+msgstr "Використане в:"
+
+msgid "Used on localize.drupal.org to maintain copies of project and release lists with the drupal.org project database"
+msgstr ""
+
+msgid "User associated with bulk imports"
+msgstr ""
+
+msgid "Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the translated text as-is."
+msgstr ""
+
+msgid "View"
+msgstr "Перегляд"
+
+msgid "View releases"
+msgstr "Огляд версій"
+
+msgid "Welcome message"
+msgstr "Привітальне повідомлення"
+
+msgid "Welcome message to display on the group homepage."
+msgstr ""
+
+msgid "Welcome to the translation server. This block will show you tips and advice throughout the application."
+msgstr ""
+
+msgid "Whether different types of group members have different permissions."
+msgstr ""
+
+msgid "You are a member of this translation group, so you can suggest translations or import complete Gettext translation files to suggest multiple translations at once. Administrators of this group either accept or decline suggestions provided by members of the group. To work offline, export a translation template, which contains the current state of the translation."
+msgstr ""
+
+msgid "You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use."
+msgstr ""
+
+msgid "You can suggest translations or import complete Gettext translation files to suggest multiple translations at once. People with permission to approve suggestions may either accept or decline your suggestions. To work offline, export a translation template, which contains the current state of the translation."
+msgstr ""
+
+msgid "You can view the work being done here, but to participate, first you need to <a href=\"@register\">create an account and/or log in</a>"
+msgstr ""
+
+msgid "You don't have the required permissions to use remote submission on this Localization Server."
+msgstr ""
+
+msgid "You have no orphan source strings in your database to clean up."
+msgstr ""
+
+msgid "You have two different options to export. You can either export a template package for a project, or a package containing the existing translations for a given project release. Both types will use the GNU Gettext Portable Object (Template) format, which is understood by Drupal and desktop translation editing tools."
+msgstr ""
+
+msgid "You should choose a project, submit the form and choose a release."
+msgstr ""
+
+msgid "You should choose a release."
+msgstr "Вам потрібно обрати версію"
+
+msgid "Your Localization Server API key"
+msgstr ""
+
+msgid "access localization community"
+msgstr ""
+
+msgid "administer localization community"
+msgstr ""
+
+msgid "administer localization community for drupal.org"
+msgstr ""
+
+msgid "administer localization community for local packages"
+msgstr ""
+
+msgid "administer localization community local project module integration"
+msgstr ""
+
+msgid "administer localization groups"
+msgstr ""
+
+msgid "by %user at %date"
+msgstr ""
+
+msgid "export gettext templates and translations"
+msgstr ""
+
+msgid "import gettext files"
+msgstr "втягування файлів gettext "
+
+msgid "in context: @context"
+msgstr ""
+
+msgid "l10n_community"
+msgstr "l10n_community"
+
+msgid "l10n_drupalorg"
+msgstr "l10n_drupalorg"
+
+msgid "l10n_localpacks"
+msgstr "l10n_localpacks"
+
+msgid "line break"
+msgstr "розрив рядка"
+
+msgid "n/a"
+msgstr "н/д"
+
+msgid "parsed"
+msgstr "перечитано"
+
+msgid "submit suggestions"
+msgstr "відіслати пропозиції"
+
+msgid "submit suggestions remotely"
+msgstr "віддалено відіслати пропозиції"
+
+msgid "submit translations and approve suggestions"
+msgstr "відіслати переклади і затвердити пропозиції"
+
