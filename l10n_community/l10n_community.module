@@ -1090,9 +1090,6 @@ function l10n_community_get_contexts() {
  */
 function l10n_community_target_save($sid, $translation, $langcode, $uid, $suggestion, &$inserted, &$updated, &$unchanged, &$suggested) {
 
-  // Load source string and adjust translation whitespace based on source.
-  $source_string = db_result(db_query('SELECT value FROM {l10n_community_string} WHERE sid = %d', $sid));
-  $translation = l10n_community_trim($translation, $source_string);
   // Look for an existing active translation, if any.
   $existing_string = db_fetch_object(db_query("SELECT sid, tid, translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
 
@@ -1243,6 +1240,7 @@ function l10n_community_project_uri_by_title($title) {
  */
 function l10n_community_is_duplicate($suggestion, $sid, $langcode) {
   // Use BINARY matching to avoid marking case-corrections as duplicate.
+  // Matches everything active, regardless of being translations or suggestions.
   return (bool) db_result(db_query("SELECT s.sid FROM {l10n_community_string} s LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid WHERE t.translation = BINARY '%s' AND t.is_active = 1 AND t.language = '%s' AND s.sid = %d", $suggestion, $langcode, $sid));
 }
 

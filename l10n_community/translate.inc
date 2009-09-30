@@ -480,10 +480,11 @@ function l10n_community_translate_form_submit($form, &$form_state) {
       continue;
     }
 
+    $source_string = db_result(db_query('SELECT value FROM {l10n_community_string} WHERE sid = %d', $sid));
     $text = '';
-    if (is_string($item['translation']['value'])) {
+    if (is_string($item['translation']['value']) && strlen(trim($item['translation']['value']))) {
       // Single string representation: simple translation.
-      $text = $item['translation']['value'];
+      $text = l10n_community_trim($item['translation']['value'], $source_string);
     }
     if (is_array($item['translation']['value'])) {
       // Array -> plural variants are provided. Join them with a NULL separator.

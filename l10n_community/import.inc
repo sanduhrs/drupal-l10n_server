@@ -97,9 +97,9 @@ function l10n_community_import_form_submit($form, &$form_state) {
     // Do the actual parsing on the local file.
     if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'], $uid)) {
       // Get status report on what was done in the process.
-      list($inserted, $updated, $unchanged, $suggested) = _l10n_community_import_one_string();
+      list($inserted, $updated, $unchanged, $suggested, $duplicates) = _l10n_community_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));
-      l10n_community_update_message($inserted, $updated, $unchanged, $suggested, 0);
+      l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates);
       cache_clear_all('l10n:stats:'. $form_state['values']['langcode'], 'cache');
     }
   }
@@ -305,12 +305,17 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
   static $updated = 0;
   static $unchanged = 0;
   static $suggested = 0;
+  static $duplicates = 0;
 
   if ($value == NULL) {
     // Result stats queried.
-    return array($inserted, $updated, $unchanged, $suggested);
+    return array($inserted, $updated, $unchanged, $suggested, $duplicates);
   }
-  elseif (!empty($value['msgid']) && !empty($value['msgstr'])) {
+  
+  // Trim translation (we will apply source string based whitespace later).
+  $value['msgstr'] = trim($value['msgstr']);
+  
+  if (!empty($value['msgid']) && !empty($value['msgstr'])) {
     // We only save non-empty translations/suggestions.
 
     if (empty($uid)) {
@@ -334,6 +339,9 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
 
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
+      
+      // Trim imported translation to have whitesapce from source string.
+      $value['msgstr'] = l10n_community_trim($value['msgstr'], $value['msgid']);
 
       if ($translation && (empty($translation->translation) || ($translation->translation != $value['msgstr']))) {
         // If we have an empty translation placeholder (ie. no translation yet,
@@ -344,7 +352,12 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
       }
 
       if ($is_suggestion || !$translation) {
-        l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
+        if (!l10n_community_is_duplicate($value['msgstr'], $sid, $langcode)) {
+          l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
+        }
+        else {
+          $duplicates++;
+        }
       }
       else {
         // We certainly did not update this one.
