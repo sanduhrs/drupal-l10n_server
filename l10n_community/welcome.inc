@@ -129,8 +129,15 @@ function l10n_community_pick_go() {
       '#value' => $language_code
     );
   }
+  
+  if (count($language_list) > 1) {
+    $projects_title = user_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
+  }
+  else {
+    $projects_title = t('Pick a project for @language translation', array('@language' => $language_name));
+  }
   $form['project'] = array(
-    '#title' => (count($language_list) > 1) ? t('And/or pick a project') : t('Pick a project for @language translation', array('@language' => $language_name)),
+    '#title' => $projects_title,
     '#description' => t('Alternatively you can <a href="@explore">explore projects</a>.', array('@explore' => url('translate/projects')))
   );
   if (($count = count($projects)) <= 30) {
@@ -162,7 +169,7 @@ function l10n_community_pick_go() {
 function l10n_community_pick_go_validate($form, &$form_state) {
   if (empty($form_state['values']['project']) && empty($form_state['values']['langcode'])) {
     // We require at least one to be selected to be effective.
-    form_set_error('langcode', t('Select a language and/or a project.'));
+    form_set_error('langcode', t('At least select a language or a project.'));
   }
 }
 
@@ -177,15 +184,22 @@ function l10n_community_pick_go_submit($form, &$form_state) {
   if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
-      $action = l10n_community_contribute_access($form_state['values']['langcode']) ? 'edit' : 'view';
-      drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/'. $action, 'project='. $uri);
+      if (user_access('browse translations')) {
+        $action = l10n_community_contribute_access($form_state['values']['langcode']) ? 'edit' : 'view';
+        drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/'. $action, 'project='. $uri);
+      }
+      else {
+        // Both language and project set, no access to browse > go to project.
+        drupal_goto('translate/projects/'. $uri);
+      }
     }
     else {
+      // Only project set.
       drupal_goto('translate/projects/'. $uri);
     }
   }
   elseif (!empty($form_state['values']['langcode'])) {
-    // Only language selected.
+    // Only language set.
     drupal_goto('translate/languages/'. $form_state['values']['langcode']);
   }
 }
