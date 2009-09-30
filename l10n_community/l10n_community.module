@@ -168,7 +168,7 @@ function l10n_community_menu() {
   $items['translate/projects/autocomplete'] = array(
     'title' => 'Project autocomplete',
     'page callback' => 'l10n_community_projects_autocomplete',
-    'access arguments' => array('access localization community'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK
   );
 
@@ -178,20 +178,21 @@ function l10n_community_menu() {
     'title' => 'String details',
     'page callback' => 'l10n_community_string_details',
     'file' => 'ajax.inc',
-    'access arguments' => array('access localization community'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK,
   );
   $items['translate/suggestions'] = array(
     'title' => 'String suggestions',
     'page callback' => 'l10n_community_string_suggestions',
     'file' => 'ajax.inc',
-    'access arguments' => array('access localization community'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK,
   );
   $items['translate/approve'] = array(
     'title' => 'Approve suggestion',
     'page callback' => 'l10n_community_string_approve',
     'file' => 'ajax.inc',
+    // Permission is enforced in l10n_community_string_ajax_suggestion().
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK,
   );
@@ -199,6 +200,7 @@ function l10n_community_menu() {
     'title' => 'Decline suggestion',
     'page callback' => 'l10n_community_string_decline',
     'file' => 'ajax.inc',
+    // Permission is enforced in l10n_community_string_ajax_suggestion().
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK,
   );
@@ -224,7 +226,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
-    'access arguments' => array('access localization community'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
@@ -365,21 +367,21 @@ function l10n_community_project_admin_load($uri) {
  *  Boolean. Whether this is a gettext import operation.
  */
 function l10n_community_contribute_access($langcode, $import = FALSE) {
-  return user_access('access localization community') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE) && ($import ? user_access('import gettext files') : TRUE);
+  return user_access('browse translations') && (l10n_community_get_permission($langcode) != L10N_PERM_NONE) && ($import ? user_access('import gettext files') : TRUE);
 }
 
 /**
  * Access callback for exporting paths. Requires access and export privileges.
  */
 function l10n_community_export_access() {
-  return user_access('access localization community') && user_access('export gettext templates and translations');
+  return user_access('browse translations') && user_access('export gettext templates and translations');
 }
 
 /**
  * Access to the moderation screen.
  */
 function l10n_community_moderation_access($langcode) {
-  return user_access('access localization community') && (l10n_community_get_permission($langcode) == L10N_PERM_ALL);
+  return user_access('browse translations') && (l10n_community_get_permission($langcode) == L10N_PERM_ALL);
 }
 
 /**
@@ -411,7 +413,7 @@ function l10n_community_init() {
  * Implementation of hook_perm().
  */
 function l10n_community_perm() {
-  return array('access localization community', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community', 'export gettext templates and translations', 'import gettext files');
+  return array('access localization community', 'browse translations', 'submit suggestions', 'submit translations and approve suggestions', 'administer localization community', 'export gettext templates and translations', 'import gettext files');
 }
 
 /**
@@ -433,7 +435,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
     case 'view':
       switch ($delta) {
         case 'help':
-          if (user_access('access localization community')) {
+          if (user_access('browse translations')) {
             return l10n_community_block_help();
           }
           return;
