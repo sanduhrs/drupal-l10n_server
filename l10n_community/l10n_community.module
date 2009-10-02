@@ -555,7 +555,7 @@ function l10n_community_block_stats() {
   $stats_numbers = l10n_community_get_stats();
   if (isset($stats_numbers['groups'])) {
     $stats = array(
-      format_plural($groups, '1 translation group', '@count translation groups'),
+      format_plural($stats_numbers['groups'], '1 translation group', '@count translation groups'),
     );
   }
 
