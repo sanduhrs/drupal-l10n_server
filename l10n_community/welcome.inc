@@ -27,26 +27,11 @@ function l10n_community_welcome_page() {
   );
   $output .= theme('admin_block', $block);
 
-  $stats = array();
-  if (module_exists('l10n_groups')) {
-    $groups = db_result(db_query('SELECT COUNT(*) FROM {l10n_groups_group}'));
-    $stats = array(
-      format_plural($groups, '1 translation group', '@count translation groups'),
-    );
-  }
-  $stats_numbers = l10n_community_get_stats();
+  $stats_block = l10n_community_block_stats();
   $block = array(
     'title' => t('Quick stats'),
     'description' => t('Some facts about this community'),
-    'content' => theme('item_list', array_merge($stats, array(
-      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-      format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
-      format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') .' ('. format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') .')',
-      format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
-      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-    ))),
+    'content' => $stats_block['content'],
   );
   $output .= theme('admin_block', $block);
 

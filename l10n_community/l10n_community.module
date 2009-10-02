@@ -429,6 +429,12 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
           'enabled' => 1,
           'region' => 'left'
         ),
+        'stats' => array(
+          'info' => t('Quick statistics'),
+          'weight' => 3,
+          'enabled' => 1,
+          'region' => 'left'
+        ),
       );
       return $blocks;
 
@@ -437,6 +443,11 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
         case 'help':
           if (user_access('browse translations')) {
             return l10n_community_block_help();
+          }
+          return;
+        case 'stats':
+          if (user_access('access localization community')) {
+            return l10n_community_block_stats();
           }
           return;
       }
@@ -534,6 +545,33 @@ function l10n_community_block_help() {
       }
     }
   }
+}
+
+/**
+ * Stats block, also reused on welcome.inc.
+ */
+function l10n_community_block_stats() {
+  $stats = array();
+  $stats_numbers = l10n_community_get_stats();
+  if (isset($stats_numbers['groups'])) {
+    $stats = array(
+      format_plural($groups, '1 translation group', '@count translation groups'),
+    );
+  }
+
+  $block = array(
+    'subject' => t('Quick community statistics'),
+    'content' => theme('item_list', array_merge($stats, array(
+      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+      format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
+      format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') .' ('. format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') .')',
+      format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
+      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+    ))),
+  );
+  return $block;
 }
 
 /**
@@ -1473,6 +1511,10 @@ function l10n_community_get_stats($langcode = NULL) {
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
       $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND translation != ''"));
       $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
+
+      if (module_exists('l10n_groups')) {
+        $stats['groups'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_groups_group}'));
+      }
 
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
