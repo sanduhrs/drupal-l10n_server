@@ -560,7 +560,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Login as admin and get this package parsed.
     $this->drupalLogin($this->u_admin);
     $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
-    $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $package_file)), t('Contents of project tarball parsed.'));
+    $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $package_file)));
     $this->drupalGet('user/logout');
   }
 
