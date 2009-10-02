@@ -14,6 +14,8 @@ collaborate on translating Drupal projects to different languages. It is
 inspired by Launchpad Rosetta (https://launchpad.net/rosetta) but is highly
 tailored to Drupal needs.
 
+This module suite powers the base functionality of http://localize.drupal.org.
+
 The module suite solves the Drupal project translation problem with a web
 based interface. The various Drupal projects release source code on a daily
 basis. The goal is to help translators to keep up with this pace by sharing
@@ -38,8 +40,8 @@ The localization server module suite consists of a few possible components:
        file system directory. The projects and releases are identified based
        on placement and naming of the package files. 
      
-     - l10n_drupalorg: To be used on drupal.org. Maintains a relation with
-       the drupal.org project and release listing, downloads tarballs,
+     - l10n_project: To be used on drupal.org only! Maintains a relation with
+       the drupal.org project and release listings, syncronizes tarballs,
        collects translatables automatically.
 
 INSTALLATION
@@ -47,25 +49,13 @@ INSTALLATION
 
 - Your PHP installation should have the PEAR Tar package installed (which
   requires zzlib support). This is required for Tar extraction (in the
-  l10n_localpacks and l10n_drupalorg modules) and Tar generation (in the
-  l10n_community module).
-
-- With l10n_drupalorg module, files are simply copied from the drupal.org
-  server, so allow_url_fopen needs to be enabled.
+  l10n_localpacks module) and Tar generation (in the l10n_community module).
 
 - Locale (built into Drupal) is required. Organic Groups
   (http://drupal.org/project/og) is required by l10n_groups.
 
-- This package makes use of Unicode fonts to create text-based icons. If
-  your icons do not display properly, test your browser for compatibility
-  with the Unicode 'Dingbats' block at the URL
-  http://www.fileformat.info/info/unicode/block/dingbats/utf8test.htm.
-  Note: It may be necessary to install a font that supports characters in the
-  Unicode 'Dingbats' block. A list of these fonts can be found at the URL
-  http://www.fileformat.info/info/unicode/block/dingbats/fontsupport.htm.
-
-1. Enable l10n_community and *only one* of the connector modules at
-   Administer > Site configuration > Modules. Optionally enable l10n_groups.
+1. Enable l10n_community and l10n_localpacks at Administer >
+   Site configuration > Modules. Optionally enable l10n_groups.
 
 2. Configure the connector at Administer > Localization Server.
 
@@ -79,22 +69,13 @@ unpacking their contents and running the string extraction process takes time,
 CPU cycles and hard disk space. Although only temporary copies of the packages
 are kept, some hard disk space and a decent amount of memory is required. This
 is why connectors are preconfigured to scan only one project at a time. Big
-projects like E-Commerce or Drupal itself take considerable time to parse.
+projects like Ubercart or Drupal itself take considerable time to parse.
 
 The localization community module provides the actual interface. Users with
 proper permissions can suggest new translations for strings, maintainers can
 even decide on the official translation based on the different suggestions. To
 translate a project, go to Translations, choose a language and optionally
 choose a project. There you can translate all strings.
-
-DEVELOPERS
---------------------------------------------------------------------------------
-
-This module suite is in heavy development now. Better cooperation with existing
-modules and more interoperability functions are planned. The goal is to have
-this module used as the official translation interface for Drupal modules.
-We take pride by coding to Drupal, PHP E_ALL and E_STRICT coding standards,
-as well as XHTML Strict and CSS 2 compliance.
 
 CONTRIBUTORS
 --------------------------------------------------------------------------------

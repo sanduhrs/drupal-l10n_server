@@ -1,10 +1,7 @@
 $Id$
 
 This document explains how the l10n_server suite (and l10n_client) modules are
-intended to work together, and interact with other modules. The figures attached
-may also help understand how the different components fit together. This
-document is also used to track TODO items, as there are still holes in the big
-picture to plug in.
+intended to work together, and interact with other modules.
 
 l10n_community
 --------------------------------------------------------------------------------
@@ -15,7 +12,7 @@ l10n_community
     project =(1:n)> release =(1:n)> file =(1:n)> line =(1:n)> string =(1:n)> translation
     
    Which means that granular information is available about where strings are
-   used. Extraction errors reports also have their place connected to releases.
+   used. Extraction warning reports also have their place connected to releases.
    All these tables are only provided by this module though, and not filled
    up with actual data (with the exception of the translation table). Connector
    modules are expected to provide the project, release, file, line and string
@@ -25,11 +22,11 @@ l10n_community
    in-house translation teams need their own project releases translated, and
    they have no connection to drupal.org projects.
 
-2. The community server is designed to work with Organic Groups. Each language
-   has one organic group on the site, which provides a discusson space for
-   group members *and* makes it possible to hand out permissions (ie.
-   differentiate between group managers and members if a group needs this
-   level of permission).
+2. The community server is designed to be able to work with Organic Groups.
+   Each language can have one organic group on the site, which provides a
+   discusson space for group members *and* makes it possible to hand out
+   permissions (ie. differentiate between group managers and members if a
+   group needs this level of permission).
    
    Group managers can choose a permission model of either open or controlled.
    A controlled model allows members of the group to suggest translations,
@@ -37,21 +34,20 @@ l10n_community
    all members to suggest and approve as well.
    
 3. Translations can be approached from the list of language groups or the
-   list of projects. On the second level, the other list shows (ie. after
-   selecting a language, one needs to select a project and vice versa).
+   list of projects. On the second level, detailed summaries related to the
+   selected language or project are shown as well as other stats.
    These two interfaces allow people to get different overviews (summaries)
    of the translations hosted on the site, as well as make it possible to
    import and export translations based on languages or projects.
    
 4. Translation can either happen on the site (which only requires a user
-   account subscribed to at least one translation group) or off-site. The
-   online interface allows translators to provide suggestions for
-   strings.
+   account with privileges to translate) or off-site. The online interface
+   allows translators to provide suggestions for strings.
    
 5. Off-site translation support is possible with exporting Gettext PO(T)
    files of a specific project release. Translators can work with offline
-   translation tools and import the modified PO files later. Exports are
-   generated in the structure expected by Drupal 6.
+   translation tools and import the modified PO files later. Exports can be
+   generated in various formats.
       
 6. Extracted strings are stored related to projects, releases, files
    and lines. So if a string appears multiple times in the same file
@@ -59,54 +55,26 @@ l10n_community
    Strings are only stored once, relations are made between lines and
    strings.
    
-   This means that if strings in all releases of a project are required,
-   we need to join projects to releases to files to lines to strings.
-   For strings in a specific project release or file or line, the joins
-   are simpler obviously.
+   Source strings also store optinal context information, which is supported
+   from Drupal 7 in Drupal sites as well.
    
-   Because strings are handled with their numeric (auto incremented)
-   ID, it is possible to have two identical strings with different
-   numbers stored (although the current system does not support this,
-   and there is no plan to implement this). That would make it possible
-   to provide different translations for the same string used in
-   different releases. It should not be allowed however to have different
-   translations of the same string in projects which could be used
-   together on a Drupal site, due to how Drupal enforces translation
-   sharing.
-
-l10n_drupalorg
+l10n_localpacks
 --------------------------------------------------------------------------------
 
-1. l10n_drupalorg maintains a list of projects and releases syncronized with
-   drupal.org. It uses the updates.drupal.org XML file interface to grab
-   a project list and releases for each project.
-   
-   TODO: there is a project list stub implemented, real implementation is
-   possible once this patch is committed: http://drupal.org/node/157514
- 
-2. Synchronization with the project list is always performed, and a project
-   is picked to retrieve list of releases for. Then the releases are
-   traversed, tarballs are downloaded and uncompressed.
-   
-3. Potx is run on the uncompressed package to collect a list of strings
-   used in the files *and* record a list of extraction errors.
-   
-   TODO: integrate with drupal.org by pushing back at least a summary
-   of the errors found (could be used for project metrics)
-   
-4. Integration with drupal.org makes it possible to list translation
-   packages and offer them for download for each project release. The
-   translation status summary can also be used as part of the metrics
-   used to rate projects.
-   
-   TODO: implement this direction of the integration
+If you are setting up l10n_server, the most likely setup is l10n_localpacks.
 
+l10n_localpacks works off of a local directory, where packages are placed. The
+module looks at that directory periodically and when new ones are found, their
+parent projects and releases are created in the database, as well as their
+source code is parsed.
+ 
 l10n_client
 --------------------------------------------------------------------------------
 
-Although this module is hosted in its own project, it is a good idea to document
-it here because of the relations of architecture. l10n_client only works with
-Drupal 6 and later because it requires a change made in Drupal 6 to work.
+Although this module is hosted in its own separate project, it makes sense to
+document it here because of the relations of architecture. l10n_client works
+best with Drupal 6 and later because it requires a change made in Drupal 6 to
+work (but a backport of that change is available with the Drupal 5 module).
 
 1. By enabling locale module and l10n_client and adding at least one foreign
    language, when viewing pages in foreign languages, people with 'use on-page
@@ -114,10 +82,11 @@ Drupal 6 and later because it requires a change made in Drupal 6 to work.
    to build the page viewed. Translations are saved with AJAX callbacks, so
    on-page translation is easy.
 
-2. Users of l10n_client should be able to opt to share their translations as
-   they produce it, so there should be a component in l10n_community to receive
-   translation suggestions from group members using the external (from the
-   localization server point of view) l10n_client.
+2. Sites running l10n_client can set up translations sharing with a central
+   server at Administer >> Site configuration >> Languages >> Localization
+   sharing. If a correct server address is specified, the list of languages
+   supported there is shown.
    
-   TODO: implement server part in l10n_community
-   TODO: implement client part in l10n_client
+3. Once the sharing is set up, to keep attribution intact, per-user API keys
+   should also be set up. Each user should request and set their own API key
+   via their user (My account) page on the client site.
