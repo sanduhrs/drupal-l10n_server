@@ -1182,9 +1182,12 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
  *   Translation string with the right beginning and ending chars.
  */
 function l10n_community_trim($translation, $source) {
-  $matches = array();
-  preg_match("/^(\s*).*\S(\s*)\$/s", $source, $matches);
-  return $matches[1] . trim($translation) . $matches[2];
+  if (is_string($translation) && is_string($source)) {
+    $matches = array();
+    preg_match("/^(\s*).*\S(\s*)\$/s", $source, $matches);
+    return $matches[1] . trim($translation) . $matches[2];
+  }
+  return $translation;
 }
 
 /**
