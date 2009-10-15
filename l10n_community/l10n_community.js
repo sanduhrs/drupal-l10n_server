@@ -107,7 +107,8 @@ l10nCommunity.copyString = function(elem) {
     sid = sid.split('-');
     sid = sid[0];
     for (i = 0; i < Drupal.settings.l10n_num_plurals; i++) {
-      $('#l10n-community-translation-'+ sid +'-'+ i).val($('.string-'+ sid +'-'+ i +' .original', parentlist).text());
+      source_index = (i > 0 ? 1 : 0);
+      $('#l10n-community-translation-'+ sid +'-'+ i).val($('.string-'+ sid +'-'+ source_index +' .original', parentlist).text());
     }
   }
   else if (original.indexOf(";  ") > 0)  {
