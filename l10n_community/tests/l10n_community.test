@@ -40,6 +40,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     else {
       simpletest_clean_temporary_directory(file_directory_path() .'/l10n_community_test');
     }
+    $this->full_temp_path = realpath($this->temp_path);
 
     // Set local package directory, so we can work with this.
     $this->drupalLogin($this->u_admin);
@@ -531,11 +532,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Include api version name in file basename too (before version string),
     // to ensure that it is easier to debug what strings appear where.
     if (!isset($this->project_names[$api_version])) {
-      $temp_file = tempnam($this->temp_path, 'l10n_test') .'_'. $api_version;
+      $temp_file = tempnam($this->full_temp_path, 'l10n_test') .'_'. $api_version;
       $this->project_names[$api_version] = $project_name = basename($temp_file);
     }
     else {
-      $temp_file = $this->temp_path .'/'. $this->project_names[$api_version];
+      $temp_file = $this->full_temp_path .'/'. $this->project_names[$api_version];
       $project_name = $this->project_names[$api_version];
     }
     $package_file = $temp_file .'-'. $version .'.tar.gz';
@@ -560,6 +561,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Login as admin and get this package parsed.
     $this->drupalLogin($this->u_admin);
     $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
+    // Replace full path name to relative path name to ensure that we check for
+    // the right feedback in the output.
+    $package_file = str_replace($this->full_temp_path, $this->temp_path, $package_file);
     $this->assertRaw(t('Contents of %filename have been scanned.', array('%filename' => $package_file)));
     $this->drupalGet('user/logout');
   }
