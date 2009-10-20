@@ -187,6 +187,15 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
     $files[$file] = l10n_community_save_file(NULL, $file);
   }
 
+  // Value set but empty. Mark error on empty translatable string. Only trim
+  // for empty string checking, since we should store leading/trailing
+  // whitespace as it appears in the string otherwise.
+  $check_empty = trim($value);
+  if (empty($check_empty)) {
+    potx_status('error', t('Empty string attempted to be localized. Please do not leave test code for localization in your source.'), $file, $line);
+    return;
+  }
+
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$file])) {
     // Explode files array to pid, rid and fid.

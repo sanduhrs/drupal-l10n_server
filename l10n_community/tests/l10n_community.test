@@ -49,6 +49,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
 
     $this->project_names = array();
+
+    // Store empty error message for reuse in multiple cases.
+    $this->empty_error = t('Empty string attempted to be localized. Please do not leave test code for localization in your source.');
   }
 
   /**
@@ -226,6 +229,18 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw('<em>'. $this->project_names[5] .':</em> 5.x-'. $this->version_js .' (1)');
     $this->assertRaw('<em>'. $this->project_names[6] .':</em> 6.x-'. $this->version_js .' (1), 6.x-'. $this->version_base .' (1)');
     $this->assertRaw('<em>'. $this->project_names[7] .':</em> 7.x-'. $this->version_js .' (1)');
+
+    // WARNINGS ====
+
+    // 3 in the module.
+    $this->drupalGet('translate/projects/'. $this->project_names[5] .'/warnings');
+    $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 5 project releases.'));
+    // 3 in both releases of modules, 1 in the JS (in one release).
+    $this->drupalGet('translate/projects/'. $this->project_names[6] .'/warnings');
+    $this->assertCount($this->empty_error, 7, t('7 warnings found in Drupal 5 project releases.'));
+    // 2 in the module, 1 in the JS.
+    $this->drupalGet('translate/projects/'. $this->project_names[7] .'/warnings');
+    $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 5 project releases.'));
   }
 
   /**
