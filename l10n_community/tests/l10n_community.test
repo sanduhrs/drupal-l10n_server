@@ -26,10 +26,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
     $this->u_auth = $this->drupalCreateUser(array('access localization community', 'browse translations'));
-    $this->u_member_1 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions'));
-    $this->u_member_2 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions'));
-    $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit translations and approve suggestions'));
-    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization community', 'administer localization community for local packages'));
+    $this->u_member_1 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
+    $this->u_member_2 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
+    $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit translations and approve suggestions', 'import gettext files'));
+    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization community', 'administer localization community for local packages', 'import gettext files'));
+    $this->u_team = $this->drupalCreateUser();
 
     // Set up temporary directory for our work. Because this is inside the
     // simpletest controlled file path, it will be cleaned up later.
@@ -44,9 +45,14 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Set local package directory, so we can work with this.
     $this->drupalLogin($this->u_admin);
-    $edit['l10n_localpacks_directory'] = $this->temp_path;
+    $edit = array('l10n_localpacks_directory' => $this->temp_path);
     $this->drupalPost('admin/l10n_server/l10n_localpacks', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
+
+    // Set team username.
+    $edit = array('l10n_community_import_user' => $this->u_team->name);
+    $this->drupalPost('admin/l10n_server/l10n_community', $edit, t('Save configuration'));
+    $this->assertText(t('The configuration options have been saved.'), t('Team user set.'));
 
     $this->project_names = array();
 
@@ -467,6 +473,180 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30'));
     $this->assertCount('<input type="checkbox"', 1);
     $this->assertRaw('This is a test string. suggestion-3');
+  }
+  
+  /**
+   * Test importing functionality.
+   */
+  public function testImport() {
+    $this->addLanguage();
+    $this->addProject(5);
+    $this->addProject(6);
+    $this->addProject(6, FALSE);
+    $this->addProject(7);
+    
+    // UNPRIVILEGED
+    
+    // Verify that users without permission will not see import screen.
+    $this->drupalLogin($this->u_auth);
+    $this->drupalGet('translate/languages/hu/import');
+    $this->assertRaw(t('Access denied'));
+
+    // SUGGESTION IMPORT AS SELF
+
+    // Verify that we can see the import screen.
+    $this->drupalGet('user/logout');
+    $this->drupalLogin($this->u_member_1);
+    $this->drupalGet('translate/languages/hu/import');
+    $this->assertRaw(t('Gettext .po file with translations'));
+    $this->assertNoRaw(t('Store as approved translations'));
+    $this->assertRaw(t('Attribute import to'));
+    
+    // Import our test suggestions
+    $filename = drupal_get_path('module', 'l10n_community') .'/tests/l10n_community_test.po';
+    $this->importPO($filename, $this->u_member_1->uid);
+    $this->assertRaw(t('@count new suggestions added', array('@count' => 3)));
+    $this->assertRaw(t('1 duplicate translation not saved'));
+    $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
+ 
+    // Check whether it is there.
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=8'));
+    $this->assertMsgID('This is a test string.');
+    $this->assertMsgIDPlural('1 test string');
+    $this->assertMsgIDPlural('@count test strings');
+    $this->assertMsgIDContext('Test string in context', 'Test context');
+    $this->assertCount('<td class="source"', 3);
+
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=2'));
+    $this->assertNoRaw('<td class="source"');
+
+    $sid1 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
+    $this->drupalGet('translate/suggestions/hu/'. $sid1);
+    $this->assertCount('<span class="original hidden">This is a test string. - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+
+    $sid2 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", "1 test string\0@count test strings"));
+    $this->drupalGet('translate/suggestions/hu/'. $sid2);
+    $this->assertCount('<span class="original hidden">1 test string - imported translation;  @count test strings - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+
+    $sid3 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s' AND context = '%s'", 'Test string in context', 'Test context'));
+    $this->drupalGet('translate/suggestions/hu/'. $sid3);
+    $this->assertCount('<span class="original hidden">Test string in context - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+
+    // IMPORT AS MODERATOR
+
+    // Moderators can also choose to import translations directly.
+    $this->drupalGet('user/logout');
+    $this->drupalLogin($this->u_moderator);
+    $this->drupalGet('translate/languages/hu/import');
+    $this->assertRaw(t('Gettext .po file with translations'));
+    $this->assertRaw(t('Store as approved translations'));
+    $this->assertRaw(t('Attribute import to'));
+
+    // CHECK DUPLICATES
+
+    // Importing the same file, we should only get duplicates (and ignored).
+    $this->importPO($filename, $this->u_moderator->uid);
+    $this->assertRaw(t('@count duplicate translations not saved', array('@count' => 4)));
+    $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
+    
+    // IMPORT AS TEAM
+    
+    // Modify existing suggestions, so we can test importing again.
+    db_query("UPDATE {l10n_community_translation} SET translation = 'saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid1);
+    db_query("UPDATE {l10n_community_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid2);
+    db_query("UPDATE {l10n_community_translation} SET translation = 'saved string in context' WHERE sid = %d AND is_suggestion = 1", $sid3);
+
+    // Importing the same file, but attribute to team (this can be done logged
+    // in as anyone who can import, we don't need to log in as u_team).
+    $this->importPO($filename, $this->u_team->uid);
+    $this->assertRaw(t('@count new suggestions added', array('@count' => 3)));
+    $this->assertRaw(t('1 duplicate translation not saved'));
+    $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
+    
+    $this->drupalGet('translate/suggestions/hu/'. $sid1);
+    $this->assertCount('<span class="original hidden">saved for testing</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+    $this->assertCount('<span class="original hidden">This is a test string. - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_team->name .'</em>', 1);
+
+    $this->drupalGet('translate/suggestions/hu/'. $sid2);
+    $this->assertCount('<span class="original hidden">1 saved for testing;  @count saved for testing</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+    $this->assertCount('<span class="original hidden">1 test string - imported translation;  @count test strings - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_team->name .'</em>', 1);
+
+    $this->drupalGet('translate/suggestions/hu/'. $sid3);
+    $this->assertCount('<span class="original hidden">saved string in context</span>', 1);
+    $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);
+    $this->assertCount('<span class="original hidden">Test string in context - imported translation</span>', 1);
+    $this->assertCount('by <em>'. $this->u_team->name .'</em>', 1);
+
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=2'));
+    $this->assertNoRaw('<td class="source"');
+
+    // IMPORT AS TRANSLATION (KICKED TO SUGGESTION)
+
+    // Modify existing suggestions (again), so we can test importing (again).
+    // We don't care about the suggestions being the exact same string now,
+    // we only care about that on import and data submission. It is not a
+    // problem for the data model, but an issue for workflow, so for testing,
+    // it is fine as we have it here.
+    db_query("UPDATE {l10n_community_translation} SET translation = 'saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid1);
+    db_query("UPDATE {l10n_community_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid2);
+    db_query("UPDATE {l10n_community_translation} SET translation = 'saved string in context' WHERE sid = %d AND is_suggestion = 1", $sid3);
+
+    // Importing the same file, but ask to import as final translation.
+    $this->importPO($filename, $this->u_moderator->uid, 0);
+    $this->assertRaw(t('@count new suggestions added', array('@count' => 3)));
+    $this->assertRaw(t('1 duplicate translation not saved'));
+    $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
+
+    // Because we did not have an active translation but had outstanding
+    // suggestions, these translations should be diverted to suggestions.
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=8'));
+    $this->assertCount('<td class="source"', 3);
+
+    // Should still see no translations.
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=2'));
+    $this->assertNoRaw('<td class="source"');
+
+    // IMPORT AS TRANSLATION
+
+    // Drop all existing translations, so we can see importing a translation.
+    db_query("DELETE FROM {l10n_community_translation} WHERE sid IN (%d, %d, %d)", $sid1, $sid2, $sid3);
+
+    $this->importPO($filename, $this->u_moderator->uid, 0);
+    $this->assertRaw(t('@count new translations added', array('@count' => 3)));
+    $this->assertRaw(t('1 translation unchanged'));
+    $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
+
+    // Importing as translation should have kicked out the existing suggestions
+    // for these strings.
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=8'));
+    $this->assertNoRaw('<td class="source"');
+
+    // Three strings should now have translations submitted by us.
+    $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=2'));
+    $this->assertCount('<td class="source"', 3);
+  }
+
+  /**
+   * Import specified file to the given language.
+   */
+  function importPO($filename, $import_uid, $is_suggestion = NULL, $assert = TRUE) {
+    $edit = array();
+    $edit['files[file]']   = $filename;
+    if (!is_null($is_suggestion)) {
+      $edit['is_suggestion'] = $is_suggestion;
+    }
+    $edit['import_uid']    = $import_uid;
+    $this->drupalPost('translate/languages/hu/import', $edit, t('Import'));
+    if ($assert) {
+      $this->assertRaw(t('The translation was successfully imported.'), $filename . ' imported successfully.');
+    }
   }
 
   /**

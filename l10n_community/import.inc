@@ -30,6 +30,8 @@ function l10n_community_import_page($langcode) {
  * Translation import form.
  */
 function l10n_community_import_form($form_state, $langcode, $perm) {
+  global $user;
+  
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
   $form['langcode'] = array(
@@ -39,31 +41,48 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
 
   $form['file'] = array(
     '#type' => 'file',
-    '#title' => t('Translation file'),
+    '#title' => t('Gettext .po file with translations'),
     '#size' => 50,
-    '#description' => t('A Gettext Portable Object (.po) file to upload.'),
+    '#description' => t('The maximum allowed size for uploads is %maxsize.', array('%maxsize' => format_size(file_upload_max_size()))),
   );
-  $form['is_suggestion'] = array(
-    '#title' => t('Store as suggestions'),
-    '#type' => 'checkbox',
-    '#description' => t('Check if the translations you import need discussion. If checked, all translations in the imported file will be saved as suggestions.'),
-  );
-  // Restrict to suggestions if no permission to submit translations directly.
-  if ($perm != L10N_PERM_ALL) {
-    $form['is_suggestion']['#type'] = 'value';
-    $form['is_suggestion']['#value'] = 1;
+
+  if ($perm == L10N_PERM_ALL) {
+    // If can submit translations, offer option to pick mode.
+    $form['is_suggestion'] = array(
+      '#title' => t('Status'),
+      '#type' => 'radios',
+      '#default_value' => 0,
+      '#options' => array(
+        0 => t('Store as approved translations'),
+        1 => t('Store as suggestions needing approval, possibly discussion'),
+      ),
+    );
+  }
+  else {
+    // Restrict to suggestions if no permission to submit translations directly.
+    $form['is_suggestion'] = array(
+      '#type' => 'value',
+      '#value' => 1,
+    );
   }
 
   if (($import_account = variable_get('l10n_community_import_user', '')) && ($account = user_load(array('name' => $import_account)))) {
     // If available, let the user import with attribution to a bulk import user.
-    $form['attribute_to_import_account'] = array(
-      '#title' => t('Attribute to %name', array('%name' => $import_account)),
-      '#type' => 'checkbox',
-      '#description' => t('If the imported translations were worked on by a team of people, it is common curtesy, to attribute them to this user to ensure you do not claim credit for work of the whole team.'),
+    $form['import_uid'] = array(
+      '#title' => t('Attribute import to'),
+      '#type' => 'radios',
+      '#default_value' => $user->uid,
+      '#options' => array(
+        $user->uid => t('Yourself (%name)', array('%name' => $user->name)),
+        $account->uid => $import_account,
+      ),
+      '#description' => t('When importing the result of teamwork, If the imported translations were worked on by a team of people, it is common curtesy to not attribute them to your personal username to ensure you do not claim credit for work of the whole team.'),
     );
+  }
+  else {
     $form['import_uid'] = array(
       '#type' => 'value',
-      '#value' => $account->uid,
+      '#value' => $user->uid,
     );
   }
 
@@ -88,18 +107,12 @@ function l10n_community_import_form_submit($form, &$form_state) {
       @set_time_limit(240);
     }
 
-    // Calculate the uid to use for attribution.
-    $uid = $user->uid;
-    if (!empty($form_state['values']['attribute_to_import_account'])) {
-      $uid = $form_state['values']['import_uid'];
-    }
-
     // Do the actual parsing on the local file.
-    if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'], $uid)) {
+    if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'], $form_state['values']['import_uid'])) {
       // Get status report on what was done in the process.
-      list($inserted, $updated, $unchanged, $suggested, $duplicates) = _l10n_community_import_one_string();
+      list($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored) = _l10n_community_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));
-      l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates);
+      l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
       cache_clear_all('l10n:stats:'. $form_state['values']['langcode'], 'cache');
     }
   }
@@ -275,7 +288,7 @@ function l10n_community_import($file, $langcode, $is_suggestion, $uid) {
   }
 
   // End of PO file, flush last entry
-  if (!empty($current) && !empty($current['msgstr'])) {
+  if (!empty($current)) {
     _l10n_community_import_one_string($current, $langcode, $is_suggestion, $uid);
   }
   elseif ($context != "COMMENT") {
@@ -306,10 +319,11 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
   static $unchanged = 0;
   static $suggested = 0;
   static $duplicates = 0;
+  static $ignored = 0;
 
   if ($value == NULL) {
     // Result stats queried.
-    return array($inserted, $updated, $unchanged, $suggested, $duplicates);
+    return array($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
   }
   
   // Trim translation (we will apply source string based whitespace later).
@@ -365,6 +379,10 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
         // We certainly did not update this one.
         $unchanged++;
       }
+    }
+    else {
+      // Source string not found, string ignored.
+      $ignored++;
     }
   }
 }

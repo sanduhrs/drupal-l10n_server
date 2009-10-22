@@ -1195,7 +1195,7 @@ function l10n_community_trim($translation, $source) {
  *
  * Used by both the save and import process.
  */
-function l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates) {
+function l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored) {
   // Inform user about changes made.
   $message = array();
   if ($inserted) {
@@ -1213,8 +1213,11 @@ function l10n_community_update_message($inserted, $updated, $unchanged, $suggest
   if ($duplicates) {
     $message[] = format_plural($duplicates, '1 duplicate translation not saved', '@count duplicate translations not saved');
   }
+  if ($ignored) {
+    $message[] = format_plural($ignored, '1 source string not found, its translation ignored', '@count source strings not found, their translations were ignored');
+  }
   if (count($message)) {
-    drupal_set_message(join(', ', $message) .'.');
+    drupal_set_message(join('; ', $message) .'.');
   }
 }
 

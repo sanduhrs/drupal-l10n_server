@@ -38,8 +38,8 @@ function l10n_community_settings_form() {
     '#default_value' => variable_get('l10n_community_project_per_page', 10),
   );
   $form['l10n_community_import_user'] = array(
-    '#title' => t('User associated with bulk imports'),
-    '#description' => t('The user associated with imports of Gettext files which have been translated by a team, so assigning the current user importing them would not be appropriate.'),
+    '#title' => t('Account associated with bulk imports'),
+    '#description' => t('The account associated with imports of Gettext files which have been translated by a team, so assigning the current user importing them would not be appropriate. Suggested username for this account is <em>Multiple contributors</em> to indicate the team nature.'),
     '#type' => 'textfield',
     '#default_value' => variable_get('l10n_community_import_user', ''),
     '#autocomplete_path' => 'user/autocomplete',
