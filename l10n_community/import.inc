@@ -117,7 +117,7 @@ function l10n_community_import_form_submit($form, &$form_state) {
     }
   }
   else {
-    drupal_set_message(t('File to import not found.'), 'error');
+    drupal_set_message(t('File to import not found. Did you choose a .po file to upload which was under %maxsize?', array('%maxsize' => format_size(file_upload_max_size()))), 'error');
   }
 }
 
