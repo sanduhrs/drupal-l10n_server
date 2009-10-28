@@ -472,7 +472,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
 function l10n_community_translate_form_submit($form, &$form_state) {
   global $user;
 
-  $inserted = $updated = $unchanged = $suggested = $duplicates = 0;
+  $inserted = $updated = $unchanged = $suggested = $duplicates = $ignored = 0;
 
   foreach ($form_state['values'] as $sid => $item) {
     if (!is_array($item) || !isset($item['translation'])) {
@@ -515,7 +515,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
   }
 
   // Inform user about changes made to the database.
-  l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates);
+  l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
 }
 
 // = Theme functions ===========================================================
