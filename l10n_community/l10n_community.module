@@ -828,8 +828,7 @@ function l10n_community_plural_formulas() {
     // Wordforge has different rules!?
     'pt-br' => $default,
     'pt-pt' => $default,
-    // Wordforge has completely different rules with nplurals=3!?
-    'ro' => $default,
+    'ro' => 'nplurals=3; plural=n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2;',
     'ru' => 'nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);',
     // This should not be there in CVS, needs cleanup!
     // 'ru-ru' => array(),
