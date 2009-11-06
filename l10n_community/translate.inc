@@ -85,7 +85,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     $form['project']['#options'] = array('' => t('All'));
     foreach ($projects as $project) {
       // URI used to shorten the lookup cycle in filter sanitization.
-      $form['project']['#options'][$project->uri] = $project->title;
+      $form['project']['#options'][$project->title] = $project->title;
     }
   }
   else {
