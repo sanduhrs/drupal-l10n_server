@@ -49,10 +49,13 @@ function l10n_community_moderate_page($langcode) {
  *   Filters used to present this moderation view.
  */
 function l10n_community_moderation_form(&$form_state, $strings = array(), $language = NULL, $filters) {
+
+  $form['#redirect'] = array($_GET['q'], l10n_community_flat_filters($filters));
+  
   $form['pager'] = array(
     '#value' => theme('pager', NULL, $filters['limit'], 0)
   );
-  
+
   // Keep language code in form for further reference.
   $form['langcode'] = array(
     '#type' => 'value',

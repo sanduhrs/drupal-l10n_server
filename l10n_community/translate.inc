@@ -185,15 +185,8 @@ function l10n_community_filter_form_submit($form, &$form_state) {
 
   if ($form_state['values']['op'] == t('Filter')) {
     $filters = l10n_community_build_filter_values($form_state['values']);
-    // Replace some values by their string representation.
-    foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
-      if (!empty($filters[$name])) {
-        $filters[$name] = $filters[$name]->$key;
-      }
-    }
-
     // Redirect keeping the relevant filters intact in the URL.
-    $form_state['redirect'] = array($_GET['q'], $filters);
+    $form_state['redirect'] = array($_GET['q'], l10n_community_flat_filters($filters));
   }
 }
 
@@ -267,16 +260,10 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
     // after submission, the same page can be shown.
     $filters['page'] = (int) $_GET['page'];
   }
-  // Replace some values by their string representation for URL redirects.
-  foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
-    if (!empty($filters[$name])) {
-      $filters[$name] = $filters[$name]->$key;
-    }
-  }
 
   $form = array(
     '#tree' => TRUE,
-    '#redirect' => array($_GET['q'], $filters)
+    '#redirect' => array($_GET['q'], l10n_community_flat_filters($filters))
   );
   $form['pager_top'] = array(
     '#weight' => -10,
@@ -766,4 +753,21 @@ function l10n_community_build_filter_values($params, $suggestions = FALSE) {
     }
   }
   return $filter;
+}
+
+/**
+ * Replace complex data filters (objects or arrays) with string representations.
+ *
+ * @param $filters
+ *   Associative array with filters passed.
+ * @return
+ *   The modified filter array only containing string and number values.
+ */
+function l10n_community_flat_filters($filters) {
+  foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
+    if (!empty($filters[$name])) {
+      $filters[$name] = $filters[$name]->$key;
+    }
+  }
+  return $filters;
 }
