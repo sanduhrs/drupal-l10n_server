@@ -216,6 +216,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
  */
 function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string, $compact = FALSE) {
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
+  $output = '';
 
   if (!empty($export_string)) {
 

@@ -304,7 +304,7 @@ function l10n_community_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
-  
+
   // Development helpers.
   if (module_exists('devel_generate')) {
     $items['admin/generate/languages'] = array(
@@ -1164,7 +1164,7 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
     }
     else {
       // No active translation yet -> INSERT.
-      db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, is_active) VALUES (%d, '%s', '%s', %d, %d, 1)", $sid, $translation, $langcode, $uid, time());
+      db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, uid_approved, time_entered, time_approved, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, %d, 1)", $sid, $translation, $langcode, $uid, $uid, time(), time());
       $inserted++;
     }
   }
