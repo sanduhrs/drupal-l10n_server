@@ -589,3 +589,12 @@ function l10n_community_update_6007() {
   }
   return $ret;
 }
+
+/**
+ * Translations which are submitted right away should have equal approval data.
+ */
+function l10n_community_update_6008() {
+  $ret = array();
+  $ret[] = update_sql('UPDATE {l10n_community_translation} SET uid_approved = uid_entered, time_approved = time_entered WHERE is_suggestion = 0 AND uid_approved = 0');
+  return $ret;
+}
