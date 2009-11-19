@@ -62,6 +62,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   else {
     $form['data']['project'] = array(
       '#title' => t('Project'),
+      '#required' => TRUE,
     );
     if (($count = count($projects)) <= 30) {
       // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
@@ -86,16 +87,15 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     $form['data']['project']['#default_value'] = $projects[$uri]->title;
 
     $releases = l10n_community_get_releases($uri);
-    $release_options = array('all' => t('All'));
+    $release_options = array('all' => t('All releases merged'));
     foreach ($releases as $rid => $this_release) {
-      $release_options[$rid] = $this_release->title;
+      $release_options[$rid] = t('@release only', array('@release' => $this_release->title));
     }
     $form['data']['release'] = array(
       '#title' => t('Release'),
       '#type' => count($release_options) <= 3 ? 'radios' : 'select',
       '#options' => $release_options,
       '#default_value' => isset($release) ? $release : 'all',
-      '#description' => t('Exporting with all releases is useful for translators, but is not optimal to use for end users because unused data would clutter up their database, when files get imported. Export for all releases if you would like to provide a complete translation, and you work with a desktop tool.'),
     );
   }
   if (isset($langcode) && isset($form['data']['release'])) {
@@ -113,21 +113,19 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     $form['format']['type'] = array(
       '#title' => t('Type'),
       '#type' => 'radios',
-      '#options' => array('translation' => t('Translation'), 'template' => t('Translation template')),
+      '#options' => array('translation' => t('Include both English originals and translations'), 'template' => t('Just export English originals')),
       '#default_value' => 'translation',
-      '#description' => t('Templates only contain the source (English) strings, translations are represented by empty placeholders.')
     );
     $form['format']['version'] = array(
-      '#title' => t('Format'),
+      '#title' => t('Packaging'),
       '#type' => 'radios',
-      '#options' => array('drupal-6' => t('Drupal 6 package format'), 'drupal-5' => t('Drupal 5 package format for autolocale module'), 'flat-package' => t('Flat package for CVS commit'), 'all-in-one' => t('All in one file')),
+      '#options' => array('drupal-6' => t('Drupal 6 package format (translations directories)'), 'drupal-5' => t('Drupal 5 package format (for autolocale module)'), 'flat-package' => t('Flat package for CVS commit (use for Drupal core)'), 'all-in-one' => t('All in one file')),
       '#default_value' => 'drupal-6',
-      '#description' => t("Drupal 5's autolocale module and Drupal 6 use different conventions for directory naming in packages. Temporarily, as long as you need to use CVS to distribute translations the flat package helps you generate a package for committing to Drupal.org. Additionally, for testing, spell checking and smaller modules, you can also export in one file without packaging as well. It is not advised to use big .po files for importing in Drupal though, as it might lead to incomplete imports. Use packages for usage with Drupal importing."),
     );
     $form['format']['compact'] = array(
-      '#title' => t('Compact files'),
-      '#description' => t('Compact files will not include the list of files being used to parse the translatable strings. Locations comments mentioning the filenames and line numbers are also skipped and translations are not separated by a newline. This saves a considerable amount of file size for distribution, but will not look nice if you would like to edit with a simple text editor.'),
-      '#type' => 'checkbox',
+      '#title' => t('Verbosity'), 
+      '#type' => 'radios',
+      '#options' => array(0 => t('Verbose files useful for desktop translation'), 1 => t('Compact files optimized for size, not desktop editing')),
       '#default_value' => 0,
     );
   }
@@ -142,11 +140,8 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
  * Release field is mandatory.
  */
 function l10n_community_export_form_validate($form, &$form_state) {
-  if (empty($form_state['values']['project'])) {
-    form_set_error('project', t('You should choose a project, submit the form and choose a release.'));
-  }
-  elseif (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
-    form_set_error('project', t('Invalid project chosen.'));
+  if (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
+    form_set_error('project', t('Invalid project selected.'));
     $form_state['values']['project'] = '';
   }
 }

@@ -108,13 +108,29 @@ function l10n_packager_admin_projects_form() {
     '#title' => t('Project translations'),
     '#description' => t('Repackage all translations of a single project or release.'),
   );
+
+  $projects = l10n_community_get_projects();
   $form['projects']['project'] = array(
     '#title' => t('Project'),
-    '#type' => 'textfield',
-    '#autocomplete_path' => 'translate/projects/autocomplete',
-    '#description' => t('Type the name of a project, eg. Drupal.'),
     '#required' => TRUE,
   );
+  if (($count = count($projects)) <= 30) {
+    // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
+    $form['projects']['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+    $form['projects']['project']['#options'] = array();
+    foreach ($projects as $project) {
+      // Title used to conform to the autocomplete behavior.
+      $form['projects']['project']['#options'][$project->title] = $project->title;
+    }
+  }
+  else {
+    // Autocomplete field for more then 30 projects.
+    $form['projects']['project'] += array(
+      '#type' => 'textfield',
+      '#autocomplete_path' => 'translate/projects/autocomplete',
+    );
+  }
+
   $form['projects']['release'] = array(
     '#title' => t('Release'),
     '#type' => 'textfield',
