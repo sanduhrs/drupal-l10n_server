@@ -70,8 +70,15 @@ function l10n_packager_admin_check_directory($form_element) {
  * Join two independent forms on one page.
  */
 function l10n_packager_admin_repackage_page() {
-  $output = drupal_get_form('l10n_packager_admin_projects_form');
+  $projects = l10n_community_get_projects();
+
+  $output = drupal_get_form('l10n_packager_admin_projects_form', $projects);
   $output .= drupal_get_form('l10n_packager_admin_languages_form');
+
+  // @todo: make this project agnostic for others running l10n_server.
+  $project = isset($projects['drupal']) ? $projects['drupal'] : NULL;
+  $output .= drupal_get_form('l10n_packager_admin_installer_form', $project);
+
   return $output;
 }
 
@@ -93,23 +100,15 @@ function l10n_packager_admin_languages_form() {
 }
 
 /**
- * Rebuild language list on form submission.
- */
-function l10n_packager_admin_languages_form_submit() {
-  l10n_packager_export_language_list();
-}
-
-/**
  * Form callback. Repackage translations manually.
  */
-function l10n_packager_admin_projects_form() {
+function l10n_packager_admin_projects_form(&$form_state, $projects) {
   $form['projects'] = array(
     '#type' => 'fieldset',
     '#title' => t('Project translations'),
     '#description' => t('Repackage all translations of a single project or release.'),
   );
 
-  $projects = l10n_community_get_projects();
   $form['projects']['project'] = array(
     '#title' => t('Project'),
     '#required' => TRUE,
@@ -221,4 +220,78 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
     db_query("UPDATE {l10n_packager_release} SET updated = 0, checked = 0, status = %d WHERE rid IN ($query)", $args);
     drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => db_affected_rows())));
   }
+}
+
+/**
+ * Form callback. Package installer tarballs for Drupal core.
+ *
+ * The tarball created is offered for download, so the user can get it to their
+ * install profile right away (given multiple files are generated).
+ *
+ * @todo
+ *   Make it possible to reuse this for non-Drupal.org use, eg. by letting the
+ *   user pick a project and a release.
+ */
+function l10n_packager_admin_installer_form(&$form_state, $project) {
+  $form['installer'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Install profile packaging'),
+    '#description' => t('Generate a set of .po files to be used in a Drupal 6 install profile from Drupal core.'),
+  );
+
+  $form['installer']['project'] = array(
+    '#type' => 'value',
+    '#value' => $project
+  );
+
+  $releases = l10n_community_get_releases($project->uri);
+  foreach ($releases as $rid => $this_release) {
+    $release_options[$rid] = t('@release only', array('@release' => $this_release->title));
+  }
+  $form['installer']['release'] = array(
+    '#title' => t('Release'),
+    '#type' => count($release_options) <= 3 ? 'radios' : 'select',
+    '#options' => $release_options,
+    '#default_value' => isset($release) ? $release : 'all',
+    '#required' => TRUE,
+  );
+
+  $form['installer']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Download an install profile package'),
+  );
+  return $form;
+}
+
+/**
+ * Package an install profile tarball with .po files for all languages.
+ */
+function l10n_packager_admin_installer_form_submit($form, $form_state) {
+  // l10n_community_requirements() makes sure there is a status
+  // error if this is not installed.
+  include_once 'Archive/Tar.php';
+
+  module_load_include('inc', 'l10n_community', 'export');
+
+  // Generate tgz file with all files added.
+  $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $form_state['values']['project']->uri . '-installer');
+  $tar = new Archive_Tar($tempfile, 'gz');
+
+  $languages = l10n_community_get_languages();
+  foreach ($languages as $language) {
+    $output = l10n_community_export($form_state['values']['project']->uri, $form_state['values']['release'], $language, FALSE, 'all-in-one', TRUE, TRUE);
+    // Add file to the tgz. We need to purely use the language code because
+    // Drupal 6 uses that to identify the language.
+    $tar->addString($language->language .'.po', file_get_contents($output[1]));
+  }
+
+  $releases = l10n_community_get_releases($form_state['values']['project']->uri);
+  $release = $releases[$form_state['values']['release']];
+
+  // Return compressed archive to user.
+  header('Content-Disposition: attachment; filename=drupal-installer-'. $release->title .'.tgz');
+  header('Content-Type: application/x-compressed');
+  echo file_get_contents($tempfile);
+  unlink($tempfile);
+  die();
 }

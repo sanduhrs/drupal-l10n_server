@@ -371,12 +371,15 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  *   given Drupal version.
  * @param $compact
  *   A compact export will skip outputting the comments, superfluous
- *   newlines and the list of files. TRUE or FALSE.
+ *   newlines, empty translations and the list of files. TRUE or FALSE.
+ * @param $installer
+ *   Whether we should only export the translations needed for the installer
+ *   and not those needed for the runtime site.
  *
  * @todo
  *   Look into possibly exporting suggestions as fuzzy translations.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE) {
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE, $installer = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
   include_once 'Archive/Tar.php';
@@ -392,8 +395,10 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // translation for compact method export.
     $translation_join = ($compact) ? 'INNER JOIN' : 'LEFT JOIN';
     $translation_filter = ($compact) ? "AND t.translation != ''" : '';
+    // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
+    $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  $translation_join {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 $translation_filter WHERE f.pid = %d";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  $translation_join {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 $translation_filter WHERE f.pid = %d $type_limit";
     $sql_args = array($language->language, $project->pid);
   }
 
