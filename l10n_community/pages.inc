@@ -494,7 +494,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       else {
         // First get the count of strings available for translation.
         $sums = $count_args = array();
-        $result = db_query("SELECT COUNT(DISTINCT s.sid) AS string_count, l.pid FROM {l10n_community_line} l INNER JOIN {l10n_community_string} s ON l.sid = s.sid GROUP BY l.pid");
+        $result = db_query("SELECT COUNT(DISTINCT sid) AS string_count, pid FROM {l10n_community_line} GROUP BY pid");
         while ($row = db_fetch_object($result)) {
           $sums[$row->pid] = array('count' => $row->string_count);
         }
@@ -520,7 +520,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
         while ($row = db_fetch_object($result)) {
-          $sums[$row->pid]['translations'] = $row->translation_count;
+          $sums[$row->pid]['suggestions'] = $row->translation_count;
         }
         cache_set('l10n:count:projects:'. $id, $sums, 'cache', CACHE_PERMANENT);
         return $sums;
