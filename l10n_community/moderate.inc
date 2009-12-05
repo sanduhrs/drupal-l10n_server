@@ -77,11 +77,12 @@ function l10n_community_moderation_form(&$form_state, $strings = array(), $langu
     '#type' => 'submit',
     '#value' => t('Decline all selected'),
   );
-  
+
   // All strings and suggestions
   $form['strings'] = array(
     '#tree' => TRUE,
   );
+
   foreach ($strings as $string) {
     $form['strings']['tid'][$string->tid] = array(
       '#type' => 'checkbox',
@@ -145,6 +146,8 @@ function l10n_community_moderation_form_submit($form, &$form_state) {
  *   An array of suggestion records from database.
  */
 function l10n_community_get_suggestions($langcode, $filters) {
+  global $user;
+
   $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
 
@@ -204,6 +207,19 @@ function l10n_community_get_suggestions($langcode, $filters) {
   else {
     $join[] = "LEFT JOIN {l10n_community_translation} tt ON tt.sid = ts.sid AND tt.is_suggestion = 0 AND tt.is_active = 1 AND tt.language = '%s'";
     $join_args[] = $langcode;
+  }
+  
+  // Only show strings matching the user's permissions. It should be already
+  // ensured that the user has either one of these permissions, when calling
+  // this function, or nothing will be returned.
+  $perm = l10n_community_get_permission($langcode);
+  if (!($perm & L10N_PERM_MODERATE_OWN)) {
+    $where[] = "(ts.uid_entered <> %d)";
+    $where_args[] = $user->uid;
+  }
+  if (!($perm & L10N_PERM_MODERATE_OTHERS)) {
+    $where[] = "(ts.uid_entered = %d)";
+    $where_args[] = $user->uid;
   }
 
   // Build the queries

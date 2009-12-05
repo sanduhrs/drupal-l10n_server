@@ -11,27 +11,22 @@
  */
 function l10n_community_import_page($langcode) {
   $languages = l10n_community_get_languages();
-  if (($perm = l10n_community_get_permission($langcode)) == L10N_PERM_ALL) {
-    drupal_set_title(t('Import translations to @language', array('@language' => $languages[$langcode]->name)));
-  }
-  else {
-    drupal_set_title(t('Import suggestions to @language', array('@language' => $languages[$langcode]->name)));
-  }
+  drupal_set_title(t('Import to @language', array('@language' => $languages[$langcode]->name)));
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
       l(t('Home'), NULL),
       l(t('Translate projects'), 'translate'))
   );
-  return drupal_get_form('l10n_community_import_form', $langcode, $perm);
+  return drupal_get_form('l10n_community_import_form', $langcode);
 }
 
 /**
  * Translation import form.
  */
-function l10n_community_import_form($form_state, $langcode, $perm) {
+function l10n_community_import_form($form_state, $langcode) {
   global $user;
-  
+
   $form['#attributes']['enctype'] = 'multipart/form-data';
 
   $form['langcode'] = array(
@@ -46,27 +41,7 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
     '#description' => t('The maximum allowed size for uploads is %maxsize.', array('%maxsize' => format_size(file_upload_max_size()))),
   );
 
-  if ($perm == L10N_PERM_ALL) {
-    // If can submit translations, offer option to pick mode.
-    $form['is_suggestion'] = array(
-      '#title' => t('Status'),
-      '#type' => 'radios',
-      '#default_value' => 0,
-      '#options' => array(
-        0 => t('Store as approved translations'),
-        1 => t('Store as suggestions needing approval, possibly discussion'),
-      ),
-    );
-  }
-  else {
-    // Restrict to suggestions if no permission to submit translations directly.
-    $form['is_suggestion'] = array(
-      '#type' => 'value',
-      '#value' => 1,
-    );
-  }
-
-  if (($import_account = variable_get('l10n_community_import_user', '')) && ($account = user_load(array('name' => $import_account)))) {
+  if (($import_name = variable_get('l10n_community_import_user', '')) && ($import_account = user_load(array('name' => $import_name)))) {
     // If available, let the user import with attribution to a bulk import user.
     $form['import_uid'] = array(
       '#title' => t('Attribute import to'),
@@ -74,7 +49,7 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
       '#default_value' => $user->uid,
       '#options' => array(
         $user->uid => t('Yourself (%name)', array('%name' => $user->name)),
-        $account->uid => $import_account,
+        $import_account->uid => $import_name,
       ),
       '#description' => t('When importing the result of teamwork, If the imported translations were worked on by a team of people, it is common curtesy to not attribute them to your personal username to ensure you do not claim credit for work of the whole team.'),
     );
@@ -86,11 +61,56 @@ function l10n_community_import_form($form_state, $langcode, $perm) {
     );
   }
 
+  if (!l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OWN) && (!l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OTHERS) || empty($import_account))) {
+    // Either has no permission to approve own or approve others, or we do not
+    // have a mass import account and no permission to approve own, so no way
+    // we can offer importing translations directly.
+    $form['is_suggestion'] = array(
+      '#type' => 'value',
+      '#value' => 1,
+    );
+  }
+  else {
+    // If can submit translations, offer option to pick mode.
+    $form['is_suggestion'] = array(
+      '#title' => t('Status'),
+      '#type' => 'radios',
+      '#default_value' => 0,
+      '#options' => array(
+        0 => t('Store as approved translations'),
+        1 => t('Store as suggestions needing approval, possibly discussion'),
+      ),
+    );
+  }
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Import')
   );
   return $form;
+}
+
+/**
+ * Validate the locale import form submission.
+ */
+function l10n_community_import_form_validate($form, &$form_state) {
+  global $user;
+
+  if (empty($form_state['values']['is_suggestion'])) {
+    if ($form_state['values']['import_uid'] == $user->uid) {
+      // Trying to submit translation in her own name.
+      if (!l10n_community_has_permission($form_state['values']['langcode'], L10N_PERM_MODERATE_OWN)) {
+        form_set_error('is_suggestion', t('You do not have sufficient permissions to submit translations directly in your name. Please submit as suggestions.'));
+      }
+    }
+    else {
+      // Trying to submit translation in the import_account's name.
+      if (!l10n_community_has_permission($form_state['values']['langcode'], L10N_PERM_MODERATE_OTHERS)) {
+        form_set_error('is_suggestion', t('You do not have sufficient permissions to submit translations directly in the name of other users. Please submit as suggestions.'));
+      }
+    }
+  }
+
 }
 
 /**
@@ -325,12 +345,12 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
     // Result stats queried.
     return array($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
   }
-  
+
   // Trim translation (we will apply source string based whitespace later).
   if (is_string($value['msgstr'])) {
     $value['msgstr'] = trim($value['msgstr']);
   }
-  
+
   if (!empty($value['msgid']) && !empty($value['msgstr'])) {
     // We only save non-empty translations/suggestions.
 
@@ -355,7 +375,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
 
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
-      
+
       // Trim imported translation to have whitesapce from source string.
       $value['msgstr'] = l10n_community_trim($value['msgstr'], $value['msgid']);
 

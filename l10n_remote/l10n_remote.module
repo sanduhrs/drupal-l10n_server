@@ -142,8 +142,8 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
     return array('status' => FALSE, 'reason' => 'Language not accepted.');
   }
   
-  // Check if the user has permission to submit strings in this language. 
-  if (l10n_community_get_permission($langcode, $account) == L10N_PERM_NONE) {
+  // Check if the user has permission to submit strings in this language.
+  if (!(l10n_community_get_permission($langcode, $account) & L10N_PERM_SUGGEST)) {
     //watchdog('l10n_community', 'Not allowed to submit translations in this language remotely.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Not allowed to submit translations in this language.');
   }

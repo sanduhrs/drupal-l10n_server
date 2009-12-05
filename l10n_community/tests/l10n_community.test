@@ -28,7 +28,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->u_auth = $this->drupalCreateUser(array('access localization community', 'browse translations'));
     $this->u_member_1 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
     $this->u_member_2 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
-    $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit translations and approve suggestions', 'import gettext files'));
+    $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'moderate own suggestions', 'moderate suggestions from others', 'import gettext files', 'submit suggestions'));
     $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization community', 'administer localization community for local packages', 'import gettext files'));
     $this->u_team = $this->drupalCreateUser();
 
@@ -474,7 +474,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<input type="checkbox"', 1);
     $this->assertRaw('This is a test string. suggestion-3');
   }
-  
+
   /**
    * Test importing functionality.
    */
@@ -484,9 +484,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->addProject(6);
     $this->addProject(6, FALSE);
     $this->addProject(7);
-    
+
     // UNPRIVILEGED
-    
+
     // Verify that users without permission will not see import screen.
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate/languages/hu/import');
@@ -501,14 +501,14 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('Gettext .po file with translations'));
     $this->assertNoRaw(t('Store as approved translations'));
     $this->assertRaw(t('Attribute import to'));
-    
+
     // Import our test suggestions
     $filename = drupal_get_path('module', 'l10n_community') .'/tests/l10n_community_test.po';
     $this->importPO($filename, $this->u_member_1->uid);
     $this->assertRaw(t('@count new suggestions added', array('@count' => 3)));
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
- 
+
     // Check whether it is there.
     $this->drupalGet('translate/languages/hu/view', array('query' => 'limit=30&status=8'));
     $this->assertMsgID('This is a test string.');
@@ -551,9 +551,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->importPO($filename, $this->u_moderator->uid);
     $this->assertRaw(t('@count duplicate translations not saved', array('@count' => 4)));
     $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
-    
+
     // IMPORT AS TEAM
-    
+
     // Modify existing suggestions, so we can test importing again.
     db_query("UPDATE {l10n_community_translation} SET translation = 'saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid1);
     db_query("UPDATE {l10n_community_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE sid = %d AND is_suggestion = 1", $sid2);
@@ -565,7 +565,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('@count new suggestions added', array('@count' => 3)));
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found, their translations were ignored', array('@count' => 2)));
-    
+
     $this->drupalGet('translate/suggestions/hu/'. $sid1);
     $this->assertCount('<span class="original hidden">saved for testing</span>', 1);
     $this->assertCount('by <em>'. $this->u_member_1->name .'</em>', 1);

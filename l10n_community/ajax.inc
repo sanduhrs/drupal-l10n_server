@@ -56,6 +56,8 @@ function l10n_community_string_details($langcode = NULL, $sid = 0) {
 }
 
 function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
+  global $user;
+
   // Existing, "unresolved" suggestions.
   $suggestions = array();
   $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, u.name FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $langcode, $sid);
@@ -64,8 +66,11 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
   while ($suggestion = db_fetch_object($result)) {
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
     $token = "'". drupal_get_token('l10n_server_'. $suggestion->tid .'_'. $suggestion->sid) ."'";
-    $approve_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Approve suggestion.') .'"') : '';
-    $decline_button = $perm == L10N_PERM_ALL ? theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Decline suggestion.') .'"') : '';
+    $approve_button = $decline_button = '';
+    if ($perm & ($suggestion->uid_entered == $user->uid ? L10N_PERM_MODERATE_OWN : L10N_PERM_MODERATE_OTHERS)) {
+      $approve_button = theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Approve suggestion.') .'"');
+      $decline_button = theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Decline suggestion.') .'"');
+    }
 
     // Plural versions are shown in a short form.
     // Since we no longer store an additional copy of strings in JS
@@ -95,8 +100,11 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
  *   The suggestion object if validated $tid, user permissions and token.
  */
 function l10n_community_string_ajax_suggestion($tid = 0) {
+  global $user;
+  
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) &&
-      (l10n_community_get_permission($suggestion->language) == L10N_PERM_ALL) &&
+      ($perm = l10n_community_get_permission($suggestion->language)) &&
+      ($perm & ($suggestion->uid_entered == $user->uid ? L10N_PERM_MODERATE_OWN : L10N_PERM_MODERATE_OTHERS)) &&
       !empty($_GET['form_token']) &&
       drupal_valid_token($_GET['form_token'], 'l10n_server_'. $suggestion->tid .'_'. $suggestion->sid)) {
     return $suggestion;

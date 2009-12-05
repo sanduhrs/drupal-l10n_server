@@ -170,7 +170,7 @@ function l10n_community_pick_go_submit($form, &$form_state) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
       if (user_access('browse translations')) {
-        $action = l10n_community_contribute_access($form_state['values']['langcode']) ? 'edit' : 'view';
+        $action = l10n_community_has_permission($form_state['values']['langcode'], L10N_PERM_SUGGEST) ? 'edit' : 'view';
         drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/'. $action, 'project='. $uri);
       }
       else {

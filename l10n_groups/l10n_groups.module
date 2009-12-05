@@ -242,19 +242,15 @@ function l10n_groups_block_help($perm, $langcode = NULL) {
 
   $groups = l10n_groups_get_groups();
   $permission_help = '';
-  switch ($perm) {
-    // Inform user about her permission level in this group.
-    case L10N_PERM_NONE:
-      $permission_help = t('You are not a member of this translation group, but you can still view the existing translations and export templates or translations for your own use.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
-      break;
-    case L10N_PERM_SUGGEST:
-      $permission_help = t('You are a member of this translation group, so you can suggest translations or import complete Gettext translation files to suggest multiple translations at once. Administrators of this group either accept or decline suggestions provided by members of the group. To work offline, export a translation template, which contains the current state of the translation.');
-      break;
-    case L10N_PERM_ALL:
-      $permission_help = t('As a member of this translation group, you can suggest translations as well as approve translations suggested by other members of the group. Export/import of Gettext translation files is also possible.');
-      break;
+
+  if (empty($user->og_groups) || empty($user->og_groups[$groups[$langcode]->nid])) {
+    $permission_help = t('You are not a member of this translation group.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
   }
-  return '<p>'. $permission_help .'</p>';
+  elseif (!empty($user->og_groups[$groups[$langcode]->nid]['is_admin']) || ($groups[$langcode]->model == L10N_MODEL_OPEN)) {
+    $permission_help = t('You are an administrator in this translation group.');
+  }
+
+  return !empty($permission_help) ? '<p>'. $permission_help .'</p>' : '';
 }
 
 /**
@@ -280,36 +276,34 @@ function l10n_groups_get_groups() {
 /**
  * Get permission level for a specific user based on group membership.
  *
- * The group permissio model is taken into account and membership of
+ * The group permission model is taken into account and membership of
  * the user in language groups is checked.
  *
  * @param $permissions
  *   Permission cache array to tunnel cache values to.
- * @param $global_permission
- *   Permission based on user access settings to consider as a base.
- * @param $langcode
- *   Language code, for example 'hu', 'pt-br', 'de' or 'it'.
  * @param $account
  *   Optional user account.
+ * @param $global
+ *   Permission based on user access settings to consider as a base.
  */
-function l10n_groups_get_permission(&$permissions, $global_permission, $langcode, $account) {
+function l10n_groups_get_permission(&$permissions, $account, $global) {
   if ($groups = l10n_groups_get_groups()) {
     // Fill up local cache with all langcode permissions of this account for
     // future reference (eg. a page showing links for all languages).
     foreach ($groups as $group) {
-      $permission = L10N_PERM_NONE;
-      if (!empty($account->og_groups) and !empty($account->og_groups[$group->nid])) {
-        if (!empty($account->og_groups[$group->nid]['is_admin'])) {
-          // Administrators of groups have all permissions in the group.
-          $permission = L10N_PERM_ALL;
-        }
-        elseif ($account->og_groups[$group->nid]['is_active']) {
-          // Members in the group have a permission depending on the model used.
-          $permission = ($group->model == L10N_MODEL_OPEN ? L10N_PERM_ALL : L10N_PERM_SUGGEST);
-        }
+      $perm = $global;
+
+      if (empty($account->og_groups) || empty($account->og_groups[$group->nid])) {
+        // The user is not in the group and may therefore only view.
+        $perm = $perm & ~(L10N_PERM_CONTRIBUTE | L10N_PERM_REVIEW);
       }
-      // Save the lowest common denominator of permissions given.
-      $permissions[$account->uid][$group->language] = min($permission, $global_permission);
+      elseif (empty($account->og_groups[$group->nid]['is_admin']) && $group->model != L10N_MODEL_OPEN) {
+        // Non-admins of group don't have review permissions but can contribute.
+        // Open groups consider all members as admins regarding reviews.
+        $perm = $perm & ~(L10N_PERM_REVIEW);
+      }
+
+      $permissions[$account->uid][$group->language] = $perm;
     }
   }
 }
