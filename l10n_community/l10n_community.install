@@ -598,3 +598,20 @@ function l10n_community_update_6008() {
   $ret[] = update_sql('UPDATE {l10n_community_translation} SET uid_approved = uid_entered, time_approved = time_entered WHERE is_suggestion = 0 AND uid_approved = 0');
   return $ret;
 }
+
+/**
+ * Permission "submit translations and approve suggestions" split in two.
+ *
+ * Became "moderate suggestions from others" and "moderate own suggestions".
+ */
+function l10n_community_update_6009() {
+  $ret = array();
+  $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
+  while ($role = db_fetch_object($result)) {
+    $renamed_permission = preg_replace('/submit translations and approve suggestions/', 'moderate suggestions from others, moderate own suggestions', $role->perm);
+    if ($renamed_permission != $role->perm) {
+      $ret[] = update_sql("UPDATE {permission} SET perm = '$renamed_permission' WHERE rid = $role->rid");
+    }
+  }
+  return $ret;
+}
