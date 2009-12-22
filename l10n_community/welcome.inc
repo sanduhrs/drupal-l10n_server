@@ -114,7 +114,7 @@ function l10n_community_pick_go() {
       '#value' => $language_code
     );
   }
-  
+
   if (count($language_list) > 1) {
     $projects_title = user_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
   }

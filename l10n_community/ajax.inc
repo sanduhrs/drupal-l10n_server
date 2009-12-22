@@ -101,7 +101,7 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
  */
 function l10n_community_string_ajax_suggestion($tid = 0) {
   global $user;
-  
+
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) &&
       ($perm = l10n_community_get_permission($suggestion->language)) &&
       ($perm & ($suggestion->uid_entered == $user->uid ? L10N_PERM_MODERATE_OWN : L10N_PERM_MODERATE_OTHERS)) &&

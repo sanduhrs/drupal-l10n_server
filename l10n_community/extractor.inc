@@ -200,7 +200,7 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
   if (isset($files[$file])) {
     // Explode files array to pid, rid and fid.
     list($pid, $rid, $fid) = $files[$file];
-    
+
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.

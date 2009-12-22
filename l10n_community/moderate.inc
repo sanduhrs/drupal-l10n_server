@@ -23,7 +23,7 @@ function l10n_community_moderate_page($langcode) {
   $filters = l10n_community_build_filter_values($_GET, TRUE);
 
   $output = drupal_get_form('l10n_community_filter_form', $filters, TRUE);
-  
+
   $strings = l10n_community_get_suggestions($langcode, $filters);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
@@ -33,12 +33,12 @@ function l10n_community_moderate_page($langcode) {
     drupal_set_title(t('Suggestions for @language', array('@language' => $languages[$langcode]->name)));
     $output .= drupal_get_form('l10n_community_moderation_form', $strings, $languages[$langcode], $filters);
   }
-  return $output;  
+  return $output;
 }
 
 // == Moderation form ==========================================================
 
-/** 
+/**
  * Translation web interface.
  *
  * @param $strings
@@ -51,7 +51,7 @@ function l10n_community_moderate_page($langcode) {
 function l10n_community_moderation_form(&$form_state, $strings = array(), $language = NULL, $filters) {
 
   $form['#redirect'] = array($_GET['q'], l10n_community_flat_filters($filters));
-  
+
   $form['pager'] = array(
     '#value' => theme('pager', NULL, $filters['limit'], 0)
   );
@@ -97,7 +97,7 @@ function l10n_community_moderation_form(&$form_state, $strings = array(), $langu
     $form['strings']['translation'][$string->tid] = array(
       //'#type' => 'item',
       '#value' => l10n_community_format_string($string->translation, FALSE),
-    );    
+    );
     $form['strings']['suggestion'][$string->tid] = array(
       //'#type' => 'item',
       '#value' => l10n_community_format_string($string->suggestion, FALSE),
@@ -156,13 +156,13 @@ function l10n_community_get_suggestions($langcode, $filters) {
   $join[] = "INNER JOIN {l10n_community_string} s ON ts.sid = s.sid";
   $where[] = "ts.is_suggestion = 1 AND ts.is_active = 1 AND ts.language = '%s'";
   $where_args[] = $langcode;
-    
+
   // Add submitted by condition
   if (!empty($filters['author'])) {
     $where[] = "ts.uid_entered = %d";
     $where_args[] = $filters['author']->uid;
   }
-  
+
   // Restrict based on project or release.
   $release = empty($filters['release']) || $filters['release'] === 'all' ? NULL : $filters['release'];
   $project = $filters['project'];
@@ -173,7 +173,7 @@ function l10n_community_get_suggestions($langcode, $filters) {
       // Release restriction.
       $where_args[] = $release;
       $where[] = 'l.rid = %d';
-    }  
+    }
     elseif ($project) {
       $where[] = "l.pid = %d";
       $where_args[] = $project->pid;
@@ -208,7 +208,7 @@ function l10n_community_get_suggestions($langcode, $filters) {
     $join[] = "LEFT JOIN {l10n_community_translation} tt ON tt.sid = ts.sid AND tt.is_suggestion = 0 AND tt.is_active = 1 AND tt.language = '%s'";
     $join_args[] = $langcode;
   }
-  
+
   // Only show strings matching the user's permissions. It should be already
   // ensured that the user has either one of these permissions, when calling
   // this function, or nothing will be returned.
@@ -241,7 +241,7 @@ function l10n_community_get_suggestions($langcode, $filters) {
  */
 function l10n_community_moderate_approve_selected($langcode, $tids, $strings) {
   global $user;
-  
+
   // In case we have more than one sugggestion for an sid, error.
   $sids = array_unique($strings);
   if (count($sids) < count($strings)) {
@@ -250,15 +250,15 @@ function l10n_community_moderate_approve_selected($langcode, $tids, $strings) {
   }
   $tid_placeholders = db_placeholders($tids);
   $sid_placeholders = db_placeholders($sids);
-  
+
   // Mark existing translations and suggestions as inactive in this language.
   $args = array_merge($sids, array($langcode));
   db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid IN ($sid_placeholders) AND language = '%s'", $args);
-  
+
   // Remove placeholder translation record (which was there if
   // first came suggestions, before an actual translation).
   db_query("DELETE FROM {l10n_community_translation} WHERE sid IN ($sid_placeholders) AND translation = '' AND language = '%s'", $args);
-  
+
   // Mark this exact suggestions as active, and set approval time.
   $args = array_merge(array(time(), $user->uid), $tids);
   db_query("UPDATE {l10n_community_translation} SET time_approved = %d, uid_approved = %d, has_suggestion = 0, is_suggestion = 0, is_active = 1 WHERE tid IN ($tid_placeholders)", $args);
@@ -278,15 +278,15 @@ function l10n_community_moderate_decline_selected($langcode, $tids, $sids) {
   // Deactive the selected suggestions.
   db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE tid IN ($tid_placeholders)", $tids);
   drupal_set_message(format_plural(db_affected_rows(), 'A suggestion has been declined.', '@count suggestions have been declined.'));
-  
+
   // Update 'has suggestion' option for remaining string translations
   $args = array_merge(array($langcode), $sids);
   $result = db_query(
-    "SELECT tt.tid 
-     FROM {l10n_community_translation} tt 
-     LEFT JOIN {l10n_community_translation} ts ON tt.sid = ts.sid AND tt.language = ts.language AND ts.is_active = 1 AND ts.is_suggestion = 1 
-     WHERE tt.is_active = 1 AND tt.is_suggestion = 0 AND tt.has_suggestion = 1 AND tt.language = '%s' AND tt.sid IN ($sid_placeholders) 
-     GROUP BY tt.tid 
+    "SELECT tt.tid
+     FROM {l10n_community_translation} tt
+     LEFT JOIN {l10n_community_translation} ts ON tt.sid = ts.sid AND tt.language = ts.language AND ts.is_active = 1 AND ts.is_suggestion = 1
+     WHERE tt.is_active = 1 AND tt.is_suggestion = 0 AND tt.has_suggestion = 1 AND tt.language = '%s' AND tt.sid IN ($sid_placeholders)
+     GROUP BY tt.tid
      HAVING COUNT(ts.tid) = 0",
     $args
   );
@@ -304,7 +304,7 @@ function theme_l10n_community_moderation_form($form) {
   $output = '';
   $pager = isset($form['pager']) ? drupal_render($form['pager']) : '';
   $output .= $pager;
-  $output .= drupal_render($form['options']);  
+  $output .= drupal_render($form['options']);
   $header = array(theme('table_select_header_cell'), t('Suggestion'), t('Translation'), t('Source'));
   foreach (element_children($form['strings']['tid']) as $tid) {
     $rows[] = array(

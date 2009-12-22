@@ -49,7 +49,7 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
         unset($predefined[$key]);
       }
     }
-    
+
     $formulas = l10n_community_plural_formulas();
     $default_formula = $default = 'nplurals=2; plural=(n!=1);';
     foreach ($languages as $langcode => $language) {

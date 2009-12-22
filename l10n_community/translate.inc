@@ -74,7 +74,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     L10N_STATUS_NO_SUGGESTION  => t('Has no suggestion'),
     L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
   );
-  
+
   $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => isset($filters['project']) ? $filters['project']->title : '',
@@ -636,7 +636,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
       // Release restriction.
       $where_args[] = $release;
       $where[] = 'l.rid = %d';
-    }  
+    }
     elseif ($project) {
       $where[] = "l.pid = %d";
       $where_args[] = $project->pid;
@@ -666,7 +666,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     // NULL in this case, as we are not allowing NULL there and only saving an empty
     // translation if there are suggestions but no translation yet.
     $where[] = "(t.translation is NULL OR t.translation = '')";
-  } 
+  }
   elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
     $where[] = "t.translation != ''";
   }
@@ -732,9 +732,9 @@ function l10n_community_build_filter_values($params, $suggestions = FALSE) {
     'context' => isset($params['context']) ? (string) $params['context'] : 'all',
     'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30))) ? (int) $params['limit'] : 10,
   );
-  
-  // The project can be a dropdown or text field depending on number of 
-  // projects. So we need to sanitize its value. 
+
+  // The project can be a dropdown or text field depending on number of
+  // projects. So we need to sanitize its value.
   if (isset($params['project'])) {
     // Try to load project by uri or title, but give URI priority. URI is used
     // to shorten the URL and have simple redirects. Title is used if the
