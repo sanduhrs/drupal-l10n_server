@@ -6,16 +6,6 @@
  *   Organic groups enabler for localization community.
  */
 
-/**
- * Open translation model, here all team members can translate.
- */
-define('L10N_MODEL_OPEN', 0);
-
-/**
- * Controlled translation model, where only admins can translate.
- */
-define('L10N_MODEL_CONTROLLED', 1);
-
 // = Core hooks ================================================================
 
 /**
@@ -57,14 +47,23 @@ function l10n_groups_form_alter(&$form, $form_state, $form_id) {
  * on the translation pages.
  */
 function l10n_groups_init() {
-  if (user_access('access localization community') && (arg(0) == 'translate') && (arg(1) == 'languages')) {
-    // If under a localization path URL for a language, look up group.
-    $groups = l10n_groups_get_groups();
-    if (isset($groups[$langcode = arg(2)])) {
-      // Set group context and ask for og details block.
-      $node = node_load($groups[$langcode]->nid);
-      og_set_group_context($node);
+  if (user_access('access localization community') && (arg(0) == 'translate') && (arg(1) == 'languages') && ($langcode = arg(2))) {
+    // If under a localization path URL for a language, set context.
+    if (!empty($langcode)) {
+      l10n_groups_set_context($langcode);
     }
+  }
+}
+
+/**
+ * Set group context to the group determined by $langcode.
+ */
+function l10n_groups_set_context($langcode) {
+  $groups = l10n_groups_get_groups();
+  if (isset($groups[$langcode])) {
+    // Set group context and ask for og details block.
+    $node = node_load($groups[$langcode]->nid);
+    og_set_group_context($node);
   }
 }
 
@@ -74,7 +73,7 @@ function l10n_groups_init() {
  * Implementation of hook_node_info().
  *
  * We expose one node type to tie into the organic groups system, and maintain a
- * list of localization community related ones with their permission models.
+ * list of localization community related ones.
  */
 function l10n_groups_node_info() {
   return array(
@@ -90,7 +89,7 @@ function l10n_groups_node_info() {
  * Implementation of hook_insert().
  */
 function l10n_groups_insert($node) {
-  db_query("INSERT INTO {l10n_groups_group} (nid, language, model) VALUES (%d, '%s', %d)", $node->nid, $node->l10n_group_language, $node->l10n_group_model);
+  db_query("INSERT INTO {l10n_groups_group} (nid, language) VALUES (%d, '%s')", $node->nid, $node->l10n_group_language);
   l10n_community_cache_clear_all();
 }
 
@@ -107,7 +106,7 @@ function l10n_groups_delete(&$node) {
  */
 function l10n_groups_update($node) {
   if ($nid = db_result(db_query('SELECT nid FROM {l10n_groups_group} WHERE nid = %d', $node->nid))) {
-    db_query("UPDATE {l10n_groups_group} SET language = '%s', model = %d WHERE nid = %d", $node->l10n_group_language, $node->l10n_group_model, $node->nid);
+    db_query("UPDATE {l10n_groups_group} SET language = '%s' WHERE nid = %d", $node->l10n_group_language, $node->nid);
   }
   else {
     l10n_groups_insert($node);
@@ -118,7 +117,7 @@ function l10n_groups_update($node) {
  * Implementation of hook_load().
  */
 function l10n_groups_load($node) {
-  return db_fetch_object(db_query('SELECT language AS l10n_group_language, model as l10n_group_model FROM {l10n_groups_group} WHERE nid = %d', $node->nid));
+  return db_fetch_object(db_query('SELECT language AS l10n_group_language FROM {l10n_groups_group} WHERE nid = %d', $node->nid));
 }
 
 /**
@@ -201,17 +200,6 @@ function l10n_groups_form($node, $form_state) {
       '#required' => TRUE,
     );
   }
-  $form['l10n_group_model'] = array(
-    '#type' => 'radios',
-    '#title' => t('Localization permission model'),
-    '#description' => t('Whether different types of group members have different permissions.'),
-    '#default_value' => isset($node->l10n_group_model) ? $node->l10n_group_model : L10N_MODEL_OPEN,
-    '#options' => array(
-      L10N_MODEL_OPEN => t('Open: everybody is equal, all members can suggest and approve translations.'),
-      L10N_MODEL_CONTROLLED => t('Controlled: members can only suggest translations, group administrators can approve them.'),
-    ),
-    '#weight' => -3,
-  );
   $form['body'] = array(
     '#type' => 'textarea',
     '#title' => t('Welcome message'),
@@ -246,7 +234,7 @@ function l10n_groups_block_help($perm, $langcode = NULL) {
   if (empty($user->og_groups) || empty($user->og_groups[$groups[$langcode]->nid])) {
     $permission_help = t('You are not a member of this translation group.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
   }
-  elseif (!empty($user->og_groups[$groups[$langcode]->nid]['is_admin']) || ($groups[$langcode]->model == L10N_MODEL_OPEN)) {
+  elseif (!empty($user->og_groups[$groups[$langcode]->nid]['is_admin'])) {
     $permission_help = t('You are an administrator in this translation group.');
   }
 
@@ -264,46 +252,11 @@ function l10n_groups_get_groups() {
 
   if (!isset($groups)) {
     $groups = array();
-    $result = db_query('SELECT nid, language, model FROM {l10n_groups_group}');
+    $result = db_query('SELECT nid, language FROM {l10n_groups_group}');
     while ($group = db_fetch_object($result)) {
       $groups[$group->language] = $group;
     }
   }
 
   return $groups;
-}
-
-/**
- * Get permission level for a specific user based on group membership.
- *
- * The group permission model is taken into account and membership of
- * the user in language groups is checked.
- *
- * @param $permissions
- *   Permission cache array to tunnel cache values to.
- * @param $account
- *   Optional user account.
- * @param $global
- *   Permission based on user access settings to consider as a base.
- */
-function l10n_groups_get_permission(&$permissions, $account, $global) {
-  if ($groups = l10n_groups_get_groups()) {
-    // Fill up local cache with all langcode permissions of this account for
-    // future reference (eg. a page showing links for all languages).
-    foreach ($groups as $group) {
-      $perm = $global;
-
-      if (empty($account->og_groups) || empty($account->og_groups[$group->nid])) {
-        // The user is not in the group and may therefore only view.
-        $perm = $perm & ~(L10N_PERM_CONTRIBUTE | L10N_PERM_REVIEW);
-      }
-      elseif (empty($account->og_groups[$group->nid]['is_admin']) && $group->model != L10N_MODEL_OPEN) {
-        // Non-admins of group don't have review permissions but can contribute.
-        // Open groups consider all members as admins regarding reviews.
-        $perm = $perm & ~(L10N_PERM_REVIEW);
-      }
-
-      $permissions[$account->uid][$group->language] = $perm;
-    }
-  }
 }

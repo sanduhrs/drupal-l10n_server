@@ -28,7 +28,6 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   );
 
   $languages = l10n_community_get_languages();
-  $perm = l10n_community_get_permission($langcode);
 
   $filters = l10n_community_build_filter_values($_GET);
   $output = drupal_get_form('l10n_community_filter_form', $filters);
@@ -37,7 +36,7 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
   }
-  elseif (!($perm & L10N_PERM_SUGGEST) || $mode == 'view') {
+  elseif (!user_access('submit suggestions') || ($mode == 'view')) {
     // For users without permission to translate or suggest, display the view.
     drupal_set_title(t('@language translations', array('@language' => $languages[$langcode]->name)));
     $output .= l10n_community_translate_view($strings, $languages[$langcode], $filters);
@@ -46,7 +45,7 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
     // For users with some permission, display the form.
     drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
     drupal_set_title(t('Translate to @language', array('@language' => $languages[$langcode]->name)));
-    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $filters, $perm);
+    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $filters);
   }
   return $output;
 }
@@ -250,10 +249,8 @@ function l10n_community_translate_view($strings = array(), $language = NULL, $fi
  *   Language object.
  * @param $filters
  *   Filters used to present this editing view.
- * @param $perm
- *   Community permission level of user watching the page.
  */
-function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $filters = array(), $perm = L10N_PERM_SUGGEST) {
+function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $filters = array()) {
 
   if (isset($_GET['page'])) {
     // Ensure that we keep all filter values, even the page number, so
@@ -349,11 +346,11 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
         $target = $string->sid .'-'. $i;
         if ($translated) {
           // Already translated so we ask for new translation or suggestion.
-          $description = !($perm & L10N_PERM_MODERATE_OWN) ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
+          $description = !user_access('moderate own suggestions') ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
         }
         else {
           // Not translated yet, so we ask for initial translation or suggestion.
-          $description = !($perm & L10N_PERM_MODERATE_OWN) ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
+          $description = !user_access('moderate own suggestions') ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
         }
 
         // Include editing area for each plural variant.
@@ -381,7 +378,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
         // Use textarea for long and multiline strings.
         '#type' => ((strlen($string->value) > 45) || (count(explode("\n", $string->value)) > 1)) ? 'textarea' : 'textfield',
         // Provide accurate title based on previous data and permission.
-        '#description' => $translated ? (!($perm & L10N_PERM_MODERATE_OWN) ? t('Add a new suggestion') : t('Add a new translation')) : (!($perm & L10N_PERM_MODERATE_OWN) ? t('Suggestion') : ''),
+        '#description' => $translated ? (!user_access('moderate own suggestions') ? t('Add a new suggestion') : t('Add a new translation')) : (!user_access('moderate own suggestions') ? t('Suggestion') : ''),
         '#rows' => 4,
         '#resizable' => FALSE,
         '#cols' => NULL,
@@ -406,7 +403,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
       '#type' => 'markup',
     );
 
-    if (!($perm & L10N_PERM_MODERATE_OWN)) {
+    if (!user_access('moderate own suggestions')) {
       // User with suggestion capability only, record this.
       $form[$string->sid]['translation']['is_suggestion'] = array(
         '#type' => 'value',
@@ -445,7 +442,7 @@ function l10n_community_translate_form(&$form_state, $strings = array(), $langua
   // Let the user submit the form.
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => !($perm & L10N_PERM_MODERATE_OWN) ? t('Save suggestions') : t('Save translations')
+    '#value' => !user_access('moderate own suggestions') ? t('Save suggestions') : t('Save translations')
   );
 
   $form['#theme'] = 'l10n_community_translate_form';

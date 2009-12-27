@@ -32,7 +32,6 @@ function l10n_community_explore_languages() {
   $table = array();
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
-    $perm = l10n_community_get_permission($langcode);
     if (empty($language->plurals)) {
       $table[] = array(
         array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
@@ -270,7 +269,6 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
 
   $table = array();
   foreach ($languages as $langcode => $language) {
-    $perm = l10n_community_get_permission($langcode);
     if (empty($language->plurals)) {
       $table[] = array(
         array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),

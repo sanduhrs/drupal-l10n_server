@@ -61,7 +61,7 @@ function l10n_community_import_form($form_state, $langcode) {
     );
   }
 
-  if (!l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OWN) && (!l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OTHERS) || empty($import_account))) {
+  if (!user_access('moderate own suggestions') && (!user_access('moderate suggestions from others') || empty($import_account))) {
     // Either has no permission to approve own or approve others, or we do not
     // have a mass import account and no permission to approve own, so no way
     // we can offer importing translations directly.
@@ -99,13 +99,13 @@ function l10n_community_import_form_validate($form, &$form_state) {
   if (empty($form_state['values']['is_suggestion'])) {
     if ($form_state['values']['import_uid'] == $user->uid) {
       // Trying to submit translation in her own name.
-      if (!l10n_community_has_permission($form_state['values']['langcode'], L10N_PERM_MODERATE_OWN)) {
+      if (!user_access('moderate own suggestions')) {
         form_set_error('is_suggestion', t('You do not have sufficient permissions to submit translations directly in your name. Please submit as suggestions.'));
       }
     }
     else {
       // Trying to submit translation in the import_account's name.
-      if (!l10n_community_has_permission($form_state['values']['langcode'], L10N_PERM_MODERATE_OTHERS)) {
+      if (!user_access('moderate suggestions from others')) {
         form_set_error('is_suggestion', t('You do not have sufficient permissions to submit translations directly in the name of other users. Please submit as suggestions.'));
       }
     }

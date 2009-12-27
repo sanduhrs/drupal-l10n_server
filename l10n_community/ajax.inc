@@ -62,12 +62,11 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
   $suggestions = array();
   $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, u.name FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $langcode, $sid);
 
-  $perm = l10n_community_get_permission($langcode);
   while ($suggestion = db_fetch_object($result)) {
     // This detail pane is only retrieved from JS, so we are free to output obtrusive JS here.
     $token = "'". drupal_get_token('l10n_server_'. $suggestion->tid .'_'. $suggestion->sid) ."'";
     $approve_button = $decline_button = '';
-    if ($perm & ($suggestion->uid_entered == $user->uid ? L10N_PERM_MODERATE_OWN : L10N_PERM_MODERATE_OTHERS)) {
+    if ($suggestion->uid_entered == $user->uid ? user_access('moderate own suggestions') : user_access('moderate suggestions from others')) {
       $approve_button = theme('l10n_community_button', 'approve', 'l10n-approve', 'onclick="l10nCommunity.approveSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Approve suggestion.') .'"');
       $decline_button = theme('l10n_community_button', 'decline', 'l10n-decline', 'onclick="l10nCommunity.declineSuggestion('. $suggestion->tid .','. $suggestion->sid .', this, '. $token .');" title="'. t('Decline suggestion.') .'"');
     }
@@ -103,8 +102,7 @@ function l10n_community_string_ajax_suggestion($tid = 0) {
   global $user;
 
   if (($suggestion = db_fetch_object(db_query("SELECT * FROM {l10n_community_translation} WHERE tid = %d AND is_suggestion = 1 AND is_active = 1", $tid))) &&
-      ($perm = l10n_community_get_permission($suggestion->language)) &&
-      ($perm & ($suggestion->uid_entered == $user->uid ? L10N_PERM_MODERATE_OWN : L10N_PERM_MODERATE_OTHERS)) &&
+      ($suggestion->uid_entered == $user->uid ? user_access('moderate own suggestions') : user_access('moderate suggestions from others')) &&
       !empty($_GET['form_token']) &&
       drupal_valid_token($_GET['form_token'], 'l10n_server_'. $suggestion->tid .'_'. $suggestion->sid)) {
     return $suggestion;

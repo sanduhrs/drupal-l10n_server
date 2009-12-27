@@ -212,12 +212,11 @@ function l10n_community_get_suggestions($langcode, $filters) {
   // Only show strings matching the user's permissions. It should be already
   // ensured that the user has either one of these permissions, when calling
   // this function, or nothing will be returned.
-  $perm = l10n_community_get_permission($langcode);
-  if (!($perm & L10N_PERM_MODERATE_OWN)) {
+  if (!user_access('moderate own suggestions')) {
     $where[] = "(ts.uid_entered <> %d)";
     $where_args[] = $user->uid;
   }
-  if (!($perm & L10N_PERM_MODERATE_OTHERS)) {
+  if (!user_access('moderate suggestions from others')) {
     $where[] = "(ts.uid_entered = %d)";
     $where_args[] = $user->uid;
   }

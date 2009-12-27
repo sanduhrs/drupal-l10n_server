@@ -11,51 +11,6 @@
  */
 
 /**
- * Base permission; no access at all.
- */
-define('L10N_PERM_NONE', 0);
-
-/**
- * User may view the translations.
- */
-define('L10N_PERM_VIEW', 1);
-
-/**
- * User may contribute suggestions.
- */
-define('L10N_PERM_SUGGEST', 2);
-
-/**
- * User may approve or decline other user's suggestions.
- */
-define('L10N_PERM_MODERATE_OTHERS', 4);
-
-/**
- * User may approve her own suggestions.
- */
-define('L10N_PERM_MODERATE_OWN', 8);
-
-/**
- * User may import translations from a file.
- */
-define('L10N_PERM_IMPORT', 16);
-
-/**
- * User may export translation templates or translated .po files.
- */
-define('L10N_PERM_EXPORT', 32);
-
-/**
- * Accumulates all permissions a contributor may have.
- */
-define('L10N_PERM_CONTRIBUTE', L10N_PERM_SUGGEST | L10N_PERM_IMPORT);
-
-/**
- * Accumulates all permissions a reviewer may have.
- */
-define('L10N_PERM_REVIEW', L10N_PERM_MODERATE_OTHERS | L10N_PERM_MODERATE_OWN);
-
-/**
  * Strings with any status.
  */
 define('L10N_STATUS_ALL', 0);
@@ -256,8 +211,8 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
-    'access callback' => 'l10n_community_has_permission',
-    'access arguments' => array(2, (string)L10N_PERM_VIEW),
+    'access callback' => 'user_access',
+    'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
   );
@@ -266,8 +221,8 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2, 'edit'),
     'file' => 'translate.inc',
-    'access callback' => 'l10n_community_has_permission',
-    'access arguments' => array(2, (string)L10N_PERM_SUGGEST),
+    'access callback' => 'user_access',
+    'access arguments' => array('submit suggestions'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -8,
   );
@@ -276,8 +231,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_moderate_page',
     'page arguments' => array(2),
     'file' => 'moderate.inc',
-    'access callback' => 'l10n_community_has_review_permission',
-    'access arguments' => array(2),
+    'access callback' => 'l10n_community_review_access',
     'type' => MENU_LOCAL_TASK,
     'weight' => -6,
   );
@@ -286,8 +240,8 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_import_page',
     'page arguments' => array(2),
     'file' => 'import.inc',
-    'access callback' => 'l10n_community_has_permission',
-    'access arguments' => array(2, (string)L10N_PERM_IMPORT),
+    'access callback' => 'user_access',
+    'access arguments' => array('import gettext files'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
   );
@@ -296,8 +250,8 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(NULL, 2),
     'file' => 'export.inc',
-    'access callback' => 'l10n_community_has_permission',
-    'access arguments' => array(2, (string)L10N_PERM_EXPORT),
+    'access callback' => 'user_access',
+    'access arguments' => array('export gettext templates and translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );
@@ -322,8 +276,8 @@ function l10n_community_menu() {
     'title' => 'Export template',
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(2),
-    'access callback' => 'l10n_community_has_permission',
-    'access arguments' => array(2, (string)L10N_PERM_EXPORT),
+    'access callback' => 'user_access',
+    'access arguments' => array('export gettext templates and translations'),
     'file' => 'export.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
@@ -490,25 +444,24 @@ function l10n_community_block_help() {
   // Match actual translation editing or review pages with the two different path models they could have.
   if (preg_match('!translate/languages/(?P<langcode>[^/]+)(/(?P<action>view|edit|import|export|moderate))?$!', $_GET['q'], $args) ||
       preg_match('!translate/projects/(?P<uri>[^/]+)(/(?P<action>|export))??$!', $_GET['q'], $args)) {
-    $perm = isset($args['langcode']) ? l10n_community_get_permission($args['langcode']) : L10N_PERM_NONE;
     $permission_help = $permission_notes = array();
     if (module_exists('l10n_groups')) {
       // We are dealing with a groups based permission model.
       $permission_help[] = l10n_groups_block_help($perm, isset($args['langcode']) ? $args['langcode'] : NULL);
     }
-    if ($perm & L10N_PERM_SUGGEST) {
+    if (user_access('submit suggestions')) {
       $permission_notes[] = t('You can suggest translations to be reviewed by moderators of the team.');
     }
-    if ($perm & L10N_PERM_MODERATE_OTHERS) {
+    if (user_access('moderate suggestions from others')) {
       $permission_notes[] = t('Moderation of suggestions submitted by others is possible.');
     }
-    if ($perm & L10N_PERM_MODERATE_OWN) {
+    if (user_access('moderate own suggestions')) {
       $permission_notes[] = t('You are empowered to directly submit translations.');
     }
-    if ($perm & L10N_PERM_IMPORT) {
+    if (user_access('import gettext files')) {
       $permission_notes[] = t('Import complete Gettext translation files to suggest multiple translations at once.');
     }
-    if ($perm & L10N_PERM_EXPORT) {
+    if (user_access('export gettext templates and translations')) {
       $permission_notes[] = t('To work offline, export a translation template, which contains the current state of the translation.');
     }
     if (!empty($permission_notes)) {
@@ -949,72 +902,10 @@ function l10n_community_get_languages($key = NULL) {
 }
 
 /**
- * Get translation permission level for a specific user.
- *
- * @param $langcode
- *   Language code, for example 'hu', 'pt-br', 'de' or 'it'.
- * @param $account
- *   (Optional) A user account object. If not passed, the current user is used.
- * @return
- *   A bitmask of all permission flags the user has.
+ * Check whether the user has either review permissions.
  */
-function l10n_community_get_permission($langcode, $account = NULL) {
-  static $permissions = array();
-  global $user;
-
-  if (empty($langcode)) {
-    return L10N_PERM_NONE;
-  }
-  if (!isset($account)) {
-    $account = $user;
-  }
-
-  if (!isset($permissions[$account->uid])) {
-    $permissions[$account->uid] = array();
-  }
-  if (!isset($permissions[$account->uid][$langcode])) {
-    // Minimal permission.
-    $global = L10N_PERM_NONE;
-    $global |= user_access('browse translations', $account) ? L10N_PERM_VIEW : 0;
-    $global |= user_access('submit suggestions', $account) ? L10N_PERM_SUGGEST : 0;
-    $global |= user_access('moderate suggestions from others', $account) ? L10N_PERM_MODERATE_OTHERS : 0;
-    $global |= user_access('moderate own suggestions', $account) ? L10N_PERM_MODERATE_OWN : 0;
-    $global |= user_access('import gettext files', $account) ? L10N_PERM_IMPORT : 0;
-    $global |= user_access('export gettext templates and translations', $account) ? L10N_PERM_EXPORT : 0;
-
-    if (!module_exists('l10n_groups')) {
-      $permissions[$account->uid][$langcode] = $global;
-    }
-    else {
-      l10n_groups_get_permission($permissions, $account, $global);
-    }
-  }
-
-  // Return from local cache.
-  return $permissions[$account->uid][$langcode];
-}
-
-/**
- * Checks whether the current user has a certain permission.
- *
- * @param $langcode
- *   Language code, for example 'hu', 'pt-br', 'de' or 'it'.
- * @param $permission
- *   The permission to check for.
- * @return
- *   TRUE if the user has at least one of the specified permissions.
- */
-function l10n_community_has_permission($langcode, $permission) {
-  return (bool)(l10n_community_get_permission($langcode, NULL) & $permission);
-}
-
-/**
- * Check whether the user has either review permissions for $langcode.
- *
- * @see l10n_community_has_permission()
- */
-function l10n_community_has_review_permission($langcode) {
-  return l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OTHERS) || l10n_community_has_permission($langcode, L10N_PERM_MODERATE_OWN);
+function l10n_community_review_access() {
+  return user_access('moderate suggestions from others') || user_access('moderate own suggestions');
 }
 
 /**
