@@ -159,31 +159,37 @@ function l10n_community_menu() {
 
   // AJAX callbacks for easy translation management. These are expected to be
   // used only onsite (not as remote API endpoints), so they have no versioning.
-  $items['translate/details'] = array(
+  $items['translate/details/%l10n_community_language/%'] = array(
     'title' => 'String details',
     'page callback' => 'l10n_community_string_details',
+    'page arguments' => array(2, 3),
     'file' => 'ajax.inc',
     'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK,
   );
-  $items['translate/suggestions'] = array(
+  $items['translate/suggestions/%l10n_community_language/%'] = array(
     'title' => 'String suggestions',
     'page callback' => 'l10n_community_string_suggestions',
+    'page arguments' => array(2, 3),
     'file' => 'ajax.inc',
     'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK,
   );
-  $items['translate/approve'] = array(
+  $items['translate/approve/%l10n_community_language/%'] = array(
     'title' => 'Approve suggestion',
     'page callback' => 'l10n_community_string_approve',
+    // %l10n_community_language only used for user access setup.
+    'page arguments' => array(3),
     'file' => 'ajax.inc',
     // Permission is enforced in l10n_community_string_ajax_suggestion().
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK,
   );
-  $items['translate/decline'] = array(
+  $items['translate/decline/%l10n_community_language/%'] = array(
     'title' => 'Decline suggestion',
     'page callback' => 'l10n_community_string_decline',
+    // %l10n_community_language only used for user access setup.
+    'page arguments' => array(3),
     'file' => 'ajax.inc',
     // Permission is enforced in l10n_community_string_ajax_suggestion().
     'access arguments' => array('access localization community'),
@@ -1312,10 +1318,8 @@ function theme_l10n_community_strings($items, $form = TRUE) {
   $output = "<ul class='l10n-community-strings'>";
   foreach ($items as $i => $item) {
     $output .= "<li class='clear-block'>";
-    if ($form && ($i < 1)) {
-      // Only print copy button if we are displaying a form and on the first item.
-      // For plurals, only the first item will have the copy button, but will copy
-      // all the values into the form.
+    if ($form) {
+      // Only print copy button if we are displaying a form.
       $output .= "<div class='buttons'>". theme('l10n_community_copy_button') ."</div>";
     }
     $output .= "<div class='string'>". $item ."</div>";

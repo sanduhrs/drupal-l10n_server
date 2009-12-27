@@ -47,7 +47,7 @@ function l10n_groups_form_alter(&$form, $form_state, $form_id) {
  * on the translation pages.
  */
 function l10n_groups_init() {
-  if (user_access('access localization community') && (arg(0) == 'translate') && (arg(1) == 'languages') && ($langcode = arg(2))) {
+  if (user_access('access localization community') && (arg(0) == 'translate') && in_array(arg(1), array('languages', 'details', 'suggestions', 'approve', 'decline')) && ($langcode = arg(2))) {
     // If under a localization path URL for a language, set context.
     if (!empty($langcode)) {
       l10n_groups_set_context($langcode);
