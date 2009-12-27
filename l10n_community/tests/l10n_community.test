@@ -453,7 +453,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
     $this->drupalGet('translate/suggestions/hu/'. $sid3);
     $this->assert((bool) preg_match("!". $tid .",". $sid3 .", this, '([a-z0-9]+)'!", $this->content, $found), t('Found token for decline action.'));
-    $this->drupalGet('translate/decline/'. $tid, array('query' => 'form_token='. $found[1]));
+    $this->drupalGet('translate/decline/hu/'. $tid, array('query' => 'form_token='. $found[1]));
     $this->assertRaw('done');
 
     // Now we should be down to 3 suggestions.
@@ -465,7 +465,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
     $this->drupalGet('translate/suggestions/hu/'. $sid3);
     $this->assert((bool) preg_match("!". $tid .",". $sid3 .", this, '([a-z0-9]+)'!", $this->content, $found), t('Found token for approve action.'));
-    $this->drupalGet('translate/approve/'. $tid, array('query' => 'form_token='. $found[1]));
+    $this->drupalGet('translate/approve/hu/'. $tid, array('query' => 'form_token='. $found[1]));
     $this->assertRaw('done');
 
     // Now we should be down to 1 suggestion (with approving 1 suggestion,
