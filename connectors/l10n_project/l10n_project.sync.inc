@@ -237,19 +237,20 @@ function l10n_project_pick_and_parse($release) {
     $error = 'Filename %file contains malicious characters.';
   }
 
-  // Nothing to do if already downloaded.
+  // Already downloaded. Probably result of faulty file download left around,
+  // so remove file, letting the code come back to this release later.
   elseif (file_exists($file)) {
     $error_arguments = array('%file' => $file);
-    $error_t = t('File %file already exists.', $error_arguments);
-    $error = 'File %file already exists.';
+    $error_t = t('File %file already exists, deleting.', $error_arguments);
+    $error = 'File %file already exists, deleting.';
     unlink($file);
   }
 
   // Download the tar.gz file from drupal.org and save it in the local filesystem.
-  elseif (!(($contents = drupal_http_request($release->download_link)) && file_put_contents($file, $contents->data))) {
-    $error_arguments = array('%download_link' => $release->download_link);
-    $error_t = t('Unable to download and save %download_link file.', $error_arguments);
-    $error = 'Unable to download and save %download_link file.';
+  elseif (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($file, $contents->data))) {
+    $error_arguments = array('%download_link' => $release->download_link, '%error' => $contents->code .' '. $contents->error);
+    $error_t = t('Unable to download and save %download_link file (%error).', $error_arguments);
+    $error = 'Unable to download and save %download_link file (%error).';
   }
 
   // Extract and parse the local file and remove the tarball.
