@@ -369,7 +369,7 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
 
     // We use BINARY matching here to avoid case insensitively matching
     // strings like 'operations' and 'Operations'.
-    if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE BINARY value = '%s' AND context = '%s'", $value['msgid'], $value['msgctxt']))) {
+    if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value['msgid'] . $value['msgctxt']))) {
       // We have this source string (otherwise we don't save anything).
       $translation = db_fetch_object(db_query("SELECT translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
 

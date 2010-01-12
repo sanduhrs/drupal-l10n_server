@@ -204,10 +204,10 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s' AND context = '%s'", $value, $context))) {
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value . $context))) {
       // String does not exist.
-      db_query("INSERT INTO {l10n_community_string} (value, context) VALUES ('%s', '%s')", $value, $context);
-      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = BINARY '%s' AND context = '%s'", $value, $context));
+      db_query("INSERT INTO {l10n_community_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
+      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value . $context));
     }
     if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
       // Location does not exist with this string.

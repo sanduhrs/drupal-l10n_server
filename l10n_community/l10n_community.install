@@ -266,8 +266,17 @@ function l10n_community_schema() {
         'default' => '',
         'description' => 'The context this string applies to. Only applicable to some strings in Drupal 7 and its modules.',
       ),
+      'hashkey' => array(
+        'description' => 'MD5 hash of the concatenation of value and context, used for quick lookups when these two are known (imports, new releases, remote submissions).',
+        'type' => 'char',
+        'length' => 32,
+        'not null' => TRUE
+      ),
     ),
     'primary key' => array('sid'),
+    'unique keys' => array(
+      'hashkey' => array('hashkey'),
+    ),
   );
 
   $schema['l10n_community_translation'] = array(
@@ -613,5 +622,18 @@ function l10n_community_update_6009() {
       $ret[] = update_sql("UPDATE {permission} SET perm = '$renamed_permission' WHERE rid = $role->rid");
     }
   }
+  return $ret;
+}
+
+/**
+ * Add hashkey to speed up source string lookups.
+ */
+function l10n_community_update_6010() {
+  $ret = array();
+
+  db_add_field($ret, 'l10n_community_string', 'hashkey', array('type' => 'char', 'not null' => FALSE, 'length' => 32));
+  $ret[] = update_sql("UPDATE {l10n_community_string} SET hashkey = MD5(CONCAT(value, context))");
+  db_add_unique_key($ret, 'l10n_community_string', 'hashkey', array('hashkey'));
+
   return $ret;
 }

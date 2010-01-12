@@ -236,7 +236,7 @@ function l10n_localpacks_save_data($project_uri, $project_title, $release_versio
     }
     else {
       // Log error on existing project with another connector and skip the rest of this function.
-      $t_args = array('%uri' => $uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_localpacks');
+      $t_args = array('%uri' => $project_uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_localpacks');
       watchdog('l10n_localpacks', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
       drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
       return;
