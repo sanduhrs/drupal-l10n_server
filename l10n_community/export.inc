@@ -278,10 +278,10 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       if (!$compact) {
         $output = $comment;
       }
-      $output .= 'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
+      $output .= 'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
       if (!$template && !empty($export_string['translation'])) {
         // Export translations we have.
         foreach (explode("\0", $export_string['translation']) as $id => $value) {
@@ -307,10 +307,10 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       if (!$compact) {
         $output = $comment;
       }
-      $output .= 'msgid '. _l10n_community_export_string($export_string['value']);
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
+      $output .= 'msgid '. _l10n_community_export_string($export_string['value']);
       if (!empty($export_string['translation'])) {
         $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
       }
