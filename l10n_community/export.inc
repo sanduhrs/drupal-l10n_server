@@ -119,7 +119,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     $form['format']['version'] = array(
       '#title' => t('Packaging'),
       '#type' => 'radios',
-      '#options' => array('drupal-6' => t('Drupal 6 package format (translations directories)'), 'drupal-5' => t('Drupal 5 package format (for autolocale module)'), 'flat-package' => t('Flat package for CVS commit (use for Drupal core)'), 'all-in-one' => t('All in one file')),
+      '#options' => array('drupal-6' => t('Drupal 6 core package format (translations directories)'), 'drupal-5' => t('Drupal 5 core package format (for autolocale module)'), 'flat-package' => t('Drupal 5/6 core flat package format (for CVS commit)'), 'all-in-one' => t('All in one file')),
       '#default_value' => 'drupal-6',
     );
     $form['format']['compact'] = array(
