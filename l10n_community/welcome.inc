@@ -138,7 +138,7 @@ function l10n_community_pick_go() {
     // Autocomplete field for more then 30 projects.
     $form['project'] += array(
       '#type' => 'textfield',
-      '#autocomplete_path' => 'translate/projects/autocomplete',
+      '#autocomplete_path' => 'translate/project-autocomplete',
     );
   }
 

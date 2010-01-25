@@ -93,7 +93,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     // Autocomplete field for more then 30 projects.
     $form['project'] += array(
       '#type' => 'textfield',
-      '#autocomplete_path' => 'translate/projects/autocomplete',
+      '#autocomplete_path' => 'translate/project-autocomplete',
       '#size' => 20,
     );
   }

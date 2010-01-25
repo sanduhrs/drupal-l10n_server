@@ -126,7 +126,7 @@ function l10n_packager_admin_projects_form(&$form_state, $projects) {
     // Autocomplete field for more then 30 projects.
     $form['projects']['project'] += array(
       '#type' => 'textfield',
-      '#autocomplete_path' => 'translate/projects/autocomplete',
+      '#autocomplete_path' => 'translate/project-autocomplete',
     );
   }
 

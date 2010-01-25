@@ -83,7 +83,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       // Autocomplete field for more then 30 projects.
       $form['data']['project'] += array(
         '#type' => 'textfield',
-        '#autocomplete_path' => 'translate/projects/autocomplete',
+        '#autocomplete_path' => 'translate/project-autocomplete',
       );
     }
   }

@@ -150,7 +150,8 @@ function l10n_community_menu() {
     'access arguments' => array('access localization community'),
     'weight' => -5,
   );
-  $items['translate/projects/autocomplete'] = array(
+  // Unique path to avoid clashing with other items.
+  $items['translate/project-autocomplete'] = array(
     'title' => 'Project autocomplete',
     'page callback' => 'l10n_community_projects_autocomplete',
     'access arguments' => array('access localization community'),
