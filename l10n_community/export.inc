@@ -15,6 +15,12 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
     l(t('Translate'), 'translate'),
   );
 
+  // Include filters just so if user wants to quickly go back to translate or
+  // browse forms, they can do that without loosing their filters.
+  $filters = l10n_community_build_filter_values($_GET);
+  l10n_community_add_url_modifiers($langcode, $filters);
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
+
   // Set a matching title with the translation page.
   $project = l10n_community_get_projects(array('uri' => $uri));
   if (isset($langcode)) {
@@ -95,7 +101,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       '#title' => t('Release'),
       '#type' => count($release_options) <= 3 ? 'radios' : 'select',
       '#options' => $release_options,
-      '#default_value' => isset($release) ? $release : 'all',
+      '#default_value' => isset($_GET['release']) && isset($releases[$_GET['release']]) ? $_GET['release'] : 'all',
     );
   }
   if (isset($langcode) && isset($form['data']['release'])) {

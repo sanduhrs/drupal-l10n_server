@@ -25,6 +25,16 @@ l10nCommunity.switchPanes = function(elem, id) {
  * Initialize action images: toolboxes and string copy buttons.
  */
 l10nCommunity.init = function() {
+
+  // Act on links if we have URL replacements to do.
+  if (Drupal.settings.l10nServerURLs) {
+    for (var url in Drupal.settings.l10nServerURLs) {
+      // Look for links with this exact URL and replace with extended version.
+      // This ensures we keep filter values while switching tabs.
+      $('a[href=' + url +']').attr('href', Drupal.settings.l10nServerURLs[url]);
+    }
+  }
+
   // Only attempt to register events if form exists
   if ($('#l10n-community-translate-form').size() > 0) {
     // When the copy button is clicked, copy the original string value to the

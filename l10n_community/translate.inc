@@ -32,6 +32,9 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   $filters = l10n_community_build_filter_values($_GET);
   $output = drupal_get_form('l10n_community_filter_form', $filters);
 
+  l10n_community_add_url_modifiers($langcode, $filters);
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
+
   $strings = l10n_community_get_strings($languages[$langcode]->language, $filters, $filters['limit']);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
@@ -43,7 +46,6 @@ function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
   }
   else {
     // For users with some permission, display the form.
-    drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
     drupal_set_title(t('Translate to @language', array('@language' => $languages[$langcode]->name)));
     $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $filters);
   }
@@ -64,12 +66,12 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
   $projects = l10n_community_get_projects();
 
   $translation_options = array(
-    L10N_STATUS_ALL            => t('<Any>'),
+    L10N_STATUS_ALL            => '<'. t('Any') .'>',
     L10N_STATUS_UNTRANSLATED   => t('Untranslated'),
     L10N_STATUS_TRANSLATED     => t('Translated'),
   );
   $suggestion_options = array(
-    L10N_STATUS_ALL            => t('<Any>'),
+    L10N_STATUS_ALL            => '<'. t('Any') .'>',
     L10N_STATUS_NO_SUGGESTION  => t('Has no suggestion'),
     L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
   );
@@ -696,75 +698,4 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     $result[] = $string;
   }
   return $result;
-}
-
-/**
- * Check and sanitize arguments and build filter array.
- *
- * @param $params
- *   Associative array with unsanitized values.
- * @param $suggestions
- *   Whether we build the filters for the suggestions (TRUE) or not (FALSE).
- */
-function l10n_community_build_filter_values($params, $suggestions = FALSE) {
-  $project = $release = NULL;
-
-  // Convert array representation of flags to one integer.
-  if (isset($params['status']) && is_array($params['status'])) {
-    if (isset($params['status']['suggestion'])) {
-      $params['status'] = ((int) $params['status']['translation']) | ((int) $params['status']['suggestion']);
-    }
-    else {
-      $params['status'] = (int) $params['status']['translation'];
-    }
-  }
-
-  $filter = array(
-    'project' => NULL,
-    'status' => isset($params['status']) ? (int) $params['status'] : L10N_STATUS_ALL,
-    'release' => 'all',
-    'search' => !empty($params['search']) ? (string) $params['search'] : '',
-    'author' => !empty($params['author']) && ($account = user_load(array('name' => $params['author']))) ? $account : NULL,
-    // Dropdown, validated by form API.
-    'context' => isset($params['context']) ? (string) $params['context'] : 'all',
-    'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30))) ? (int) $params['limit'] : 10,
-  );
-
-  // The project can be a dropdown or text field depending on number of
-  // projects. So we need to sanitize its value.
-  if (isset($params['project'])) {
-    // Try to load project by uri or title, but give URI priority. URI is used
-    // to shorten the URL and have simple redirects. Title is used if the
-    // filter form was submitted, but that one is simplified to the URI on
-    // redirect to make the URL shorter.
-    $project = l10n_community_get_projects(array('uri' => $params['project']));
-    if (empty($project)) {
-      $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $params['project']));
-    }
-    if (!empty($project)) {
-      $filter['project'] = $project;
-      if (isset($params['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$params['release']])) {
-        // Allow to select this release, if belongs to current project only.
-        $filter['release'] = $params['release'];
-      }
-    }
-  }
-  return $filter;
-}
-
-/**
- * Replace complex data filters (objects or arrays) with string representations.
- *
- * @param $filters
- *   Associative array with filters passed.
- * @return
- *   The modified filter array only containing string and number values.
- */
-function l10n_community_flat_filters($filters) {
-  foreach (array('project' => 'uri', 'author' => 'name') as $name => $key) {
-    if (!empty($filters[$name])) {
-      $filters[$name] = $filters[$name]->$key;
-    }
-  }
-  return $filters;
 }

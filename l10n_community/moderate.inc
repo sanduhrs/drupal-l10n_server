@@ -24,6 +24,11 @@ function l10n_community_moderate_page($langcode) {
 
   $output = drupal_get_form('l10n_community_filter_form', $filters, TRUE);
 
+  // Include filters just so if user wants to quickly go back to translate or
+  // browse forms, they can do that without loosing their filters.
+  l10n_community_add_url_modifiers($langcode, $filters);
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
+
   $strings = l10n_community_get_suggestions($langcode, $filters);
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
