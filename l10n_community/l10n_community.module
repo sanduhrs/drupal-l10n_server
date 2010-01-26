@@ -209,36 +209,8 @@ function l10n_community_menu() {
     'title' => 'String details',
     'page callback' => 'l10n_community_string_details',
     'page arguments' => array(2, 3),
-    'file' => 'ajax.inc',
+    'file' => 'translate.inc',
     'access arguments' => array('browse translations'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['translate/suggestions/%l10n_community_language/%'] = array(
-    'title' => 'String suggestions',
-    'page callback' => 'l10n_community_string_suggestions',
-    'page arguments' => array(2, 3),
-    'file' => 'ajax.inc',
-    'access arguments' => array('browse translations'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['translate/approve/%l10n_community_language/%'] = array(
-    'title' => 'Approve suggestion',
-    'page callback' => 'l10n_community_string_approve',
-    // %l10n_community_language only used for user access setup.
-    'page arguments' => array(3),
-    'file' => 'ajax.inc',
-    // Permission is enforced in l10n_community_string_ajax_suggestion().
-    'access arguments' => array('access localization community'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['translate/decline/%l10n_community_language/%'] = array(
-    'title' => 'Decline suggestion',
-    'page callback' => 'l10n_community_string_decline',
-    // %l10n_community_language only used for user access setup.
-    'page arguments' => array(3),
-    'file' => 'ajax.inc',
-    // Permission is enforced in l10n_community_string_ajax_suggestion().
-    'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK,
   );
 
@@ -258,8 +230,8 @@ function l10n_community_menu() {
     'weight' => -20,
   );
   // Tabs to translate, import and export projects.
-  $items['translate/languages/%l10n_community_language/view'] = array(
-    'title' => 'Browse',
+  $items['translate/languages/%l10n_community_language/translate'] = array(
+    'title' => 'Translate',
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
@@ -267,16 +239,6 @@ function l10n_community_menu() {
     'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
-  );
-  $items['translate/languages/%l10n_community_language/edit'] = array(
-    'title' => 'Translate',
-    'page callback' => 'l10n_community_translate_page',
-    'page arguments' => array(2, 'edit'),
-    'file' => 'translate.inc',
-    'access callback' => 'user_access',
-    'access arguments' => array('submit suggestions'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -8,
   );
   $items['translate/languages/%l10n_community_language/moderate'] = array(
     'title' => 'Moderate',
@@ -954,6 +916,19 @@ function l10n_community_get_languages($key = NULL) {
 }
 
 /**
+ * Returns a language object for a specific language.
+ *
+ * @param $langcode
+ *   Language code, for example 'hu', 'pt-br', 'de' or 'it'.
+ * @return
+ *   A populated language object.
+ */
+function l10n_community_get_language($langcode) {
+  $languages = l10n_community_get_languages();
+  return $languages[$langcode];
+}
+
+/**
  * Check whether the user has either review permissions.
  */
 function l10n_community_review_access() {
@@ -1296,16 +1271,6 @@ function l10n_community_is_duplicate($suggestion, $sid, $langcode) {
  */
 function l10n_community_theme($existing, $type, $theme, $path) {
   return array(
-    // l10n_community.module
-    'l10n_community_button' => array(
-      'arguments' => array('type' => NULL, 'class' => NULL, 'extras' => ''),
-    ),
-    'l10n_community_strings' => array(
-      'arguments' => array('items' => NULL, 'form' => TRUE),
-    ),
-    'l10n_community_copy_button' => array(
-      'arguments' => array(),
-    ),
     // pages.inc
     'l10n_community_progress_columns' => array(
       'arguments' => array('sum' => NULL, 'translated' => NULL, 'has_suggestion' => NULL),
@@ -1320,11 +1285,26 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     'l10n_community_filter_form' => array(
       'arguments' => array('form' => NULL),
     ),
-    'l10n_community_translate_form' => array(
-      'arguments' => array('form' => NULL),
+    'l10n_community_translate_translation' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'l10n_community_translate_actions' => array(
+      'arguments' => array('element' => NULL),
     ),
     'l10n_community_in_context' => array(
       'arguments' => array('source' => NULL),
+    ),
+    'l10n_community_translate_radio' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'l10n_community_translate_source' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'l10n_community_translate_translation_list' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'l10n_community_translate_table' => array(
+      'arguments' => array('element' => NULL),
     ),
     // l10n_community.admin.inc
     'l10n_community_admin_projects_form' => array(
@@ -1338,75 +1318,6 @@ function l10n_community_theme($existing, $type, $theme, $path) {
       'arguments' => array('form' => NULL),
     ),
   );
-}
-
-/**
- * Theme a textual button.
- *
- * Text values are centralized here so it is easy to change.
- */
-function theme_l10n_community_button($type, $class, $extras = '') {
-  switch ($type) {
-    case 'translate':
-      $text = t('Translate');
-      break;
-    case 'lookup':
-      $text = t('Information');
-      break;
-    case 'edit':
-      // Source string and translation edit field.
-      $text = t('Edit');
-      break;
-    case 'has-suggestion':
-    case 'has-no-suggestion':
-    case 'untranslated':
-      // Star in a filled circle.
-      $text = t('Suggestions');
-      break;
-    case 'approve':
-      // Checkmark.
-      $text = t('Approve');
-      break;
-    case 'decline':
-      // Checkmark.
-      $text = t('Decline');
-      break;
-    case 'save':
-      // Save button.
-      $text = t('Save');
-      break;
-    case 'clear':
-      // Clear form button.
-      $text = t('Clear');
-      break;
-  }
-  return ' <span title="'. $text .'" class="'. $class .' l10n-button"'. (!empty($extras) ? (' '. $extras) : '') .'><b><b>'. $text .'</b></b></span>';
-}
-
-/**
- * Theme a list of translatable strings. Adds a copy button to each string
- * for quickly copying its source text into a translation form.
- */
-function theme_l10n_community_strings($items, $form = TRUE) {
-  $output = "<ul class='l10n-community-strings'>";
-  foreach ($items as $i => $item) {
-    $output .= "<li class='clear-block'>";
-    if ($form) {
-      // Only print copy button if we are displaying a form.
-      $output .= "<div class='buttons'>". theme('l10n_community_copy_button') ."</div>";
-    }
-    $output .= "<div class='string'>". $item ."</div>";
-    $output .= "</li>";
-  }
-  $output .= "</ul>";
-  return $output;
-}
-
-/**
- * Copy button for string values.
- */
-function theme_l10n_community_copy_button() {
-  return theme('l10n_community_button', 'edit', 'l10n-community-copy');
 }
 
 /**

@@ -6,52 +6,6 @@
  *   Translation view and editing pages for localization community.
  */
 
-// = Translation interface hub =================================================
-
-/**
- * Menu callback for the translation pages.
- *
- * Displays a translation view or translation edit page depending
- * on permissions. If no strings are found, an error is printed.
- *
- * @param $langcode
- *   Language code, for example 'hu', 'pt-br', 'de', 'it'.
- */
-function l10n_community_translate_page($langcode = NULL, $mode = 'view') {
-
-  // Add missing breadcrumb.
-  drupal_set_breadcrumb(
-    array(
-      l(t('Home'), NULL),
-      l(t('Translate'), 'translate')
-    )
-  );
-
-  $languages = l10n_community_get_languages();
-
-  $filters = l10n_community_build_filter_values($_GET);
-  $output = drupal_get_form('l10n_community_filter_form', $filters);
-
-  l10n_community_add_url_modifiers($langcode, $filters);
-  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
-
-  $strings = l10n_community_get_strings($languages[$langcode]->language, $filters, $filters['limit']);
-  if (!count($strings)) {
-    drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
-  }
-  elseif (!user_access('submit suggestions') || ($mode == 'view')) {
-    // For users without permission to translate or suggest, display the view.
-    drupal_set_title(t('@language translations', array('@language' => $languages[$langcode]->name)));
-    $output .= l10n_community_translate_view($strings, $languages[$langcode], $filters);
-  }
-  else {
-    // For users with some permission, display the form.
-    drupal_set_title(t('Translate to @language', array('@language' => $languages[$langcode]->name)));
-    $output .= drupal_get_form('l10n_community_translate_form', $strings, $languages[$langcode], $filters);
-  }
-  return $output;
-}
-
 // = Filter form handling ======================================================
 
 /**
@@ -191,383 +145,401 @@ function l10n_community_filter_form_submit($form, &$form_state) {
   }
 }
 
-// = Translation viewer ========================================================
+// = Translation view ==========================================================
 
 /**
- * Form for translations display.
- *
- * @param $strings
- *   Array of string objects to display on the page.
- * @param $language
- *   Language object corresponding to the page displayed.
- * @param $filters
- *   Filters used to present this listing view.
+ * Menu callback: List translations and suggestions.
  */
-function l10n_community_translate_view($strings = array(), $language = NULL, $filters = array()) {
-  $output = '';
-  $rows = array();
-  foreach ($strings as $string) {
-    $row = array();
-    // Source display
-    $source = l10n_community_format_string($string->value);
-    $source .= theme('l10n_community_in_context', $string);
-    $row[] = array('data' => $source, 'class' => 'source');
+function l10n_community_translate_page($langcode) {
+  drupal_add_css(drupal_get_path('module', 'l10n_community') .'/editor.css');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/jquery.worddiff.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/editor.js');
 
-    // Translation display.
-    if (!empty($string->translation)) {
-      if (strpos($string->value, chr(0)) !== FALSE) {
-        $translations = explode(chr(0), l10n_community_format_text($string->translation));
-        // Fill in any missing items, so it is shown that not all items are done.
-        if (count($translations) < $language->plurals) {
-          $translations = array_merge($translations, array_fill(0, count($translations) - $language->plurals, ''));
-        }
-        $translation = theme('item_list', $translations);
-      }
-      else {
-        $translation = l10n_community_format_text($string->translation);
-      }
-      $row[] = $translation;
-    }
-    else {
-      $row[] = '';
-    }
-    $rows[] = $row;
+  $language = l10n_community_get_language($langcode);
+  $filters = l10n_community_build_filter_values($_GET);
+  $strings = l10n_community_get_strings($langcode, $filters, $filters['limit']);
+
+  // Set the most appropriate title.
+  if ($filters['project']) {
+    drupal_set_title(t('Translate %project to @language', array('%project' => $filters['project']->title, '@language' => $language->name)));
   }
-  $output .= ($pager = theme('pager', NULL, $filters['limit'], 0));
-  $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
-  $output .= $pager;
-  $output = "<div id='l10n-community-translate-view'>". $output ."</div>";
+  else {
+    drupal_set_title(t('Translate to @language', array('@language' => $language->name)));
+  }
+
+  // Add the filter form.
+  $output = drupal_get_form('l10n_community_filter_form', $filters);
+
+  // Output the actual strings.
+  if (!count($strings)) {
+    drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
+  }
+  else {
+    $output .= drupal_get_form('l10n_community_translate_form', $language, $filters, $strings);
+  }
   return $output;
 }
 
-// = Translation editor ========================================================
-
 /**
- * Translation web interface.
+ * Form callback: List translations and suggestions.
  *
- * @param $strings
- *   Array of string objects to display.
+ * @param $form_state
+ *   The form state array.
  * @param $language
- *   Language object.
+ *   A language object.
  * @param $filters
- *   Filters used to present this editing view.
+ *   An array of filters applied to the strings.
+ * @param $strings
+ *   The strings to render.
  */
-function l10n_community_translate_form(&$form_state, $strings = array(), $language = NULL, $filters = array()) {
-
-  if (isset($_GET['page'])) {
-    // Ensure that we keep all filter values, even the page number, so
-    // after submission, the same page can be shown.
-    $filters['page'] = (int) $_GET['page'];
-  }
+function l10n_community_translate_form(&$form_state, $language, $filters, $strings) {
+  $pager = theme('pager', NULL, $filters['limit'], 0);
+  $redirect_url = $_GET;
+  unset($redirect_url['q']);
 
   $form = array(
-    '#tree' => TRUE,
-    '#redirect' => array($_GET['q'], l10n_community_flat_filters($filters))
-  );
-  $form['pager_top'] = array(
-    '#weight' => -10,
-    '#value' => ($pager = theme('pager', NULL, $filters['limit'], 0)),
-  );
-  $form['pager_bottom'] = array(
-    '#weight' => 10,
-    '#value' => $pager,
-  );
-  // Keep language code and URI in form for further reference.
-  $form['langcode'] = array(
-    '#type' => 'value',
-    '#value' => $language->language
-  );
-  $form['project'] = array(
-    '#type' => 'value',
-    '#value' => isset($project) ? $project->uri : NULL
+    '#submit' => array('l10n_community_translate_submit'),
+    '#redirect' => array($_GET['q'], $redirect_url),
+    'langcode' => array('#type' => 'value', '#value' => $language->language),
+    'pager_top' => array('#weight' => -10, '#value' => $pager),
+    'submit_top' => array('#type' => 'submit', '#value' => t('Save changes'), '#access' => user_access('submit suggestions')),
+    'strings' => array('#tree' => TRUE, '#theme' => 'l10n_community_translate_table'),
+    'submit' => array('#type' => 'submit', '#value' => t('Save changes'), '#access' => user_access('submit suggestions')),
+    'pager_bottom' => array('#weight' => 10, '#value' => $pager),
   );
 
   foreach ($strings as $string) {
-    $form[$string->sid] = array(
-      '#tree' => TRUE,
-    );
-
-    // A toolbox which displays action icons on each string editor fieldset.
-    $toolbox = theme('l10n_community_button', 'translate', 'l10n-translate active');
-    $toolbox .= theme('l10n_community_button', 'lookup', 'l10n-lookup');
-    $toolbox .= $string->has_suggestion ? theme('l10n_community_button', 'has-suggestion', 'l10n-suggestions') : "";
-    $toolbox = "<div class='toolbox'>$toolbox</div>";
-    $form[$string->sid]['toolbox'] = array(
-      '#type' => 'markup',
-      '#value' => $toolbox,
-    );
-    $form[$string->sid]['messagebox'] = array(
-      '#type' => 'markup',
-      '#value' => "<div class='messagebox'></div>",
-    );
-
-    $is_plural = strpos($string->value, "\0");
-    // Multiple source strings if we deal with plurals. The form item and
-    // consequently the JavaScript strings identifiers are the sid and then
-    // the index of the plural being displayed.
-    $string_parts = explode(chr(0), $string->value);
-    foreach ($string_parts as $delta => &$part) {
-      $part = l10n_community_format_text($part, $string->sid, (count($string_parts) > 1) ? $delta : NULL);
-    }
-    $source = theme('l10n_community_strings', $string_parts);
-    $source .= theme('l10n_community_in_context', $string);
-
-    $form[$string->sid]['source'] = array(
-      '#type' => 'item',
-      '#value' => $source,
-    );
-
-    $translated = !empty($string->translation);
-    $form[$string->sid]['translation'] = array(
-      '#type' => 'item',
-      // Hide editing controls of translated stuff to save some space and guide user eyes.
-      '#prefix' => '<div id="l10n-community-wrapper-'. $string->sid .'"'. ($translated ? ' class="hidden"' : '') .'>',
-      '#suffix' => '</div>',
-    );
-
-    if ($is_plural) {
-
-      // Dealing with a string with plural versions.
-      if ($translated) {
-        // Add translation form element with all plural versions.
-        $translations = explode("\0", $string->translation);
-        $string_parts = array();
-        for ($i = 0; $i < $language->plurals; $i++) {
-          $target = $string->sid .'-'. $i;
-          $string_parts[] = l10n_community_format_text($translations[$i], $string->sid, $i);
-        }
-        $form[$string->sid]['translation_existing'] = array(
-          '#type' => 'item',
-          '#value' => theme('l10n_community_strings', $string_parts),
-        );
-      }
-
-      $string_parts = explode(chr(0), $string->value);
-
-      for ($i = 0; $i < $language->plurals; $i++) {
-        $target = $string->sid .'-'. $i;
-        if ($translated) {
-          // Already translated so we ask for new translation or suggestion.
-          $description = !user_access('moderate own suggestions') ? t('New suggestion for variant #%d', array('%d' => $i)) : t('New translation for variant #%d', array('%d' => $i));
-        }
-        else {
-          // Not translated yet, so we ask for initial translation or suggestion.
-          $description = !user_access('moderate own suggestions') ? t('Suggestion for variant #%d', array('%d' => $i)) : t('Translation for variant #%d', array('%d' => $i));
-        }
-
-        // Include editing area for each plural variant.
-        $source_index = ($i > 0 ? 1 : 0);
-        $form[$string->sid]['translation']['value'][$i] = array(
-          // Use textarea for long and multiline strings.
-          '#type' => ((strlen($string_parts[$source_index]) > 45) || (count(explode("\n", $string_parts[$source_index])) > 1)) ? 'textarea' : 'textfield',
-          '#description' => $description,
-          '#rows' => 1,
-          '#id' => 'l10n-community-translation-'. $target,
-        );
-      }
-    }
-
-    // Dealing with a simple string (no plurals).
-
-    else {
-      if ($translated) {
-        $form[$string->sid]['translation_existing'] = array(
-          '#type' => 'item',
-          '#value' => theme('l10n_community_strings', array(l10n_community_format_text($string->translation, $string->sid))),
-        );
-      }
-      $form[$string->sid]['translation']['value'] = array(
-        // Use textarea for long and multiline strings.
-        '#type' => ((strlen($string->value) > 45) || (count(explode("\n", $string->value)) > 1)) ? 'textarea' : 'textfield',
-        // Provide accurate title based on previous data and permission.
-        '#description' => $translated ? (!user_access('moderate own suggestions') ? t('Add a new suggestion') : t('Add a new translation')) : (!user_access('moderate own suggestions') ? t('Suggestion') : ''),
-        '#rows' => 4,
-        '#resizable' => FALSE,
-        '#cols' => NULL,
-        '#size' => NULL,
-        '#id' => 'l10n-community-translation-'. $string->sid,
-      );
-      if (strlen($string->value) > 200) {
-        $form[$string->sid]['translation']['value']['#rows'] = floor(strlen($string->value) * .03);
-        $form[$string->sid]['translation']['value']['#resizable'] = TRUE;
-      }
-    }
-
-    // Add AJAX saving buttons
-    $form[$string->sid]['translation']['save'] = array(
-      '#prefix' => "<span class='l10n-approval-buttons'>",
-      '#value' => theme('l10n_community_button', 'save', 'l10n-save'),
-      '#type' => 'markup',
-    );
-    $form[$string->sid]['translation']['clear'] = array(
-      '#suffix' => "</span>",
-      '#value' => theme('l10n_community_button', 'clear', 'l10n-clear'),
-      '#type' => 'markup',
-    );
-
-    if (!user_access('moderate own suggestions')) {
-      // User with suggestion capability only, record this.
-      $form[$string->sid]['translation']['is_suggestion'] = array(
-        '#type' => 'value',
-        '#value' => TRUE
-      );
-    }
-    else {
-      // User with full privileges, offer option to submit suggestion.
-      $form[$string->sid]['translation']['is_suggestion'] = array(
-        '#title' => t('Suggestion for discussion'),
-        '#type' => 'checkbox',
-      );
-    }
+    $form['strings'][$string->sid] = _l10n_community_translate_string($form_state, $string, $language);
   }
-
-  // Add all strings for copy-pasting and some helpers.
-  drupal_add_js(
-    array(
-      'l10n_lookup_help'      => t('Show detailed information.'),
-      'l10n_approve_error'    => t('There was an error approving this suggestion. You might not have permission or the suggestion id was invalid.'),
-      'l10n_approve_confirm'  => t('!icon Suggestion approved.', array('!icon' => '&#10004;')),
-
-      'l10n_decline_error'    => t('There was an error declining this suggestion. You might not have permission or the suggestion id was invalid.'),
-      'l10n_decline_confirm'  => t('Suggestion declined.'),
-
-      'l10n_details_callback' => url('translate/details/'. $language->language .'/'),
-      'l10n_suggestions_callback' => url('translate/suggestions/'. $language->language .'/'),
-      'l10n_approve_callback' => url('translate/approve/'. $language->language .'/'),
-      'l10n_decline_callback' => url('translate/decline/'. $language->language .'/'),
-      'l10n_form_token_path'  => variable_get('clean_url', '0') ? '?form_token=' : '&form_token=',
-      'l10n_num_plurals'      => $language->plurals
-    ),
-    'setting'
-  );
-
-  // Let the user submit the form.
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => !user_access('moderate own suggestions') ? t('Save suggestions') : t('Save translations')
-  );
-
-  $form['#theme'] = 'l10n_community_translate_form';
-
   return $form;
 }
 
 /**
- * Save translations entered in the web form.
+ * Return a marked-up string.
  */
-function l10n_community_translate_form_submit($form, &$form_state) {
+function _l10n_community_translate_render_strings($strings, $empty = '') {
+  if ($empty) {
+    $empty = ' data-empty="'. check_plain($empty) .'"';
+  }
+  return "<span$empty>". implode("</span><br /><span$empty>", array_map('check_plain', $strings)) .'</span>';
+}
+
+/**
+ * Creates the form fragment for a source string.
+ */
+function _l10n_community_translate_string(&$form_state, $source, $language) {
+  // Normalize empty default translation.
+  if (!$source->translation) {
+    $source->tid = '0';
+    $source->translation = array(t('(not translated)'));
+    $source->is_active = '1';
+    $source->is_suggestion = '0';
+  }
+  else {
+    $source->translation = l10n_community_unpack_string($source->translation);
+  }
+
+  $source->value = l10n_community_unpack_string($source->value);
+
+  $form = array(
+    '#string' => $source,
+    '#langcode' => $language->language,
+    'source' => array(
+      'string' => array('#value' => _l10n_community_translate_render_strings($source->value)),
+    ),
+  );
+
+  if (user_access('submit suggestions')) {
+    $form['source']['edit'] = array(
+      '#value' => t('Edit Copy'),
+      '#prefix' => '<label title="'. t('Edit Copy') .'">',
+      '#suffix' => '</label>',
+    );
+  }
+
+  // Add the current string (either a approved translation or a mock object
+  // for the "untranslated" string).
+  $form[$source->tid] = _l10n_community_translate_translation($form_state, $source, $source);
+
+  // When there are suggestions, load them from the database.
+  if ($source->has_suggestion) {
+    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.is_active, t.is_suggestion, u.name as username FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $language->language, $source->sid);
+    while ($suggestion = db_fetch_object($result)) {
+      $suggestion->translation = l10n_community_unpack_string($suggestion->translation);
+      // Add the suggestion to the list.
+      $form[$suggestion->tid] = _l10n_community_translate_translation($form_state, $suggestion, $source);
+    }
+  }
+
+  // If the user may add new suggestions, display a textarea.
+  if (user_access('submit suggestions')) {
+    $textarea = _l10n_community_translate_translation_textarea($source);
+    $form[$textarea->tid] = _l10n_community_translate_translation($form_state, $textarea, $source);
+  }
+  return $form;
+}
+
+/**
+ * Build mock object for new textarea.
+ */
+function _l10n_community_translate_translation_textarea($source) {
   global $user;
 
-  $inserted = $updated = $unchanged = $suggested = $duplicates = $ignored = 0;
-
-  foreach ($form_state['values'] as $sid => $item) {
-    if (!is_array($item) || !isset($item['translation'])) {
-      // Skip, if we don't have translations in this form item,
-      // which means this is some other form value.
-      continue;
-    }
-
-    $source_string = db_result(db_query('SELECT value FROM {l10n_community_string} WHERE sid = %d', $sid));
-    $text = '';
-    if (is_string($item['translation']['value']) && strlen(trim($item['translation']['value']))) {
-      // Single string representation: simple translation.
-      $text = l10n_community_trim($item['translation']['value'], $source_string);
-    }
-    if (is_array($item['translation']['value'])) {
-      // Array -> plural variants are provided. Join them with a NULL separator.
-      $text = join("\0", $item['translation']['value']);
-      if (trim($text) == '') {
-        // If the whole string only contains NULL bytes, empty the string, so
-        // we don't save an empty translation. Otherwise the NULL bytes need
-        // to be there, so we know plural variant indices.
-        $text = '';
-      }
-    }
-
-    if (!empty($text)) {
-      // Check for duplicate translation or suggestion.
-      if (l10n_community_is_duplicate($text, $sid, $form_state['values']['langcode'])) {
-        $duplicates++;
-        continue;
-      }
-
-      // We have some string to save.
-      l10n_community_target_save(
-        $sid, $text, $form_state['values']['langcode'], $user->uid,
-        ($item['translation']['is_suggestion'] == TRUE),
-        $inserted, $updated, $unchanged, $suggested
-      );
-    }
-  }
-
-  // Inform user about changes made to the database.
-  l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
-}
-
-// = Theme functions ===========================================================
-
-/**
- * Theme function for l10n_community_filter_form.
- */
-function theme_l10n_community_filter_form($form) {
-  $row = array();
-  $labels = array();
-  // Only display these elements in distinct table cells
-  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit');
-  foreach ($form as $id => &$element) {
-    if (in_array($id, $elements)) {
-      $labels[] = $element['#title'];
-      unset($element['#title']);
-      $row[] = drupal_render($element);
-    }
-  }
-  // Fill in the rest of the header above the buttons.
-  $labels[] = '';
-  // Display the rest of the form in the last cell
-  $row[] = array('data' => drupal_render($form), 'class' => 'last');
-  return theme('table', $labels, array($row), array('class' => 'l10n-server-filter'));
+  return (object)array(
+    'sid' => $source->sid,
+    'tid' => 'new',
+    'translation' => array_fill(0, count($source->value), ''),
+    'is_active' => '1',
+    'is_suggestion' => '1',
+    'uid_entered' => $user->uid,
+  );
 }
 
 /**
- * Theme function for l10n_community_translate_form.
+ * Generates the byline containing meta information about a string.
  */
-function theme_l10n_community_translate_form($form) {
-  $rows = array();
-  $output = '';
+function l10n_community_translate_byline($string) {
+  $params = array(
+    '!author' => theme('username', (object)array('name' => $string->username, 'uid' => $string->uid_entered)),
+    '@date' => format_date($string->time_entered),
+    '@ago' => t('@time ago', array('@time' => format_interval(time() - $string->time_entered))),
+  );
+  if (!empty($string->uid_approved) && $string->uid_entered === $string->uid_approved && $string->time_entered === $string->time_approved) {
+    return t('translated and approved by !author <span title="@ago">on @date</span>', $params);
+  }
+  else {
+    $title = t('suggested by !author <span title="@ago">on @date</span>', $params);
+    if (!empty($string->uid_approved)) {
+      $title .= '<br />'. t('approved by !author <span title="@ago">on @date</span>', array(
+        '!author' => theme('username', (object)array('name' => $string->username_approved, 'uid' => $string->uid_approved)),
+        '@date' => format_date($string->time_approved),
+        '@ago' => t('@time ago', array('@time' => format_interval(time() - $string->time_approved))),
+      ));
+    }
+    return $title;
+  }
+}
 
-  foreach ($form as $id => &$element) {
-    // if the form id is numeric, this form element is for editing a string
-    if (is_numeric($id)) {
-      $source_pane = drupal_render($element['source']);
-      $translation_pane = "<div class='l10n-panes clear-block'>";
-      $translation_pane .= drupal_render($element['toolbox']);
-      $translation_pane .= "<div class='pane translate'>";
-      $translation_pane .= !empty($element['translation_existing']) ? drupal_render($element['translation_existing']) : '';
-      $translation_pane .= drupal_render($element['messagebox']);
-      $translation_pane .= drupal_render($element['translation']) .'</div>';
-      $translation_pane .= "<div class='pane suggestions'></div><div class='pane lookup'></div>";
-      $translation_pane .= "</div>";
-      $row = array(
-        array(
-          'data' => $source_pane,
-          'class' => 'source',
-          'id' => 'spane-'. $id,
-        ),
-        array(
-          'data' => $translation_pane,
-          'class' => 'translation',
-          'id' => 'tpane-'. $id,
-        ),
+/**
+ * Creates the form fragment for a translated string.
+ */
+function _l10n_community_translate_translation(&$form_state, $string, $source) {
+  global $user;
+
+  $is_own = $user->uid == $string->uid_entered;
+  $is_active = $string->is_active && !$string->is_suggestion;
+  $is_new = $string->tid == 'new';
+  $may_moderate = ($is_own ? user_access('moderate own suggestions') : user_access('moderate suggestions from others'));
+  //$may_stabilize = $permission & ($is_own ? L10N_PERM_STABILIZE_OWN : L10N_PERM_STABILIZE_OTHERS);
+
+  $form = array(
+    '#theme' => 'l10n_community_translate_translation',
+    'original' => array('#type' => 'value', '#value' => $string),
+  );
+
+  $form['active'] = array(
+    '#type' => 'radio',
+    '#theme' => 'l10n_community_translate_radio',
+    '#title' => _l10n_community_translate_render_strings($string->translation, $is_new ? t('(empty)') : FALSE),
+    '#return_value' => $string->tid,
+    '#default_value' => $is_active ? $string->tid : NULL,
+    '#parents' => array('strings', $string->sid, 'active'),
+    '#disabled' => !$may_moderate && !$is_active,
+    '#attributes' => array('class' => 'selector'),
+  );
+
+  if ($string->tid) {
+    if ($may_moderate && $string->tid != 'new') {
+      $form['declined'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Declined'),
+        '#default_value' => !($string->is_active || $string->is_suggestion),
       );
-      $rows[] = $row;
-      unset($form[$id]);
+    }
+    // if ($may_stabilize) {
+    //   $form['stable'] = array(
+    //     '#type' => 'checkbox',
+    //     '#title' => t('Stable'),
+    //     '#default_value' => FALSE, // $string->is_stable,
+    //   );
+    // }
+    if ($string->tid == 'new') {
+      $form['value'] = array_fill(0, count($source->value), array(
+        '#type' => 'textarea',
+        '#cols' => 60,
+        '#rows' => 3,
+        '#default_value' => t('<New translation>'),
+      ));
+    }
+    else {
+      if (user_access('submit suggestions')) {
+        $form['edit'] = array(
+          '#value' => t('Edit Copy'),
+          '#prefix' => '<label title="'. t('Edit Copy') .'">',
+          '#suffix' => '</label>',
+        );
+      }
+      if (isset($string->username)) {
+        $title = l10n_community_translate_byline($string);
+        $form['author'] = array(
+          '#value' => $title,
+        );
+      }
     }
   }
-  $output .= drupal_render($form['pager_top']);
-  $output .= theme('table', array(t('Source Text'), t('Translations')), $rows, array('class' => 'l10n-server-translate'));
-  $output .= drupal_render($form);
+  return $form;
+}
+
+function theme_l10n_community_translate_actions($element) {
+  $actions = '';
+  foreach (array('declined', /*'stable', */'edit') as $type) {
+    if (isset($element[$type])) {
+      $actions .= '<li class="'. $type .'">'. drupal_render($element[$type]) .'</li>';
+    }
+  }
+  if (!empty($actions)) {
+    return '<ul class="actions">'. $actions .'</ul>';
+  }
+  else {
+    return '';
+  }
+}
+
+function theme_l10n_community_translate_translation($element) {
+  if (!isset($element['#attributes']['class'])) {
+    $element['#attributes']['class'] = '';
+  }
+  $element['#attributes']['class'] .= ' clearfix translation';
+
+  switch ($element['active']['#return_value']) {
+    case 'new':
+      $element['#attributes']['class'] .= ' new-translation';
+      break;
+    case '0':
+      $element['#attributes']['class'] .= ' no-translation';
+      // Fallthrough.
+    default:
+      if ($element['active']['#value'] !== '') {
+        $element['#attributes']['class'] .= ' is-active default';
+      }
+  }
+
+  $output = '<li'. drupal_attributes($element['#attributes']) .'>';
+  $output .= theme('l10n_community_translate_actions', $element);
+  $output .= drupal_render($element['active']);
+
+  if (isset($element['author'])) {
+    $output .= '<div class="author">'. drupal_render($element['author']) .'</div>';
+  }
+
+  if (isset($element['value'])) {
+    $output .= drupal_render($element['value']);
+  }
+  return $output  . '</li>';
+}
+
+function theme_l10n_community_translate_radio($element) {
+  _form_set_class($element, array('form-radio'));
+  $output = '<input type="radio" ';
+  $output .= 'id="'. $element['#id'] .'" ';
+  $output .= 'name="'. $element['#name'] .'" ';
+  $output .= 'value="'. $element['#return_value'] .'" ';
+  $output .= (check_plain($element['#value']) == $element['#return_value']) ? ' checked="checked" ' : ' ';
+  $output .= drupal_attributes($element['#attributes']) .' />';
+
+  if (isset($element['#title'])) {
+    $output .= '<label class="l10n-string" for="'. $element['#id'] .'">'. $element['#title'] .'</label>';
+  }
   return $output;
 }
+
+function theme_l10n_community_translate_translation_list($element) {
+  $output = '<ul>';
+  foreach (element_children($element) as $child) {
+    if (is_numeric($child) || $child == 'new') {
+      $output .= drupal_render($element[$child]);
+    }
+  }
+  $output .= '</ul>';
+
+  return $output;
+}
+
+function theme_l10n_community_translate_source($element) {
+  $output = theme('l10n_community_translate_actions', $element['source']);
+  $output .= '<label class="l10n-string">'. drupal_render($element['source']['string']) .'</label>';
+  $output .= theme('l10n_community_in_context', $element['#string']);
+  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more">'. t('More information') .'</a></div>';
+  return $output;
+}
+
+function theme_l10n_community_translate_table($element) {
+  $header = array(
+    t('Source Text'),
+    t('Translations'),
+  );
+
+  $rows = array();
+
+  foreach (element_children($element) as $key) {
+    $rows[] = array(
+      array('class' => 'source', 'data' => theme('l10n_community_translate_source', $element[$key])),
+      array('class' => 'translation', 'data' => theme('l10n_community_translate_translation_list', $element[$key])),
+    );
+  }
+
+  return theme('table', $header, $rows, array('class' => 'l10n-table'));
+}
+
+function l10n_community_translate_submit($form, &$form_state) {
+  $langcode = $form_state['values']['langcode'];
+
+  foreach ($form_state['values']['strings'] as $sid => $string) {
+    foreach ($string as $tid => $options) {
+      // Store new suggestion.
+      $empty_values = 0;
+      if (isset($options['value']) && is_array($options['value'])) {
+        foreach ($options['value'] as $key => $value) {
+          if ($value === t('<New translation>')) {
+            $options['value'] = '';
+            $empty_values++;
+          }
+        }
+        if ($tid === 'new' && count($options['value']) > $empty_values) {
+          $tid = l10n_community_add_suggestion($langcode, $sid, $options['value']);
+          if ($tid) {
+            l10n_community_counter(L10N_COUNT_ADDED);
+            if ($string['active'] === 'new') {
+              $string['active'] = $tid;
+            }
+          }
+        }
+      }
+
+      if (is_numeric($tid) && $tid > 0) {
+        if ($tid == $string['active']) {
+          if ($options['original']->is_suggestion) {
+            l10n_community_approve_string($langcode, $sid, $tid);
+            l10n_community_counter(L10N_COUNT_APPROVED);
+          }
+          // if (/*!$options['original']->is_stable && */!empty($options['stable'])) {
+          //   dsm('mark as stable');
+          //   l10n_community_counter('stabilized');
+          // }
+        }
+        elseif (!empty($options['declined'])) {
+          // also remove stable flag!
+          l10n_community_counter($options['original']->is_suggestion ? L10N_COUNT_SUGGESTION_DECLINED : L10N_COUNT_DECLINED);
+          l10n_community_decline_string($langcode, $sid, $tid);
+        }
+      }
+    }
+  }
+
+  l10n_community_update_message();
+}
+
+// = Miscellaneous =============================================================
 
 /**
  * Theme context information for source strings.
@@ -614,10 +586,12 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
 
-  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active FROM {l10n_community_string} s";
+  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.has_suggestion, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved FROM {l10n_community_string} s";
   $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s";
   $join[] = "LEFT JOIN {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 AND t.is_suggestion = 0";
   $join_args[] = $langcode;
+  $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
+  $join[] = "LEFT JOIN {users} u2 ON u2.uid = t.uid_approved";
 
   // Add submitted by condition
   if (!empty($filters['author'])) {
@@ -657,27 +631,28 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   }
 
   // Restriction based on string status by translation / suggestions.
-  $status_sql = '';
-  if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
-    // We are doing a LEFT JOIN especially to look into the case, when we have nothing
-    // to match in the translation table, but we still have the string. (We get our
-    // records in the result set in this case). The translation field is empty or
-    // NULL in this case, as we are not allowing NULL there and only saving an empty
-    // translation if there are suggestions but no translation yet.
-    $where[] = "(t.translation is NULL OR t.translation = '')";
-  }
-  elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
-    $where[] = "t.translation != ''";
-  }
-  if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
-    // Note that we are not searching in the suggestions themselfs, only
-    // the source and active translation values. The user interface underlines
-    // that we are  looking for strings which have suggestions, not the
-    // suggestions themselfs.
-    $where[] = "t.has_suggestion = 1";
-  }
-  elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
-    $where[] = "((t.has_suggestion IS NULL) OR (t.has_suggestion = 0))";
+  if (isset($filters['status'])) {
+    if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
+      // We are doing a LEFT JOIN especially to look into the case, when we have nothing
+      // to match in the translation table, but we still have the string. (We get our
+      // records in the result set in this case). The translation field is empty or
+      // NULL in this case, as we are not allowing NULL there and only saving an empty
+      // translation if there are suggestions but no translation yet.
+      $where[] = "(t.translation is NULL OR t.translation = '')";
+    }
+    elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
+      $where[] = "t.translation != ''";
+    }
+    if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
+      // Note that we are not searching in the suggestions themselfs, only
+      // the source and active translation values. The user interface underlines
+      // that we are  looking for strings which have suggestions, not the
+      // suggestions themselfs.
+      $where[] = "t.has_suggestion = 1";
+    }
+    elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
+      $where[] = "((t.has_suggestion IS NULL) OR (t.has_suggestion = 0))";
+    }
   }
 
   // Build the queries
@@ -698,4 +673,195 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     $result[] = $string;
   }
   return $result;
+}
+
+/**
+ * Ensures that there is a mock translation for a given language/string.
+ *
+ * @param $langcode
+ *   The language to be checked for a mock translation.
+ * @param $sid
+ *   The string ID that needs to have a mock translation.
+ */
+function l10n_community_mock_translation($langcode, $sid) {
+  if (!db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode))) {
+    // Insert mock tuple that acts as placeholder.
+    db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '', '%s', 0, 0, 0, 1)", $sid, $langcode);
+  }
+}
+
+/**
+ * Adds a suggestion to a language/string.
+ *
+ * @param $langcode
+ *   The language of the new translation.
+ * @param $sid
+ *   The string ID for which a new translation should be added.
+ * @param $translation
+ *   An array of strings which constitute the new translation.
+ */
+function l10n_community_add_suggestion($langcode, $sid, $translation) {
+  global $user;
+
+  // Load source string and adjust translation whitespace based on source.
+  $source_string = db_result(db_query('SELECT value FROM {l10n_community_string} WHERE sid = %d', $sid));
+  $translation = l10n_community_pack_string($translation);
+  $translation = l10n_community_trim($translation, $source_string);
+
+  // Don't store empty translations.
+  if ($translation === '') {
+    return NULL;
+  }
+
+  // Look for an existing active translation, if any.
+  $existing = db_fetch_object(db_query("SELECT tid FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND translation = '%s'", $sid, $langcode, $translation));
+  if (!empty($existing)) {
+    // The translation is already in the db. Make it an active suggestion again.
+    db_query("UPDATE {l10n_community_translation} SET is_suggestion = 1, is_active = 1 WHERE tid = %d", $existing->tid);
+    $tid = $existing->tid;
+  }
+  else {
+    // This is a new translation.
+    l10n_community_mock_translation($langcode, $sid);
+    // Insert the new suggestion.
+    db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $translation, $langcode, $user->uid, time());
+    $tid = db_last_insert_id('l10n_community_translation', 'tid');
+  }
+
+  // Mark the existing or mock translation has having suggestions.
+  l10n_community_update_suggestion_status($langcode, $sid);
+
+  return $tid;
+}
+
+/**
+ * Marks a translation as declined.
+ *
+ * @param $langcode
+ *   The language of the declined translation.
+ * @param $sid
+ *   The string ID the translation belongs to.
+ * @param $tid
+ *   The translation ID of the translation.
+ */
+function l10n_community_decline_string($langcode, $sid, $tid) {
+  // Mark this translation as inactive.
+  db_query("UPDATE {l10n_community_translation} SET is_suggestion = 0, is_active = 0 WHERE tid = %d", $tid);
+
+  // Make sure the mock translation is there in case we declined the active translation.
+  l10n_community_mock_translation($langcode, $sid);
+  l10n_community_update_suggestion_status($langcode, $sid);
+}
+
+/**
+ * Updates the has_suggestion flag for the active translation.
+ *
+ * @param $langcode
+ *   The language of the string.
+ * @param $sid
+ *   The string ID that should be updated.
+ */
++function l10n_community_update_suggestion_status($langcode, $sid) {
+  // Let's see if we have any suggestions remaining in this language.
+  $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation}
+      WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
+
+  // Update the status according to the number of suggestions.
+  db_query("UPDATE {l10n_community_translation} SET has_suggestion = %d
+      WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $count ? 1 : 0, $sid, $langcode);
+}
+
+/**
+ * Marks a translation as approve.
+ *
+ * @param $langcode
+ *   The language of the approved translation.
+ * @param $sid
+ *   The string ID the translation belongs to.
+ * @param $tid
+ *   The translation ID of the translation.
+ */
+function l10n_community_approve_string($langcode, $sid, $tid) {
+  global $user;
+
+  // Remove placeholder translation record (which was there if
+  // first came suggestions, before an actual translation).
+  db_query("DELETE FROM {l10n_community_translation} WHERE sid = %d AND translation = '' AND language = '%s'", $sid, $langcode);
+
+  // Make the existing approved string a suggestion.
+  db_query("UPDATE {l10n_community_translation} SET is_suggestion = 1 WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode);
+
+  // Mark this exact suggestion as active, and set approval time.
+  db_query("UPDATE {l10n_community_translation} SET time_approved = %d, uid_approved = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $tid);
+  l10n_community_update_suggestion_status($langcode, $sid);
+}
+
+/**
+ * Unpacks a string as retrieved from the database.
+ *
+ * @param $string
+ *   The string with separation markers (NULL byte)
+ * @return
+ *   An array of strings with one element for each plural form in case of
+ *   a plural string, or one element in case of a regular string.
+ */
+function l10n_community_unpack_string($string) {
+  return explode("\0", $string);
+}
+
+/**
+ * Packs a string for storage in the database.
+ *
+ * @param $string
+ *   An array of strings.
+ * @return
+ *   A packed string with NULL bytes separating each string.
+ */
+function l10n_community_pack_string($strings) {
+  return implode("\0", $strings);
+}
+
+// = AJAX callbacks ============================================================
+
+/**
+ * Return a HTML list of projects, releases and counts of where strings
+ * appear in the managed projects.
+ *
+ * We could provide much more information, but usability should also be kept
+ * in mind. It is possible to investigate hidden information sources though,
+ * like tooltips on the release titles presented.
+ *
+ * This callback is invoked from JavaScript and is used as an AHAH provider.
+ *
+ * @param $langcode
+ *   Language code.
+ * @param $sid
+ *   Source string id.
+ */
+function l10n_community_string_details($langcode = NULL, $sid = 0) {
+  // Prevent devel module information.
+  $GLOBALS['devel_shutdown'] = FALSE;
+
+  // List of project releases, where this string is used.
+  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_community_line} l INNER JOIN {l10n_community_project} p ON l.pid = p.pid INNER JOIN {l10n_community_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
+
+  $list = array();
+  $output = array();
+  $previous_project = '';
+  while ($instance = db_fetch_object($result)) {
+    if ($instance->project_title != $previous_project) {
+      if (!empty($list)) {
+        $output[] = join(', ', $list);
+      }
+      $list = array('<em>'. $instance->project_title .':</em> '. $instance->release_title .' ('. $instance->occurance_count .')');
+    }
+    else {
+      $list[] = $instance->release_title .' ('. $instance->occurance_count .')';
+    }
+    $previous_project = $instance->project_title;
+  }
+  $output[] = join(', ', $list);
+  print '<strong>'. t('Used in:') .'</strong>'. theme('item_list', $output);
+
+  exit;
 }
