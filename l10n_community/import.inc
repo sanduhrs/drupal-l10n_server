@@ -129,10 +129,8 @@ function l10n_community_import_form_submit($form, &$form_state) {
 
     // Do the actual parsing on the local file.
     if (l10n_community_import($file, $form_state['values']['langcode'], $form_state['values']['is_suggestion'], $form_state['values']['import_uid'])) {
-      // Get status report on what was done in the process.
-      list($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored) = _l10n_community_import_one_string();
       drupal_set_message(t('The translation was successfully imported.'));
-      l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
+      l10n_community_update_message();
       cache_clear_all('l10n:stats:'. $form_state['values']['langcode'], 'cache');
     }
   }
@@ -331,20 +329,8 @@ function l10n_community_import($file, $langcode, $is_suggestion, $uid) {
  * @param $uid
  *   User id used to save attribution information.
  */
-function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_suggestion = FALSE, $uid = NULL) {
+function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggestion = FALSE, $uid = NULL) {
   global $user;
-
-  static $inserted = 0;
-  static $updated = 0;
-  static $unchanged = 0;
-  static $suggested = 0;
-  static $duplicates = 0;
-  static $ignored = 0;
-
-  if ($value == NULL) {
-    // Result stats queried.
-    return array($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored);
-  }
 
   // Trim translation (we will apply source string based whitespace later).
   if (is_string($value['msgstr'])) {
@@ -389,20 +375,20 @@ function _l10n_community_import_one_string($value = NULL, $langcode = NULL, $is_
 
       if ($is_suggestion || !$translation) {
         if (!l10n_community_is_duplicate($value['msgstr'], $sid, $langcode)) {
-          l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion, $inserted, $updated, $unchanged, $suggested);
+          l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion);
         }
         else {
-          $duplicates++;
+          l10n_community_counter(L10N_COUNT_DUPLICATE);
         }
       }
       else {
         // We certainly did not update this one.
-        $unchanged++;
+        l10n_community_counter(L10N_COUNT_UNCHANGED);
       }
     }
     else {
       // Source string not found, string ignored.
-      $ignored++;
+      l10n_community_counter(L10N_COUNT_IGNORED);
     }
   }
 }

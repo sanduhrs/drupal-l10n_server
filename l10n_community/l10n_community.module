@@ -35,6 +35,51 @@ define('L10N_STATUS_NO_SUGGESTION', 4);
  */
 define('L10N_STATUS_HAS_SUGGESTION', 8);
 
+/**
+ * Used to mark counting duplicates.
+ */
+define('L10N_COUNT_DUPLICATE', 'duplicate');
+
+/**
+ * Used to mark counting unchanged strings.
+ */
+define('L10N_COUNT_UNCHANGED', 'unchanged');
+
+/**
+ * Used to mark counting ignored strings.
+ */
+define('L10N_COUNT_IGNORED', 'ignored');
+
+/**
+ * Used to mark counting suggested strings.
+ */
+define('L10N_COUNT_SUGGESTED', 'suggested');
+
+/**
+ * Used to mark counting added strings.
+ */
+define('L10N_COUNT_ADDED', 'added');
+
+/**
+ * Used to mark counting updated strings.
+ */
+define('L10N_COUNT_UPDATED', 'updated');
+
+/**
+ * Used to mark counting declined strings.
+ */
+define('L10N_COUNT_DECLINED', 'declined');
+
+/**
+ * Used to mark counting declined suggestions.
+ */
+define('L10N_COUNT_SUGGESTION_DECLINED', 'suggestion_declined');
+
+/**
+ * Used to mark counting approved suggestions.
+ */
+define('L10N_COUNT_APPROVED', 'approved');
+
 // = Core hooks ================================================================
 
 /**
@@ -1044,42 +1089,33 @@ function l10n_community_get_contexts() {
  *   User ID.
  * @param $suggestion
  *   TRUE if $translation is a suggestion, FALSE otherwise.
- * @param $inserted
- *   Counter to increment if insert is made.
- * @param $updated
- *   Counter to increment if update is made.
- * @param $unchanged
- *   Counter to increment if nothing is changed.
- * @param $suggested
- *   Counter to increment if a suggestion was saved.
  *
  * @see l10n_community_is_duplicate()
  */
-function l10n_community_target_save($sid, $translation, $langcode, $uid, $suggestion, &$inserted, &$updated, &$unchanged, &$suggested) {
+function l10n_community_target_save($sid, $translation, $langcode, $uid, $suggestion) {
 
   // Look for an existing active translation, if any.
   $existing_string = db_fetch_object(db_query("SELECT sid, tid, translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
 
   if (!empty($existing_string->sid)) {
-
     // We have an active translation.
     if ($existing_string->translation != $translation) {
       // And what we should save now is different.
       if ($suggestion) {
         // Saving a suggestion, so set flag on translation.
         db_query("UPDATE {l10n_community_translation} SET has_suggestion = 1 WHERE tid = %d", $existing_string->tid);
-        $suggested++;
+        l10n_community_counter(L10N_COUNT_SUGGESTED);
       }
       else {
         // Saving a different translation -> deactivate previous translations and suggestions.
         db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE sid = %d AND language = '%s';", $sid, $langcode);
-        $updated++;
+        l10n_community_counter(L10N_COUNT_UPDATED);
       }
       db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, uid_approved, time_approved, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, %d, %d, 1)", $sid, $translation, $langcode, $uid, time(), ($suggestion ? 0 : $uid), ($suggestion ? 0 : time()), $suggestion);
     }
     else {
       // Same string as existing translation.
-      $unchanged++;
+      l10n_community_counter(L10N_COUNT_UNCHANGED);
     }
   }
 
@@ -1090,12 +1126,12 @@ function l10n_community_target_save($sid, $translation, $langcode, $uid, $sugges
       // suggestions. We track and exclude these by translation = '' later.
       db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, has_suggestion, is_active) VALUES (%d, '', '%s', 0, %d, 1, 1)", $sid, $langcode, time());
       db_query("INSERT INTO {l10n_community_translation} (sid, language, translation, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $langcode, $translation, $uid, time());
-      $suggested++;
+      l10n_community_counter(L10N_COUNT_SUGGESTED);
     }
     else {
       // No active translation yet -> INSERT.
       db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, uid_approved, time_entered, time_approved, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, %d, 1)", $sid, $translation, $langcode, $uid, $uid, time(), time());
-      $inserted++;
+      l10n_community_counter(L10N_COUNT_ADDED);
     }
   }
 }
@@ -1120,33 +1156,69 @@ function l10n_community_trim($translation, $source) {
 }
 
 /**
+ * Stores counters for status messages when modifying translations.
+ *
+ * @param $field
+ *   The field to increment. Can be one of L10N_COUNT_*.
+ *   If not specified, the counters are returned and reset afterwards.
+ * @param $increment
+ *   Optional increment for the counter. Defaults to 1.
+ */
+function l10n_community_counter($field = NULL, $increment = 1) {
+  static $counters = array();
+
+  if (isset($field)) {
+    if (!isset($counters[$field])) {
+      $counters[$field] = 0;
+    }
+    $counters[$field] += $increment;
+  }
+  else {
+    $return = $counters;
+    $counters = array();
+    return $return;
+  }
+}
+
+/**
  * Set a message based on the number of translations changed.
  *
  * Used by both the save and import process.
  */
-function l10n_community_update_message($inserted, $updated, $unchanged, $suggested, $duplicates, $ignored) {
-  // Inform user about changes made.
-  $message = array();
-  if ($inserted) {
-    $message[] = format_plural($inserted, '1 new translation added', '@count new translations added');
+function l10n_community_update_message() {
+  $counters = l10n_community_counter();
+  $messages = array();
+
+  if (!empty($counters[L10N_COUNT_DECLINED])) {
+    $messages[] = format_plural($counters[L10N_COUNT_DECLINED], '1 translation declined', '@count translations declined');
   }
-  if ($suggested) {
-    $message[] = format_plural($suggested, '1 new suggestion added', '@count new suggestions added');
+  if (!empty($counters[L10N_COUNT_SUGGESTION_DECLINED])) {
+    $messages[] = format_plural($counters[L10N_COUNT_SUGGESTION_DECLINED], '1 suggestion declined', '@count suggestion declined');
   }
-  if ($updated) {
-    $message[] = format_plural($updated, '1 translation updated', '@count translations updated');
+  if (!empty($counters[L10N_COUNT_APPROVED])) {
+    $messages[] = format_plural($counters[L10N_COUNT_APPROVED], '1 translation approved', '@count translations approved');
   }
-  if ($unchanged) {
-    $message[] = format_plural($unchanged, '1 translation unchanged', '@count translations unchanged');
+  if (!empty($counters[L10N_COUNT_ADDED])) {
+    $messages[] = format_plural($counters[L10N_COUNT_ADDED], '1 translation added', '@count translations added');
   }
-  if ($duplicates) {
-    $message[] = format_plural($duplicates, '1 duplicate translation not saved', '@count duplicate translations not saved');
+  if (!empty($counters[L10N_COUNT_SUGGESTED])) {
+    $message[] = format_plural($counters[L10N_COUNT_SUGGESTED], '1 new suggestion added', '@count new suggestions added');
   }
-  if ($ignored) {
-    $message[] = format_plural($ignored, '1 source string not found, its translation ignored', '@count source strings not found, their translations were ignored');
+  if (!empty($counters[L10N_COUNT_UPDATED])) {
+    $message[] = format_plural($counters[L10N_COUNT_UPDATED], '1 translation updated', '@count translations updated');
   }
-  if (count($message)) {
-    drupal_set_message(join('; ', $message) .'.');
+  if (!empty($counters[L10N_COUNT_DUPLICATE])) {
+    $message[] = format_plural($counters[L10N_COUNT_DUPLICATE], '1 duplicate translation not saved', '@count duplicate translations not saved');
+  }
+  if (!empty($counters[L10N_COUNT_IGNORED])) {
+    $message[] = format_plural($counters[L10N_COUNT_IGNORED], '1 source string not found; its translation was ignored', '@count source strings not found; their translations were ignored');
+  }
+  if (!empty($counters[L10N_COUNT_UNCHANGED])) {
+    $message[] = format_plural($counters[L10N_COUNT_UNCHANGED], '1 translation unchanged', '@count translations unchanged');
+  }
+
+  if ($messages) {
+    drupal_set_message(implode(', ', $messages));
   }
 }
 
