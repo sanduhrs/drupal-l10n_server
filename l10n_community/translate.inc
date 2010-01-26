@@ -129,6 +129,28 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
 }
 
 /**
+ * Theme function for l10n_community_filter_form.
+ */
+function theme_l10n_community_filter_form($form) {
+  $row = array();
+  $labels = array();
+  // Only display these elements in distinct table cells
+  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit');
+  foreach ($form as $id => &$element) {
+    if (in_array($id, $elements)) {
+      $labels[] = $element['#title'];
+      unset($element['#title']);
+      $row[] = drupal_render($element);
+    }
+  }
+  // Fill in the rest of the header above the buttons.
+  $labels[] = '';
+  // Display the rest of the form in the last cell
+  $row[] = array('data' => drupal_render($form), 'class' => 'last');
+  return theme('table', $labels, array($row), array('class' => 'l10n-server-filter'));
+}
+
+/**
  * Submission handler for filtering form.
  */
 function l10n_community_filter_form_submit($form, &$form_state) {
@@ -761,7 +783,7 @@ function l10n_community_decline_string($langcode, $sid, $tid) {
  * @param $sid
  *   The string ID that should be updated.
  */
-+function l10n_community_update_suggestion_status($langcode, $sid) {
+function l10n_community_update_suggestion_status($langcode, $sid) {
   // Let's see if we have any suggestions remaining in this language.
   $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation}
       WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
