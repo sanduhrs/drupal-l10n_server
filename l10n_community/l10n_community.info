@@ -2,6 +2,7 @@
 name = "Localization community"
 description = A community interface for string translation
 dependencies[] = locale
+dependencies[] = jquery_update
 package = "Localization server"
 core = 6.x
 php = 5
