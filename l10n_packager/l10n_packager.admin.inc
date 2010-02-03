@@ -76,8 +76,9 @@ function l10n_packager_admin_repackage_page() {
   $output .= drupal_get_form('l10n_packager_admin_languages_form');
 
   // @todo: make this project agnostic for others running l10n_server.
-  $project = isset($projects['drupal']) ? $projects['drupal'] : NULL;
-  $output .= drupal_get_form('l10n_packager_admin_installer_form', $project);
+  if (!empty($projects['drupal'])) {
+    $output .= drupal_get_form('l10n_packager_admin_installer_form', $projects['drupal']);
+  }
 
   return $output;
 }
