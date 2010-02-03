@@ -1,16 +1,24 @@
 (function($) {
+
+  /**
+   * Fragment used to represent a string fragment in the diff.
+   */
   var Fragment = function (string) {
     this.content = string;
     this.equiv = false;
   };
 
+  /**
+   * Wrap in given tag or return the clean value.
+   */
   Fragment.prototype.toString = function (tag) {
-    if (this.equiv || !tag)
+    if (this.equiv || !tag) {
       return this.content;
-    else
+    }
+    else {
       return '<' + tag + '>' + this.content + '</' + tag + '>';
+    }
   };
-
 
   var moveToEnd = function (a, i, k) {
     if (!a.equiv && (!k[i-1] || k[i-1].equiv)) {
@@ -144,15 +152,20 @@
     }
   };
 
+  /**
+   * Add worddiff markup to $(selector) using processor().
+   */
   $.fn.worddiff = function (selector, processor) {
     var src = $(selector), del = src.data('worddiff:original');
-    if (del === undefined)
+    if (del === undefined) {
       src.data('worddiff:original', del = src.html());
+    }
 
     return this.each(function () {
       var dst = $(this), ins = dst.data('worddiff:original');
-      if (ins === undefined)
+      if (ins === undefined) {
         dst.data('worddiff:original', ins = dst.html());
+      }
 
       var diff = $.wordDiff.diff(del, ins);
       if (processor) {
@@ -167,6 +180,9 @@
     });
   };
 
+  /**
+   * Revert worddiff markup.
+   */
   $.fn.worddiffRevert = function () {
     return this.each(function () {
       var dest = $(this), orig = dest.data('worddiff:markup');
@@ -180,4 +196,5 @@
       }
     });
   };
+  
 })(jQuery);
