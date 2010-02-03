@@ -84,7 +84,7 @@ function l10n_community_string_suggestions($langcode = NULL, $sid = 0) {
     $suggestion_info = '<strong>'. t('Outstanding suggestions:') .'</strong>'. theme('l10n_community_strings', $suggestions);
   }
   else {
-    $suggestion_info .= '<strong>'. t('No suggestions found.') .'</strong>';
+    $suggestion_info = '<strong>'. t('No suggestions found.') .'</strong>';
   }
   print $suggestion_info;
   exit;
