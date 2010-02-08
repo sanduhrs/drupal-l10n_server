@@ -368,6 +368,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source) {
     ),
   );
 
+  // Active radio box is used to pick the approved translation.
   $form['active'] = array(
     '#type' => 'radio',
     '#theme' => 'l10n_community_translate_radio',
@@ -506,6 +507,9 @@ function theme_l10n_community_in_context($string) {
   return '';
 }
 
+/**
+ * Theme a suggestion/translation.
+ */
 function theme_l10n_community_translate_translation($element) {
   if (!isset($element['#attributes']['class'])) {
     $element['#attributes']['class'] = '';
@@ -527,6 +531,7 @@ function theme_l10n_community_translate_translation($element) {
 
   $output = '<li'. drupal_attributes($element['#attributes']) .'>';
   $output .= theme('l10n_community_translate_actions', $element);
+  // Add the radio box to pick the active translation.
   $output .= drupal_render($element['active']);
 
   if (isset($element['author'])) {
@@ -536,9 +541,12 @@ function theme_l10n_community_translate_translation($element) {
   if (isset($element['value'])) {
     $output .= drupal_render($element['value']);
   }
-  return $output  . '</li>';
+  return $output  .'</li>';
 }
 
+/**
+ * Theme a radio button to pick the active translation.
+ */
 function theme_l10n_community_translate_radio($element) {
   _form_set_class($element, array('form-radio'));
   $output = '<input type="radio" ';
@@ -554,6 +562,9 @@ function theme_l10n_community_translate_radio($element) {
   return $output;
 }
 
+/**
+ * Theme a list of suggestions for a string.
+ */
 function theme_l10n_community_translate_translation_list($element) {
   $output = '<ul>';
   foreach (element_children($element) as $child) {
@@ -562,7 +573,6 @@ function theme_l10n_community_translate_translation_list($element) {
     }
   }
   $output .= '</ul>';
-
   return $output;
 }
 
@@ -576,10 +586,16 @@ function theme_l10n_community_translate_translation_list($element) {
 function l10n_community_translate_form_submit($form, &$form_state) {
   $langcode = $form_state['values']['langcode'];
 
+  // Iterate outer structure built in l10n_community_translate_form().
   foreach ($form_state['values']['strings'] as $sid => $string) {
+    
+    // Iterate inner structure built in _l10n_community_translate_form_item().
+    // Form items have numeric $tid values and other keys here.
     foreach ($string as $tid => $options) {
+      
       // Store new suggestion.
       $empty_values = 0;
+      // $options['value'] is the result of (a series of) textareas.
       if (isset($options['value']) && is_array($options['value'])) {
         foreach ($options['value'] as $key => $value) {
           if ($value === t('<New translation>')) {
@@ -587,11 +603,14 @@ function l10n_community_translate_form_submit($form, &$form_state) {
             $empty_values++;
           }
         }
+        // If we had value in any of the textareas, add new suggestion.
         if ($tid === 'new' && count($options['value']) > $empty_values) {
           $tid = l10n_community_add_suggestion($langcode, $sid, $options['value']);
           if ($tid) {
             l10n_community_counter(L10N_COUNT_ADDED);
             if ($string['active'] === 'new') {
+              // This new string was selected to be approved, so remember $tid
+              // for later, so we can save this as an approved translation.
               $string['active'] = $tid;
             }
           }
@@ -601,11 +620,13 @@ function l10n_community_translate_form_submit($form, &$form_state) {
       if (is_numeric($tid) && $tid > 0) {
         if ($tid == $string['active']) {
           if ($options['original']->is_suggestion) {
+            // $tid is a suggestion that was made active.
             l10n_community_approve_string($langcode, $sid, $tid);
             l10n_community_counter(L10N_COUNT_APPROVED);
           }
         }
         elseif (!empty($options['declined'])) {
+          // The decline checkbox for this suggestion was checked.
           l10n_community_counter($options['original']->is_suggestion ? L10N_COUNT_SUGGESTION_DECLINED : L10N_COUNT_DECLINED);
           l10n_community_decline_string($langcode, $sid, $tid);
         }
@@ -613,6 +634,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
     }
   }
 
+  // Tell the user what happened.
   l10n_community_update_message();
 }
 
@@ -790,7 +812,7 @@ function l10n_community_add_suggestion($langcode, $sid, $translation) {
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
   }
 
-  // Mark the existing or mock translation has having suggestions.
+  // Mark the existing or mock translation as having suggestions.
   l10n_community_update_suggestion_status($langcode, $sid);
 
   return $tid;
@@ -825,16 +847,14 @@ function l10n_community_decline_string($langcode, $sid, $tid) {
  */
 function l10n_community_update_suggestion_status($langcode, $sid) {
   // Let's see if we have any suggestions remaining in this language.
-  $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation}
-      WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
+  $count = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
 
   // Update the status according to the number of suggestions.
-  db_query("UPDATE {l10n_community_translation} SET has_suggestion = %d
-      WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $count ? 1 : 0, $sid, $langcode);
+  db_query("UPDATE {l10n_community_translation} SET has_suggestion = %d WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $count ? 1 : 0, $sid, $langcode);
 }
 
 /**
- * Marks a translation as approve.
+ * Mark a translation as approved.
  *
  * @param $langcode
  *   The language of the approved translation.
@@ -853,7 +873,7 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
   // Make the existing approved string a suggestion.
   db_query("UPDATE {l10n_community_translation} SET is_suggestion = 1 WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode);
 
-  // Mark this exact suggestion as active, and set approval time.
+  // Mark this exact suggestion as active translation, and set approval time.
   db_query("UPDATE {l10n_community_translation} SET time_approved = %d, uid_approved = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $tid);
   l10n_community_update_suggestion_status($langcode, $sid);
 }

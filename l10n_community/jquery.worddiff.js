@@ -1,3 +1,12 @@
+/* $Id$ */
+
+/**
+ * @file
+ *  jQuery worddif algorithm implementation.
+ *  Originally created by Konstantin Kaefer in 2009.
+ *  Based on http://en.wikipedia.org/wiki/Longest_common_subsequence_problem
+ */
+
 (function($) {
 
   /**
