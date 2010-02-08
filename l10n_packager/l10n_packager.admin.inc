@@ -24,6 +24,12 @@ function l10n_packager_settings_form() {
     // Create directory by default if possible.
     '#after_build' => array('l10n_packager_admin_check_directory'),
   );
+  $form['l10n_packager_update_url'] = array(
+    '#title' => t('Root URL for translation downloads'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory())),
+    '#description' => t('Root URL for the client to build file URLs and fetch updates. The public facing URL for the package directory defined above. Leave blank for not providing any.'),
+  );
   $form['l10n_packager_filepath'] = array(
     '#title' => t('Path structure for generated packages'),
     '#type' => 'textfield',
@@ -55,7 +61,12 @@ function l10n_packager_settings_form() {
     '#description' => t('Time interval for the translations to be automatically repackaged.'),
   );
 
-  return system_settings_form($form);
+  $form = system_settings_form($form);
+
+  // Rebuild metafile after submisson.
+  $form['#submit'][] = 'l10n_packager_export_metafile';
+  
+  return $form;
 }
 
 /**
