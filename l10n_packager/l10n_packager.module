@@ -65,26 +65,35 @@ function l10n_packager_cron() {
 }
 
 /**
- * Check releases that need repackaging
+ * Check releases that need repackaging.
  */
 function l10n_packager_check_updates() {
-  $count_check = 0;
+  
+  $count_check = $count_files = $time = 0;
   $updates = array();
+  
   if ($interval = variable_get('l10n_packager_update', 0)) {
+
+    timer_start('l10n_packager');
     module_load_include('inc', 'l10n_packager');
     $timestamp = time() - $interval;
     $file_limit = variable_get('l10n_packager_file_limit', 1);
     $count_files = $count_check = 0;
-    // Go for it: check releases for repackaging. We need project_uri for later
+
+    // Go for it: check releases for repackaging. We need project_uri for later.
     $result = db_query_range("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_community_release} r INNER JOIN {l10n_community_project} p ON r.pid = p.pid LEFT JOIN {l10n_packager_release} pr ON pr.rid = r.rid WHERE pr.status IS NULL OR (pr.status = %d AND (pr.checked < %d OR pr.updated < %d)) ORDER BY pr.checked", L10N_PACKAGER_ACTIVE, $timestamp, $timestamp, 0, variable_get('l10n_packager_release_limit', 10));
     while ((!$file_limit || $file_limit > $count_files) && ($release = db_fetch_object($result))) {
       $updates = l10n_packager_release_check($release, FALSE, $file_limit - $count_files, NULL, TRUE);
       $count_files += count($updates);
       $count_check++;
     }
-    watchdog('l10n_packager', 'Checked %checked releases. Repackaged %repack translations.', array('%checked' => $count_check, '%repack' => $count_files));
+    $timer = timer_stop('l10n_packager');
+    $time = $timer['time'];
+
+    watchdog('l10n_packager', 'Checked %checked releases, repackaged %repack translations in @ms microseconds.', array('%checked' => $count_check, '%repack' => $count_files, '@ms' => $time));
   }
-  return array($count_check, $count_files);
+  
+  return array($count_check, $count_files, $time);
 }
 
 // == Language list export =====================================================
