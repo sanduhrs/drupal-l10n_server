@@ -26,11 +26,12 @@ function l10n_packager_drush_command() {
  * Drush command callback
  */
 function l10n_packager_drush_update() {
-  list($checked, $updated) = l10n_packager_check_updates();
+  list($checked, $updated, $time) = l10n_packager_check_updates();
   $vars = array(
     '!checkmax' => variable_get('l10n_packager_release_limit', 10),
-    '!checked' => (int) $checked,
-    '!updated' => (int) $updated,
+    '!checked' => $checked,
+    '!updated' => $updated,
+    '!ms' => $time,
   );
-  drush_print(dt("Checked !checked releases for updates (max !checkmax). Updated !updated files.", $vars)); 
+  drush_print(dt("Checked !checked releases for updates (max !checkmax). Updated !updated files in !ms microseconds.", $vars)); 
 }
