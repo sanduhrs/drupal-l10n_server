@@ -209,9 +209,11 @@ function l10n_community_translate_page($langcode) {
   drupal_add_css(drupal_get_path('module', 'l10n_community') .'/editor.css');
   drupal_add_js(drupal_get_path('module', 'l10n_community') .'/jquery.worddiff.js');
   drupal_add_js(drupal_get_path('module', 'l10n_community') .'/editor.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
 
   $language = l10n_community_get_language($langcode);
   $filters = l10n_community_build_filter_values($_GET);
+  l10n_community_add_url_modifiers($langcode, $filters);
   $strings = l10n_community_get_strings($langcode, $filters, $filters['limit']);
 
   // Set the most appropriate title.

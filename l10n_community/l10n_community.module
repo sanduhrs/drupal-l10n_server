@@ -1574,8 +1574,7 @@ function l10n_community_flat_filters($filters) {
 function l10n_community_add_url_modifiers($langcode, $filters) {
   $filters = l10n_community_flat_filters($filters);
   $urls = array(
-    'translate/languages/'. $langcode .'/view',
-    'translate/languages/'. $langcode .'/edit',
+    'translate/languages/'. $langcode .'/translate',
     'translate/languages/'. $langcode .'/moderate',
     'translate/languages/'. $langcode .'/export'
   );
