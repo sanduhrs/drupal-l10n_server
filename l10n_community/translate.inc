@@ -76,9 +76,32 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
   );
 
+  // This form can be submitted multiple times to support AHAH flows.
+  // So we set an initial default value set for the form values, if there
+  // was none submitted already. Otherwise, the submitted values will take
+  // on being the defaults.
+  if (empty($form_state['values'])) {
+    $form_state['values'] = array(
+      'project' => isset($filters['project']) ? $filters['project']->title : '',
+      'release' => isset($filters['release']) ? $filters['release']        : 'all',
+      'context' => isset($filters['context']) ? $filters['context']        : '',
+      'status'  => isset($filters['status'])  ? $filters['status']         : L10N_STATUS_ALL,
+      'author'  => isset($filters['author'])  ? $filters['author']->name   : '',
+      'search'  => isset($filters['search'])  ? $filters['search']         : '',
+      'limit'   => isset($filters['limit'])   ? $filters['limit']          : 10,
+    );
+  }
+  
+  $form = array();
   $form['project'] = array(
     '#title' => t('Project'),
-    '#default_value' => isset($filters['project']) ? $filters['project']->title : '',
+    '#default_value' => $form_state['values']['project'],
+    '#ahah' => array(
+      // 'event' missing, Drupal will apply the per-#type defaults.
+      'path' => 'translate/releases-ahah',
+      'wrapper' => 'l10n-server-releases',
+      'effect' => 'fade',
+    ),
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
@@ -98,26 +121,35 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     );
   }
 
-  if (isset($filters['project'])) {
-    $releases = l10n_community_get_releases($filters['project']->uri);
-    $release_options = array('all' => t('All'));
+  // Always add releases option, so we can update it when 
+  // needed as the project changes with AHAH.
+  $release_options = array('all' => t('All'));
+  if (!empty($form_state['values']['project'])) {
+    $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
+    $releases = l10n_community_get_releases($selected_project->uri);
     foreach ($releases as $rid => $release) {
       $release_options[$rid] = $release->title;
     }
-    $form['release'] = array(
-      '#title' => t('Release'),
-      '#type' => 'select',
-      '#options' => $release_options,
-      '#default_value' => isset($filters['release']) ? $filters['release'] : 'all',
-    );
   }
+  if (!isset($release_options[$form_state['values']['release']])) {
+    $form_state['values']['release'] = 'all';
+  }
+  $form['release'] = array(
+    '#title' => t('Release'),
+    '#type' => 'select',
+    '#options' => $release_options,
+    '#default_value' => $form_state['values']['release'],
+    // Wrapper used to replace release options via AHAH.
+    '#prefix' => '<div id="l10n-server-releases">',
+    '#suffix' => '</div>',
+  );
 
   if (count($contexts = l10n_community_get_contexts()) > 1) {
     $form['context'] = array(
      '#title' => t('Context'),
       '#type' => 'select',
       '#options' => array('all' => t('All')) + $contexts,
-      '#default_value' => $filters['context'],
+      '#default_value' => $form_state['values']['context'],
     );
   }
 
@@ -128,13 +160,13 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
   $form['status']['translation'] = array(
     '#type' => 'select',
     '#options' => $translation_options,
-    '#default_value' => $filters['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED),
+    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED),
   );
   if (!$limited) {
     $form['status']['suggestion'] = array(
       '#type' => 'select',
       '#options' => $suggestion_options,
-      '#default_value' => $filters['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION),
+      '#default_value' => $form_state['values']['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION),
     );
   }
 
@@ -143,23 +175,22 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     '#title' => t('Submitted by'),
     '#maxlength' => 60,
     '#autocomplete_path' => 'user/autocomplete',
-    '#default_value' => isset($filters['author']) ? $filters['author']->name : '',
+    '#default_value' => $form_state['values']['author'],
     '#size' => 15,
   );
 
   $form['search'] = array(
     '#title' => t('Contains'),
     '#type' => 'textfield',
-    '#default_value' => $filters['search'],
+    '#default_value' => $form_state['values']['search'],
     '#size' => 20,
   );
 
   $form['limit'] = array(
     '#type' => 'select',
     '#title' => t('Limit'),
-    '#default_value' => isset($filters['limit']) ? $filters['limit'] : 10,
     '#options' => drupal_map_assoc(array(5, 10, 20, 30)),
-    '#default_value' => $filters['limit'],
+    '#default_value' => $form_state['values']['limit'],
   );
 
   $form['submit'] = array(

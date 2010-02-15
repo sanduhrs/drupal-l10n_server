@@ -44,31 +44,42 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
  */
 function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL) {
 
-  $hide_projects = FALSE;
-  if (!isset($uri)) {
-    $uri = !empty($form_state['values']['project']) ? $form_state['values']['project'] : (!empty($_GET['project']) ? $_GET['project'] : NULL);
-  }
-  else {
-    // When project was preset from URL, disable the selector.
-    $hide_projects = TRUE;
-  }
-
+  // When project was preset from path, disable the selector. 
+  $hide_projects = isset($uri);
+  
+  // Set initial form state, so we can consistently use that.
   $projects = l10n_community_get_projects();
+  if (empty($form_state['values'])) {
+    $form_state['values'] = array(
+      'project' => isset($projects[$uri]) ? $projects[$uri]->title : (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : ''),
+      'release' => isset($_GET['release']) ? isset($_GET['release']) : 'all',
+    );
+  }
+  
+  $form = array();
   $form['data'] = array(
     '#type' => 'fieldset',
     '#title' => t('Source data'),
   );
   if ($hide_projects) {
+    // This only happens if we have a project to export via $uri.
+    // In this case, $uri is already verified via the menu system.
     $form['data']['project'] = array(
       '#type' => 'value',
-      // Value of $uri already verified in menu path handler.
-      '#value' => $projects[$uri]->title,
+      '#value' => $form_state['values']['project'],
     );
   }
   else {
     $form['data']['project'] = array(
       '#title' => t('Project'),
       '#required' => TRUE,
+      '#default_value' => $form_state['values']['project'],
+      '#ahah' => array(
+        // 'event' missing, Drupal will apply the per-#type defaults.
+        'path' => 'translate/releases-ahah',
+        'wrapper' => 'l10n-server-releases',
+        'effect' => 'fade',
+      ),
     );
     if (($count = count($projects)) <= 30) {
       // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
@@ -88,23 +99,29 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     }
   }
 
-  if (isset($projects[$uri])) {
-    // Set this project as default value if identified.
-    $form['data']['project']['#default_value'] = $projects[$uri]->title;
-
-    $releases = l10n_community_get_releases($uri);
-    $release_options = array('all' => t('All releases merged'));
+  $release_options = array('all' => t('All releases merged'));
+  if (!empty($form_state['values']['project'])) {
+    $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
+    $releases = l10n_community_get_releases($selected_project->uri);
     foreach ($releases as $rid => $this_release) {
       $release_options[$rid] = t('@release only', array('@release' => $this_release->title));
     }
-    $form['data']['release'] = array(
-      '#title' => t('Release'),
-      '#type' => count($release_options) <= 3 ? 'radios' : 'select',
-      '#options' => $release_options,
-      '#default_value' => isset($_GET['release']) && isset($releases[$_GET['release']]) ? $_GET['release'] : 'all',
-    );
   }
-  if (isset($langcode) && isset($form['data']['release'])) {
+  if (!isset($release_options[$form_state['values']['release']])) {
+    $form_state['values']['release'] = 'all';
+  }
+  $form['data']['release'] = array(
+    '#title' => t('Release'),
+    '#required' => TRUE,
+    '#type' => 'select',
+    '#options' => $release_options,
+    '#default_value' => $form_state['values']['release'],
+    // Wrapper used to replace release options via AHAH.
+    '#prefix' => '<div id="l10n-server-releases">',
+    '#suffix' => '</div>',
+  );
+
+  if (isset($langcode)) {
     $form['langcode'] = array(
       '#type' => 'value',
       '#value' => $langcode,
@@ -137,7 +154,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   }
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => isset($form['data']['release']) ? t('Export') : t('Choose project'),
+    '#value' => t('Export'),
   );
   return $form;
 }
