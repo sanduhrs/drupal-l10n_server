@@ -202,6 +202,14 @@ function l10n_community_menu() {
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK
   );
+  // Serve a list of releases for a given project.
+  $items['translate/releases-ahah'] = array(
+    'title' => 'AHAH release picker callback',
+    'page callback' => 'l10n_community_ahah_releases',
+    'access arguments' => array('access localization community'),
+    'type' => MENU_CALLBACK
+  );
+  
 
   // AJAX callbacks for easy translation management. These are expected to be
   // used only onsite (not as remote API endpoints), so they have no versioning.
@@ -1576,4 +1584,50 @@ function l10n_community_add_url_modifiers($langcode, $filters) {
     $replacements[url($url)] = url($url, array('query' => $filters));
   }
   drupal_add_js(array('l10nServerURLs' => $replacements), 'setting');
+}
+
+// = AHAH callbacks ============================================================
+
+/**
+ * AHAH callback to serve an updated list of releases on project changes.
+ *
+ * This callback is used on the filter forms for translation pages and the
+ * export form, so need to accommodate for small differences of the two.
+ */
+function l10n_community_ahah_releases() {
+  // AHAH copy-paste from http://drupal.org/node/331941
+  $form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+  $form_build_id = $_POST['form_build_id'];
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  // AHAH copy-paste cut.
+
+  // Include the right file based on the form being used.
+  $file = ($form_id == 'l10n_community_export_form') ? 'export.inc' : 'translate.inc';
+  include_once drupal_get_path('module', 'l10n_community') .'/'. $file;
+
+  // AHAH copy-paste from http://drupal.org/node/331941 continued
+  $form_state['post'] = $form['#post'] = $_POST;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+  drupal_process_form($form_id, $form, $form_state);
+  $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+  // End of AHAH copy paste.
+
+  // Pick and render our changed element for output.
+  $changed_element = ($form_id == 'l10n_community_export_form') ? $form['data']['release'] : $form['release'];
+  // Prevent duplicate wrappers.
+  unset($changed_element['#prefix'], $changed_element['#suffix']); 
+
+  if ($form_id == 'l10n_community_filter_form') {
+    // Prevent duplicate titles (due to how we render the elements).
+    unset($changed_element['#title']);
+  }
+  
+  drupal_json(
+    array(
+      'status' => TRUE,
+      'data'   => theme('status_messages') . drupal_render($changed_element),
+    )
+  );
 }
