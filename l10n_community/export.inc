@@ -52,7 +52,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   if (empty($form_state['values'])) {
     $form_state['values'] = array(
       'project' => isset($projects[$uri]) ? $projects[$uri]->title : (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : ''),
-      'release' => isset($_GET['release']) ? isset($_GET['release']) : 'all',
+      'release' => isset($_GET['release']) ? $_GET['release'] : 'all',
     );
   }
   
