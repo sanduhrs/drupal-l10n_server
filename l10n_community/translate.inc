@@ -541,22 +541,24 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  * Theme function for l10n_community_filter_form.
  */
 function theme_l10n_community_filter_form($form) {
-  $row = array();
-  $labels = array();
-  // Only display these elements in distinct table cells
+
+  $output = '<div class="l10n-server-filter clear-block">';
+
+  // Only display these elements individually.
   $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit');
   foreach ($form as $id => &$element) {
     if (in_array($id, $elements)) {
-      $labels[] = $element['#title'];
+      $title = $element['#title'];
       unset($element['#title']);
-      $row[] = drupal_render($element);
+      $output .= '<div class="filter-widget"><label>'. $title .'</label>'. drupal_render($element) .'</div>';
     }
   }
-  // Fill in the rest of the header above the buttons.
-  $labels[] = '';
-  // Display the rest of the form in the last cell
-  $row[] = array('data' => drupal_render($form), 'class' => 'last');
-  return theme('table', $labels, array($row), array('class' => 'l10n-server-filter'));
+
+  // Render the rest of the form as one filter-widget.
+  $output .= '<div class="filter-widget">'. drupal_render($form) .'</div>';
+  $output .= '</div>';
+
+  return $output;
 }
 
 /**

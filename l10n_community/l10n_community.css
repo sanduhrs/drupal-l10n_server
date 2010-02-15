@@ -47,15 +47,24 @@ div.admin form {
 }
 
 /* String search filtering form */
-#l10n-community-filter-form,
-#l10n-community-moderate-filter-form {
-  white-space:nowrap;
+.l10n-server-filter {
+  background-color: #f5f5f5;
+  padding: 0.6em;
 }
-table.l10n-server-filter {
-  width: 100%;
+.l10n-server-filter .filter-widget {
+  float: left; 
+  padding: 0 1em 0 0; 
+  height: 6em;
 }
-table.l10n-server-filter td.last {
-  text-align: right;
+.l10n-server-filter .filter-widget label {
+  font-weight: bold;
+  color: #003150;
+}
+.l10n-server-filter .filter-widget .form-item {
+  margin-top: 0;
+}
+.l10n-server-filter .form-item#edit-status-translation-wrapper {
+  margin-bottom: 0;
 }
 
 /* Emphasized replaceable parts of translatables */
