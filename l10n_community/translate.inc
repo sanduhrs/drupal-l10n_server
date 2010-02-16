@@ -411,6 +411,8 @@ function _l10n_community_translate_translation(&$form_state, $string, $source) {
     '#return_value' => $string->tid,
     '#default_value' => $is_active ? $string->tid : NULL,
     '#parents' => array('strings', $string->sid, 'active'),
+    // Let a moderator roll back to the current translation even if they
+    // would otherwise not have permission to approve such a string.
     '#disabled' => !$may_moderate && !$is_active,
     '#attributes' => array('class' => 'selector'),
   );
@@ -550,6 +552,14 @@ function theme_l10n_community_translate_translation($element) {
     $element['#attributes']['class'] = '';
   }
   $element['#attributes']['class'] .= ' clearfix translation';
+  
+  // Add is-selectable and is-declinable helpers for JS.
+  if (!$element['active']['#disabled']) {
+    $element['#attributes']['class'] .= ' is-selectable';
+  }
+  if (isset($element['declined'])) {
+    $element['#attributes']['class'] .= ' is-declinable';
+  }
 
   switch ($element['active']['#return_value']) {
     case 'new':
@@ -563,6 +573,7 @@ function theme_l10n_community_translate_translation($element) {
         $element['#attributes']['class'] .= ' is-active default';
       }
   }
+  $element['#attributes']['class'] = trim($element['#attributes']['class']);
 
   $output = '<li'. drupal_attributes($element['#attributes']) .'>';
   $output .= theme('l10n_community_translate_actions', $element);

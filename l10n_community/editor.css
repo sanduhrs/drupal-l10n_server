@@ -113,15 +113,8 @@ li.translation > .selector {
   li.translation.is-declined > .actions li.declined label {
     background-image:url(images/undecline.png);
   }
-  .l10n-table ul.actions li.stable label {
-    background:url(images/stable-inactive.png) no-repeat right top;
-  }
-  li.translation.is-stable > .actions li.stable label,
   li.translation:hover > .actions li label {
     opacity:1;
-  }
-  li.translation.is-stable > .actions li.stable label {
-    background-image:url(images/stable-active.png);
   }
 
   .l10n-string > br {

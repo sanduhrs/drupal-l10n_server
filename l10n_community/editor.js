@@ -132,9 +132,11 @@
         };
 
         translation.find('> .selector').click(function() {
+          // Set this undeclined.
           setStatus(translation, 'declined', false);
-          // Mark this as the active translation, update others.
-          setStatus(translation.siblings('.is-active:not(.new-translation)'), 'declined', true);
+          // Mark the previously active translation declined, if that is possible.
+          setStatus(translation.siblings('.is-active.is-declinable:not(.new-translation)'), 'declined', true);
+          // Move active mark to this one.
           setStatus(translation.siblings('.is-active'), 'active', false);
           translation.addClass('is-active');
         });
@@ -151,8 +153,8 @@
 
         if (isTranslation) {
           // Add doubleclick behavior to decline all other suggestions.
-          translation.find('.l10n-string').dblclick(function() {
-            translation.siblings().not('.new-translation').each(function () {
+          translation.filter('.is-selectable').find('.l10n-string').dblclick(function() {
+            translation.siblings('.is-declinable').each(function () {
               setStatus($(this), 'declined', true);
             });
           });
