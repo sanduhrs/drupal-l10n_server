@@ -163,7 +163,7 @@ li.translation > .author {
   }
 
 
-  li.new-translation:not(.focussed):not(.has-content):not(.is-active) > .l10n-string {
+  li.new-translation:not(.focused):not(.has-content):not(.is-active) > .l10n-string {
     display:none;
   }
   li.new-translation.has-content > .actions {
@@ -186,7 +186,7 @@ li.translation > .author {
   li.new-translation > .form-item ~ .form-item {
     margin-top:5px;
   }
-  li.new-translation:not(.has-content):not(.focussed) > .form-item ~ .form-item {
+  li.new-translation:not(.has-content):not(.focused) > .form-item ~ .form-item {
     display:none;
   }
   li.new-translation textarea {
@@ -199,10 +199,10 @@ li.translation > .author {
     font-family:inherit;
     -webkit-transition: height 0.2s ease-out;
   }
-  li.new-translation:not(.focussed) textarea:not(:focus):hover {
+  li.new-translation:not(.focused) textarea:not(:focus):hover {
     opacity:0.75;
   }
-  li.new-translation:not(.focussed) .grippie {
+  li.new-translation:not(.focused) .grippie {
     visibility:hidden;
     margin-bottom:-9px;
   }
@@ -211,10 +211,10 @@ li.translation > .author {
     overflow:hidden;
     resize:none;
   }
-  li.new-translation:not(.focussed) textarea {
+  li.new-translation:not(.focused) textarea {
     opacity:0.5 !important;
   }
-  li.new-translation.focussed textarea {
+  li.new-translation.focused textarea {
     opacity:1;
     position:relative;
     z-index:1;

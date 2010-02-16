@@ -195,7 +195,7 @@
 
             textarea
               .focus(function() {
-                translation.addClass('focussed');
+                translation.addClass('focused');
                 clearTimeout(blurTimeout);
                 // Empty textarea when focused.
                 if (textarea.val() === textarea.attr('defaultValue')) {
@@ -204,7 +204,7 @@
               })
               .blur(function() {
                 blurTimeout = setTimeout(function() {
-                  translation.removeClass('focussed');
+                  translation.removeClass('focused');
                   // Add back default value if user moved out and kept the original text.
                   if (textarea.val() === '') {
                     textarea.val(textarea.attr('defaultValue'));
