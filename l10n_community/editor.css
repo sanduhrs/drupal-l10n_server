@@ -78,7 +78,6 @@ li.translation > .selector {
 .l10n-table ul.actions {
   float:right;
 }
-  li.translation:not(.is-active) > .actions li.stable,
   li.translation.is-active > .actions li.declined { display:none; }
   .l10n-table ul.actions {
     overflow:hidden;
