@@ -642,11 +642,14 @@ function l10n_community_translate_form_submit($form, &$form_state) {
         if ($tid === 'new' && count($options['value']) > $empty_values) {
           $tid = l10n_community_add_suggestion($langcode, $sid, $options['value']);
           if ($tid) {
-            l10n_community_counter(L10N_COUNT_ADDED);
             if ($string['active'] === 'new') {
               // This new string was selected to be approved, so remember $tid
               // for later, so we can save this as an approved translation.
               $string['active'] = $tid;
+              l10n_community_counter(L10N_COUNT_ADDED);
+            }
+            else {
+              l10n_community_counter(L10N_COUNT_SUGGESTED);
             }
           }
         }

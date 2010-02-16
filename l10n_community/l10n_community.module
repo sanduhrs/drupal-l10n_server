@@ -1185,19 +1185,19 @@ function l10n_community_update_message() {
     $messages[] = format_plural($counters[L10N_COUNT_ADDED], '1 translation added', '@count translations added');
   }
   if (!empty($counters[L10N_COUNT_SUGGESTED])) {
-    $message[] = format_plural($counters[L10N_COUNT_SUGGESTED], '1 new suggestion added', '@count new suggestions added');
+    $messages[] = format_plural($counters[L10N_COUNT_SUGGESTED], '1 suggestion added', '@count suggestions added');
   }
   if (!empty($counters[L10N_COUNT_UPDATED])) {
-    $message[] = format_plural($counters[L10N_COUNT_UPDATED], '1 translation updated', '@count translations updated');
+    $messages[] = format_plural($counters[L10N_COUNT_UPDATED], '1 translation updated', '@count translations updated');
   }
   if (!empty($counters[L10N_COUNT_DUPLICATE])) {
-    $message[] = format_plural($counters[L10N_COUNT_DUPLICATE], '1 duplicate translation not saved', '@count duplicate translations not saved');
+    $messages[] = format_plural($counters[L10N_COUNT_DUPLICATE], '1 duplicate translation not saved', '@count duplicate translations not saved');
   }
   if (!empty($counters[L10N_COUNT_IGNORED])) {
-    $message[] = format_plural($counters[L10N_COUNT_IGNORED], '1 source string not found; its translation was ignored', '@count source strings not found; their translations were ignored');
+    $messages[] = format_plural($counters[L10N_COUNT_IGNORED], '1 source string not found; its translation was ignored', '@count source strings not found; their translations were ignored');
   }
   if (!empty($counters[L10N_COUNT_UNCHANGED])) {
-    $message[] = format_plural($counters[L10N_COUNT_UNCHANGED], '1 translation unchanged', '@count translations unchanged');
+    $messages[] = format_plural($counters[L10N_COUNT_UNCHANGED], '1 translation unchanged', '@count translations unchanged');
   }
 
   if ($messages) {
