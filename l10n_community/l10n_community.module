@@ -214,7 +214,7 @@ function l10n_community_menu() {
   // AJAX callbacks for easy translation management. These are expected to be
   // used only onsite (not as remote API endpoints), so they have no versioning.
   $items['translate/details/%l10n_community_language/%'] = array(
-    'title' => 'String details',
+    'title' => 'Source string usage details',
     'page callback' => 'l10n_community_string_details',
     'page arguments' => array(2, 3),
     'file' => 'translate.inc',

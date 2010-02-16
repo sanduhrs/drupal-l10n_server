@@ -222,9 +222,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
     $this->drupalGet('translate/details/hu/'. $sid);
-    $this->assertRaw('<em>'. $this->project_names[5] .':</em> 5.x-'. $this->version_js .' (1)');
-    $this->assertRaw('<em>'. $this->project_names[6] .':</em> 6.x-'. $this->version_js .' (1), 6.x-'. $this->version_base .' (1)');
-    $this->assertRaw('<em>'. $this->project_names[7] .':</em> 7.x-'. $this->version_js .' (1)');
+    $this->assertPattern('!<em>'. preg_quote($this->project_names[5]) .':</em> '. preg_quote('5.x-'. $this->version_js) .' <span title="[^>]+">\(1\)</span>!');
+    $this->assertPattern('!<em>'. preg_quote($this->project_names[6]) .':</em> '. preg_quote('6.x-'. $this->version_js) .' <span title="[^>]+">\(1\)</span>, '. preg_quote('6.x-'. $this->version_base) .' <span title="[^>]+">\(1\)</span>!');
+    $this->assertPattern('!<em>'. preg_quote($this->project_names[7]) .':</em> '. preg_quote('7.x-'. $this->version_js) .' <span title="[^>]+">\(1\)</span>!');
 
     // WARNINGS ====
 

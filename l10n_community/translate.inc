@@ -509,7 +509,7 @@ function theme_l10n_community_translate_source($element) {
   $output = theme('l10n_community_translate_actions', $element['source']);
   $output .= '<label class="l10n-string">'. drupal_render($element['source']['string']) .'</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
-  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more">'. t('More information') .'</a></div>';
+  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more-link">'. t('Show occurrences') .'</a><div class="l10n-more-info"></div></div>';
   return $output;
 }
 
@@ -973,31 +973,52 @@ function l10n_community_pack_string($strings) {
  *   Language code.
  * @param $sid
  *   Source string id.
+ * @param $ahah
+ *   Whether the request came through AHAH, in which case no page
+ *   theming should be applied.
  */
-function l10n_community_string_details($langcode = NULL, $sid = 0) {
-  // Prevent devel module information.
-  $GLOBALS['devel_shutdown'] = FALSE;
+function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
 
+  $output = '';
+  if ($ahah) {
+    // Prevent devel module information if doing AHAH.
+    $GLOBALS['devel_shutdown'] = FALSE;
+  }
+  else {
+    // Get data about this source string.
+    $string = db_fetch_object(db_query('SELECT value, context FROM {l10n_community_string} WHERE sid = %d', $sid));
+    $unpacked = l10n_community_unpack_string($string->value);
+    $output .= '<h3>'. t('Source string') .'</h3>'. theme('item_list', $unpacked);
+    $output .= '<h3>'. (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) .'</h3>';
+  }
+  
   // List of project releases, where this string is used.
-  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurance_count FROM {l10n_community_line} l INNER JOIN {l10n_community_project} p ON l.pid = p.pid INNER JOIN {l10n_community_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
+  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_community_line} l INNER JOIN {l10n_community_project} p ON l.pid = p.pid INNER JOIN {l10n_community_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
 
-  $list = array();
-  $output = array();
+  $version_list = array();
+  $project_list = array();
   $previous_project = '';
   while ($instance = db_fetch_object($result)) {
+    $release_info = $instance->release_title .' <span title="'. format_plural($instance->occurrence_count, 'Appears once in this release.', 'Appears @count times in this release.') .'">('. $instance->occurrence_count .')</span>';
     if ($instance->project_title != $previous_project) {
-      if (!empty($list)) {
-        $output[] = join(', ', $list);
+      if (!empty($version_list)) {
+        $project_list[] = join(', ', $version_list);
       }
-      $list = array('<em>'. $instance->project_title .':</em> '. $instance->release_title .' ('. $instance->occurance_count .')');
+      $version_list = array('<em>'. $instance->project_title .':</em> '. $release_info);
     }
     else {
-      $list[] = $instance->release_title .' ('. $instance->occurance_count .')';
+      $version_list[] = $release_info;
     }
     $previous_project = $instance->project_title;
   }
-  $output[] = join(', ', $list);
-  print '<strong>'. t('Used in:') .'</strong>'. theme('item_list', $output);
-
-  exit;
+  $project_list[] = join(', ', $version_list);
+  $usage_list = theme('item_list', $project_list);
+  if ($ahah) {
+    print $usage_list;
+    exit;
+  }
+  else {
+    $output .= $usage_list;
+    return $output; 
+  }
 }

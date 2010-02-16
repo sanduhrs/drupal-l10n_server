@@ -39,17 +39,20 @@ td.source {
     font-size:10px;
     line-height:12px;
   }
-  td.source .l10n-usage .l10n-more {
+  td.source .l10n-usage .l10n-more-info {
+    padding-left: 16px;
+  }
+  td.source .l10n-usage .l10n-more-link {
     font-size:10px;
     text-decoration:none;
     color:#000;
     opacity:0.4;
   }
-  td.source .l10n-usage .l10n-more:before {
+  td.source .l10n-usage .l10n-more-link:before {
     content:"▾ ";
   }
-  td.source .l10n-usage .l10n-more:hover,
-  td.source .l10n-usage .l10n-more:active {
+  td.source .l10n-usage .l10n-more-link:hover,
+  td.source .l10n-usage .l10n-more-link:active {
     color:#666;
   }
   td.source .l10n-usage li {
