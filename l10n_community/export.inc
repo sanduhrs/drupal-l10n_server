@@ -417,7 +417,6 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Join differently based on compact method, so we can skip strings without
     // translation for compact method export.
     $translation_join = ($compact) ? 'INNER JOIN' : 'LEFT JOIN';
-    $translation_filter = ($compact) ? "AND t.translation != ''" : '';
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
     $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
     // We only export active translations, not suggestions.

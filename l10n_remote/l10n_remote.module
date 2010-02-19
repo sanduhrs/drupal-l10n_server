@@ -164,15 +164,18 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
     return array('status' => FALSE, 'reason' => 'Source string not found on server, translation not saved.');
   }
 
-  // Trim string to have the same whitespace as the source and check duplicates.
-  $translation = l10n_community_trim($translation, $source);
-  if (l10n_community_is_duplicate($translation, $sid, $langcode)) {
+  // Attempt to add this as a suggestion.
+  $tid = l10n_community_add_suggestion($sid, $translation, $langcode, $uid);
+  
+  if ($tid === FALSE) {
     //watchdog('l10n_community', 'Duplicate translation submitted.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Suggested translation already appears as active translation or suggestion.');
   }
+  elseif ($tid === NULL) {
+    //watchdog('l10n_community', 'Empty suggestions are not saved.', NULL, WATCHDOG_WARNING);
+    return array('status' => FALSE, 'reason' => 'Empty suggestions are not saved.');
+  }
 
-  // If we got this far, everything is fine and $translation contains the
-  // text as expected with whitespace correction. Signal success to the client.
-  l10n_community_target_save($sid, $translation, $langcode, $uid, TRUE, $inserted, $updated, $unchanged, $suggested);
+  // If we got this far, everything is fine. Signal success to the client.
   return array('status' => TRUE, 'sid' => $sid);
 }

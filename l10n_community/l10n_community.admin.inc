@@ -342,18 +342,15 @@ function l10n_community_admin_projects_cleanup_form_submit($form, &$form_state) 
 function l10n_community_delete_project($pid, $skip_strings = FALSE) {
 
   // Drop errors stored for releases of this project.
-  db_query(
-    'DELETE e FROM {l10n_community_error} e
-     LEFT JOIN {l10n_community_release} r ON e.rid = r.rid
-     WHERE r.pid = %d',
-    $pid
-  );
+  db_query('DELETE FROM {l10n_community_error} WHERE rid IN (SELECT rid FROM {l10n_community_release} WHERE pid = %d)', $pid);
 
-  db_query('DELETE l FROM {l10n_community_line} l WHERE l.pid = %d', $pid);
-  db_query('DELETE f FROM {l10n_community_file} f WHERE f.pid = %d', $pid);
-  db_query('DELETE r FROM {l10n_community_release} r WHERE r.pid = %d', $pid);
-  db_query('DELETE p FROM {l10n_community_project} p WHERE p.pid = %d', $pid);
+  // Almost all other related data has the pid associated directly.
+  db_query('DELETE FROM {l10n_community_line} WHERE pid = %d', $pid);
+  db_query('DELETE FROM {l10n_community_file} WHERE pid = %d', $pid);
+  db_query('DELETE FROM {l10n_community_release} WHERE pid = %d', $pid);
+  db_query('DELETE FROM {l10n_community_project} WHERE pid = %d', $pid);
 
+  // Finally, we might need to drop the possibly left orphan strings.
   if (!$skip_strings) {
     l10n_community_delete_orphans();
   }
@@ -363,12 +360,10 @@ function l10n_community_delete_project($pid, $skip_strings = FALSE) {
  * Delete all orphan source strings and their associated translations.
  */
 function l10n_community_delete_orphans() {
-  // Drop all stale source strings and translations.
-  db_query(
-    'DELETE s, t FROM {l10n_community_string} s
-     LEFT JOIN {l10n_community_translation} t ON t.sid = s.sid
-     WHERE s.sid NOT IN (SELECT sid FROM {l10n_community_line})'
-  );
+  // Drop all stale source strings, translations and status flags.
+  db_query('DELETE FROM {l10n_community_string} WHERE sid NOT IN (SELECT sid FROM {l10n_community_line})');
+  db_query('DELETE FROM {l10n_community_translation} WHERE sid NOT IN (SELECT sid FROM {l10n_community_line})');
+  db_query('DELETE FROM {l10n_community_status_flag} WHERE sid NOT IN (SELECT sid FROM {l10n_community_line})');
 }
 
 /**

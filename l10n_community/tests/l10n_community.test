@@ -301,153 +301,52 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=4&limit=30'));
     $this->assertCount('<td class="source"', 21);
 
+    // Look for translations per user.
+    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&author='. $this->u_member_1->name));
+    $this->assertMsgID('This is a test string. suggestion');
+    $this->assertMsgIDPlural('1 test string', '@count test strings');
+    $this->assertCount('<td class="source"', 4);
+    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&author='. $this->u_member_2->name));
+    $this->assertMsgID('This is a test string. suggestion-2');
+    $this->assertCount('<td class="source"', 2);
+
     // MODERATION ====
 
     $this->drupalGet('user/logout');
     $this->drupalLogin($this->u_moderator);
 
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30'));
-    $this->assertCount('<input type="checkbox"', 6);
-    $this->assertRaw('This is a test string. suggestion');
-    $this->assertRaw('Test string in context. suggestion-1');
-    $this->assertRaw('Test string in context. suggestion-2');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&project='. $this->project_names[6]));
-    $this->assertCount('<input type="checkbox"', 4);
-    $this->assertRaw('This is a test string. suggestion');
-    $this->assertRaw('Test string in context. suggestion-1');
-    $this->assertNoRaw('Test string in context. suggestion-2');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&project='. $this->project_names[7]));
-    $this->assertCount('<input type="checkbox"', 5);
-    $this->assertRaw('This is a test string. suggestion');
-    $this->assertNoRaw('Test string in context. suggestion-1');
-    $this->assertRaw('Test string in context. suggestion-2');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&context=Test%20context'));
-    $this->assertCount('<input type="checkbox"', 2);
-    $this->assertRaw('Test string in context. suggestion-2');
-    $this->assertRaw('Test string in context. suggestion-3');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&search=is%20a'));
-    $this->assertCount('<input type="checkbox"', 2);
-    $this->assertRaw('This is a test string. suggestion');
-    $this->assertRaw('This is a test string. suggestion-2');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&author='. $this->u_member_1->name));
-    $this->assertCount('<input type="checkbox"', 4);
-    $this->assertRaw('This is a test string. suggestion');
-
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30&author='. $this->u_member_2->name));
-    $this->assertCount('<input type="checkbox"', 2);
-    $this->assertRaw('This is a test string. suggestion-2');
-
-    $edit = array();
-    $tid1 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'This is a test string. suggestion', 'hu'));
-    $edit['strings[tid]['. $tid1 .']'] = 1;
-    $tid4 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", "1 test string suggestion\0@count test strings suggestion", 'hu'));
-    $edit['strings[tid]['. $tid4 .']'] = 1;
-    $this->drupalPost('translate/languages/hu/moderate', $edit, t('Approve all selected'), array('query' => 'limit=30'));
-    // Approving a translation removed two of them, since they were for the same
-    // source string.
-    $this->assertCount('<input type="checkbox"', 3);
-    $this->assertText(t('@count suggestions have been approved.', array('@count' => 2)));
-    $this->assertNoRaw('This is a test string. suggestion-2');
-
-    // Add 2 new suggestions and 1 translation for the fun of testing.
-    $edit = array();
-    $edit['strings['. $sid1 .'][new][value][0]'] = 'This is a test string. suggestion-3';
-    $edit['strings['. $sid3 .'][new][value][0]'] = 'Test string in context. suggestion-4';
-    $sid5 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", "This is a test menu item"));
-    $edit['strings['. $sid5 .'][new][value][0]'] = 'This is a test menu item translation';
-    // Mark this new suggestion as the active translation.
-    $edit['strings['. $sid5 .'][active]'] = 'new';
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=30'));
-    $this->assertRaw(t('@count translation added', array('@count' => 1)));
-    $this->assertRaw(t('@count suggestions added', array('@count' => 2)));
-
-    // Add 1 more suggestion.
-    $edit = array();
-    $edit['strings['. $sid3 .'][new][value][0]'] = 'Test string in context. suggestion-5';
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=30'));
-
-    // Three strings should have translations.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=2'));
-    $this->assertMsgID('This is a test string.');
-    $this->assertMsgID('This is a test menu item');
-    $this->assertMsgIDPlural('1 test string', '@count test strings');
-    $this->assertCount('<td class="source"', 3);
-
-    // 22 should not have translations
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=1'));
-    $this->assertCount('<td class="source"', 22);
-
-    // Translated but lacks further suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status='. (2 | 4)));
-    $this->assertMsgID('This is a test menu item');
-    $this->assertMsgIDPlural('1 test string', '@count test strings');
-    $this->assertCount('<td class="source"', 2);
-
-    // Translated and has further suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status='. (2 | 8)));
-    $this->assertMsgID('This is a test string.');
-    $this->assertCount('<td class="source"', 1);
-
-    // Untranslated and has further suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status='. (1 | 8)));
-    $this->assertMsgID('Test string in context');
-    $this->assertMsgIDContext('Test string in context', 'Test context');
-    $this->assertCount('<td class="source"', 2);
-
-    // Untranslated and no further suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status='. (1 | 4)));
-    $this->assertCount('<td class="source"', 20);
-
-    // Look for translations per user.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&author='. $this->u_moderator->name));
-    $this->assertMsgID('This is a test menu item translation');
-    $this->assertCount('<td class="source"', 1);
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&author='. $this->u_member_1->name));
-    $this->assertMsgID('This is a test string. suggestion');
-    $this->assertMsgIDPlural('1 test string', '@count test strings');
-    $this->assertCount('<td class="source"', 2);
-
-    // MASS DECLINE ====
-
-    $edit = array();
-    $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-1', 'hu'));
-    $edit['strings[tid]['. $tid .']'] = 1;
-    $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-4', 'hu'));
-    $edit['strings[tid]['. $tid .']'] = 1;
-    $this->drupalPost('translate/languages/hu/moderate', $edit, t('Decline all selected'), array('query' => 'limit=30'));
-    $this->assertCount('<input type="checkbox"', 4);
-    $this->assertText(t('@count suggestions have been declined.', array('@count' => 2)));
-
     // INDIVIDUAL DECLINE ====
 
-    $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
+    $tid1 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-1', 'hu'));
+    $tid2 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
+    $tid3 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
     $edit = array();
-    $edit['strings['. $sid3 .']['. $tid .'][declined]'] = 1;
+    $edit['strings['. $sid2 .']['. $tid1 .'][declined]'] = 1;
+    $edit['strings['. $sid3 .']['. $tid2 .'][declined]'] = 1;
+    $edit['strings['. $sid3 .']['. $tid3 .'][declined]'] = 1;
     $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=30'));
-    $this->assertRaw(t('1 suggestion declined'));
+    $this->assertRaw(t('3 suggestions declined'));
 
     // Now we should be down to 3 suggestions.
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30'));
+    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=8&limit=30'));
     $this->assertCount('<input type="checkbox"', 3);
 
     // INDIVIDUAL APPROVE ====
 
-    $tid = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
+    $tid1 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'This is a test string. suggestion', 'hu'));
+    $tid2 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", "1 test string suggestion\0@count test strings suggestion", 'hu'));
     $edit = array();
-    $edit['strings['. $sid3 .'][active]'] = $tid;
+    $edit['strings['. $sid1 .'][active]'] = $tid1;
+    $edit['strings['. $sid4 .'][active]'] = $tid2;
     $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=30'));
-    $this->assertRaw(t('1 translation approved'));
+    $this->assertRaw(t('2 translations approved'));
 
-    // Now we should be down to 2 suggestions.
-    $this->drupalGet('translate/languages/hu/moderate', array('query' => 'limit=30'));
+    // Now we should be down to 1 suggestion and 1 translation.
+    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=8&limit=30'));
+    $this->assertCount('<td class="source"', 1);
     $this->assertCount('<input type="checkbox"', 2);
-    $this->assertRaw('This is a test string. suggestion-3');
-    $this->assertRaw('Test string in context. suggestion-5');
+    $this->assertRaw('This is a test string. suggestion');
+    $this->assertRaw('This is a test string. suggestion-2');
   }
 
   /**
@@ -484,6 +383,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
+    // Log in with moderator, so we can check the suggestions easily.
+    $this->drupalGet('user/logout');
+    $this->drupalLogin($this->u_moderator);
+
     // Check whether it is there.
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=8'));
     $this->assertMsgID('This is a test string.');
@@ -503,8 +406,6 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // IMPORT AS MODERATOR
 
     // Moderators can also choose to import translations directly.
-    $this->drupalGet('user/logout');
-    $this->drupalLogin($this->u_moderator);
     $this->drupalGet('translate/languages/hu/import');
     $this->assertRaw(t('Gettext .po file with translations'));
     $this->assertRaw(t('Store as approved translations'));
@@ -526,7 +427,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Importing the same file, but attribute to team (this can be done logged
     // in as anyone who can import, we don't need to log in as u_team).
-    $this->importPO($filename, $this->u_team->uid);
+    $this->importPO($filename, $this->u_team->uid, 1);
     $this->assertRaw(t('@count suggestions added', array('@count' => 3)));
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
@@ -557,18 +458,17 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Importing the same file, but ask to import as final translation.
     $this->importPO($filename, $this->u_moderator->uid, 0);
-    $this->assertRaw(t('@count suggestions added', array('@count' => 3)));
+    $this->assertRaw(t('@count translations added', array('@count' => 3)));
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
-    // Because we did not have an active translation but had outstanding
-    // suggestions, these translations should be diverted to suggestions.
+    // Should still have 3 strings with outstanding suggestions.
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=8'));
     $this->assertCount('<td class="source"', 3);
 
-    // Should still see no translations.
+    // Should now have 3 strings with approved translations.
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=2'));
-    $this->assertNoRaw('<td class="source"');
+    $this->assertCount('<td class="source"', 3);
 
     // IMPORT AS TRANSLATION
 
@@ -577,11 +477,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     $this->importPO($filename, $this->u_moderator->uid, 0);
     $this->assertRaw(t('@count translations added', array('@count' => 3)));
-    $this->assertRaw(t('1 translation unchanged'));
+    $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
-    // Importing as translation should have kicked out the existing suggestions
-    // for these strings.
+    // No string should have suggestions submitted at this point.
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&status=8'));
     $this->assertNoRaw('<td class="source"');
 

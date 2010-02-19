@@ -353,38 +353,26 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
     // If context was not set, set to empty.
     $value['msgctxt'] = !empty($value['msgctxt']) ? $value['msgctxt'] : '';
 
-    // We use BINARY matching here to avoid case insensitively matching
-    // strings like 'operations' and 'Operations'.
     if ($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value['msgid'] . $value['msgctxt']))) {
-      // We have this source string (otherwise we don't save anything).
-      $translation = db_fetch_object(db_query("SELECT translation FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode));
-
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 
-      // Trim imported translation to have whitesapce from source string.
-      $value['msgstr'] = l10n_community_trim($value['msgstr'], $value['msgid']);
-
-      if ($translation && (empty($translation->translation) || ($translation->translation != $value['msgstr']))) {
-        // If we have an empty translation placeholder (ie. no translation yet,
-        // but unresolved suggestions are there), or if we have some translation
-        // already, which is different from what we save now, redirect the data
-        // to be a suggestion instead. This allows conflict issues to be resolved.
-        $is_suggestion = TRUE;
-      }
-
-      if ($is_suggestion || !$translation) {
-        if (!l10n_community_is_duplicate($value['msgstr'], $sid, $langcode)) {
-          l10n_community_target_save($sid, $value['msgstr'], $langcode, $uid, $is_suggestion);
-        }
-        else {
-          l10n_community_counter(L10N_COUNT_DUPLICATE);
+      // Add this as a suggestion first.
+      $tid = l10n_community_add_suggestion($sid, $value['msgstr'], $langcode, $uid);
+      
+      if ($tid) {
+        if ($is_suggestion) {
+          l10n_community_counter(L10N_COUNT_SUGGESTED);
+        } else {
+          l10n_community_approve_string($langcode, $sid, $tid);
+          l10n_community_counter(L10N_COUNT_ADDED);
         }
       }
-      else {
-        // We certainly did not update this one.
-        l10n_community_counter(L10N_COUNT_UNCHANGED);
+      elseif ($tid === FALSE) {
+        l10n_community_counter(L10N_COUNT_DUPLICATE);
       }
+      
+      
     }
     else {
       // Source string not found, string ignored.
