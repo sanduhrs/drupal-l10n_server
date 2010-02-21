@@ -509,10 +509,10 @@ function l10n_community_get_string_count($type, $id = NULL) {
           $sums[$row->pid]['translations'] = $row->translation_count;
         }
         // Get the count of distinct strings having suggestions per project.
-        $count_sql = "SELECT COUNT(DISTINCT t.sid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_status_flag} ts ON l.sid = ts.sid WHERE ts.has_suggestion = 1 ";
+        $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, l.pid FROM {l10n_community_line} l LEFT JOIN {l10n_community_status_flag} ts ON l.sid = ts.sid WHERE ts.has_suggestion = 1 ";
         if (isset($id)) {
           // Limit to language if desired.
-          $count_sql .= "AND t.language = '%s' ";
+          $count_sql .= "AND ts.language = '%s' ";
           $count_args[] = $id;
         }
         $count_sql .= 'GROUP BY l.pid';
