@@ -466,7 +466,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         else {
           // More complex joins if we also need to factor the project in.
           $count1_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_community_line} l INNER JOIN {l10n_community_status_flag} ts ON l.sid = ts.sid WHERE l.pid = %d AND ts.has_translation = 1 GROUP BY ts.language";
-          $count1_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_community_line} l INNER JOIN {l10n_community_status_flag} ts ON l.sid = ts.sid WHERE l.pid = %d AND ts.has_suggestion = 1 GROUP BY ts.language";
+          $count2_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_community_line} l INNER JOIN {l10n_community_status_flag} ts ON l.sid = ts.sid WHERE l.pid = %d AND ts.has_suggestion = 1 GROUP BY ts.language";
           $count_args = array($id);
         }
         $result = db_query($count1_sql, $count_args);
