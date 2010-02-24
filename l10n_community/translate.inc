@@ -272,11 +272,6 @@ function l10n_community_translate_form(&$form_state, $language, $filters, $strin
       '#weight' => -10, 
       '#value' => $pager
     ),
-    'submit_top' => array(
-      '#type' => 'submit', 
-      '#value' => t('Save changes'),
-      '#access' => user_access('submit suggestions')
-    ),
     'strings' => array(
       '#tree' => TRUE, 
       '#theme' => 'l10n_community_translate_table'
