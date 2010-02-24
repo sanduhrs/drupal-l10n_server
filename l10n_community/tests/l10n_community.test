@@ -516,7 +516,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
       $message = t('String "@raw" not found', array('@raw' => $raw));
     }
     // Label tag for translations include for="" attribute, but not for source.
-    $found = (bool) preg_match('!<label class="l10n-string"([^>]*)><span>'. preg_quote($raw) .'</span></label>!', $this->content);
+    $found = (bool) preg_match('!<label class="l10n-string([^"]*)"([^>]*)><span>'. preg_quote($raw) .'</span></label>!', $this->content);
     return $this->assert($match ? $found : !$found, $message);
   }
 
@@ -532,7 +532,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     }
     // Look for the string wrapped in a list item on its own line. Only used
     // for singular and plural strings.
-    $found = (bool) preg_match('!<label class="l10n-string"([^>]*)><span>'. preg_quote($raw_singular) .'</span><br /><span>'. preg_quote($raw_plural) .'</span></label>!', $this->content);
+    $found = (bool) preg_match('!<label class="l10n-string([^"]*)"([^>]*)><span>'. preg_quote($raw_singular) .'</span><br /><span>'. preg_quote($raw_plural) .'</span></label>!', $this->content);
     return $this->assert($match ? $found : !$found, $message);
   }
 
@@ -546,7 +546,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     else {
       $message = t('String "@raw" not found in context "@context"', array('@raw' => $raw, '@context' => $context));
     }
-    $found = (bool) strpos($this->content, '<label class="l10n-string"><span>'. $raw .'</span></label><div class="string-context">'. t('in context: @context', array('@context' => $context)) .'</div>');
+    $found = (bool) preg_match('!<label class="l10n-string([^"]*)"><span>'. preg_quote($raw) .'</span></label><div class="string-context">'. preg_quote(t('in context: @context', array('@context' => $context))) .'</div>!', $this->content);
     return $this->assert($match ? $found : !$found, $message);
   }
 
