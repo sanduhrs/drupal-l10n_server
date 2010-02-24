@@ -1289,7 +1289,7 @@ function l10n_community_get_stats($langcode = NULL) {
       $stats['releases_queue'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_release} r INNER JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.status = 1 AND r.last_parsed = 0'));
       $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
       $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_status_flag} WHERE has_translation = 1"));
+      $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_status_flag} WHERE has_translation = 1'));
       $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
 
       if (module_exists('l10n_groups')) {
@@ -1562,8 +1562,14 @@ function l10n_community_update_string_status($langcode, $sid) {
   $has_suggestion = db_result(db_query("SELECT 1 FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
   $has_translation = db_result(db_query("SELECT 1 FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $sid, $langcode));
 
-  // Update the status according to the number of suggestions.
-  db_query("UPDATE {l10n_community_status_flag} SET has_suggestion = %d, has_translation = %d WHERE sid = %d AND language = '%s'", (int) $has_suggestion, (int) $has_translation, $sid, $langcode);
+  if ($has_suggestion || $has_translation) {
+    // Update the status according to the number of suggestions.
+    db_query("REPLACE INTO {l10n_community_status_flag} (has_suggestion, has_translation, sid, language) VALUES (%d, %d, %d, '%s')", (int) $has_suggestion, (int) $has_translation, $sid, $langcode);
+  }
+  else {
+    // Drop database entry, not required anymore.
+    db_query("DELETE FROM {l10n_community_status_flag} WHERE sid = %d AND language = '%s'", $sid, $langcode);
+  }
 }
 
 /**

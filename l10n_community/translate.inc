@@ -762,7 +762,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
 
   $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved, ts.has_suggestion, ts.has_translation FROM {l10n_community_string} s";
   $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s";
-  $join[] = "INNER JOIN {l10n_community_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
+  $join[] = "LEFT JOIN {l10n_community_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
   $join_args[] = $langcode;
   $join[] = "LEFT JOIN {l10n_community_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
   $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
@@ -808,7 +808,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   // Restriction based on string status by translation / suggestions.
   if (isset($filters['status'])) {
     if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
-      $where[] = "ts.has_translation = 0";
+      $where[] = "(ts.has_translation = 0 OR ts.has_translation IS NULL)";
     }
     elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
       $where[] = "ts.has_translation = 1";
@@ -821,7 +821,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
       $where[] = "ts.has_suggestion = 1";
     }
     elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
-      $where[] = "ts.has_suggestion = 0";
+      $where[] = "(ts.has_suggestion = 0 OR ts.has_suggestion IS NULL)";
     }
     elseif ($filters['status'] & L10N_STATUS_IS_SUGGESTION) {
       $where[] = "t.is_suggestion = 1";

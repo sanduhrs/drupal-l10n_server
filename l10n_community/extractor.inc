@@ -208,11 +208,6 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
       // String does not exist.
       db_query("INSERT INTO {l10n_community_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
       $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value . $context));
-      // Initialize status flags for this string.
-      $languages = l10n_community_get_languages();
-      foreach ($languages as $language) {
-        db_query("INSERT INTO {l10n_community_status_flag} (sid, language) VALUES (%d, '%s')", $sid, $language->language);
-      }
     }
     if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
       // Location does not exist with this string.
