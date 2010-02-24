@@ -410,7 +410,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
     if (!empty($filters['search'])) {
       // Search is matched if the source matched the search and the translation
       // matched the user or the translation matched both.
-      $filters_matched[] = (!empty($filters['author']) && $source_match) || (strpos(l10n_community_pack_string($string->translation), $filters['search']) !== FALSE);
+      $filters_matched[] = (!empty($filters['author']) && $source_match) || (stripos(l10n_community_pack_string($string->translation), $filters['search']) !== FALSE);
       $filters_to_match++;
     }
     $filters_matched = array_filter($filters_matched);
