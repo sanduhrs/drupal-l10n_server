@@ -619,18 +619,4 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('user/logout');
   }
 
-  /**
-   * Debug functionality until simpletest built-in debugging is backported.
-   */
-  private function outputScreenContents($description = 'output', $basename = 'output') {
-    // This is a hack to get a directory that won't be cleaned up by simpletest
-    $file_dir = file_directory_path() .'/../simpletest_output_pages';
-    if (!is_dir($file_dir)) {
-      mkdir($file_dir, 0777, TRUE);
-    }
-    $output_path = "$file_dir/$basename.". $this->randomName(10) .'.html';
-    $rv = file_put_contents($output_path, $this->drupalGetContent());
-    $this->pass("$description: ". l('Contents of result page', $output_path));
-  }
-
 }

@@ -32,7 +32,7 @@ function l10n_server_generate_languages_form() {
  */
 function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
   include_once 'includes/locale.inc';
-  db_query("DELETE FROM {languages} WHERE language != 'en'");
+  db_query("DELETE FROM {languages} WHERE language <> 'en'");
   db_query('DELETE FROM {locales_target}');
   drupal_set_message(t('Languages deleted.'));
   $num = $form_state['values']['num'];

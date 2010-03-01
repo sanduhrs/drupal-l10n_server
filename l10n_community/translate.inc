@@ -77,7 +77,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     );
   }
 
-  // Always add releases option, so we can update it when 
+  // Always add releases option, so we can update it when
   // needed as the project changes with AHAH.
   $release_options = array('all' => t('All'));
   if (!empty($form_state['values']['project'])) {
@@ -102,7 +102,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
 
   if (count($contexts = l10n_community_get_contexts()) > 1) {
     $form['context'] = array(
-     '#title' => t('Context'),
+      '#title' => t('Context'),
       '#type' => 'select',
       '#options' => array('all' => t('All')) + $contexts,
       '#default_value' => $form_state['values']['context'],
@@ -261,28 +261,28 @@ function l10n_community_translate_form(&$form_state, $language, $filters, $strin
   // strings in the database.
   $form = array(
     '#redirect' => array(
-      $_GET['q'], 
+      $_GET['q'],
       $redirect_url
     ),
     'langcode' => array(
-      '#type' => 'value', 
+      '#type' => 'value',
       '#value' => $language->language
     ),
     'pager_top' => array(
-      '#weight' => -10, 
+      '#weight' => -10,
       '#value' => $pager
     ),
     'strings' => array(
-      '#tree' => TRUE, 
+      '#tree' => TRUE,
       '#theme' => 'l10n_community_translate_table'
     ),
     'submit' => array(
-      '#type' => 'submit', 
-      '#value' => t('Save changes'), 
+      '#type' => 'submit',
+      '#value' => t('Save changes'),
       '#access' => user_access('submit suggestions')
     ),
     'pager_bottom' => array(
-      '#weight' => 10, 
+      '#weight' => 10,
       '#value' => $pager
     ),
   );
@@ -419,7 +419,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
   $form = array(
     '#theme' => 'l10n_community_translate_translation',
     'original' => array(
-      '#type' => 'value', 
+      '#type' => 'value',
       '#value' => $string,
     ),
     'filters_match' => array(
@@ -658,7 +658,7 @@ function theme_l10n_community_translate_translation_list($element) {
  * Form submit callback for l10n_community_translate_form().
  *
  * @see l10n_community_translate_form().
- */ 
+ */
 function l10n_community_translate_form_submit($form, &$form_state) {
   global $user;
 
@@ -847,7 +847,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
         }
       }
       else {
-        // No parent translation. Pretend this does not exist. 
+        // No parent translation. Pretend this does not exist.
         // The display code will call for the suggestions.
         $string->translation = '';
       }
@@ -949,6 +949,6 @@ function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
   }
   else {
     $output .= $usage_list;
-    return $output; 
+    return $output;
   }
 }
