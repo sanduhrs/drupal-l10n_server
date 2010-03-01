@@ -170,8 +170,7 @@ function l10n_community_pick_go_submit($form, &$form_state) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
       if (user_access('browse translations')) {
-        $action = user_access('submit suggestions') ? 'edit' : 'view';
-        drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/'. $action, 'project='. $uri);
+        drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/translate', 'project='. $uri);
       }
       else {
         // Both language and project set, no access to browse > go to project.
