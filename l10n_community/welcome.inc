@@ -96,6 +96,11 @@ function l10n_community_pick_go() {
     return $form;
   }
 
+  if (module_exists('l10n_groups')) {
+    // We are dealing with a groups based permission model.
+    $form['groups'] = l10n_groups_pick_go();
+  }
+
   if (count($language_list) > 1) {
     // If more then one language.
     $form['langcode'] = array(
