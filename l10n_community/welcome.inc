@@ -18,62 +18,49 @@
  * fit perfectly with all listings, so I bended some stuff more to comply.
  */
 function l10n_community_welcome_page() {
-  $output = '<div id="l10n-community-welcome" class="admin clear-block"><div class="left clear-block">';
-
-  $block = array(
-    'title' => t('About this interface'),
-    'description' => t('Community for Drupal translations'),
-    'content' => '<p class="info">'. t('This interface serves as a community hub for translating Drupal projects, so translators only need to use a browser to contribute. Our system knows about Drupal projects, such as modules, themes and install profiles; with their respective releases. This means that all text added to these packages are translatable. New projects and releases are scanned regularly. Languages are maintained by translation groups. Every group has a community space, where members can share information, discuss specific questions and document best practices. Finally, translations are packaged on drupal.org for each project release.') .'</p>'
-  );
-  $output .= theme('admin_block', $block);
-
+  // Build stats block.
   $stats_block = l10n_community_block_stats();
   $block = array(
     'title' => t('Quick stats'),
     'description' => t('Some facts about this community'),
     'content' => $stats_block['content'],
   );
-  $output .= theme('admin_block', $block);
+  $stats_output = theme('admin_block', $block);
 
-  $items = array(
-    array('title' => t('Translator\'s guide'), 'path' => 'http://drupal.org/translators', 'description' => t('Documentation for translators on drupal.org.')),
-    array('title' => t('Translations group'), 'path' => 'http://groups.drupal.org/translations', 'description' => t('Translations group at groups.drupal.org.')),
-    array('title' => t('Mailing list'), 'path' => 'http://lists.drupal.org/listinfo/translations', 'description' => t('Translators mailing list hosted at drupal.org.')),
-  );
-  $content = '';
-  foreach ($items as $item) {
-    $content .= '<dt>'. l($item['title'], $item['path']) .'</dt>';
-    $content .= '<dd>'. $item['description'] .'</dd>';
+  // Build highlights block.
+  $highlight_output = '';
+  if ($project = l10n_community_get_highlighted_project()) {
+    // Display progress status of the highlighted project.
+    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+    $highlight_output = l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project'));
   }
-  $block = array(
-    'title' => t('Handy links'),
-    'description' => t('Documentation, discussion spaces'),
-    'content' => '<dl class="admin-list">'. $content .'</dl>'
-  );
-  $output .= theme('admin_block', $block);
 
-  $output .= '</div><div class="right clear-block">';
+  // Build contribution call to action block.
   $content = '';
   if (!$GLOBALS['user']->uid) {
     // Only display account creation task if not logged in.
     $content = '<p>'. t('You can review the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>.', array('@register' => url('user/login'))) .'</p>';
   }
-
   $content .= drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>';
-
   $block = array(
     'title' => t('Contribute'),
     'description' => t('Suggest, translate, review'),
     'content' => '<div class="admin-list">'. $content .'</div>'
   );
-  $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
+  $contribute_output = str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 
-  if ($project = l10n_community_get_highlighted_project()) {
-    // Display progress status of the highlighted project.
-    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
-    $output .= l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project'));
+  // Build it alltogether.
+  $output = '<div id="l10n-community-welcome" class="admin clear-block"><div class="left clear-block">';
+  if (!empty($highlight_output)) {
+    $output .= $highlight_output;
   }
-
+  else {
+    $output .= $stats_output;
+  }
+  $output .= '</div><div class="right clear-block">'. $contribute_output;
+  if (!empty($highlight_output)) {
+    $output .= $stats_output;
+  }
   $output .= '</div></div>';
   return $output;
 }
