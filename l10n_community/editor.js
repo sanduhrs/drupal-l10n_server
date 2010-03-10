@@ -50,6 +50,22 @@
       // Prevent the actual link click from happening.
       return false;
     });
+    
+    // Hide items which are default and not among project, release and context filters.
+    $('#l10n-community-filter-form .is-default').not("[name=project]").not('[name=release]').not("[name=context]").parents('.filter-widget').hide();
+    
+    // Callback to show all filters.
+    var showAllFilters = function() {
+      $('#l10n-community-filter-form .reveal-link').hide();
+      $('#l10n-community-filter-form .filter-widget:hidden').fadeIn();
+      return false;
+    }
+    
+    // If we did hide items, add a link to show all.
+    if ($('#l10n-community-filter-form .filter-widget:hidden')) {
+      $('#l10n-community-filter-form .l10n-server-filter').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
+      $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
+    }
 
     var markup = function(string) {
       // Highlight placeholders with the l10n-placeholder class.

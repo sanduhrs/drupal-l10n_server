@@ -11,12 +11,12 @@
 /**
  * Translate form filter.
  *
+ * @param $langcode
+ *   Language code
  * @param $filters
  *   Array of filter options.
- * @param $limited
- *   Return limited set of filters (no suggestion filters).
  */
-function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
+function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $projects = l10n_community_get_projects();
 
   $translation_options = array(
@@ -40,7 +40,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     $form_state['values'] = array(
       'project' => isset($filters['project']) ? $filters['project']->title : '',
       'release' => isset($filters['release']) ? $filters['release']        : 'all',
-      'context' => isset($filters['context']) ? $filters['context']        : '',
+      'context' => isset($filters['context']) ? $filters['context']        : 'all',
       'status'  => isset($filters['status'])  ? $filters['status']         : L10N_STATUS_ALL,
       'author'  => isset($filters['author'])  ? $filters['author']->name   : '',
       'search'  => isset($filters['search'])  ? $filters['search']         : '',
@@ -58,6 +58,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
       'wrapper' => 'l10n-server-releases',
       'effect' => 'fade',
     ),
+    '#attributes' => array('class' => empty($form_state['values']['project']) ? 'is-default' : 'is-not-default'),
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
@@ -98,6 +99,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     // Wrapper used to replace release options via AHAH.
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
+    '#attributes' => array('class' => $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default'),
   );
 
   if (count($contexts = l10n_community_get_contexts()) > 1) {
@@ -106,25 +108,26 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
       '#type' => 'select',
       '#options' => array('all' => t('All')) + $contexts,
       '#default_value' => $form_state['values']['context'],
+      '#attributes' => array('class' => $form_state['values']['context'] == 'all' ? 'is-default' : 'is-not-default'),
     );
   }
 
   $form['status'] = array(
     '#title' => t('Status'),
     '#tree' => TRUE,
+    '#prefix' => '<div class="'. ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default' : 'is-not-default') .'">',
+    '#suffix' => '</div>',
   );
   $form['status']['translation'] = array(
     '#type' => 'select',
     '#options' => $translation_options,
     '#default_value' => $form_state['values']['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED | L10N_STATUS_IS_TRANSLATION),
   );
-  if (!$limited) {
-    $form['status']['suggestion'] = array(
-      '#type' => 'select',
-      '#options' => $suggestion_options,
-      '#default_value' => $form_state['values']['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
-    );
-  }
+  $form['status']['suggestion'] = array(
+    '#type' => 'select',
+    '#options' => $suggestion_options,
+    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
+  );
 
   $form['author']= array(
     '#type' => 'textfield',
@@ -133,6 +136,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     '#autocomplete_path' => 'user/autocomplete',
     '#default_value' => $form_state['values']['author'],
     '#size' => 15,
+    '#attributes' => array('class' => empty($form_state['values']['author']) ? 'is-default' : 'is-not-default'),
   );
 
   $form['search'] = array(
@@ -140,6 +144,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     '#type' => 'textfield',
     '#default_value' => $form_state['values']['search'],
     '#size' => 20,
+    '#attributes' => array('class' => empty($form_state['values']['search']) ? 'is-default' : 'is-not-default'),
   );
 
   $form['limit'] = array(
@@ -147,6 +152,7 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     '#title' => t('Limit'),
     '#options' => drupal_map_assoc(array(5, 10, 20, 30)),
     '#default_value' => $form_state['values']['limit'],
+    '#attributes' => array('class' => $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default'),
   );
 
   $form['submit'] = array(
@@ -154,8 +160,8 @@ function l10n_community_filter_form(&$form_state, $filters, $limited = FALSE) {
     '#type' => 'submit',
   );
   $form['reset'] = array(
-    '#value' => t('Reset'),
-    '#type' => 'submit',
+    '#value' => '<div class="reset-link">'. l(t('Clear all filters'), 'translate/languages/'. $langcode .'/translate', array('attributes' => array('class' => 'filter-exclude'))) .'</div>',
+    '#type' => 'markup',
   );
   $form['#theme'] = 'l10n_community_filter_form';
   return $form;
@@ -179,7 +185,7 @@ function theme_l10n_community_filter_form($form) {
   }
 
   // Render the rest of the form as one filter-widget.
-  $output .= '<div class="filter-widget">'. drupal_render($form) .'</div>';
+  $output .= '<div class="filter-submit">'. drupal_render($form) .'</div>';
   $output .= '</div>';
 
   return $output;
@@ -227,7 +233,7 @@ function l10n_community_translate_page($langcode) {
   }
 
   // Add the filter form.
-  $output = drupal_get_form('l10n_community_filter_form', $filters);
+  $output = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
 
   // Output the actual strings.
   if (!count($strings)) {
