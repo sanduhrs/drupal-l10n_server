@@ -9,6 +9,22 @@
 // = Core hooks ================================================================
 
 /**
+ * Implementation of hook_menu().
+ */
+function l10n_groups_menu() {
+  $items['translate/languages/%l10n_community_language/broadcast'] = array(
+    'title' => 'Broadcast',
+    'page callback' => 'l10n_groups_broadcast',
+    'page arguments' => array(2),
+    'access callback' => 'l10n_groups_broadcast_access',
+    'access arguments' => array(2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 200,
+  );
+  return $items;
+}
+
+/**
  * Implementation of hook_perm().
  */
 function l10n_groups_perm() {
@@ -53,6 +69,11 @@ function l10n_groups_init() {
       l10n_groups_set_context($langcode);
     }
   }
+  if (($item = menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
+    // If on node view page for l10n_group nodes, redirect to our more full featured
+    // version of the group with translation tabs and all.
+    drupal_goto('translate/languages/'. $item['page_arguments'][0]->l10n_group_language);
+  }
 }
 
 /**
@@ -62,7 +83,7 @@ function l10n_groups_set_context($langcode) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$langcode])) {
     // Set group context and ask for og details block.
-    $node = node_load($groups[$langcode]->nid);
+    $node = node_load($groups[$langcode]);
     og_set_group_context($node);
   }
 }
@@ -211,6 +232,17 @@ function l10n_groups_form($node, $form_state) {
   return $form;
 }
 
+/**
+ * Implementation of hook_og_create_links().
+ */
+function l10n_groups_og_create_links($node) {
+  $links = array();
+  if (node_access('update', $node)) {
+    $links['edit_group'] = l(t('Edit group'), 'node/'. $node->nid .'/edit');
+  }
+  return $links;
+}
+
 // = API functions =============================================================
 
 /**
@@ -231,10 +263,10 @@ function l10n_groups_block_help($perm, $langcode = NULL) {
   $groups = l10n_groups_get_groups();
   $permission_help = '';
 
-  if (empty($user->og_groups) || empty($user->og_groups[$groups[$langcode]->nid])) {
-    $permission_help = t('You are not a member of this translation group.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]->nid))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]->nid))));
+  if (empty($user->og_groups) || empty($user->og_groups[$groups[$langcode]])) {
+    $permission_help = t('You are not a member of this translation group.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]))));
   }
-  elseif (!empty($user->og_groups[$groups[$langcode]->nid]['is_admin'])) {
+  elseif (!empty($user->og_groups[$groups[$langcode]]['is_admin'])) {
     $permission_help = t('You are an administrator in this translation group.');
   }
 
@@ -254,7 +286,7 @@ function l10n_groups_get_groups() {
     $groups = array();
     $result = db_query('SELECT nid, language FROM {l10n_groups_group}');
     while ($group = db_fetch_object($result)) {
-      $groups[$group->language] = $group;
+      $groups[$group->language] = $group->nid;
     }
   }
 
@@ -284,4 +316,24 @@ function l10n_groups_pick_go() {
       );
     }
   }
+}
+
+/**
+ * Menu access callback for broadcast proxy tab.
+ */
+function l10n_groups_broadcast_access($langcode) {
+  $groups = l10n_groups_get_groups();
+  if (isset($groups[$langcode])) {
+    return og_broadcast_access(node_load($groups[$langcode]));
+  }
+  return FALSE;
+}
+
+/**
+ * Menu callback for broadcast proxy tab.
+ */
+function l10n_groups_broadcast($langcode) {
+  $groups = l10n_groups_get_groups();
+  include_once drupal_get_path('module', 'og') .'/og.pages.inc';
+  return drupal_get_form('og_broadcast_form', node_load($groups[$langcode]));
 }

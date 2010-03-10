@@ -4,6 +4,7 @@ div.admin .admin-panel-contribute {
   background: #ffb;
   margin-bottom: 2em;
   padding-bottom: 0.3em;
+  position: relative;
 }
 table.l10n-community-overview {
   width: 45%;
@@ -21,6 +22,17 @@ div.admin .form-submit {
 }
 div.admin form {
   margin-bottom: 0 !important;
+}
+div.admin .l10n-join-group {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.3em;
+  position: absolute;
+  top: 0.8em;
+  right: 0.6em;
+}
+div.admin .l10n-join-group a {
+  padding: 0.3em;
 }
 
 /* Overview navigation tables for projects and languages */

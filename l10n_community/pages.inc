@@ -25,10 +25,6 @@ function l10n_community_explore_languages() {
 
   // Generate listing of all languages with summaries. The list of languages
   // is relatively "short", compared to projects, so we don't need a pager here.
-  $groups = array();
-  if (module_exists('l10n_groups')) {
-    $groups = l10n_groups_get_groups();
-  }
   $table = array();
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
@@ -98,6 +94,8 @@ function l10n_community_explore_projects() {
  *   Language code, for example 'hu', 'pt-br', 'de', 'it'.
  */
 function l10n_community_overview_language($langcode = NULL) {
+  global $user;
+
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
@@ -115,34 +113,44 @@ function l10n_community_overview_language($langcode = NULL) {
   $languages = l10n_community_get_languages('name');
   drupal_set_title(t('@language overview', array('@language' => $languages[$langcode])));
 
-  $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
-
-  $has_posts = FALSE;
-  if (module_exists('taxonomy') && ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode))) {
-    $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-    while ($node = db_fetch_object($result)) {
-      $has_posts = TRUE;
-      $output .= node_view(node_load($node->nid), 1);
-    }
-  }
-  if (!$has_posts) {
-    $output .= '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $langcode)) .'</p>';
-  }
-
-  $output .= '</div><div class="right clear-block">';
-
-  $group_help = '';
+  $content_output = $group_prefix = '';
   if (module_exists('l10n_groups')) {
-    // A little extra message if the groups module is enabled.
+    // If l10n_groups available, try to load group frontpage.
     $groups = l10n_groups_get_groups();
-    if (isset($groups[$langcode])) {
-      $group_help = '<p>'. t('The <a href="@group">%language group</a> pages might provide you with more information, translation suggestions and guidelines.', array('@group' => url('node/'. $groups[$langcode]->nid), '%language' => $languages[$langcode])) .'</p>';
+    if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
+      $content_output = node_view($group_node, FALSE, TRUE);
+      if (!isset($user->og_groups[$groups[$langcode]])) {
+        $group_prefix = '<div class="l10n-join-group">'. og_subscribe_link($group_node) .'</div>';
+      }
+    }
+    else {
+      $content_output .= '<p>'. t('Group not found or not accessible. No posts to display') .'</p>';
     }
   }
+  elseif (module_exists('taxonomy')) {
+    if ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode)) {
+      // Found tag, look for posts.
+      $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
+      while ($node = db_fetch_object($result)) {
+        $content_output .= node_view(node_load($node->nid), 1);
+      }
+    }
+    if (empty($content_output)) {
+      // Either no such tag, or that tag has no posts currently.
+      $output .= '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $langcode)) .'</p>';
+    }
+  }
+  else {
+    // Neither l10n_groups, neither taxonomy available.
+    $content_output .= '<p>'. t('No posts to display') .'</p>';
+  }
+
+  $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">'. $content_output .'</div><div class="right clear-block">';
+
   $block = array(
     'title' => t('Contribute'),
     'description' => t('Review, translate, import'),
-    'content' => '<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for import to Drupal or offline work.') .'</p>'. $group_help
+    'content' => $group_prefix .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use or  offline work.') .'</p>'
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 
