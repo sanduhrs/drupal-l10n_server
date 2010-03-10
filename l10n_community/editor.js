@@ -36,16 +36,16 @@
     $('.l10n-more-link').click(function() {
       if ($(this).siblings('.l10n-more-info').css('display') == 'none') {
         // Was shown before but is currently hidden.
-        $(this).html(Drupal.t('Hide occurances')).siblings('.l10n-more-info').toggle();
+        $(this).html(Drupal.t('Hide related projects')).siblings('.l10n-more-info').toggle();
       }
       else if ($(this).siblings('.l10n-more-info').html()) {
         // Is shown and needs to be hidden.
-        $(this).html(Drupal.t('Show occurrences')).siblings('.l10n-more-info').toggle();
+        $(this).html(Drupal.t('Show related projects')).siblings('.l10n-more-info').toggle();
       }
       else {
         // Was not yet loaded, we want to load the information fresh from the server.
         // Append /1 to the href, telling the server we want AHAH targeted output.
-        $(this).html(Drupal.t('Hide occurrences')).siblings('.l10n-more-info').load(this.href + '/1');
+        $(this).html(Drupal.t('Hide related projects')).siblings('.l10n-more-info').load(this.href + '/1');
       }
       // Prevent the actual link click from happening.
       return false;
@@ -66,6 +66,9 @@
       $('#l10n-community-filter-form .l10n-server-filter').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
       $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
     }
+
+     // Add title to all decline buttons. Will be modified dynamically.
+     $('.actions .declined label').attr('title', Drupal.t('Decline'));
 
     var markup = function(string) {
       // Highlight placeholders with the l10n-placeholder class.
@@ -107,6 +110,9 @@
       var setStatus = function(elem, status, value) {
         newValue = elem.find('.' + status + ' :checkbox').attr('checked', value).attr('checked');
         elem[(newValue === undefined ? value : newValue) ? 'addClass' : 'removeClass']('is-' + status);
+        if (status == 'declined') {
+          elem.find('li.declined label').attr('title', value ? Drupal.t('Undo decline') : Drupal.t('Decline'));
+        }
       };
 
       var textareas = all.filter('.new-translation').find('textarea');

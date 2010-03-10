@@ -333,8 +333,8 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 
   if (user_access('submit suggestions')) {
     $form['source']['edit'] = array(
-      '#value' => t('Edit a copy'),
-      '#prefix' => '<label title="'. t('Edit a copy') .'">',
+      '#value' => t('Translate'),
+      '#prefix' => '<label title="'. t('Translate') .'">',
       '#suffix' => '</label>',
     );
   }
@@ -540,7 +540,7 @@ function theme_l10n_community_translate_source($element) {
   $output = theme('l10n_community_translate_actions', $element['source']);
   $output .= '<label class="l10n-string'. ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') .'">'. drupal_render($element['source']['string']) .'</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
-  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more-link">'. t('Show occurrences') .'</a><div class="l10n-more-info"></div></div>';
+  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
   return $output;
 }
 
