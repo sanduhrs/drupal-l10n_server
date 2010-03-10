@@ -96,15 +96,6 @@ function l10n_community_explore_projects() {
 function l10n_community_overview_language($langcode = NULL) {
   global $user;
 
-  // Add missing breadcrumb.
-  drupal_set_breadcrumb(
-    array(
-      l(t('Home'), NULL),
-      l(t('Translate'), 'translate'),
-      l(t('Explore languages'), 'translate/languages')
-    )
-  );
-
   if (!isset($langcode)) {
     drupal_set_message(t('No language selected.'), 'error');
     return '';
@@ -188,6 +179,15 @@ function l10n_community_overview_language($langcode = NULL) {
 
 
   $output .= '</div></div>';
+
+  // Add missing breadcrumb.
+  drupal_set_breadcrumb(
+    array(
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages')
+    )
+  );
 
   return $output;
 }

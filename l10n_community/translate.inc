@@ -232,6 +232,16 @@ function l10n_community_translate_page($langcode) {
     drupal_set_title(t('Translate to @language', array('@language' => $language->name)));
   }
 
+  // Add missing breadcrumb.
+  drupal_set_breadcrumb(
+    array(
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+      l($language->name, 'translate/languages/'. $langcode)
+    )
+  );
+
   // Add the filter form.
   $output = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
 

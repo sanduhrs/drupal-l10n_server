@@ -10,13 +10,16 @@
  * User interface for the translation import screen.
  */
 function l10n_community_import_page($langcode) {
-  $languages = l10n_community_get_languages();
-  drupal_set_title(t('Import to @language', array('@language' => $languages[$langcode]->name)));
+  $language = l10n_community_get_language($langcode);
+  drupal_set_title(t('Import to @language', array('@language' => $language->name)));
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
       l(t('Home'), NULL),
-      l(t('Translate projects'), 'translate'))
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+      l($language->name, 'translate/languages/'. $langcode)
+    )
   );
   return drupal_get_form('l10n_community_import_form', $langcode);
 }

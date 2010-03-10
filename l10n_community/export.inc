@@ -22,16 +22,17 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
 
   // Set a matching title with the translation page.
-  $project = l10n_community_get_projects(array('uri' => $uri));
   if (isset($langcode)) {
-    $languages = l10n_community_get_languages();
-    drupal_set_title(t('Export @language translations', array('@language' => $languages[$langcode]->name)));
+    $language = l10n_community_get_language($langcode);
+    drupal_set_title(t('Export @language translations', array('@language' => $language->name)));
     $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
+    $breadcrumb[] = l($language->name, 'translate/languages/'. $langcode);
   }
   else {
     $project = l10n_community_get_projects(array('uri' => $uri));
     drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
     $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
+    $breadcrumb[] = l($project->title, 'translate/projects/'. $project->uri);
   }
   // Add missing breadcrumb.
   drupal_set_breadcrumb($breadcrumb);
