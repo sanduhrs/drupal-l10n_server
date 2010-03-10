@@ -45,7 +45,7 @@
       else {
         // Was not yet loaded, we want to load the information fresh from the server.
         // Append /1 to the href, telling the server we want AHAH targeted output.
-        $(this).html(Drupal.t('Hide related projects')).siblings('.l10n-more-info').load(this.href + '/1');
+        $(this).html(Drupal.t('Loading...')).siblings('.l10n-more-info').load(this.href + '/1', function(){$(this).siblings('.l10n-more-link').html(Drupal.t('Hide related projects'));});
       }
       // Prevent the actual link click from happening.
       return false;
