@@ -349,13 +349,9 @@ function l10n_community_schema() {
     ),
     'primary key' => array('tid'),
     'indexes' => array(
-      'is_active' => array('is_active'),
-      'is_suggestion' => array('is_suggestion'),
-      'language' => array('language'),
-      'suggestion_active' => array('is_suggestion', 'is_active'),
       'uid_entered' => array('uid_entered'),
-      'sid_language_suggestion' => array('sid', 'language', 'is_suggestion'),
-      'sid' => array('sid')
+      'is_suggestion_is_active_language' => array('is_suggestion', 'is_active', 'language'),
+      'sid_language_is_suggestion_is_active' => array('sid', 'language', 'is_suggestion', 'is_active')
     ),
   );
 
@@ -725,5 +721,23 @@ function l10n_community_update_6011() {
 function l10n_community_update_6012() {
   $ret = array();
   $ret[] = update_sql('DELETE FROM {l10n_community_status_flag} WHERE has_suggestion = 0 AND has_translation = 0');
+  return $ret;
+}
+
+/**
+ * Consolidate indexes.
+ */
+function l10n_community_update_6013() {
+  $ret = array();
+  // Drop all but the primary index of the table.
+  db_drop_index($ret, 'l10n_community_translation', 'is_active');
+  db_drop_index($ret, 'l10n_community_translation', 'is_suggestion');
+  db_drop_index($ret, 'l10n_community_translation', 'language');
+  db_drop_index($ret, 'l10n_community_translation', 'suggestion_active');
+  db_drop_index($ret, 'l10n_community_translation', 'sid_language_suggestion');
+  db_drop_index($ret, 'l10n_community_translation', 'sid');
+  // Add two specific indexes.
+  db_add_index($ret, 'l10n_community_translation', 'is_suggestion_is_active_language', array('is_suggestion', 'is_active', 'language'));
+  db_add_index($ret, 'l10n_community_translation', 'sid_language_is_suggestion_is_active', array('sid', 'language', 'is_suggestion', 'is_active'));
   return $ret;
 }
