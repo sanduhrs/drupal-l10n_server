@@ -54,7 +54,8 @@ div.admin .l10n-join-group a {
   height: 1em;
   float: left;
   -moz-border-radius: 4px 0 0 4px;
-  -webkit-border-top-left-radius: 4px 0 0 4px;
+  -webkit-border-top-left-radius: 4px;
+  -webkit-border-bottom-left-radius: 4px;
 }
 .l10n-community-progress-untranslated {
   background-color: transparent;
