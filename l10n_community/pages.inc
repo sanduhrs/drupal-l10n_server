@@ -183,6 +183,17 @@ function l10n_community_overview_language($langcode = NULL) {
   }
   $output .= theme('admin_block', $block);
 
+  if (module_exists('l10n_groups')) {
+    $og_block = module_invoke('og', 'block_details');
+    if (!empty($og_block)) {
+      $block = array(
+        'title' => t('Group links'),
+        'description' => t('Create content, manage your membership'),
+        'content' => $og_block['content'],
+      );
+      $output .= theme('admin_block', $block);
+    }
+  }
 
   $output .= '</div></div>';
 
