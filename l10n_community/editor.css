@@ -306,3 +306,7 @@ border-color:rgba(0,0,0,0.2);
   clear: both;
   visibility: hidden;
   }
+  
+html.js .js-hide {
+  display: none;
+}

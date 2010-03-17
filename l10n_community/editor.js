@@ -51,13 +51,10 @@
       return false;
     });
     
-    // Hide items which are default and not among project, release and context filters.
-    $('#l10n-community-filter-form .is-default').not("[name=project]").not('[name=release]').not("[name=context]").parents('.filter-widget').hide();
-    
     // Callback to show all filters.
     var showAllFilters = function() {
       $('#l10n-community-filter-form .reveal-link').hide();
-      $('#l10n-community-filter-form .filter-widget:hidden').fadeIn();
+      $('#l10n-community-filter-form .filter-widget:hidden').removeClass('js-hide').fadeIn();
       return false;
     }
     

@@ -115,7 +115,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $form['status'] = array(
     '#title' => t('Status'),
     '#tree' => TRUE,
-    '#prefix' => '<div class="'. ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default' : 'is-not-default') .'">',
+    '#prefix' => '<div class="'. ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default js-hide' : 'is-not-default') .'">',
     '#suffix' => '</div>',
   );
   $form['status']['translation'] = array(
@@ -136,7 +136,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#autocomplete_path' => 'user/autocomplete',
     '#default_value' => $form_state['values']['author'],
     '#size' => 15,
-    '#attributes' => array('class' => empty($form_state['values']['author']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => empty($form_state['values']['author']) ? 'is-default js-hide' : 'is-not-default'),
   );
 
   $form['search'] = array(
@@ -144,7 +144,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#type' => 'textfield',
     '#default_value' => $form_state['values']['search'],
     '#size' => 20,
-    '#attributes' => array('class' => empty($form_state['values']['search']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => empty($form_state['values']['search']) ? 'is-default js-hide' : 'is-not-default'),
   );
 
   $form['limit'] = array(
@@ -152,7 +152,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#title' => t('Limit'),
     '#options' => drupal_map_assoc(array(5, 10, 20, 30)),
     '#default_value' => $form_state['values']['limit'],
-    '#attributes' => array('class' => $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => $form_state['values']['limit'] == 10 ? 'is-default js-hide' : 'is-not-default'),
   );
 
   $form['submit'] = array(
@@ -180,7 +180,15 @@ function theme_l10n_community_filter_form($form) {
     if (in_array($id, $elements)) {
       $title = $element['#title'];
       unset($element['#title']);
-      $output .= '<div class="filter-widget"><label>'. $title .'</label>'. drupal_render($element) .'</div>';
+
+      // Bubble up js-hide class to the container.
+      $class = '';
+      if (strpos($element['#attributes']['class'], 'js-hide')) {
+        $class = ' js-hide';
+        $element['#attributes']['class'] = str_replace($element['#attributes']['class'], ' js-hide', '');
+      }
+      
+      $output .= '<div class="filter-widget'. $class .'"><label>'. $title .'</label>'. drupal_render($element) .'</div>';
     }
   }
 
