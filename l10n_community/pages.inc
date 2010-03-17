@@ -104,14 +104,14 @@ function l10n_community_overview_language($langcode = NULL) {
   $languages = l10n_community_get_languages('name');
   drupal_set_title(t('@language overview', array('@language' => $languages[$langcode])));
 
-  $content_output = $group_prefix = '';
+  $content_output = $next_action = '';
   if (module_exists('l10n_groups')) {
     // If l10n_groups available, try to load group frontpage.
     $groups = l10n_groups_get_groups();
     if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
       $content_output = node_view($group_node, FALSE, TRUE);
       if (!isset($user->og_groups[$groups[$langcode]])) {
-        $group_prefix = '<div class="l10n-join-group">'. og_subscribe_link($group_node) .'</div>';
+        $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
       }
     }
     else {
@@ -136,12 +136,18 @@ function l10n_community_overview_language($langcode = NULL) {
     $content_output .= '<p>'. t('No posts to display') .'</p>';
   }
 
+  // If we don't know the next action yet, and the user can submit suggestions,
+  // call for submitting those.
+  if (empty($next_action) && user_access('submit suggestions')) {
+    $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $langcode .'/translate') .'</div>';
+  }
+
   $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">'. $content_output .'</div><div class="right clear-block">';
 
   $block = array(
     'title' => t('Contribute'),
     'description' => t('Review, translate, import'),
-    'content' => $group_prefix .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use or  offline work.') .'</p>'
+    'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use or  offline work.') .'</p>'
   );
   $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
 

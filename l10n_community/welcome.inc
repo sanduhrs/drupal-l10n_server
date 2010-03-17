@@ -39,7 +39,9 @@ function l10n_community_welcome_page() {
   $content = '';
   if (!$GLOBALS['user']->uid) {
     // Only display account creation task if not logged in.
-    $content = '<p>'. t('You can review the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>.', array('@register' => url('user/login'))) .'</p>';
+    $content = '<div class="l10n-next-action">'. l(t('Register'), 'user/register') .'</div>';
+    $content .= '<p>'. t('You can review the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>.', array('@register' => url('user/login'))) .'</p>';
+    }
   }
   $content .= drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>';
   $block = array(

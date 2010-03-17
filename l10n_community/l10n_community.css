@@ -23,7 +23,7 @@ div.admin .form-submit {
 div.admin form {
   margin-bottom: 0 !important;
 }
-div.admin .l10n-join-group {
+div.admin .l10n-next-action {
   text-align: center;
   font-weight: bold;
   font-size: 1.3em;
@@ -31,8 +31,9 @@ div.admin .l10n-join-group {
   top: 0.8em;
   right: 0.6em;
 }
-div.admin .l10n-join-group a {
+div.admin .l10n-next-action a {
   padding: 0.3em;
+  font-weight: bold;
 }
 
 /* Overview navigation tables for projects and languages */
