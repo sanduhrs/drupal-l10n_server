@@ -261,7 +261,7 @@ function l10n_community_menu() {
     'page arguments' => array(2),
     'file' => 'import.inc',
     'access callback' => 'user_access',
-    'access arguments' => array('import gettext files'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
   );
@@ -271,7 +271,7 @@ function l10n_community_menu() {
     'page arguments' => array(NULL, 2),
     'file' => 'export.inc',
     'access callback' => 'user_access',
-    'access arguments' => array('export gettext templates and translations'),
+    'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
   );

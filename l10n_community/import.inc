@@ -10,6 +10,11 @@
  * User interface for the translation import screen.
  */
 function l10n_community_import_page($langcode) {
+  if (!user_access('import gettext files')) {
+    // Access check done late to let og_user_roles fill in permissions.
+    return drupal_access_denied();
+  }
+
   $language = l10n_community_get_language($langcode);
   drupal_set_title(t('Import to @language', array('@language' => $language->name)));
   // Add missing breadcrumb.

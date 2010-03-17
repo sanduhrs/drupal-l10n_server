@@ -10,6 +10,11 @@
  * User interface for the translation export screen.
  */
 function l10n_community_export_page($uri = NULL, $langcode = NULL) {
+  if (!user_access('export gettext templates and translations')) {
+    // Access check done late to let og_user_roles fill in permissions.
+    return drupal_access_denied();
+  }
+  
   $breadcrumb = array(
     l(t('Home'), NULL),
     l(t('Translate'), 'translate'),
