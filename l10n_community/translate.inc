@@ -376,7 +376,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 
   // If the user may add new suggestions, display a textarea.
   if (user_access('submit suggestions')) {
-    $textarea = _l10n_community_translate_translation_textarea($source);
+    $textarea = _l10n_community_translate_translation_textarea($source, $language->plurals);
     $form[$textarea->tid] = _l10n_community_translate_translation($form_state, $textarea, $source, $filters, $source_match);
   }
   return $form;
@@ -400,13 +400,15 @@ function _l10n_community_translate_render_textarray($textarray, $empty = '') {
 /**
  * Build mock object for new textarea.
  */
-function _l10n_community_translate_translation_textarea($source) {
+function _l10n_community_translate_translation_textarea($source, $nplurals) {
   global $user;
 
   return (object) array(
     'sid' => $source->sid,
     'tid' => 'new',
-    'translation' => array_fill(0, count($source->value), ''),
+    // Fill in with as many items as required. If the source was plural, we
+    // need to fill in with a number adequate for this language.
+    'translation' => array_fill(0, count($source->value) > 1 ? $nplurals : 1, ''),
     'is_active' => '1',
     'is_suggestion' => '1',
     'uid_entered' => $user->uid,
@@ -480,7 +482,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
     if ($string->tid == 'new') {
       // Fill in with as many textareas as required to enter translation
       // for this string.
-      $form['value'] = array_fill(0, count($source->value), array(
+      $form['value'] = array_fill(0, count($string->translation), array(
         '#type' => 'textarea',
         '#cols' => 60,
         '#rows' => 3,
