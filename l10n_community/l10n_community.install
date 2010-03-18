@@ -705,12 +705,13 @@ function l10n_community_update_6011() {
     ),
   ));
   
+  // Drop all placeholder records, which were only used to hold the has_suggestion flag.
+  $ret[] = update_sql("DELETE FROM {l10n_community_translation} WHERE is_active = 1 AND is_suggestion = 0 AND translation = ''");
+
   // Initialize status flags with values based on the current data.
   $ret[] = update_sql("REPLACE INTO {l10n_community_status_flag} SELECT sid, language, MAX(has_suggestion) AS has_suggestion, MAX(has_translation) AS has_translation FROM (SELECT sid, language, (is_suggestion = 1 and is_active = 1) as has_suggestion, (is_suggestion = 0 and is_active = 1) as has_translation FROM {l10n_community_translation} HAVING has_translation = 1 or has_suggestion = 1) t GROUP BY sid, language;");
   // Drop the has_suggestion field from the translation table.
   db_drop_field($ret, 'l10n_community_translation', 'has_suggestion');
-  // Drop all placeholder records, which were only used to hold the has_suggestion flag.
-  $ret[] = update_sql("DELETE FROM {l10n_community_translation} WHERE is_active = 1 AND is_suggestion = 0 AND translation = ''");
 
   return $ret;
 }
