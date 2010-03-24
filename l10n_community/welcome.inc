@@ -69,7 +69,7 @@ function l10n_community_welcome_page() {
 function l10n_community_pick_go() {
   $form = array();
   $languages = l10n_community_get_languages();
-  $projects = l10n_community_get_projects();
+  $projects = l10n_server_get_projects();
 
   // Drop languages without a plural formula from the options.
   $language_list = array();

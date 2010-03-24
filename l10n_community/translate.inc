@@ -17,7 +17,7 @@
  *   Array of filter options.
  */
 function l10n_community_filter_form(&$form_state, $langcode, $filters) {
-  $projects = l10n_community_get_projects();
+  $projects = l10n_server_get_projects();
 
   $translation_options = array(
     L10N_STATUS_ALL            => '<'. t('Any') .'>',
@@ -47,7 +47,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
       'limit'   => isset($filters['limit'])   ? $filters['limit']          : 10,
     );
   }
-  
+
   $form = array();
   $form['project'] = array(
     '#title' => t('Project'),
@@ -83,7 +83,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $release_options = array('all' => t('All'));
   if (!empty($form_state['values']['project'])) {
     $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
-    $releases = l10n_community_get_releases($selected_project->uri);
+    $releases = l10n_server_get_releases($selected_project->uri);
     foreach ($releases as $rid => $release) {
       $release_options[$rid] = $release->title;
     }
@@ -190,7 +190,7 @@ function theme_l10n_community_filter_form($form) {
       if (!empty($element['#display_none'])) {
         $class = ' js-hide';
       }
-      
+
       $output .= '<div class="filter-widget'. $class .'"><label>'. $title .'</label>'. drupal_render($element) .'</div>';
     }
   }
@@ -606,7 +606,7 @@ function theme_l10n_community_translate_translation($element) {
     $element['#attributes']['class'] = '';
   }
   $element['#attributes']['class'] .= ' clearfix translation';
-  
+
   // Add is-selectable and is-declinable helpers for JS.
   if (!$element['active']['#disabled']) {
     $element['#attributes']['class'] .= ' is-selectable';
@@ -695,11 +695,11 @@ function l10n_community_translate_form_submit($form, &$form_state) {
 
   // Iterate outer structure built in l10n_community_translate_form().
   foreach ($form_state['values']['strings'] as $sid => $string) {
-    
+
     // Iterate inner structure built in _l10n_community_translate_form_item().
     // Form items have numeric $tid values and other keys here.
     foreach ($string as $tid => $options) {
-      
+
       // Store new suggestion.
       $empty_values = 0;
       // $options['value'] is the result of (a series of) textareas.
@@ -840,7 +840,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     elseif ($filters['status'] & L10N_STATUS_IS_TRANSLATION) {
       $where[] = "t.is_suggestion = 0";
     }
-    
+
     if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
       $where[] = "ts.has_suggestion = 1";
     }
@@ -950,7 +950,7 @@ function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
     $output .= '<h3>'. t('Source string') .'</h3>'. theme('item_list', $unpacked);
     $output .= '<h3>'. (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) .'</h3>';
   }
-  
+
   // List of project releases, where this string is used.
   $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_community_line} l INNER JOIN {l10n_community_project} p ON l.pid = p.pid INNER JOIN {l10n_community_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
 

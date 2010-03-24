@@ -1,0 +1,7 @@
+; $Id$
+name = Localization server
+description = Base backend module for localization server
+package = "Localization server"
+dependencies[] = locale
+core = 6.x
+php = 5

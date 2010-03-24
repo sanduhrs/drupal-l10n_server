@@ -704,7 +704,7 @@ function l10n_community_update_6011() {
       'sid_language_has_translation' => array('sid', 'language', 'has_translation'),
     ),
   ));
-  
+
   // Drop all placeholder records, which were only used to hold the has_suggestion flag.
   $ret[] = update_sql("DELETE FROM {l10n_community_translation} WHERE is_active = 1 AND is_suggestion = 0 AND translation = ''");
 
@@ -740,5 +740,20 @@ function l10n_community_update_6013() {
   // Add two specific indexes.
   db_add_index($ret, 'l10n_community_translation', 'is_suggestion_is_active_language', array('is_suggestion', 'is_active', 'language'));
   db_add_index($ret, 'l10n_community_translation', 'sid_language_is_suggestion_is_active', array('sid', 'language', 'is_suggestion', 'is_active'));
+  return $ret;
+}
+
+/**
+ * Permission "administer localization community" renamed.
+ */
+function l10n_community_update_6014() {
+  $ret = array();
+  $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
+  while ($role = db_fetch_object($result)) {
+    $renamed_permission = preg_replace('/administer localization community/', 'administer localization server', $role->perm);
+    if ($renamed_permission != $role->perm) {
+      $ret[] = update_sql("UPDATE {permission} SET perm = '$renamed_permission' WHERE rid = $role->rid");
+    }
+  }
   return $ret;
 }

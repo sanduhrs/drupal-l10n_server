@@ -65,7 +65,7 @@ function l10n_packager_settings_form() {
 
   // Rebuild metafile after submisson.
   $form['#submit'][] = 'l10n_packager_export_metafile';
-  
+
   return $form;
 }
 
@@ -81,7 +81,7 @@ function l10n_packager_admin_check_directory($form_element) {
  * Join two independent forms on one page.
  */
 function l10n_packager_admin_repackage_page() {
-  $projects = l10n_community_get_projects();
+  $projects = l10n_server_get_projects();
 
   $output = drupal_get_form('l10n_packager_admin_projects_form', $projects);
   $output .= drupal_get_form('l10n_packager_admin_languages_form');
@@ -166,7 +166,7 @@ function l10n_packager_admin_projects_form(&$form_state, $projects) {
  */
 function l10n_packager_admin_projects_form_validate($form, &$form_state) {
   if (!empty($form_state['values']['project'])) {
-    if ($project = l10n_community_get_projects(array('uri' => l10n_community_project_uri_by_title($form_state['values']['project'])))) {
+    if ($project = l10n_server_get_projects(array('uri' => l10n_community_project_uri_by_title($form_state['values']['project'])))) {
       $form_state['values']['pid'] = $project->pid;
     }
     else {
@@ -256,7 +256,7 @@ function l10n_packager_admin_installer_form(&$form_state, $project) {
     '#value' => $project
   );
 
-  $releases = l10n_community_get_releases($project->uri);
+  $releases = l10n_server_get_releases($project->uri);
   foreach ($releases as $rid => $this_release) {
     $release_options[$rid] = t('@release only', array('@release' => $this_release->title));
   }
@@ -297,7 +297,7 @@ function l10n_packager_admin_installer_form_submit($form, $form_state) {
     $tar->addString($language->language .'.po', file_get_contents($output[1]));
   }
 
-  $releases = l10n_community_get_releases($form_state['values']['project']->uri);
+  $releases = l10n_server_get_releases($form_state['values']['project']->uri);
   $release = $releases[$form_state['values']['release']];
 
   // Return compressed archive to user.

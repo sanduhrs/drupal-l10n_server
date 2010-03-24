@@ -21,7 +21,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   public function setUp() {
     // Set up required modules for l10n_community.
-    parent::setUp('locale', 'potx', 'l10n_community', 'l10n_localpacks');
+    parent::setUp('locale', 'potx', 'l10n_server', 'l10n_community', 'l10n_localpacks');
 
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
@@ -29,7 +29,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->u_member_1 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
     $this->u_member_2 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
     $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'moderate own suggestions', 'moderate suggestions from others', 'import gettext files', 'submit suggestions'));
-    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization community', 'administer localization community for local packages', 'import gettext files'));
+    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization server', 'administer localization community for local packages', 'import gettext files'));
     $this->u_team = $this->drupalCreateUser();
 
     // Set up temporary directory for our work. Because this is inside the

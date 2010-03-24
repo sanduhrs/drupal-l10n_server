@@ -3,7 +3,7 @@
 
 /**
  * @file
- *   Development helpers for localization community.
+ *   Development helpers for localization server.
  */
 
 // == Language generation ======================================================
@@ -50,12 +50,12 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
       }
     }
 
-    $formulas = l10n_community_plural_formulas();
+    $formulas = l10n_server_plural_formulas();
     $default_formula = $default = 'nplurals=2; plural=(n!=1);';
     foreach ($languages as $langcode => $language) {
       $plural_formula = (isset($formulas['langcode']) ? $formulas['langcode'] : $default_formula);
       // We know we get a valid formula here so no need for error handling.
-      list($plurals, $formula) = l10n_community_parse_plural_formula($plural_formula);
+      list($plurals, $formula) = l10n_server_parse_plural_formula($plural_formula);
       db_query(
         "INSERT INTO {languages}
          (language, name, native, direction, enabled, plurals, formula, domain, prefix, weight, javascript) VALUES

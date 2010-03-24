@@ -57,7 +57,7 @@ function l10n_community_explore_projects() {
   $pager_setting = variable_get('l10n_community_project_per_page', 10);
 
   $output = '';
-  if (!$projects = l10n_community_get_projects(array('pager' => $pager_setting))) {
+  if (!$projects = l10n_server_get_projects(array('pager' => $pager_setting))) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
@@ -239,7 +239,7 @@ function l10n_community_overview_project($uri = NULL) {
 
   $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
 
-  $project = l10n_community_get_projects(array('uri' => $uri));
+  $project = l10n_server_get_projects(array('uri' => $uri));
   $output .= l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'));
 
   $output .= '</div><div class="right clear-block">';
@@ -254,7 +254,7 @@ function l10n_community_overview_project($uri = NULL) {
   $num_source = l10n_community_get_string_count('project', $project->pid);
 
   // Get information on releases, and the number of parsed ones.
-  $releases = l10n_community_get_releases($uri, FALSE);
+  $releases = l10n_server_get_releases($uri, FALSE);
   $num_parsed = 0;
   foreach ($releases as $release) {
     if ($release->last_parsed > 0) {
@@ -343,7 +343,7 @@ function l10n_community_project_warnings($uri = NULL) {
   }
 
   $output = '';
-  $releases = l10n_community_get_releases($uri);
+  $releases = l10n_server_get_releases($uri);
   foreach ($releases as $release) {
     $output .= '<h3>'. $release->title .'</h3>';
     if (!isset($warnings[$release->rid])) {

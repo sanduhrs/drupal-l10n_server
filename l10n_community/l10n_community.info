@@ -1,8 +1,8 @@
 ; $Id$
-name = "Localization community"
-description = A community interface for string translation
-dependencies[] = locale
+name = Localization community UI
+description = Community interface for string translation
 dependencies[] = jquery_update
+dependencies[] = l10n_server
 package = "Localization server"
 core = 6.x
 php = 5

@@ -40,7 +40,7 @@ function l10n_packager_menu() {
     'description' => 'Select project, releases and languages to repackage.',
     'page callback' => 'l10n_packager_admin_repackage_page',
     'file' => 'l10n_packager.admin.inc',
-    'access arguments' => array('administer localization community'),
+    'access arguments' => array('administer localization server'),
   );
   $items['admin/l10n_server/packager/package'] = array(
     'title' => 'Package',
@@ -53,7 +53,7 @@ function l10n_packager_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_packager_settings_form'),
     'file' => 'l10n_packager.admin.inc',
-    'access arguments' => array('administer localization community'),
+    'access arguments' => array('administer localization server'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
@@ -65,7 +65,7 @@ function l10n_packager_menu() {
  */
 function l10n_packager_cron() {
   if (variable_get('l10n_packager_cron', 0)) {
-    l10n_packager_check_updates(); 
+    l10n_packager_check_updates();
   }
 }
 
@@ -73,10 +73,10 @@ function l10n_packager_cron() {
  * Check releases that need repackaging.
  */
 function l10n_packager_check_updates() {
-  
+
   $count_check = $count_files = $time = 0;
   $updates = array();
-  
+
   if ($interval = variable_get('l10n_packager_update', 0)) {
 
     timer_start('l10n_packager');
@@ -97,7 +97,7 @@ function l10n_packager_check_updates() {
 
     watchdog('l10n_packager', 'Checked %checked releases, repackaged %repack translations in @ms microseconds.', array('%checked' => $count_check, '%repack' => $count_files, '@ms' => $time));
   }
-  
+
   return array($count_check, $count_files, $time);
 }
 
@@ -123,13 +123,13 @@ function l10n_packager_form_alter(&$form, $form_state, $form_id) {
  * Export meta information in a simple XML format for remote use.
  */
 function l10n_packager_export_metafile() {
-  
+
   // Start off with a root element of l10nserver.
   $xml = new SimpleXMLElement("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<l10n_server></l10n_server>");
 
   // Add version of this XML format.
   $xml->addChild('version', L10N_PACKAGER_API_VERSION);
-  
+
   // Add server meta information.
   $server_url = url('', array('absolute' => TRUE));
   $xml->addChild('name', variable_get('site_name', 'Drupal'));
@@ -137,13 +137,13 @@ function l10n_packager_export_metafile() {
   if ($url = variable_get('l10n_packager_update_url', 0)) {
     $xml->addChild('update_url', $url .'/'. variable_get('l10n_packager_filepath', L10N_PACKAGER_FILEPATH));
   }
-  
+
   // We also inform the client whether this server accepts remote string
   // submissions so the client can auto-configure itself.
   if (module_exists('l10n_remote')) {
     $xml->addChild('l10n_remote', $server_url);
   }
-  
+
   // Add language list.
   $languages = $xml->addChild('languages');
   foreach (language_list('language', TRUE) as $language) {
@@ -154,12 +154,12 @@ function l10n_packager_export_metafile() {
       $item->addChild($key == 'language' ? 'code' : $key, $language->$key);
     }
   }
-  
+
   // Export to static file.
   $xml_path = l10n_packager_directory();
   file_check_directory($xml_path, FILE_CREATE_DIRECTORY);
   $t_args = array('%file' => $xml_path .'/l10n_server.xml');
-  
+
   if ($xml->asXML($xml_path .'/l10n_server.xml')) {
     drupal_set_message(t('Server information XML exported to %file.', $t_args));
   }

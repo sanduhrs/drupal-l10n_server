@@ -111,72 +111,15 @@ function l10n_community_help($path, $arg) {
 function l10n_community_menu() {
   $items = array();
 
-  // Settings menu items.
-  $items['admin/l10n_server'] = array(
-    'title' => 'Localization server',
-    'description' => 'Configuration options for the localization server.',
-    'page callback' => 'l10n_community_settings_overview',
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'position' => 'right',
-    'weight' => -5,
-  );
-
+  // Settings for the community UI.
   $items['admin/l10n_server/l10n_community'] = array(
     'title' => 'General settings',
-    'description' => 'Set up general settings for the localization server.',
+    'description' => 'Set up general settings for the localization community UI.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_community_settings_form'),
-    'access arguments' => array('administer localization community'),
+    'access arguments' => array('administer localization server'),
     'file' => 'l10n_community.admin.inc',
     'weight' => -10,
-  );
-
-  $items['admin/l10n_server/projects'] = array(
-    'title' => 'Projects and releases',
-    'description' => 'Manage projects and releases handled by the server.',
-    'page callback' => 'l10n_community_admin_projects',
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'weight' => -8,
-  );
-  $items['admin/l10n_server/projects/overview'] = array(
-    'title' => 'Overview',
-    'access arguments' => array('administer localization community'),
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -20,
-  );
-  $items['admin/l10n_server/projects/cleanup'] = array(
-    'title' => 'Clean up',
-    'page callback' => 'l10n_community_admin_projects_cleanup',
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => 10,
-  );
-  $items['admin/l10n_server/projects/delete/%l10n_community_project_admin'] = array(
-    'title' => 'Delete project',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('l10n_community_admin_projects_delete', 4),
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'type' => MENU_CALLBACK
-  );
-  $items['admin/l10n_server/projects/reset/%l10n_community_project_admin'] = array(
-    'title' => 'Enable project',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('l10n_community_admin_projects_reset', 4),
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'type' => MENU_CALLBACK
-  );
-  $items['admin/l10n_server/projects/releases/%l10n_community_project_admin'] = array(
-    'title' => 'Releases',
-    'page callback' => 'l10n_community_admin_releases',
-    'page arguments' => array(4),
-    'file' => 'l10n_community.admin.inc',
-    'access arguments' => array('administer localization community'),
-    'type' => MENU_CALLBACK
   );
 
   // Main menu items.
@@ -216,7 +159,7 @@ function l10n_community_menu() {
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK
   );
-  
+
 
   // AJAX callbacks for easy translation management. These are expected to be
   // used only onsite (not as remote API endpoints), so they have no versioning.
@@ -312,26 +255,6 @@ function l10n_community_menu() {
     'weight' => 10,
   );
 
-  // Development helpers.
-  if (module_exists('devel_generate')) {
-    $items['admin/generate/languages'] = array(
-      'title' => 'Generate languages',
-      'description' => 'Generate a given number of languages.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('l10n_server_generate_languages_form'),
-      'access arguments' => array('administer localization community'),
-      'file' => 'devel.inc',
-    );
-    $items['admin/generate/translations'] = array(
-      'title' => 'Generate translations and suggestions',
-      'description' => 'Generate a given number of translations and suggestions.',
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('l10n_server_generate_translations_form'),
-      'access arguments' => array('administer localization community'),
-      'file' => 'devel.inc',
-    );
-  }
-
   return $items;
 }
 
@@ -349,17 +272,7 @@ function l10n_community_language_load($langcode) {
  * Menu loader function for %l10n_community_project to validate project URI.
  */
 function l10n_community_project_load($uri) {
-  if (($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
-    return $uri;
-  }
-  return FALSE;
-}
-
-/**
- * Menu loader function for %l10n_community_project_admin to validate project URI.
- */
-function l10n_community_project_admin_load($uri) {
-  if (($projects = l10n_community_get_projects(array('all' => TRUE))) && isset($projects[$uri])) {
+  if (($projects = l10n_server_get_projects()) && isset($projects[$uri])) {
     return $uri;
   }
   return FALSE;
@@ -369,7 +282,7 @@ function l10n_community_project_admin_load($uri) {
  * Title callback for project pages.
  */
 function l10n_community_page_title_project($uri) {
-  if (($projects = l10n_community_get_projects()) && isset($projects[$uri])) {
+  if (($projects = l10n_server_get_projects()) && isset($projects[$uri])) {
     return $projects[$uri]->title;
   }
   return t('Translate');
@@ -397,7 +310,6 @@ function l10n_community_perm() {
   return array(
     'access localization community',
     'browse translations',
-    'administer localization community',
     'export gettext templates and translations',
     'import gettext files',
     'submit suggestions',
@@ -636,88 +548,6 @@ function l10n_community_review_access() {
 }
 
 /**
- * Provides a list of projects from the database, ordered by uri.
- *
- * @param $options
- *   Associative array of options
- *    - 'uri': Project URI, if requesting information about one project only.
- *      If not specified, information about all projects is returned.
- *    - 'pager': Number of projects to return a pager query result with. If
- *      NULL, no pager is used.
- *    - 'all': If not specified, unpublished projects are excluded (default).
- *      If TRUE, even unpublished projects are returned (for admin pages).
- * @return
- *   An associative array keyed with project uris.
- */
-function l10n_community_get_projects($options = array()) {
-  static $projects = array();
-
-  // Consider returning all projects or just published ones.
-  $published = (empty($options['all']) ? 'WHERE status = 1 ' : '');
-
-  if (isset($options['pager'])) {
-    // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri', $options['pager'], 0, NULL);
-    $pager_results = array();
-    while ($project = db_fetch_object($results)) {
-      $pager_results[$project->uri] = $project;
-      // Save project information for later, if someone asks for it by uri.
-      $projects[$project->uri] = $project;
-    }
-    return $pager_results;
-  }
-  else {
-    if (isset($options['uri'])) {
-      // A specific project was asked for.
-      if (isset($projects[$options['uri']])) {
-        // Can be served from the local cache.
-        return $projects[$options['uri']];
-      }
-      // Not found in cache, so query and cache before returning.
-      $result = db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $options['uri']);
-      if ($project = db_fetch_object($result)) {
-        $projects[$options['uri']] = $project;
-        return $project;
-      }
-    }
-    else {
-      // A list of *all* projects was asked for.
-      $results = db_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri');
-      while ($project = db_fetch_object($results)) {
-        $projects[$project->uri] = $project;
-      }
-      return $projects;
-    }
-  }
-}
-
-/**
- * Get all releases of a project.
- *
- * @param $uri
- *   Project code to look up releases for.
- * @param $parsed_only
- *   If TRUE, only releases which already have their tarballs downloaded and
- *   parsed for translatables are returned. Otherwise all releases recorded in
- *   the database are returned.
- * @return
- *   Array of release objects for project, keyed by release id.
- */
-function l10n_community_get_releases($uri, $parsed_only = TRUE) {
-  $releases = array();
-  $query = "SELECT r.* FROM {l10n_community_release} r LEFT JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.uri = '%s' ";
-  if ($parsed_only) {
-    $query .= 'AND r.last_parsed > 0 ';
-  }
-  $query .= 'ORDER BY r.title';
-  $result = db_query($query, $uri);
-  while ($release = db_fetch_object($result)) {
-    $releases[$release->rid] = $release;
-  }
-  return $releases;
-}
-
-/**
  * Get all source code warnings for a project grouped by release.
  *
  * @param $uri
@@ -937,13 +767,6 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     'l10n_community_translate_table' => array(
       'arguments' => array('element' => NULL),
     ),
-    // l10n_community.admin.inc
-    'l10n_community_admin_projects_form' => array(
-      'arguments' => array('form' => NULL),
-    ),
-    'l10n_community_admin_releases_form' => array(
-      'arguments' => array('form' => NULL),
-    ),
   );
 }
 
@@ -1086,13 +909,13 @@ function l10n_community_build_filter_values($params) {
     // to shorten the URL and have simple redirects. Title is used if the
     // filter form was submitted, but that one is simplified to the URI on
     // redirect to make the URL shorter.
-    $project = l10n_community_get_projects(array('uri' => $params['project']));
+    $project = l10n_server_get_projects(array('uri' => $params['project']));
     if (empty($project)) {
       $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $params['project']));
     }
     if (!empty($project)) {
       $filter['project'] = $project;
-      if (isset($params['release']) && ($releases = l10n_community_get_releases($project->uri)) && isset($releases[$params['release']])) {
+      if (isset($params['release']) && ($releases = l10n_server_get_releases($project->uri)) && isset($releases[$params['release']])) {
         // Allow to select this release, if belongs to current project only.
         $filter['release'] = $params['release'];
       }
@@ -1165,13 +988,13 @@ function l10n_community_ahah_releases() {
   // Pick and render our changed element for output.
   $changed_element = ($form_id == 'l10n_community_export_form') ? $form['data']['release'] : $form['release'];
   // Prevent duplicate wrappers.
-  unset($changed_element['#prefix'], $changed_element['#suffix']); 
+  unset($changed_element['#prefix'], $changed_element['#suffix']);
 
   if ($form_id == 'l10n_community_filter_form') {
     // Prevent duplicate titles (due to how we render the elements).
     unset($changed_element['#title']);
   }
-  
+
   drupal_json(
     array(
       'status' => TRUE,

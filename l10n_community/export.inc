@@ -29,7 +29,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
     $breadcrumb[] = l($language->name, 'translate/languages/'. $langcode);
   }
   else {
-    $project = l10n_community_get_projects(array('uri' => $uri));
+    $project = l10n_server_get_projects(array('uri' => $uri));
     drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
     $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
     $breadcrumb[] = l($project->title, 'translate/projects/'. $project->uri);
@@ -45,18 +45,18 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
  */
 function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL) {
 
-  // When project was preset from path, disable the selector. 
+  // When project was preset from path, disable the selector.
   $hide_projects = isset($uri);
-  
+
   // Set initial form state, so we can consistently use that.
-  $projects = l10n_community_get_projects();
+  $projects = l10n_server_get_projects();
   if (empty($form_state['values'])) {
     $form_state['values'] = array(
       'project' => isset($projects[$uri]) ? $projects[$uri]->title : (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : ''),
       'release' => isset($_GET['release']) ? $_GET['release'] : 'all',
     );
   }
-  
+
   $form = array();
   $form['data'] = array(
     '#type' => 'fieldset',
@@ -103,7 +103,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   $release_options = array('all' => t('All releases merged'));
   if (!empty($form_state['values']['project'])) {
     $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
-    $releases = l10n_community_get_releases($selected_project->uri);
+    $releases = l10n_server_get_releases($selected_project->uri);
     foreach ($releases as $rid => $this_release) {
       $release_options[$rid] = t('@release only', array('@release' => $this_release->title));
     }
@@ -189,7 +189,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
     return;
   }
   elseif ($form_state['values']['release'] != 'all') {
-    $releases = l10n_community_get_releases($uri);
+    $releases = l10n_server_get_releases($uri);
     if (!isset($releases[$form_state['values']['release']])) {
       form_set_error('release', t('Invalid release chosen.'));
       return;
@@ -408,7 +408,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   // error if this is not installed.
   include_once 'Archive/Tar.php';
 
-  $project = l10n_community_get_projects(array('uri' => $uri));
+  $project = l10n_server_get_projects(array('uri' => $uri));
   if ($template) {
     // We are exporting a template explicitly.
     $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE f.pid = %d';
@@ -429,7 +429,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Release restriction.
     $sql_args[] = $release;
     $sql .= ' AND f.rid = %d';
-    $releases = l10n_community_get_releases($uri);
+    $releases = l10n_server_get_releases($uri);
     $release = $releases[$release];
   }
 
