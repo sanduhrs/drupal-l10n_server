@@ -83,7 +83,7 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
  * User interface to generate translations and languages.
  */
 function l10n_server_generate_translations_form() {
-  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
+  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
   if (empty($count)) {
     drupal_set_message(t('No source strings found, cannot generate translations and suggestions.'));
     return;
@@ -103,17 +103,17 @@ function l10n_server_generate_translations_form() {
  * @todo Add suggestion generation.
  */
 function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
-  db_query('DELETE FROM {l10n_community_translation}');
+  db_query('DELETE FROM {l10n_server_translation}');
   drupal_set_message(t('Previous translations and suggestions deleted.'));
 
-  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
+  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
   $languages = language_list();
   $limit = (int) $count * 0.75;
   foreach ($languages as $language) {
     if ($language->language != 'en') {
       $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
       $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-      db_query("INSERT INTO {l10n_community_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_community_string} LIMIT 0, %d", $language->language, $uid1, $uid2, time(), time(), $limit);
+      db_query("INSERT INTO {l10n_server_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_server_string} LIMIT 0, %d", $language->language, $uid1, $uid2, time(), time(), $limit);
     }
   }
   drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));

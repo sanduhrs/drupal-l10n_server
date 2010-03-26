@@ -48,8 +48,8 @@ function l10n_project_batch_parse_form_submit() {
   $operations = array();
   $result = db_query_range("
     SELECT r.*
-    FROM {l10n_community_project} p INNER JOIN
-         {l10n_community_release} r ON p.pid = r.pid
+    FROM {l10n_server_project} p INNER JOIN
+         {l10n_server_release} r ON p.pid = r.pid
     WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
     0, L10N_PROJECT_BATCH_PARSE_AMOUNT
   );
@@ -133,14 +133,14 @@ function l10n_project_sync() {
 
   // Record all projects in our local database.
   foreach ($projects as $project) {
-    if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $project->uri))) {
+    if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $project->uri))) {
       if ($existing_project->connector_module == 'l10n_project') {
         $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) ||
             ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
           // other data is internal to our database).
-          db_query("UPDATE {l10n_community_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_project'", $project->title, $project->status, time(), $project->uri);
+          db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_project'", $project->title, $project->status, time(), $project->uri);
         }
       }
       else {
@@ -155,7 +155,7 @@ function l10n_project_sync() {
     else {
       // New project, not recorded before.
       db_query(
-        "INSERT INTO {l10n_community_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
+        "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
         $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_project', $project->status
       );
       // Save last insert ID for release update code.
@@ -203,13 +203,13 @@ function l10n_project_sync() {
     }
 
     $download_link = 'http://ftp.drupal.org/' . $release->filepath;
-    if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
+    if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link))) {
       // @todo: what happens to unpublished releases? drop data outright?
     }
     elseif (!empty($release->status)) {
       // New published release, not recorded before.
       db_query(
-        "INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
+        "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
         $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
       );
     }
@@ -327,17 +327,17 @@ function l10n_project_parse_package($package_file, $release) {
         $message = 'Contents of %filename have been scanned.';
 
         // Parsed this releases files.
-        db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+        db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
 
         // Update error list for this release. Although the errors are related to
         // files, we are not interested in the fine details, the file names are in
         // the error messages as text. We assume no other messages are added while
         // importing, so we can safely use drupal_get_message() to grab our errors.
-        db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release->rid);
+        db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid);
         $messages = drupal_get_messages('error');
         if (isset($messages['error']) && is_array($messages['error'])) {
           foreach ($messages['error'] as $error_message) {
-            db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
+            db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
           }
         }
       }
@@ -396,7 +396,7 @@ function l10n_project_exec($cmd) {
   db_query('TRUNCATE l10n_community_line');
   db_query('TRUNCATE l10n_community_string');
   db_query('TRUNCATE l10n_community_translation');
-  db_query("UPDATE {l10n_community_release} SET last_parsed = 0");
+  db_query("UPDATE {l10n_server_release} SET last_parsed = 0");
 
   include_once 'includes/locale.inc';
   list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
@@ -496,13 +496,13 @@ function l10n_project_exec($cmd) {
   foreach ($releases as $uri => $project_releases) {
     foreach ($project_releases as $release) {
       $download_link = 'http://ftp.drupal.org/' . $release->filepath;
-      /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_community_release} WHERE download_link = '%s'", $download_link))) {
+      /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link))) {
         // @todo: what happens to unpublished releases? drop data outright?
       }
       else if (!empty($release->status)) {
         // New published release, not recorded before.
         db_query(
-          "INSERT INTO {l10n_community_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
+          "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
           $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
         );
       }

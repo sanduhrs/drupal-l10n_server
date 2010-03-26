@@ -169,13 +169,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // RELEASES ====
 
     // No JS release should not have JS strings.
-    $rid = db_result(db_query("SELECT rid FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-". $this->version_base . "'", $this->project_names[6]));
+    $rid = db_result(db_query("SELECT rid FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-". $this->version_base . "'", $this->project_names[6]));
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&project='. $this->project_names[6] .'&release='. $rid));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS', FALSE);
     $this->assertCount('<td class="source"', 18);
 
     // JS release should have JS strings.
-    $rid = db_result(db_query("SELECT rid FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-". $this->version_js . "'", $this->project_names[6]));
+    $rid = db_result(db_query("SELECT rid FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-". $this->version_js . "'", $this->project_names[6]));
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=30&project='. $this->project_names[6] .'&release='. $rid));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertCount('<td class="source"', 22);
@@ -220,7 +220,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // LOOKUP ====
 
-    $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
+    $sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", 'This is a test string.'));
     $this->drupalGet('translate/details/hu/'. $sid);
     $this->assertPattern('!<em>'. preg_quote($this->project_names[5]) .':</em> '. preg_quote('5.x-'. $this->version_js) .' <span title="[^>]+">\(1\)</span>!');
     $this->assertPattern('!<em>'. preg_quote($this->project_names[6]) .':</em> '. preg_quote('6.x-'. $this->version_js) .' <span title="[^>]+">\(1\)</span>, '. preg_quote('6.x-'. $this->version_base) .' <span title="[^>]+">\(1\)</span>!');
@@ -258,13 +258,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Add suggestions for four strings.
     $edit = array();
-    $sid1 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", 'This is a test string.'));
+    $sid1 = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", 'This is a test string.'));
     $edit['strings['. $sid1 .'][new][value][0]'] = 'This is a test string. suggestion';
-    $sid2 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s' AND context = ''", 'Test string in context'));
+    $sid2 = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s' AND context = ''", 'Test string in context'));
     $edit['strings['. $sid2 .'][new][value][0]'] = 'Test string in context. suggestion-1';
-    $sid3 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s' AND context = '%s'", 'Test string in context', 'Test context'));
+    $sid3 = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s' AND context = '%s'", 'Test string in context', 'Test context'));
     $edit['strings['. $sid3 .'][new][value][0]'] = 'Test string in context. suggestion-2';
-    $sid4 = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE value = '%s'", "1 test string\0@count test strings"));
+    $sid4 = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE value = '%s'", "1 test string\0@count test strings"));
     $edit['strings['. $sid4 .'][new][value][0]'] = '1 test string suggestion';
     $edit['strings['. $sid4 .'][new][value][1]'] = '@count test strings suggestion';
     $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=30'));
@@ -317,9 +317,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL DECLINE ====
 
-    $tid1 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-1', 'hu'));
-    $tid2 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
-    $tid3 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
+    $tid1 = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-1', 'hu'));
+    $tid2 = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-2', 'hu'));
+    $tid3 = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = '%s' AND language = '%s'", 'Test string in context. suggestion-3', 'hu'));
     $edit = array();
     $edit['strings['. $sid2 .']['. $tid1 .'][declined]'] = 1;
     $edit['strings['. $sid3 .']['. $tid2 .'][declined]'] = 1;
@@ -333,8 +333,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL APPROVE ====
 
-    $tid1 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", 'This is a test string. suggestion', 'hu'));
-    $tid2 = db_result(db_query("SELECT tid FROM {l10n_community_translation} WHERE translation = '%s' AND language = '%s'", "1 test string suggestion\0@count test strings suggestion", 'hu'));
+    $tid1 = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = '%s' AND language = '%s'", 'This is a test string. suggestion', 'hu'));
+    $tid2 = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = '%s' AND language = '%s'", "1 test string suggestion\0@count test strings suggestion", 'hu'));
     $edit = array();
     $edit['strings['. $sid1 .'][active]'] = $tid1;
     $edit['strings['. $sid4 .'][active]'] = $tid2;
@@ -421,9 +421,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // IMPORT AS TEAM
 
     // Modify existing suggestions, so we can test importing again.
-    db_query("UPDATE {l10n_community_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1");
-    db_query("UPDATE {l10n_community_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1");
-    db_query("UPDATE {l10n_community_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1");
 
     // Importing the same file, but attribute to team (this can be done logged
     // in as anyone who can import, we don't need to log in as u_team).
@@ -452,9 +452,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // we only care about that on import and data submission. It is not a
     // problem for the data model, but an issue for workflow, so for testing,
     // it is fine as we have it here.
-    db_query("UPDATE {l10n_community_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1");
-    db_query("UPDATE {l10n_community_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1");
-    db_query("UPDATE {l10n_community_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1");
+    db_query("UPDATE {l10n_server_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1");
 
     // Importing the same file, but ask to import as final translation.
     $this->importPO($filename, $this->u_moderator->uid, 0);
@@ -473,7 +473,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // IMPORT AS TRANSLATION
 
     // Drop all existing translations, so we can see importing a translation.
-    db_query("DELETE FROM {l10n_community_translation}");
+    db_query("DELETE FROM {l10n_server_translation}");
 
     $this->importPO($filename, $this->u_moderator->uid, 0);
     $this->assertRaw(t('@count translations added', array('@count' => 3)));

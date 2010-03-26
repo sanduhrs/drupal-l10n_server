@@ -73,17 +73,17 @@ function l10n_community_parse_package($package_file, $release) {
       $message = t('Contents of %filename have been scanned.', array('%filename' => $package_file));
 
       // Parsed this releases files.
-      db_query("UPDATE {l10n_community_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+      db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
 
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
       // the error messages as text. We assume no other messages are added while
       // importing, so we can safely use drupal_get_message() to grab our errors.
-      db_query("DELETE FROM {l10n_community_error} WHERE rid = %d", $release->rid);
+      db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid);
       $messages = drupal_get_messages('error');
       if (isset($messages['error']) && is_array($messages['error'])) {
         foreach ($messages['error'] as $error_message) {
-          db_query("INSERT INTO {l10n_community_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
+          db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
         }
       }
     }
@@ -138,17 +138,17 @@ function l10n_community_save_file($revision = NULL, $file = NULL) {
     return array($pid, $rid, $files[$file]);
   }
   else {
-    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_community_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
+    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_server_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
       if ($existing_file->revision != $revision) {
         // Changed revision on a file.
-        db_query("UPDATE {l10n_community_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+        db_query("UPDATE {l10n_server_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
       }
       $fid = $existing_file->fid;
     }
     else {
       // New file in this release.
-      db_query("INSERT INTO {l10n_community_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision);
-      $fid = db_result(db_query("SELECT fid FROM {l10n_community_file} WHERE rid = %d and location = '%s'", $rid, $file));
+      db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision);
+      $fid = db_result(db_query("SELECT fid FROM {l10n_server_file} WHERE rid = %d and location = '%s'", $rid, $file));
     }
     $files[$file] = $fid;
   }
@@ -204,14 +204,14 @@ function l10n_community_save_string($value = NULL, $context = NULL, $file = NULL
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value . $context))) {
+    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $value . $context))) {
       // String does not exist.
-      db_query("INSERT INTO {l10n_community_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
-      $sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $value . $context));
+      db_query("INSERT INTO {l10n_server_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
+      $sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $value . $context));
     }
-    if (!db_result(db_query("SELECT fid FROM {l10n_community_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
+    if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
       // Location does not exist with this string.
-      db_query("INSERT INTO {l10n_community_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type);
+      db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type);
     }
   }
 }

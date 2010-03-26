@@ -366,7 +366,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 
   // When there are suggestions, load them from the database.
   if ($source->has_suggestion) {
-    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.is_active, t.is_suggestion, u.name as username FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $language->language, $source->sid);
+    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $language->language, $source->sid);
     while ($suggestion = db_fetch_object($result)) {
       $suggestion->translation = l10n_community_unpack_string($suggestion->translation);
       // Add the suggestion to the list.
@@ -784,11 +784,11 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
 
-  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved, ts.has_suggestion, ts.has_translation FROM {l10n_community_string} s";
-  $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_community_string} s";
-  $join[] = "LEFT JOIN {l10n_community_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
+  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
+  $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_string} s";
+  $join[] = "LEFT JOIN {l10n_server_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
   $join_args[] = $langcode;
-  $join[] = "LEFT JOIN {l10n_community_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
+  $join[] = "LEFT JOIN {l10n_server_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
   $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
   $join[] = "LEFT JOIN {users} u2 ON u2.uid = t.uid_approved";
 
@@ -802,7 +802,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $release = empty($filters['release']) || $filters['release'] === 'all' ? NULL : $filters['release'];
   $project = $filters['project'];
   if ($release || $project) {
-    $join[] = "INNER JOIN {l10n_community_line} l ON s.sid = l.sid";
+    $join[] = "INNER JOIN {l10n_server_line} l ON s.sid = l.sid";
     // If we have a release we ignore the project
     if ($release) {
       // Release restriction.
@@ -869,7 +869,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   while ($string = db_fetch_object($strings)) {
     if ($string->is_suggestion) {
       // This string is not a translation, but we need that as a "parent" to display.
-      if ($string->has_translation && ($translation = db_fetch_array(db_query("SELECT t.tid, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved FROM {l10n_community_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered LEFT JOIN {users} u2 ON u2.uid = t.uid_approved WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 0", $string->language, $string->sid)))) {
+      if ($string->has_translation && ($translation = db_fetch_array(db_query("SELECT t.tid, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered LEFT JOIN {users} u2 ON u2.uid = t.uid_approved WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 0", $string->language, $string->sid)))) {
         // It does have a translation however, so let's load it, and override.
         foreach ($translation as $key => $value) {
           $string->$key = $value;
@@ -945,14 +945,14 @@ function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
   }
   else {
     // Get data about this source string.
-    $string = db_fetch_object(db_query('SELECT value, context FROM {l10n_community_string} WHERE sid = %d', $sid));
+    $string = db_fetch_object(db_query('SELECT value, context FROM {l10n_server_string} WHERE sid = %d', $sid));
     $unpacked = l10n_community_unpack_string($string->value);
     $output .= '<h3>'. t('Source string') .'</h3>'. theme('item_list', $unpacked);
     $output .= '<h3>'. (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) .'</h3>';
   }
 
   // List of project releases, where this string is used.
-  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_community_line} l INNER JOIN {l10n_community_project} p ON l.pid = p.pid INNER JOIN {l10n_community_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
+  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_server_line} l INNER JOIN {l10n_server_project} p ON l.pid = p.pid INNER JOIN {l10n_server_release} r ON l.rid = r.rid WHERE l.sid = %d AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', $sid);
 
   $version_list = array();
   $project_list = array();

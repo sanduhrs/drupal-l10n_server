@@ -149,7 +149,7 @@ function l10n_server_get_projects($options = array()) {
 
   if (isset($options['pager'])) {
     // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri', $options['pager'], 0, NULL);
+    $results = pager_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY uri', $options['pager'], 0, NULL);
     $pager_results = array();
     while ($project = db_fetch_object($results)) {
       $pager_results[$project->uri] = $project;
@@ -166,7 +166,7 @@ function l10n_server_get_projects($options = array()) {
         return $projects[$options['uri']];
       }
       // Not found in cache, so query and cache before returning.
-      $result = db_query("SELECT * FROM {l10n_community_project} WHERE uri = '%s'", $options['uri']);
+      $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $options['uri']);
       if ($project = db_fetch_object($result)) {
         $projects[$options['uri']] = $project;
         return $project;
@@ -174,7 +174,7 @@ function l10n_server_get_projects($options = array()) {
     }
     else {
       // A list of *all* projects was asked for.
-      $results = db_query('SELECT * FROM {l10n_community_project} '. $published .'ORDER BY uri');
+      $results = db_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY uri');
       while ($project = db_fetch_object($results)) {
         $projects[$project->uri] = $project;
       }
@@ -197,7 +197,7 @@ function l10n_server_get_projects($options = array()) {
  */
 function l10n_server_get_releases($uri, $parsed_only = TRUE) {
   $releases = array();
-  $query = "SELECT r.* FROM {l10n_community_release} r LEFT JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.uri = '%s' ";
+  $query = "SELECT r.* FROM {l10n_server_release} r LEFT JOIN {l10n_server_project} p ON r.pid = p.pid WHERE p.uri = '%s' ";
   if ($parsed_only) {
     $query .= 'AND r.last_parsed > 0 ';
   }

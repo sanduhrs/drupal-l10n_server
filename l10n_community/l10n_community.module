@@ -476,7 +476,7 @@ function l10n_community_block_stats() {
 function l10n_community_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'view' && user_access('access localization community')) {
     $languages = l10n_community_get_languages('name');
-    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_community_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
+    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
     $items = array();
     while ($row = db_fetch_object($result)) {
       $items[] = array('#type' => 'user_profile_item', '#title' => l(t($languages[$row->language]), 'translate/languages/'. $row->language), '#value' => format_plural($row->sum, '1 approved translation', '@count approved translations'));
@@ -558,7 +558,7 @@ function l10n_community_review_access() {
 function l10n_community_get_warnings($uri) {
   $warnings = array();
   // Inner JOIN used, so if no warnings are found, no rows are returned.
-  $result = db_query("SELECT e.rid, e.value FROM {l10n_community_project} p LEFT JOIN {l10n_community_release} r ON p.pid = r.pid INNER JOIN {l10n_community_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri);
+  $result = db_query("SELECT e.rid, e.value FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid INNER JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri);
   while ($warning = db_fetch_object($result)) {
     $warnings[$warning->rid][] = $warning->value;
   }
@@ -573,7 +573,7 @@ function l10n_community_get_warnings($uri) {
  */
 function l10n_community_get_contexts() {
   $contexts = array();
-  $query = "SELECT DISTINCT context FROM {l10n_community_string} ORDER BY context";
+  $query = "SELECT DISTINCT context FROM {l10n_server_string} ORDER BY context";
   $result = db_query($query);
   while ($context = db_fetch_object($result)) {
     $contexts[empty($context->context) ? 'none' : $context->context] = empty($context->context) ? t('No context') : $context->context;
@@ -709,7 +709,7 @@ function l10n_community_is_supported_version($path) {
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
-    $result = db_query_range("SELECT title FROM {l10n_community_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1 ORDER BY title", $string, 0, 100);
+    $result = db_query_range("SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = 1 ORDER BY title", $string, 0, 100);
     while ($project = db_fetch_object($result)) {
       $matches[$project->title] = check_plain($project->title);
     }
@@ -722,7 +722,7 @@ function l10n_community_projects_autocomplete($string = '') {
  * Companion to autocomplete lookup to return uri by title.
  */
 function l10n_community_project_uri_by_title($title) {
-  return db_result(db_query("SELECT uri FROM {l10n_community_project} WHERE title = '%s'", $title));
+  return db_result(db_query("SELECT uri FROM {l10n_server_project} WHERE title = '%s'", $title));
 }
 
 // = Theme functions ===========================================================
@@ -784,10 +784,10 @@ function l10n_community_get_stats($langcode = NULL) {
     }
     else {
       $stats = array();
-      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_status_flag} WHERE has_translation = 1 AND language = '%s'", $langcode));
-      $stats['suggestions'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
-      $stats['users'] = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
+      $stats['translations'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = 1 AND language = '%s'", $langcode));
+      $stats['suggestions'] = db_result(db_query("SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = '%s'", $langcode));
+      $stats['users'] = db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_server_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = '%s'", $langcode));
 
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
@@ -802,14 +802,14 @@ function l10n_community_get_stats($langcode = NULL) {
     }
     else {
       $stats = array();
-      $stats['users'] = (int) db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_community_translation}"));
-      $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_project} WHERE status = 1'));
-      $stats['releases_parsed'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_release} WHERE last_parsed != 0'));
-      $stats['releases_queue'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_release} r INNER JOIN {l10n_community_project} p ON r.pid = p.pid WHERE p.status = 1 AND r.last_parsed = 0'));
-      $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_file}'));
-      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_string}'));
-      $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_status_flag} WHERE has_translation = 1'));
-      $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_community_translation} WHERE is_suggestion = 1 AND is_active = 1'));
+      $stats['users'] = (int) db_result(db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_server_translation}"));
+      $stats['projects'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_project} WHERE status = 1'));
+      $stats['releases_parsed'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_release} WHERE last_parsed != 0'));
+      $stats['releases_queue'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_release} r INNER JOIN {l10n_server_project} p ON r.pid = p.pid WHERE p.status = 1 AND r.last_parsed = 0'));
+      $stats['files'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_file}'));
+      $stats['strings'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
+      $stats['translations'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = 1'));
+      $stats['suggestions'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = 1 AND is_active = 1'));
 
       if (module_exists('l10n_groups')) {
         $stats['groups'] = db_result(db_query('SELECT COUNT(*) FROM {l10n_groups_group}'));
@@ -863,7 +863,7 @@ function l10n_communiy_rebuild_stats() {
  */
 function l10n_community_get_highlighted_project() {
   if ($highlight_project = variable_get('l10n_community_highlighted_project', '')) {
-    if ($project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $highlight_project))) {
+    if ($project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE title = '%s'", $highlight_project))) {
       return $project;
     }
   }
@@ -911,7 +911,7 @@ function l10n_community_build_filter_values($params) {
     // redirect to make the URL shorter.
     $project = l10n_server_get_projects(array('uri' => $params['project']));
     if (empty($project)) {
-      $project = db_fetch_object(db_query("SELECT * FROM {l10n_community_project} WHERE title = '%s'", $params['project']));
+      $project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE title = '%s'", $params['project']));
     }
     if (!empty($project)) {
       $filter['project'] = $project;
@@ -1020,7 +1020,7 @@ function l10n_community_ahah_releases() {
 function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
 
   // Load source string and adjust translation whitespace based on source.
-  $source_string = db_result(db_query('SELECT value FROM {l10n_community_string} WHERE sid = %d', $sid));
+  $source_string = db_result(db_query('SELECT value FROM {l10n_server_string} WHERE sid = %d', $sid));
   $translation = l10n_community_trim($translation, $source_string);
 
   // Don't store empty translations.
@@ -1030,11 +1030,11 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
 
   // Look for an existing active translation, if any.
   // Use BINARY matching to avoid marking case-corrections as duplicate.
-  $existing = db_fetch_object(db_query("SELECT tid, is_active, is_suggestion FROM {l10n_community_translation} WHERE sid = %d AND language = '%s' AND translation = BINARY '%s'", $sid, $langcode, $translation));
+  $existing = db_fetch_object(db_query("SELECT tid, is_active, is_suggestion FROM {l10n_server_translation} WHERE sid = %d AND language = '%s' AND translation = BINARY '%s'", $sid, $langcode, $translation));
   if (!empty($existing)) {
     if ($existing->is_active == 0) {
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
-      db_query("UPDATE {l10n_community_translation} SET is_suggestion = 1, is_active = 1, uid_approved = 0, time_approved = 0 WHERE tid = %d", $existing->tid);
+      db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, is_active = 1, uid_approved = 0, time_approved = 0 WHERE tid = %d", $existing->tid);
       $tid = $existing->tid;
     }
     else {
@@ -1043,7 +1043,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
   }
   else {
     // Insert the new suggestion.
-    db_query("INSERT INTO {l10n_community_translation} (sid, translation, language, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $translation, $langcode, $uid, time());
+    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $translation, $langcode, $uid, time());
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
   }
 
@@ -1064,7 +1064,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
  *   The translation ID of the translation.
  */
 function l10n_community_decline_string($langcode, $sid, $tid) {
-  db_query("UPDATE {l10n_community_translation} SET is_active = 0 WHERE tid = %d", $tid);
+  db_query("UPDATE {l10n_server_translation} SET is_active = 0 WHERE tid = %d", $tid);
   l10n_community_update_string_status($langcode, $sid);
 }
 
@@ -1078,16 +1078,16 @@ function l10n_community_decline_string($langcode, $sid, $tid) {
  */
 function l10n_community_update_string_status($langcode, $sid) {
   // Let's see if we have any suggestions remaining in this language.
-  $has_suggestion = db_result(db_query("SELECT 1 FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
-  $has_translation = db_result(db_query("SELECT 1 FROM {l10n_community_translation} WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $sid, $langcode));
+  $has_suggestion = db_result(db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = %d AND is_suggestion = 1 AND is_active = 1 AND language = '%s'", $sid, $langcode));
+  $has_translation = db_result(db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = %d AND is_suggestion = 0 AND is_active = 1 AND language = '%s'", $sid, $langcode));
 
   if ($has_suggestion || $has_translation) {
     // Update the status according to the number of suggestions.
-    db_query("REPLACE INTO {l10n_community_status_flag} (has_suggestion, has_translation, sid, language) VALUES (%d, %d, %d, '%s')", (int) $has_suggestion, (int) $has_translation, $sid, $langcode);
+    db_query("REPLACE INTO {l10n_server_status_flag} (has_suggestion, has_translation, sid, language) VALUES (%d, %d, %d, '%s')", (int) $has_suggestion, (int) $has_translation, $sid, $langcode);
   }
   else {
     // Drop database entry, not required anymore.
-    db_query("DELETE FROM {l10n_community_status_flag} WHERE sid = %d AND language = '%s'", $sid, $langcode);
+    db_query("DELETE FROM {l10n_server_status_flag} WHERE sid = %d AND language = '%s'", $sid, $langcode);
   }
 }
 
@@ -1105,9 +1105,9 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
   global $user;
 
   // Make the existing approved string a suggestion (if applicable).
-  db_query("UPDATE {l10n_community_translation} SET is_suggestion = 1 WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode);
+  db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1 WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode);
 
   // Mark this exact suggestion as active translation, and set approval time.
-  db_query("UPDATE {l10n_community_translation} SET time_approved = %d, uid_approved = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $tid);
+  db_query("UPDATE {l10n_server_translation} SET time_approved = %d, uid_approved = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $tid);
   l10n_community_update_string_status($langcode, $sid);
 }

@@ -59,8 +59,8 @@ function l10n_project_cron() {
     // Pick the oldest releases we did not parse yet.
     $result = db_query_range("
       SELECT r.*
-      FROM {l10n_community_project} p INNER JOIN
-           {l10n_community_release} r ON p.pid = r.pid
+      FROM {l10n_server_project} p INNER JOIN
+           {l10n_server_release} r ON p.pid = r.pid
       WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
       0, variable_get('l10n_project_limit', 1)
     );

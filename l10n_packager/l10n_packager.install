@@ -14,7 +14,7 @@ function l10n_packager_schema() {
     'description' => 'Information about packaging for each release.',
     'fields' => array(
       'rid' => array(
-        'description' => 'Reference to {l10n_community_release}.rid',
+        'description' => 'Reference to {l10n_server_release}.rid',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,
@@ -50,7 +50,7 @@ function l10n_packager_schema() {
         'not null' => TRUE,
       ),
       'rid' => array(
-        'description' => 'Reference to {l10n_community_release}.rid',
+        'description' => 'Reference to {l10n_server_release}.rid',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,

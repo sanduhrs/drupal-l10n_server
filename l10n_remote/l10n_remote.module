@@ -159,7 +159,7 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
   // Check whether we have this source string managed.
   // @todo: add context support as soon as l10n_client starts to support it!
   // @todo: append $context to $source in MD5 counting when available.
-  if (!($sid = db_result(db_query("SELECT sid FROM {l10n_community_string} WHERE hashkey = MD5('%s')", $source)))) {
+  if (!($sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $source)))) {
     //watchdog('l10n_community', 'Source string does not exist on server.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Source string not found on server, translation not saved.');
   }

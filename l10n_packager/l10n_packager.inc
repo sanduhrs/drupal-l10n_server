@@ -229,7 +229,7 @@ function l10n_packager_get_release($rid) {
     return $rid;
   }
   else {
-    return db_fetch_object(db_query("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_community_project} p INNER JOIN {l10n_community_release} r ON p.pid = r.pid LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid WHERE r.rid = %d", $rid));
+    return db_fetch_object(db_query("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid WHERE r.rid = %d", $rid));
   }
 }
 
@@ -250,7 +250,7 @@ function l10n_packager_release_name($rid) {
  */
 function l10n_packager_translation_last_updated($rid) {
   $updated = array();
-  $result = db_query("SELECT t.language, MAX(t.time_approved) AS latest_time FROM {l10n_community_translation} t INNER JOIN {l10n_community_line} l ON t.sid = l.sid INNER JOIN {l10n_community_file} f ON f.fid = l.fid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND f.rid = %d GROUP BY t.language", $rid);
+  $result = db_query("SELECT t.language, MAX(t.time_approved) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid INNER JOIN {l10n_server_file} f ON f.fid = l.fid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND f.rid = %d GROUP BY t.language", $rid);
   while ($latest = db_fetch_object($result)) {
     $updated[$latest->language] = $latest->latest_time;
   }

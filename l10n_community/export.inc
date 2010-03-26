@@ -411,7 +411,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $project = l10n_server_get_projects(array('uri' => $uri));
   if ($template) {
     // We are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid WHERE f.pid = %d';
+    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE f.pid = %d';
     $sql_args = array($project->pid);
   }
   else {
@@ -421,7 +421,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
     $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_community_file} f INNER JOIN {l10n_community_line} l ON f.fid = l.fid INNER JOIN {l10n_community_string} s ON l.sid = s.sid  $translation_join {l10n_community_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 $translation_filter WHERE f.pid = %d $type_limit";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid  $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 $translation_filter WHERE f.pid = %d $type_limit";
     $sql_args = array($language->language, $project->pid);
   }
 

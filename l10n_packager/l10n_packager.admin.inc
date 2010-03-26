@@ -174,7 +174,7 @@ function l10n_packager_admin_projects_form_validate($form, &$form_state) {
     }
   }
   if (!empty($form_state['values']['release'])) {
-    $query = "SELECT COUNT(rid) FROM {l10n_community_release} WHERE title LIKE '%s'";
+    $query = "SELECT COUNT(rid) FROM {l10n_server_release} WHERE title LIKE '%s'";
     $args = array($form_state['values']['release']);
     if ($project) {
       $query .= " AND pid = %d";
@@ -211,7 +211,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
     $args[] = $release;
   }
   // Build the query that will be used in different ways depending on the operation
-  $query = 'SELECT rid FROM {l10n_community_release} WHERE '. implode(' AND ', $where);
+  $query = 'SELECT rid FROM {l10n_server_release} WHERE '. implode(' AND ', $where);
 
   // Now check results and run operations
   if ($op == t('Repackage now')) {
