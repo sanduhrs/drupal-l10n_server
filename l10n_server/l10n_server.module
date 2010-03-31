@@ -15,6 +15,9 @@ function l10n_server_help($path, $args) {
   if ($path == 'admin/l10n_server/connectors') {
     return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/build/modules')));
   }
+  elseif (in_array($path, array('admin/settings/language', 'admin/settings/language/edit/%')) && !module_exists('l10n_pconfig')) {
+    return t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
+  }
 }
 
 /**

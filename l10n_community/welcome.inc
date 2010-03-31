@@ -80,7 +80,11 @@ function l10n_community_pick_go() {
   }
 
   if (!count($language_list) || !count($projects)) {
-    $form['dummy'] = array('#type' => 'markup', '#value' => t('No languages with plural formulas defined or no projects scanned yet.'));
+    $pconfig_tip = '';
+    if (!module_exists('l10n_pconfig')) {
+      $pconfig_tip = ' '. t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
+    }
+    $form['dummy'] = array('#type' => 'markup', '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/settings/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip);
     return $form;
   }
 
