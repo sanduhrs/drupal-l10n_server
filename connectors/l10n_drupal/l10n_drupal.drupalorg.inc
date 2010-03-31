@@ -3,46 +3,53 @@
 
 /**
  * @file
- *   Project data updates for l10n_project.
+ *  Drupal.org project database integration for l10n_drupal.
  */
 
 /**
  * Amount of releases parsed in a batch.
  */
-define('L10N_PROJECT_BATCH_PARSE_AMOUNT', 50);
+define('L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT', 50);
 
 /**
  * The term ID for translations on Drupal.org.
  */
-define('L10N_PROJECT_TRANSLATION_TID', 29);
+define('L10N_DRUPAL_DRUPALORG_TRANSLATION_TID', 29);
 
 // == Front end functionality ==================================================
 
 /**
+ * Page callback for manual scanning.
+ */
+function l10n_drupal_drupalorg_scan_page() {
+  return drupal_get_form('l10n_drupal_drupalorg_batch_parse_form');
+}
+
+/**
  * Form to initiate batch parsing of projects to speed up catching-up.
  *
- * @see l10n_project_batch_parse_form_submit()
+ * @see l10n_drupal_drupalorg_batch_parse_form_submit()
  * @ingroup forms
  */
-function l10n_project_batch_parse_form() {
+function l10n_drupal_drupalorg_batch_parse_form() {
   return array(
     'submit' => array(
       '#type' => 'submit',
-      '#value' => t('Parse @count releases in a batch process', array('@count' => L10N_PROJECT_BATCH_PARSE_AMOUNT)),
+      '#value' => t('Parse @count releases in a batch process', array('@count' => L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT)),
     ),
   );
 }
 
 /**
- * Form submit handler to l10n_project_batch_parse_form().
+ * Form submit handler to l10n_drupal_drupalorg_batch_parse_form().
  *
- * @see l10n_project_batch_parse_form()
+ * @see l10n_drupal_drupalorg_batch_parse_form()
  */
-function l10n_project_batch_parse_form_submit() {
+function l10n_drupal_drupalorg_batch_parse_form_submit() {
   // First sync the project and release list. We need to do this before
   // initializing the batch, so we can have a fresh project list, and a better
   // chance to pick new releases.
-  l10n_project_sync();
+  l10n_drupal_drupalorg_scan();
 
   // Then pick the oldest releases we did not parse yet.
   $operations = array();
@@ -50,11 +57,11 @@ function l10n_project_batch_parse_form_submit() {
     SELECT r.*
     FROM {l10n_server_project} p INNER JOIN
          {l10n_server_release} r ON p.pid = r.pid
-    WHERE p.connector_module = 'l10n_project' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
-    0, L10N_PROJECT_BATCH_PARSE_AMOUNT
+    WHERE p.connector_module = 'l10n_drupal_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
+    0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT
   );
   while ($release = db_fetch_object($result)) {
-    $operations[] = array('l10n_project_batch_operation', array($release));
+    $operations[] = array('l10n_drupal_drupalorg_batch_operation', array($release));
   }
 
   $batch = array(
@@ -63,7 +70,7 @@ function l10n_project_batch_parse_form_submit() {
     'init_message' => t('First release is being selected'),
     'progress_message' => t('Parsed @current out of @total.'),
     'error_message' => t('Parsing process has encountered an error.'),
-    'file' => drupal_get_path('module', 'l10n_project') .'/l10n_project.sync.inc',
+    'file' => drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.drupalorg.inc',
   );
   batch_set($batch);
 }
@@ -71,9 +78,9 @@ function l10n_project_batch_parse_form_submit() {
 /**
  * Batch operations function for processing a project release.
  */
-function l10n_project_batch_operation($release, &$context) {
+function l10n_drupal_drupalorg_batch_operation($release, &$context) {
   // Parse the release we were given.
-  l10n_project_pick_and_parse($release);
+  l10n_drupal_drupalorg_parse_release($release);
 }
 
 // == Backend functionality ====================================================
@@ -81,7 +88,7 @@ function l10n_project_batch_operation($release, &$context) {
 /**
  * Syncronize the project list from the drupal.org database.
  */
-function l10n_project_sync() {
+function l10n_drupal_drupalorg_scan() {
 
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
@@ -90,13 +97,13 @@ function l10n_project_sync() {
   // Got the limited list of translation projects first to exclude from the
   // upcoming query. We cannot join on the term_node table there, since we
   // can have nodes with multiple terms, so just adding
-  // tid != L10N_PROJECT_TRANSLATION_TID would not help, the project would
-  // still match on other terms.
+  // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project 
+  // would still match on other terms.
   $result = db_query(
     "SELECT DISTINCT pp.nid
      FROM project_projects pp INNER JOIN
           term_node tn ON tn.nid = pp.nid
-     WHERE tn.tid = %d", L10N_PROJECT_TRANSLATION_TID
+     WHERE tn.tid = %d", L10N_DRUPAL_DRUPALORG_TRANSLATION_TID
   );
   $exclude_projects = array();
   while ($project = db_fetch_object($result)) {
@@ -134,19 +141,19 @@ function l10n_project_sync() {
   // Record all projects in our local database.
   foreach ($projects as $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $project->uri))) {
-      if ($existing_project->connector_module == 'l10n_project') {
+      if ($existing_project->connector_module == 'l10n_drupal_drupalorg') {
         $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) ||
             ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
           // other data is internal to our database).
-          db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_project'", $project->title, $project->status, time(), $project->uri);
+          db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_drupal_drupalorg'", $project->title, $project->status, time(), $project->uri);
         }
       }
       else {
         // Log error on existing project with another connector and skip the
         // rest of this function.
-        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_project');
+        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_drupal_drupalorg');
         watchdog('l10n_drupalorg', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
         drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
         continue;
@@ -156,10 +163,10 @@ function l10n_project_sync() {
       // New project, not recorded before.
       db_query(
         "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
-        $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_project', $project->status
+        $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_drupal_drupalorg', $project->status
       );
       // Save last insert ID for release update code.
-      $project->pid = db_last_insert_id('l10n_community_project', 'pid');
+      $project->pid = db_last_insert_id('l10n_server_project', 'pid');
       $projects[$project->uri] = $project;
     }
   }
@@ -172,7 +179,7 @@ function l10n_project_sync() {
   // previous cron run will not be a problem, but we only look at a relatively
   // small list of releases at any given time. We only sync tagged releases,
   // which will not get rebuilt later anytime.
-  $last_sync = variable_get('l10n_project_last_sync', 0);
+  $last_sync = variable_get('l10n_server_connector_l10n_drupal_drupalorg_last_sync', 0);
   $result = db_query("
     SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN
@@ -216,13 +223,13 @@ function l10n_project_sync() {
   }
 
   // Set last sync time to limit number of releases to look at next time.
-  variable_set('l10n_project_last_sync', time());
+  variable_set('l10n_server_connector_l10n_drupal_drupalorg_last_sync', time());
 }
 
 /**
  * Download and parse the picked release.
  */
-function l10n_project_pick_and_parse($release) {
+function l10n_drupal_drupalorg_parse_release($release) {
   // This could take a long time.
   @set_time_limit(0);
 
@@ -255,13 +262,13 @@ function l10n_project_pick_and_parse($release) {
 
   // Extract and parse the local file and remove the tarball.
   else {
-    $return = l10n_project_parse_package($file, $release);
+    $return = l10n_drupal_drupalorg_parse_package($file, $release);
     // Clear stats cache, so new data shows up.
     cache_clear_all('l10n:stats', 'cache');
   }
 
   if ($error) {
-    watchdog('l10n_project', $error, $error_arguments, WATCHDOG_ERROR);
+    watchdog('l10n_drupal', $error, $error_arguments, WATCHDOG_ERROR);
     $return['error'] = $error_t;
   }
   return $return;
@@ -275,12 +282,12 @@ function l10n_project_pick_and_parse($release) {
  * @param $release
  *   Release object.
  */
-function l10n_project_parse_package($package_file, $release) {
+function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   $error = $message = '';
 
   // Potx module is already a dependency.
   include_once drupal_get_path('module', 'potx') .'/potx.inc';
-  include_once drupal_get_path('module', 'l10n_community') .'/extractor.inc';
+  include_once drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.files.inc';
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -288,7 +295,7 @@ function l10n_project_parse_package($package_file, $release) {
   // Generate temp folder to extract the tarball. tempnam() creates a regular
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
-  $temp_name = tempnam(file_directory_temp(), 'l10n_project_');
+  $temp_name = tempnam(file_directory_temp(), 'l10n_drupal_drupalorg_');
   $temp_path = $temp_name .'_dir';
 
   // Nothing to do if the file is not there or the extraction folder is taken.
@@ -305,20 +312,20 @@ function l10n_project_parse_package($package_file, $release) {
 
   // Extract the local file to the temporary directory.
   else {
-    if (l10n_project_exec('mkdir '. escapeshellarg($temp_path))) {
+    if (l10n_drupal_drupalorg_exec('mkdir '. escapeshellarg($temp_path))) {
       // Try extracting the tarball to this directory.
-      if (l10n_project_exec('tar -xvvzf '. escapeshellarg($package_file) .' -C '. escapeshellarg($temp_path))) {
+      if (l10n_drupal_drupalorg_exec('tar -xvvzf '. escapeshellarg($package_file) .' -C '. escapeshellarg($temp_path))) {
 
         // Get all source files and save strings with our callback for this release.
         $files = _potx_explore_dir($temp_path);
-        l10n_community_save_file(array($release->pid, $release->rid));
-        $version = l10n_community_detect_major_version($package_file);
+        l10n_drupal_save_file(array($release->pid, $release->rid));
+        $version = l10n_drupal_detect_major_version($package_file);
         foreach ($files as $name) {
-          _potx_process_file($name, strlen($temp_path) + 1, 'l10n_community_save_string', 'l10n_community_save_file', $version);
+          _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
         }
 
         // Delete directory now that parsing is done.
-        l10n_project_exec('rm -rf '. escapeshellarg($temp_path));
+        l10n_drupal_drupalorg_exec('rm -rf '. escapeshellarg($temp_path));
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
@@ -343,7 +350,7 @@ function l10n_project_parse_package($package_file, $release) {
       }
       else {
         // Delete directory if we did not manage to extract the tarball.
-        l10n_project_exec('rm -rf '. escapeshellarg($temp_path));
+        l10n_drupal_drupalorg_exec('rm -rf '. escapeshellarg($temp_path));
       }
     }
   }
@@ -353,11 +360,11 @@ function l10n_project_parse_package($package_file, $release) {
 
   $return = array();
   if ($error) {
-    watchdog('l10n_project', $error, $error_arguments, WATCHDOG_ERROR);
+    watchdog('l10n_drupal', $error, $error_arguments, WATCHDOG_ERROR);
     $return['error'] = $error_t;
   }
   if ($message) {
-    watchdog('l10n_project', $message, $message_arguments);
+    watchdog('l10n_drupal', $message, $message_arguments);
     $return['message'] = $message_t;
   }
 
@@ -376,13 +383,13 @@ function l10n_project_parse_package($package_file, $release) {
  * @return
  *   TRUE if the command was successful (0 exit status), else FALSE.
  */
-function l10n_project_exec($cmd) {
+function l10n_drupal_drupalorg_exec($cmd) {
   // Make sure we grab stderr, too.
   $output = array();
   exec("$cmd 2>&1", $output, $rval);
   if ($rval) {
     $output = htmlspecialchars(is_array($output) ? implode("\n", $output) : $output);
-    watchdog('l10n_project', '%cmd failed with status !rval<pre>'. $output .'</pre>', array('%cmd' => $cmd, '!rval' => $rval), WATCHDOG_ERROR);
+    watchdog('l10n_drupal', '%cmd failed with status !rval<pre>'. $output .'</pre>', array('%cmd' => $cmd, '!rval' => $rval), WATCHDOG_ERROR);
     return FALSE;
   }
   return TRUE;

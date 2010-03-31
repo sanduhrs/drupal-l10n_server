@@ -6,6 +6,17 @@
  *   Base localization server module.
  */
 
+// = Core hooks ================================================================
+
+/**
+ * Implementation of hook_help().
+ */
+function l10n_server_help($path, $args) {
+  if ($path == 'admin/l10n_server/connectors') {
+    return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/build/modules')));
+  }
+}
+
 /**
  * Implementation of hook_menu().
  */
@@ -17,19 +28,40 @@ function l10n_server_menu() {
     'title' => 'Localization server',
     'description' => 'Configuration options for the localization server.',
     'page callback' => 'l10n_server_settings_overview',
-    'file' => 'l10n_server.admin.inc',
     'access arguments' => array('administer localization server'),
     'position' => 'right',
     'weight' => -5,
+  );
+  $items['admin/l10n_server/connectors'] = array(
+    'title' => 'Connectors',
+    'description' => 'Enable and configure different data source and data format handlers.',
+    'page callback' => 'l10n_server_connectors_overview',
+    'file' => 'l10n_server.connectors.inc',
+    'access arguments' => array('administer localization server'),
+    'weight' => -20,
+  );
+  $items['admin/l10n_server/connectors/scan'] = array(
+    'title' => 'Scan for new data',
+    'page callback' => 'l10n_server_connector_scan',
+    'file' => 'l10n_server.connectors.inc',
+    'access arguments' => array('administer localization server'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/l10n_server/connectors/config'] = array(
+    'title' => 'Configure a connector',
+    'page callback' => 'l10n_server_connector_configure',
+    'file' => 'l10n_server.connectors.inc',
+    'access arguments' => array('administer localization server'),
+    'type' => MENU_CALLBACK,
   );
 
   $items['admin/l10n_server/projects'] = array(
     'title' => 'Projects and releases',
     'description' => 'Manage projects and releases handled by the server.',
     'page callback' => 'l10n_server_admin_projects',
-    'file' => 'l10n_server.admin.inc',
+    'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'weight' => -8,
+    'weight' => -10,
   );
   $items['admin/l10n_server/projects/overview'] = array(
     'title' => 'Overview',
@@ -40,7 +72,7 @@ function l10n_server_menu() {
   $items['admin/l10n_server/projects/cleanup'] = array(
     'title' => 'Clean up',
     'page callback' => 'l10n_server_admin_projects_cleanup',
-    'file' => 'l10n_server.admin.inc',
+    'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
@@ -49,7 +81,7 @@ function l10n_server_menu() {
     'title' => 'Delete project',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_server_admin_projects_delete', 4),
-    'file' => 'l10n_server.admin.inc',
+    'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
     'type' => MENU_CALLBACK
   );
@@ -57,7 +89,7 @@ function l10n_server_menu() {
     'title' => 'Enable project',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_server_admin_projects_reset', 4),
-    'file' => 'l10n_server.admin.inc',
+    'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
     'type' => MENU_CALLBACK
   );
@@ -65,7 +97,7 @@ function l10n_server_menu() {
     'title' => 'Releases',
     'page callback' => 'l10n_server_admin_releases',
     'page arguments' => array(4),
-    'file' => 'l10n_server.admin.inc',
+    'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
     'type' => MENU_CALLBACK
   );
@@ -124,8 +156,43 @@ function l10n_server_theme($existing, $type, $theme, $path) {
     'l10n_server_admin_releases_form' => array(
       'arguments' => array('form' => NULL),
     ),
+    // l10n_server.admin.inc
+    'l10n_server_admin_connectors_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
   );
 }
+
+// = Page callbacks ============================================================
+
+/**
+ * This is the same admin block display function as in system.module.
+ *
+ * We need to write this wrapper code so that the right include file is
+ * loaded to run that function.
+ */
+function l10n_server_settings_overview() {
+  include_once drupal_get_path('module', 'system') .'/system.admin.inc';
+  return system_admin_menu_block_page();
+}
+
+// = Sources implemented =======================================================
+
+/**
+ * Implementation of hook_l10n_server_source_info().
+ */
+function l10n_server_l10n_server_source_info() {
+  return array(
+    'files' => array(
+      'title' => t('the file system'),
+      'form' => 'l10n_server_connectors_files_settings_form',
+      'scan' => TRUE,
+      'file' => drupal_get_path('module', 'l10n_server') .'/l10n_server.connectors.inc',
+    ),
+  );
+}
+
+// = API functions =============================================================
 
 /**
  * Provides a list of projects from the database, ordered by uri.
@@ -207,4 +274,28 @@ function l10n_server_get_releases($uri, $parsed_only = TRUE) {
     $releases[$release->rid] = $release;
   }
   return $releases;
+}
+
+/**
+ * Return information of all connector providers enabled.
+ */
+function l10n_server_get_connectors() {
+  static $connectors = NULL;
+
+  if (!isset($connectors)) {
+    $connectors = module_invoke_all('l10n_server_connector_info');
+  }
+  return $connectors;
+}
+
+/**
+ * Return information of all sources available.
+ */
+function l10n_server_get_sources() {
+  static $sources = NULL;
+
+  if (!isset($sources)) {
+    $sources = module_invoke_all('l10n_server_source_info');
+  }
+  return $sources;
 }

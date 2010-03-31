@@ -93,15 +93,6 @@ define('L10N_COUNT_APPROVED', 'approved');
 // = Core hooks ================================================================
 
 /**
- * Implementation of hook_help().
- */
-function l10n_community_help($path, $arg) {
-  if (($arg[0] == 'translate') && ($arg[1] == 'projects') && ($arg[3] == 'warnings')) {
-    return t('Source code parsing warnings listed here might indicate but not neccessarily mean misuse of the APIs our source code parser looks at. <a href="@url">Detailed explanation and a cheat sheet of the localization API</a> can be found in the Drupal.org handbooks.', array('@url' => 'http://drupal.org/node/322729'));
-  }
-}
-
-/**
  * Implementation of hook_menu().
  *
  * Note that all menu items are accessible to anyone, because
@@ -113,13 +104,13 @@ function l10n_community_menu() {
 
   // Settings for the community UI.
   $items['admin/l10n_server/l10n_community'] = array(
-    'title' => 'General settings',
+    'title' => 'User interface',
     'description' => 'Set up general settings for the localization community UI.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('l10n_community_settings_form'),
     'access arguments' => array('administer localization server'),
     'file' => 'l10n_community.admin.inc',
-    'weight' => -10,
+    'weight' => -5,
   );
 
   // Main menu items.
@@ -249,7 +240,8 @@ function l10n_community_menu() {
     'title' => 'Source code warnings',
     'page callback' => 'l10n_community_project_warnings',
     'page arguments' => array(2),
-    'access arguments' => array('access localization community'),
+    'access callback' => 'l10n_community_access_warnings',
+    'access arguments' => array(2),
     'file' => 'pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
@@ -286,6 +278,21 @@ function l10n_community_page_title_project($uri) {
     return $projects[$uri]->title;
   }
   return t('Translate');
+}
+
+/**
+ * Menu access callback for project warnings.
+ */
+function l10n_community_access_warnings($uri) {
+  $project = l10n_server_get_projects(array('uri' => $uri));
+  $connectors = l10n_server_get_connectors();
+  $connector_name = substr($project->connector_module, 0, strrpos($project->connector_module, '_'));
+  if (!empty($connectors[$connector_name]) && !empty($connectors[$connector_name]['warnings'])) {
+    // If this connector supports collecting warnings, display the tab.
+    // Otherwise, this is only going to be misleading, so do not do that.
+    return user_access('access localization community');
+  }
+  return FALSE;
 }
 
 /**
@@ -665,42 +672,6 @@ function l10n_community_update_message() {
   if ($messages) {
     drupal_set_message(implode(', ', $messages));
   }
-}
-
-/**
- * Detect major version number for given project file.
- *
- * @param $path
- *   Either a file name or a path to a file, containing the file name.
- * @return
- *   A number with the major version of the project file, computed from
- *   the version portion of the filename.
- *     - 4 for 4.x versions (even 4.6.x. and 4.7.x)
- *     - 5 for 5.x versions
- *     - 6 for 6.x versions
- *     - 7 for 7.x versions
- */
-function l10n_community_detect_major_version($path) {
-  // Only interested in the filename.
-  $filename = basename($path);
-  // The project name could not contain hyphens, as the project name equals
-  // function name prefixes, and hyphens are not allowed in function names.
-  list($project_name, $version) = explode('-', $filename);
-  // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
-  return (int) $version;
-}
-
-/**
- * Does the given file path point to a package with a supported major version?
- *
- * @param $path
- *   Either a file name or a path to a file, containing the file name.
- * @return
- *   TRUE if the major version is supported, FALSE otherwise.
- */
-function l10n_community_is_supported_version($path) {
-  // Only Drupal 5.x, 6.x and 7.x projects are supported.
-  return in_array(l10n_community_detect_major_version($path), array(5, 6, 7));
 }
 
 /**

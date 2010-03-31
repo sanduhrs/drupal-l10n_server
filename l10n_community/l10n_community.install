@@ -6,63 +6,6 @@
  *   Localization community UI installation, update and uninstallation.
  */
 
-
-/**
- * Implementation of hook_requirements().
- */
-function l10n_community_requirements($phase) {
-  $requirements = array();
-  // Ensure translations don't break at install time.
-  $t = get_t();
-
-  // Look for Tar library used for compression and uncompression.
-  $tar_library = @file_get_contents('Archive/Tar.php', TRUE);
-  $tar_available = !empty($tar_library);
-  $requirements['l10n_community_tar'] = array(
-    'title' => $t('Compression functionality'),
-    'value' => $t('Archive/Tar.php available'),
-  );
-  if (!$tar_available) {
-    $requirements['l10n_community_tar']['description'] = $t('The PEAR library Archive/Tar.php is missing. Please <a href="@pear">obtain PEAR</a> or a copy of this file and put it on the include path.', array('@pear' => 'http://pear.php.net/'));
-    $requirements['l10n_community_tar']['severity'] = REQUIREMENT_ERROR;
-    $requirements['l10n_community_tar']['value'] = $t('Not available');
-  }
-
-  if (module_exists('potx')) {
-    $requirements['l10n_community_potx'] = l10n_community_require_potx_with_context();
-  }
-
-  return $requirements;
-}
-
-/**
- * Check that potx supports context.
- *
- * In its own function, so potx can itself cross-check that l10n_server is
- * up to date in its API use.
- */
-function l10n_community_require_potx_with_context() {
-  // If potx is already installed and enabled, check its version by looking at
-  // the specific API piece which lets us fingerprint the right version.
-  // The 3.x branch introduced _potx_find_t_calls_with_context().
-
-  // Ensure translations don't break at install time.
-  $t = get_t();
-
-  include_once drupal_get_path('module', 'potx') .'/potx.inc';
-  $requirement = array(
-    'title' => $t('Translation template extractor'),
-    'value' => $t('Localization Server compatible version'),
-  );
-  if (!function_exists('_potx_find_t_calls_with_context')) {
-    $requirement['description'] = $t('The Translation template extractor should be from the 6.x-3.x branch to be compatible with this Localization Server.');
-    $requirement['severity'] = REQUIREMENT_ERROR;
-    $requirement['value'] = $t('Not compatible with Localization Server');
-  }
-
-  return $requirement;
-}
-
 // -- Drupal 5 updates ---------------------------------------------------------
 
 /**
@@ -384,5 +327,43 @@ function l10n_community_update_6015() {
   db_rename_table($ret, 'l10n_community_string',      'l10n_server_string');
   db_rename_table($ret, 'l10n_community_translation', 'l10n_server_translation');
   db_rename_table($ret, 'l10n_community_status_flag', 'l10n_server_status_flag');
+  return $ret;
+}
+
+/**
+ * Migrate l10n_localpack settings to l10n_drupal settings.
+ */
+function l10n_community_update_6016() {
+  $ret = array();
+
+  $enable = FALSE;
+  if (variable_get('l10n_localpacks_directory', '')) {
+    variable_set('l10n_server_connector_l10n_drupal_files_directory', variable_get('l10n_localpacks_directory', ''));
+    variable_set('l10n_server_connector_l10n_drupal_files_limit', variable_get('l10n_localpacks_limit', 1));
+    variable_set('l10n_server_connector_l10n_drupal_files_cron', variable_get('l10n_localpacks_cron', 0));
+    variable_set('l10n_server_connector_l10n_drupal_files_drupal_home', variable_get('l10n_localpacks_home_link', 0));
+    variable_set('l10n_server_connector_l10n_drupal_files_enabled', 1);
+    variable_del('l10n_localpacks_directory');
+    variable_del('l10n_localpacks_cron');
+    variable_del('l10n_localpacks_limit');
+    variable_del('l10n_localpacks_home_link');
+    $enable = TRUE;
+    db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_drupal_files' WHERE connector_module = 'l10n_localpacks'");
+  }
+  if (db_result(db_query("SELECT 1 FROM {l10n_server_project} WHERE connector_module = 'l10n_project'"))) {
+    variable_set('l10n_server_connector_l10n_drupal_drupalorg_limit', variable_get('l10n_project_limit', 1));
+    variable_set('l10n_server_connector_l10n_drupal_drupalorg_cron', variable_get('l10n_project_cron', 0));
+    variable_set('l10n_server_connector_l10n_drupal_drupalorg_last_sync', variable_get('l10n_project_last_sync', 0));
+    variable_del('l10n_project_cron');
+    variable_del('l10n_project_limit');
+    variable_del('l10n_project_last_sync');
+    $enable = TRUE;
+    db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_drupal_drupalorg' WHERE connector_module = 'l10n_project'");
+  }
+  
+  if ($enable) {
+    module_enable('l10n_drupal');
+  }
+
   return $ret;
 }

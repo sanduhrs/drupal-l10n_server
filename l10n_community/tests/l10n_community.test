@@ -21,7 +21,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   public function setUp() {
     // Set up required modules for l10n_community.
-    parent::setUp('locale', 'potx', 'l10n_server', 'l10n_community', 'l10n_localpacks');
+    parent::setUp('locale', 'potx', 'l10n_server', 'l10n_community', 'l10n_drupal');
 
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
@@ -29,7 +29,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->u_member_1 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
     $this->u_member_2 = $this->drupalCreateUser(array('access localization community', 'browse translations', 'submit suggestions', 'import gettext files'));
     $this->u_moderator = $this->drupalCreateUser(array('access localization community', 'browse translations', 'moderate own suggestions', 'moderate suggestions from others', 'import gettext files', 'submit suggestions'));
-    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization server', 'administer localization community for local packages', 'import gettext files'));
+    $this->u_admin = $this->drupalCreateUser(array('administer languages', 'administer localization server', 'import gettext files'));
     $this->u_team = $this->drupalCreateUser();
 
     // Set up temporary directory for our work. Because this is inside the
@@ -45,9 +45,14 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Set local package directory, so we can work with this.
     $this->drupalLogin($this->u_admin);
-    $edit = array('l10n_localpacks_directory' => $this->temp_path);
-    $this->drupalPost('admin/l10n_server/l10n_localpacks', $edit, t('Save configuration'));
+    $edit = array('l10n_server_connector_l10n_drupal_files_directory' => $this->temp_path);
+    $this->drupalPost('admin/l10n_server/connectors/config/l10n_drupal/files', $edit, t('Save configuration'));
     $this->assertText(t('The configuration options have been saved.'), t('Local package directory set.'));
+
+    // Actually enable the Drupal connector.
+    $edit = array('l10n_server_connector_l10n_drupal_files_enabled' => 1);
+    $this->drupalPost('admin/l10n_server/connectors', $edit, t('Save configuration'));
+    $this->assertText(t('The configuration options have been saved.'), t('Drupal connector enabled.'));
 
     // Set team username.
     $edit = array('l10n_community_import_user' => $this->u_team->name);
@@ -611,7 +616,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Login as admin and get this package parsed.
     $this->drupalLogin($this->u_admin);
-    $this->drupalGet('admin/l10n_server/l10n_localpacks/scan');
+    $this->drupalGet('admin/l10n_server/connectors/scan/l10n_drupal/files');
     // Replace full path name to relative path name to ensure that we check for
     // the right feedback in the output.
     $package_file = str_replace($this->full_temp_path, $this->temp_path, $package_file);
