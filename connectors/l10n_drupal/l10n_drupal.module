@@ -61,7 +61,7 @@ function l10n_drupal_l10n_server_connector_info() {
   $connectors = array(
     'l10n_drupal' => array(
       'title' => t('Drupal packages'),
-      'sources' => array('files'),
+      'sources' => array('files', 'uploads'),
 
       'file' => drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.files.inc',
       // Only provide scan functionality if enabled.
