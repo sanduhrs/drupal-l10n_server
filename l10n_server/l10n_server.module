@@ -34,6 +34,19 @@ function l10n_server_help($path, $args) {
     }
     return $help;
   }
+  
+  if ($path == 'admin/l10n_server/projects/releases/%') {
+    // Help for release management pages.
+    $project = l10n_server_get_projects(array('uri' => $args[4]));
+    list($connector, $source) = l10n_server_split_connector($project->connector_module);
+    if ($source == 'files') {
+      return t('This project is managed based on files in the file system. The connector will create releases as it finds the files, so it is not possible to add releases manually.');
+    }
+    elseif ($source == 'uploads') {
+      return t('Add releases to be able to upload different versions of your translatable source.');
+    }
+  }
+  return $path;
 }
 
 /**
@@ -137,6 +150,51 @@ function l10n_server_menu() {
     'access arguments' => array('administer localization server'),
     'type' => MENU_CALLBACK
   );
+  $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/list'] = array(
+    'title' => 'List',
+    'access arguments' => array('administer localization server'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -20,
+  );
+  $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/add'] = array(
+    'title' => 'Add release',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_server_admin_projects_release_edit_form', 4),
+    'file' => 'l10n_server.projects.inc',
+    'access callback' => 'l10n_server_admin_projects_add_release_access',
+    'access arguments' => array(4),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/edit/%l10n_server_project_release'] = array(
+    'load arguments' => array('%map'),
+    'title' => 'Edit release',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_server_admin_projects_release_edit_form', 4, 6),
+    'file' => 'l10n_server.projects.inc',
+    'access callback' => 'l10n_server_admin_projects_add_release_access',
+    'access arguments' => array(4),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/reset/%l10n_server_project_release'] = array(
+    'load arguments' => array('%map'),
+    'title' => 'Reset release',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_server_admin_projects_release_reset', 4, 6),
+    'file' => 'l10n_server.projects.inc',
+    'access arguments' => array('administer localization server'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/delete/%l10n_server_project_release'] = array(
+    'load arguments' => array('%map'),
+    'title' => 'Delete release',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('l10n_server_admin_projects_release_delete', 4, 6),
+    'file' => 'l10n_server.projects.inc',
+    'access arguments' => array('administer localization server'),
+    'type' => MENU_CALLBACK,
+  );
+
 
   // Development helpers.
   if (module_exists('devel_generate')) {
@@ -173,6 +231,32 @@ function l10n_server_admin_projects_add_access() {
   // Return based on whether we have add enabled connectors.
   $list = l10n_server_get_add_enabled_project_connectors();
   return (bool) count($list);
+}
+
+/**
+ * Access callback for the page to add a release to a project.
+ */
+function l10n_server_admin_projects_add_release_access($project_uri) {
+  if (!user_access('administer localization server')) {
+    // Skip rest of function, if no overall permission.
+    return FALSE;
+  }
+  
+  // Return based on whether the connector for this project is "addable".
+  $list = l10n_server_get_add_enabled_project_connectors();
+  $project = l10n_server_get_projects(array('uri' => $project_uri));
+  return isset($list[$project->connector_module]);
+}
+
+/**
+ * Menu loader for a release. Depends on the project.
+ */
+function l10n_server_project_release_load($release_rid, $map) {
+  $releases = l10n_server_get_releases($map[4], FALSE);
+  if (isset($releases[$release_rid])) {
+    return $release_rid;
+  }
+  return FALSE;
 }
 
 /**
