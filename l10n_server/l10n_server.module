@@ -16,12 +16,12 @@ function l10n_server_help($path, $args) {
     // Add help to connector configuration.
     return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/build/modules')));
   }
-  
+
   if (in_array($path, array('admin/settings/language', 'admin/settings/language/edit/%')) && !module_exists('l10n_pconfig')) {
     // Add tip to language management.
     return t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
   }
-  
+
   if ($path == 'admin/l10n_server/projects') {
     // Add help to project management.
     $help = t('Projects are created automatically or manually based on <a href="@connectors">your connector configuration</a>. File system based connectors need scanning to be run but create projects and releases automatically in that process.', array('@connectors' => url('admin/l10n_server/connectors')));
@@ -34,7 +34,7 @@ function l10n_server_help($path, $args) {
     }
     return $help;
   }
-  
+
   if ($path == 'admin/l10n_server/projects/releases/%') {
     // Help for release management pages.
     $project = l10n_server_get_projects(array('uri' => $args[4]));
@@ -46,7 +46,6 @@ function l10n_server_help($path, $args) {
       return t('Add releases to be able to upload different versions of your translatable source.');
     }
   }
-  return $path;
 }
 
 /**
@@ -227,7 +226,7 @@ function l10n_server_admin_projects_add_access() {
     // Skip rest of function, if no overall permission.
     return FALSE;
   }
-  
+
   // Return based on whether we have add enabled connectors.
   $list = l10n_server_get_add_enabled_project_connectors();
   return (bool) count($list);
@@ -241,7 +240,7 @@ function l10n_server_admin_projects_add_release_access($project_uri) {
     // Skip rest of function, if no overall permission.
     return FALSE;
   }
-  
+
   // Return based on whether the connector for this project is "addable".
   $list = l10n_server_get_add_enabled_project_connectors();
   $project = l10n_server_get_projects(array('uri' => $project_uri));
@@ -264,7 +263,7 @@ function l10n_server_project_release_load($release_rid, $map) {
  */
 function l10n_server_get_add_enabled_project_connectors() {
   static $addenabled = NULL;
-  
+
   if (!isset($addenabled)) {
     $addenabled = array();
     $connectors = l10n_server_get_connectors();
@@ -281,7 +280,7 @@ function l10n_server_get_add_enabled_project_connectors() {
       }
     }
   }
-  
+
   return $addenabled;
 }
 
@@ -290,7 +289,7 @@ function l10n_server_get_add_enabled_project_connectors() {
  */
 function l10n_server_get_project_connectors() {
   static $project_connectors = NULL;
-  
+
   if (!isset($project_connectors)) {
     $project_connectors = array();
     $connectors = l10n_server_get_connectors();
@@ -303,7 +302,7 @@ function l10n_server_get_project_connectors() {
       }
     }
   }
-  
+
   return $project_connectors;
 }
 
@@ -376,6 +375,52 @@ function l10n_server_l10n_server_source_info() {
       'add project' => TRUE,
     ),
   );
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$form, &$form_state) {
+  list($connector, $source) = l10n_server_split_connector($form['project']['#value']->connector_module);
+  if ($source == 'uploads') {
+    if (!empty($form['previous_release']['#value']->last_parsed)) {
+      $form['last_parsed'] = array(
+        '#type' => 'item',
+        '#title' => t('Source last parsed'),
+        '#value' => format_date($form['previous_release']['#value']->last_parsed),
+        '#description' => t('To start over this same release with a new source file, <a href="@startover">start over the release</a>, edit and upload a new source file.', array('@startover' => url('admin/l10n_server/projects/releases/'. $form['project']['#value']->uri .'/reset/'. $form['previous_release']['#value']->rid))),
+        '#weight' => 100,
+      );
+    }
+    else {
+      $form['new_source'] = array(
+        '#type' => 'file',
+        '#title' => t('Source file'),
+        '#description' => t('Upload a source file to parse and store translatable strings from for this release.'),
+        '#weight' => 100,
+      );
+      $form['#submit'][] = 'l10n_server_release_file_upload_submit';
+      $form['#attributes']['enctype'] = 'multipart/form-data';
+    }
+  }
+}
+
+/**
+ * Custom submission handler for release editing when upload method is used.
+ */
+function l10n_server_release_file_upload_submit($form, &$form_state) {
+  list($connector, $source) = l10n_server_split_connector($form_state['values']['project']->connector_module);
+  $connectors = l10n_server_get_connectors();
+
+  if (isset($connectors[$connector])) {
+    // Include the connector implementation file if specified.
+    if (!empty($connectors[$connector]['file'])) {
+      include_once $connectors[$connector]['file'];
+    }
+
+    // Invoke the upload handler defined by the connector.
+    call_user_func($connectors[$connector]['upload handler'], $form, $form_state);
+  }
 }
 
 // = API functions =============================================================
@@ -493,4 +538,179 @@ function l10n_server_split_connector($connector_module) {
   $split = explode('_', $connector_module);
   $source_name = array_pop($split);
   return array(join('_', $split), $source_name);
+}
+
+/**
+ * Parses a Gettext Portable Object file and saves strings.
+ *
+ * Modified version of Drupal 7's _locale_import_read_po():
+ *   - does not support in-memory import ($op parameter)
+ *   - calls $string_callback() to save string
+ *   - passes on $callback_arguments additionaly to the found string
+ *   - algorithm untouched except using Drupal 7 code to support msgctxt
+ *
+ * @param $file
+ *   Drupal file object corresponding to the PO file to import.
+ * @param $string_callback
+ *   Callback invoked to save a string.
+ * @param $callback_arguments
+ *   Array of arguments to pass on to the callback after the string found.
+ */
+function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
+  include_once 'includes/locale.inc';
+
+  $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
+  if (!$fd) {
+    _locale_import_message('The Gettext file import failed, because the file %filename could not be read.', $file);
+    return FALSE;
+  }
+
+  $context = "COMMENT"; // Parser context: COMMENT, MSGID, MSGID_PLURAL, MSGSTR and MSGSTR_ARR
+  $current = array();   // Current entry being read
+  $plural = 0;          // Current plural form
+  $lineno = 0;          // Current line
+
+  while (!feof($fd)) {
+    $line = fgets($fd, 10*1024); // A line should not be this long
+    if ($lineno == 0) {
+      // The first line might come with a UTF-8 BOM, which should be removed.
+      $line = str_replace("\xEF\xBB\xBF", '', $line);
+    }
+    $lineno++;
+    $line = trim(strtr($line, array("\\\n" => "")));
+
+    if (!strncmp("#", $line, 1)) { // A comment
+      if ($context == "COMMENT") { // Already in comment context: add
+        $current["#"][] = substr($line, 1);
+      }
+      elseif (($context == "MSGSTR") || ($context == "MSGSTR_ARR")) { // End current entry, start a new one
+        call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
+        $current = array();
+        $current["#"][] = substr($line, 1);
+        $context = "COMMENT";
+      }
+      else { // Parse error
+        _locale_import_message('%filename contains an error: "msgstr" was expected but not found on line %line.', $file, $lineno);
+        return FALSE;
+      }
+    }
+    elseif (!strncmp("msgid_plural", $line, 12)) {
+      if ($context != "MSGID") { // Must be plural form for current entry
+        _locale_import_message('%filename contains an error: "msgid_plural" was expected but not found on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $line = trim(substr($line, 12));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgid"] = $current["msgid"] ."\0". $quoted;
+      $context = "MSGID_PLURAL";
+    }
+    elseif (!strncmp("msgid", $line, 5)) {
+      if ($context == "MSGSTR") {   // End current entry, start a new one
+        call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
+        $current = array();
+      }
+      elseif ($context == "MSGID") { // Already in this context? Parse error
+        _locale_import_message('%filename contains an error: "msgid" is unexpected on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $line = trim(substr($line, 5));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgid"] = $quoted;
+      $context = "MSGID";
+    }
+    elseif (!strncmp("msgctxt", $line, 7)) {
+      if ($context == "MSGSTR") {   // End current entry, start a new one
+        call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
+        $current = array();
+      }
+      elseif (!empty($current["msgctxt"])) { // Already in this context? Parse error
+        _locale_import_message('%filename contains an error: "msgctxt" is unexpected on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $line = trim(substr($line, 7));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgctxt"] = $quoted;
+      $context = "MSGCTXT";
+    }
+    elseif (!strncmp("msgstr[", $line, 7)) {
+      if (($context != "MSGID") && ($context != "MSGCTXT") && ($context != "MSGID_PLURAL") && ($context != "MSGSTR_ARR")) { // Must come after msgid, msgxtxt, msgid_plural, or msgstr[]
+        _locale_import_message('%filename contains an error: "msgstr[]" is unexpected on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      if (strpos($line, "]") === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $frombracket = strstr($line, "[");
+      $plural = substr($frombracket, 1, strpos($frombracket, "]") - 1);
+      $line = trim(strstr($line, " "));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgstr"][$plural] = $quoted;
+      $context = "MSGSTR_ARR";
+    }
+    elseif (!strncmp("msgstr", $line, 6)) {
+      if (($context != "MSGID") && ($context != "MSGCTXT")) {   // Should come just after a msgid or msgctxt block
+        _locale_import_message('%filename contains an error: "msgstr" is unexpected on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $line = trim(substr($line, 6));
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      $current["msgstr"] = $quoted;
+      $context = "MSGSTR";
+    }
+    elseif ($line != "") {
+      $quoted = _locale_import_parse_quoted($line);
+      if ($quoted === FALSE) {
+        _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
+        return FALSE;
+      }
+      if (($context == "MSGID") || ($context == "MSGID_PLURAL")) {
+        $current["msgid"] .= $quoted;
+      }
+      elseif ($context == "MSGCTXT") {
+        $current["msgctxt"] .= $quoted;
+      }
+      elseif ($context == "MSGSTR") {
+        $current["msgstr"] .= $quoted;
+      }
+      elseif ($context == "MSGSTR_ARR") {
+        $current["msgstr"][$plural] .= $quoted;
+      }
+      else {
+        _locale_import_message('%filename contains an error: there is an unexpected string on line %line.', $file, $lineno);
+        return FALSE;
+      }
+    }
+  }
+
+  // End of PO file, flush last entry
+  if (!empty($current)) {
+    call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
+  }
+  elseif ($context != "COMMENT") {
+    _locale_import_message('%filename ended unexpectedly at line %line.', $file, $lineno);
+    return FALSE;
+  }
+
+  return TRUE;
 }

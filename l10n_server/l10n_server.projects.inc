@@ -288,19 +288,19 @@ function l10n_server_admin_projects_cleanup_form_submit($form, &$form_state) {
 
 /**
  * Project editing and submission form.
- */ 
+ */
 function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL) {
   if (!isset($project_uri)) {
     $connector_list = l10n_server_get_add_enabled_project_connectors();
     // Provide sensible default for project if adding new one.
-    $project = (object) array('pid' => NULL, 'uri' => '', 'title' => '', 'home_link' => '', 'connector_module' => array_shift(array_keys($connector_list)));
+    $project = (object) array('pid' => NULL, 'uri' => '', 'title' => '', 'home_link' => '', 'connector_module' => array_shift(array_keys($connector_list)), 'status' => 1);
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $project_uri));
     $connector_list = l10n_server_get_project_connectors();
   }
   list($connector, $source) = l10n_server_split_connector($project->connector_module);
-  
+
   $form = array();
   $form['previous_project'] = array(
     '#type' => 'value',
@@ -338,7 +338,7 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
     '#type' => 'submit',
     '#value' => t('Save project')
   );
-  
+
   if (!empty($project->pid)) {
     if ($source != 'uploads') {
       $form['uri']['#type'] = 'item';
@@ -388,7 +388,7 @@ function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri
     $releases = l10n_server_get_releases($project_uri, FALSE);
     $release = $releases[$release_rid];
   }
-  
+
   $form = array();
   $form['project'] = array(
     '#type' => 'value',
@@ -413,7 +413,8 @@ function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save release')
+    '#value' => t('Save release'),
+    '#weight' => 200,
   );
   return $form;
 }
@@ -428,8 +429,14 @@ function l10n_server_admin_projects_release_edit_form_submit($form, &$form_state
       $new_release->$property = $form_state['values'][$property];
     }
   }
+
   drupal_write_record('l10n_server_release', $new_release, !empty($new_release->rid) ? 'rid' : array());
   drupal_set_message(t('Release data saved.'));
+
+  // Save the new release for any successive form handlers
+  // (such as an uploads source handler).
+  $form_state['values']['new_release'] = $new_release;
+
   $form_state['redirect'] = 'admin/l10n_server/projects/releases/'. $form_state['values']['project']->uri;
 }
 
@@ -507,7 +514,7 @@ function l10n_server_admin_projects_release_reset_submit($form, &$form_state) {
  * @param $pid
  *   Project identifier.
  * @param $keep_strings_and_project
- *   If TRUE, the project itself, source strings and translations are kept. Used 
+ *   If TRUE, the project itself, source strings and translations are kept. Used
  *   for the "Start over" feature which lets regeneration of project data without
  *   loosing the actual translations.
  */
@@ -557,7 +564,7 @@ function l10n_server_orphan_strings() {
  * @param $rid
  *   Release identifier.
  * @param $keep_strings_and_release
- *   If TRUE, the release itself, source strings and translations are kept. Used 
+ *   If TRUE, the release itself, source strings and translations are kept. Used
  *   for the "Start over" feature which lets regeneration of release data without
  *   loosing the actual translations.
  */

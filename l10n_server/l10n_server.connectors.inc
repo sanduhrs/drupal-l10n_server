@@ -125,7 +125,6 @@ function l10n_server_connector_configure($connector = NULL, $source = NULL) {
 
   drupal_set_title(t('@title from @source connector configuration', array('@title' => $connectors[$connector]['title'], '@source' => $sources[$source]['title'])));
 
-
   return drupal_get_form($sources[$source]['form'], $connector, $source);
 }
 

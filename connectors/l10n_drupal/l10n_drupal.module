@@ -57,7 +57,7 @@ function l10n_drupal_cron() {
  */
 function l10n_drupal_l10n_server_connector_info() {
   global $db_url;
-  
+
   $connectors = array(
     'l10n_drupal' => array(
       'title' => t('Drupal packages'),
@@ -88,7 +88,7 @@ function l10n_drupal_l10n_server_connector_info() {
       'warnings' => TRUE,
     );
   }
-  
+
   return $connectors;
 }
 
