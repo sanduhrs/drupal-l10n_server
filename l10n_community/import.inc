@@ -11,14 +11,14 @@
  */
 function l10n_community_import_page($langcode) {
   $language = l10n_community_get_language($langcode);
-  drupal_set_title(t('Import to @language', array('@language' => $language->name)));
+  drupal_set_title(t('Import to @language', array('@language' => t($language->name))));
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
       l(t('Home'), NULL),
       l(t('Translate'), 'translate'),
       l(t('Explore languages'), 'translate/languages'),
-      l($language->name, 'translate/languages/'. $langcode)
+      l(t($language->name), 'translate/languages/'. $langcode)
     )
   );
   return drupal_get_form('l10n_community_import_form', $langcode);

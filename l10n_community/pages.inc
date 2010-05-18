@@ -30,14 +30,14 @@ function l10n_community_explore_languages() {
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
       $table[] = array(
-        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
+        array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
         array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
       );
     }
     else {
       $table[] = array_merge(
         array(
-          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
+          array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
         ),
         isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, @$string_counts[$langcode]['translations'], @$string_counts[$langcode]['suggestions']) : theme('l10n_community_progress_columns', $num_source, 0, 0)
       );
@@ -102,7 +102,7 @@ function l10n_community_overview_language($langcode = NULL) {
   }
 
   $languages = l10n_community_get_languages('name');
-  drupal_set_title(t('@language overview', array('@language' => $languages[$langcode])));
+  drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]))));
 
   $content_output = $next_action = '';
   if (module_exists('l10n_groups')) {
@@ -296,14 +296,14 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
       $table[] = array(
-        array('data' => $language->name .' ('. $langcode .')', 'class' => 'rowhead'),
+        array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
         array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
       );
     }
     else {
       $table[] = array_merge(
         array(
-          array('data' => l($language->name .' ('. $langcode .')', 'translate/languages/'. $langcode .'/translate', array('query' => 'project='. $project->uri)), 'class' => 'rowhead'),
+          array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode .'/translate', array('query' => 'project='. $project->uri)), 'class' => 'rowhead'),
         ),
         theme(
           'l10n_community_progress_columns',

@@ -75,7 +75,7 @@ function l10n_community_pick_go() {
   $language_list = array();
   foreach ($languages as $langcode => $language) {
     if (!empty($language->plurals)) {
-      $language_list[$langcode] = $language->name;
+      $language_list[$langcode] = t($language->name);
     }
   }
 

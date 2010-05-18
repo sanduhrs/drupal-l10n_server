@@ -24,9 +24,9 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   // Set a matching title with the translation page.
   if (isset($langcode)) {
     $language = l10n_community_get_language($langcode);
-    drupal_set_title(t('Export @language translations', array('@language' => $language->name)));
+    drupal_set_title(t('Export @language translations', array('@language' => t($language->name))));
     $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
-    $breadcrumb[] = l($language->name, 'translate/languages/'. $langcode);
+    $breadcrumb[] = l(t($language->name), 'translate/languages/'. $langcode);
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $uri));

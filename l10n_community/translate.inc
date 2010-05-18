@@ -237,10 +237,10 @@ function l10n_community_translate_page($langcode) {
 
   // Set the most appropriate title.
   if ($filters['project']) {
-    drupal_set_title(t('Translate %project to @language', array('%project' => $filters['project']->title, '@language' => $language->name)));
+    drupal_set_title(t('Translate %project to @language', array('%project' => $filters['project']->title, '@language' => t($language->name))));
   }
   else {
-    drupal_set_title(t('Translate to @language', array('@language' => $language->name)));
+    drupal_set_title(t('Translate to @language', array('@language' => t($language->name))));
   }
 
   // Add missing breadcrumb.
@@ -249,7 +249,7 @@ function l10n_community_translate_page($langcode) {
       l(t('Home'), NULL),
       l(t('Translate'), 'translate'),
       l(t('Explore languages'), 'translate/languages'),
-      l($language->name, 'translate/languages/'. $langcode)
+      l(t($language->name), 'translate/languages/'. $langcode)
     )
   );
 

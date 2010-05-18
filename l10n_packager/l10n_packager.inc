@@ -214,7 +214,7 @@ function _l10n_packager_batch_repackage($rid, $langcode) {
     $language = $languages[$langcode];
     $updates = l10n_packager_release_check($release, TRUE, 0, $language);
     if ($file = current($updates)) {
-      drupal_set_message(t("Repackaged release %release for %language. Created file %filename.", array('%release' => l10n_packager_release_name($release), '%filename' => $file->filename, '%language' => $language->name)));
+      drupal_set_message(t("Repackaged release %release for %language. Created file %filename.", array('%release' => l10n_packager_release_name($release), '%filename' => $file->filename, '%language' => t($language->name))));
     }
   }
 }
