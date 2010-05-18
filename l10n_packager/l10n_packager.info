@@ -1,5 +1,5 @@
 ; $Id$
-name = "Localizacion packager"
+name = "Localization packager"
 description = "Translation packaging tools for the localization server"
 package = "Localization server"
 dependencies[] = l10n_community
