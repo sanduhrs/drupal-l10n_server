@@ -108,3 +108,7 @@ div.admin .l10n-next-action a {
 em.l10n-community-marker {
   font-weight: bold;
 }
+
+#l10n-community-pick-go #edit-project {
+  width:100%
+}
