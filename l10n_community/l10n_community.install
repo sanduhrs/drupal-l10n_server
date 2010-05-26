@@ -360,9 +360,9 @@ function l10n_community_update_6016() {
     $enable = TRUE;
     db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_drupal_drupalorg' WHERE connector_module = 'l10n_project'");
   }
-  
+
   if ($enable) {
-    module_enable('l10n_drupal');
+    module_enable(array('l10n_drupal'));
   }
 
   return $ret;
