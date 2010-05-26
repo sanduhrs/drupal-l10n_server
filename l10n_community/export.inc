@@ -143,7 +143,13 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     $form['format']['version'] = array(
       '#title' => t('Packaging'),
       '#type' => 'radios',
-      '#options' => array('drupal-6' => t('Drupal 6 core package format (translations directories)'), 'drupal-5' => t('Drupal 5 core package format (for autolocale module)'), 'flat-package' => t('Drupal 5/6 core flat package format (for CVS commit)'), 'all-in-one' => t('All in one file')),
+      '#options' => array(
+        'drupal-7' => t('Drupal 7 core package format (translations directories)'),
+        'drupal-6' => t('Drupal 6 core package format (translations directories)'),
+        'drupal-5' => t('Drupal 5 core package format (for autolocale module)'),
+        'flat-package' => t('Drupal 5/6 core flat package format (for CVS commit)'),
+        'all-in-one' => t('All in one file')
+      ),
       '#default_value' => 'drupal-6',
     );
     $form['format']['compact'] = array(
@@ -343,13 +349,14 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       }
     }
 
+    $profilename = ($version == 'drupal-7' ? 'standard' : 'default');
     $file_outputs = array($filename);
     if ($export_string['type'] != 2 /* POTX_STRING_RUNTIME */ && $version != 'all-in-one') {
       // Not runtime-only, so make sure we try to have an installer entry.
       $file_outputs[] = ($uri == 'drupal' ?
         (($version == 'flat-package') ?
           ('installer'. ($template ? '.pot' : '.po')) :
-          ('profiles/default/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
+          ('profiles/'. $profilename .'/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
         ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->language .'.po')))
       );
       if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
@@ -389,8 +396,8 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  * @param $template
  *   TRUE if templates should be exported, FALSE if translations.
  * @param $version
- *   Version to export with: 'drupal-6', 'drupal-5', 'flat-package' and
- *   'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
+ *   Version to export with: 'drupal-7', 'drupal-6', 'drupal-5', 'flat-package'
+ *   and 'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
  *   directory structure generated, the others are suitable packages for the
  *   given Drupal version.
  * @param $compact
