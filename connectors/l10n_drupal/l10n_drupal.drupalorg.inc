@@ -57,7 +57,7 @@ function l10n_drupal_drupalorg_batch_parse_form_submit() {
     SELECT r.*
     FROM {l10n_server_project} p INNER JOIN
          {l10n_server_release} r ON p.pid = r.pid
-    WHERE p.connector_module = 'l10n_drupal_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
+    WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
     0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT
   );
   while ($release = db_fetch_object($result)) {
@@ -97,7 +97,7 @@ function l10n_drupal_drupalorg_scan() {
   // Got the limited list of translation projects first to exclude from the
   // upcoming query. We cannot join on the term_node table there, since we
   // can have nodes with multiple terms, so just adding
-  // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project 
+  // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
   // would still match on other terms.
   $result = db_query(
     "SELECT DISTINCT pp.nid
@@ -141,19 +141,19 @@ function l10n_drupal_drupalorg_scan() {
   // Record all projects in our local database.
   foreach ($projects as $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $project->uri))) {
-      if ($existing_project->connector_module == 'l10n_drupal_drupalorg') {
+      if ($existing_project->connector_module == 'l10n_project_drupalorg') {
         $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) ||
             ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
           // other data is internal to our database).
-          db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_drupal_drupalorg'", $project->title, $project->status, time(), $project->uri);
+          db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_project_drupalorg'", $project->title, $project->status, time(), $project->uri);
         }
       }
       else {
         // Log error on existing project with another connector and skip the
         // rest of this function.
-        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_drupal_drupalorg');
+        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_project_drupalorg');
         watchdog('l10n_drupalorg', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
         drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
         continue;
@@ -163,7 +163,7 @@ function l10n_drupal_drupalorg_scan() {
       // New project, not recorded before.
       db_query(
         "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
-        $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_drupal_drupalorg', $project->status
+        $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_project_drupalorg', $project->status
       );
       // Save last insert ID for release update code.
       $project->pid = db_last_insert_id('l10n_server_project', 'pid');
@@ -179,7 +179,7 @@ function l10n_drupal_drupalorg_scan() {
   // previous cron run will not be a problem, but we only look at a relatively
   // small list of releases at any given time. We only sync tagged releases,
   // which will not get rebuilt later anytime.
-  $last_sync = variable_get('l10n_server_connector_l10n_drupal_drupalorg_last_sync', 0);
+  $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
   $result = db_query("
     SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN
@@ -223,7 +223,7 @@ function l10n_drupal_drupalorg_scan() {
   }
 
   // Set last sync time to limit number of releases to look at next time.
-  variable_set('l10n_server_connector_l10n_drupal_drupalorg_last_sync', time());
+  variable_set('l10n_server_connector_l10n_project_drupalorg_last_sync', time());
 }
 
 /**
