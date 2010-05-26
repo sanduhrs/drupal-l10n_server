@@ -304,6 +304,7 @@ function l10n_community_update_6013() {
  */
 function l10n_community_update_6014() {
   $ret = array();
+  module_enable(array('l10n_server'));
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
   while ($role = db_fetch_object($result)) {
     $renamed_permission = preg_replace('/administer localization community/', 'administer localization server', $role->perm);
@@ -351,14 +352,15 @@ function l10n_community_update_6016() {
     db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_drupal_files' WHERE connector_module = 'l10n_localpacks'");
   }
   if (db_result(db_query("SELECT 1 FROM {l10n_server_project} WHERE connector_module = 'l10n_project'"))) {
-    variable_set('l10n_server_connector_l10n_drupal_drupalorg_limit', variable_get('l10n_project_limit', 1));
-    variable_set('l10n_server_connector_l10n_drupal_drupalorg_cron', variable_get('l10n_project_cron', 0));
-    variable_set('l10n_server_connector_l10n_drupal_drupalorg_last_sync', variable_get('l10n_project_last_sync', 0));
+    variable_set('l10n_server_connector_l10n_project_drupalorg_limit', variable_get('l10n_project_limit', 1));
+    variable_set('l10n_server_connector_l10n_project_drupalorg_cron', variable_get('l10n_project_cron', 0));
+    variable_set('l10n_server_connector_l10n_project_drupalorg_last_sync', variable_get('l10n_project_last_sync', 0));
+    variable_set('l10n_server_connector_l10n_project_drupalorg_enabled', 1);
     variable_del('l10n_project_cron');
     variable_del('l10n_project_limit');
     variable_del('l10n_project_last_sync');
     $enable = TRUE;
-    db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_drupal_drupalorg' WHERE connector_module = 'l10n_project'");
+    db_query("UPDATE {l10n_server_project} SET connector_module = 'l10n_project_drupalorg' WHERE connector_module = 'l10n_project'");
   }
 
   if ($enable) {
