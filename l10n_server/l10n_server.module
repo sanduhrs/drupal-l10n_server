@@ -447,7 +447,7 @@ function l10n_server_get_projects($options = array()) {
 
   if (isset($options['pager'])) {
     // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY uri', $options['pager'], 0, NULL);
+    $results = pager_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY title', $options['pager'], 0, NULL);
     $pager_results = array();
     while ($project = db_fetch_object($results)) {
       $pager_results[$project->uri] = $project;
