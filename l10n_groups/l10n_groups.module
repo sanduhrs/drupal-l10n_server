@@ -69,7 +69,7 @@ function l10n_groups_init() {
       l10n_groups_set_context($langcode);
     }
   }
-  
+
   // Avoid using menu_get_item() since that would cripple the cache
   // for menu access checking.
   if (($item = og_user_roles_menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
@@ -301,7 +301,7 @@ function l10n_groups_get_groups() {
  */
 function l10n_groups_pick_go() {
   global $user;
-  
+
   if (!empty($user->og_groups)) {
     $groups = array();
     foreach ($user->og_groups as $group) {
@@ -313,7 +313,7 @@ function l10n_groups_pick_go() {
     if (!empty($groups)) {
       return array(
         '#type' => 'item',
-        '#title' => count($groups) > 1 ? t('Go to one of your groups') : t('Go to your group'),
+        '#title' => count($groups) > 1 ? t('Your groups') : t('Your group'),
         '#value' => join(', ', $groups),
         '#l10n_groups' => array_keys($groups),
       );
