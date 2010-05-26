@@ -63,10 +63,16 @@ function l10n_community_explore_projects() {
   }
   $languages = l10n_community_get_languages('name');
   $language_count = count($languages);
+  $string_counts = l10n_community_get_string_count('projects');
+
+  // If we have more projects compared to what we show at the moment, display
+  // an autocomplete jumpbox to jump to a project.
+  if (count($string_counts) > $pager_setting) {
+    $output .= drupal_get_form('l10n_community_explore_projects_jump_form');
+  }
 
   $output .= theme('pager', NULL, $pager_setting, 0);
   $table = array();
-  $string_counts = l10n_community_get_string_count('projects');
   foreach ($projects as $project) {
     $table[] = array_merge(
       array(
@@ -85,6 +91,35 @@ function l10n_community_explore_projects() {
   );
   $output .= theme('pager', NULL, $pager_setting, 0);
   return $output .'<div class="clear-block"></div>';
+}
+
+/**
+ * Provide a form to jump to a specific project from the project listing.
+ */
+function l10n_community_explore_projects_jump_form() {
+  $form = array(
+    '#prefix' => '<div class="container-inline">',
+    '#suffix' => '</div>',
+  );
+  $form['project'] = array(
+    '#title' => t('Pick a project to jump to'),
+    '#type' => 'textfield',
+    '#autocomplete_path' => 'translate/project-autocomplete',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Go'),
+  );
+  return $form;
+}
+
+/**
+ * Form submission handler for project jumpform.
+ */
+function l10n_community_explore_projects_jump_form_submit($form, &$form_state) {
+  if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
+    drupal_goto('translate/projects/'. $uri);
+  }
 }
 
 /**

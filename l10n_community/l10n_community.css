@@ -112,3 +112,7 @@ em.l10n-community-marker {
 #l10n-community-pick-go #edit-project {
   width:100%
 }
+
+#l10n-community-explore-projects-jump-form {
+  text-align: center;
+}
