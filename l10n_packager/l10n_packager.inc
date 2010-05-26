@@ -148,7 +148,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     drupal_write_record('files', $file, !empty($file->fid) ? 'fid' : array());
     drupal_write_record('l10n_packager_file', $file, !empty($file->drid) ? 'drid' : array());
     $variables['%filename'] = $file->filename;
-    watchdog('l10n_packager', 'Packaged release %release for language %language, created file %filename.', $variables);
+    //watchdog('l10n_packager', 'Packaged release %release for language %language, created file %filename.', $variables);
     return $file;
 
   }

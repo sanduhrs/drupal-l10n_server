@@ -41,14 +41,14 @@ function l10n_packager_settings_form() {
     '#title' => t('Number of releases to check at once'),
     '#description' => t('The number of releases to check on a manual or cron run.'),
     '#type' => 'select',
-    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50)),
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100)),
     '#default_value' => variable_get('l10n_packager_release_limit', 10),
   );
   $form['l10n_packager_file_limit'] = array(
     '#title' => t('Maximum number of files to package at once'),
     '#description' => t('The number of files to package on a manual or cron run.'),
     '#type' => 'select',
-    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50)),
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100)),
     '#default_value' => variable_get('l10n_packager_file_limit', 1),
   );
   // Logging settings
