@@ -481,6 +481,20 @@ function l10n_server_get_projects($options = array()) {
   }
 }
 
+/*
+ * Helper function for sorting project versions.
+ *
+ * @see l10n_server_get_releases()
+ */
+function _l10n_server_version_compare($a, $b) {
+  $a = str_replace('.x-', '.9999-', $a->title);
+  $b = str_replace('.x-', '.9999-', $b->title);
+  if ($a == $b) {
+    return 0;
+  }
+  return version_compare($a, $b, '>') ? -1 : 1;
+}
+
 /**
  * Get all releases of a project.
  *
@@ -499,11 +513,11 @@ function l10n_server_get_releases($uri, $parsed_only = TRUE) {
   if ($parsed_only) {
     $query .= 'AND r.last_parsed > 0 ';
   }
-  $query .= 'ORDER BY r.title';
   $result = db_query($query, $uri);
   while ($release = db_fetch_object($result)) {
     $releases[$release->rid] = $release;
   }
+  uasort($releases, '_l10n_server_version_compare');
   return $releases;
 }
 
