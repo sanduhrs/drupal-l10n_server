@@ -95,7 +95,7 @@ function l10n_packager_check_updates() {
     $timer = timer_stop('l10n_packager');
     $time = $timer['time'];
 
-    watchdog('l10n_packager', 'Checked %checked releases, repackaged %repack translations in @ms microseconds.', array('%checked' => $count_check, '%repack' => $count_files, '@ms' => $time));
+    watchdog('l10n_packager', '@ms ms for %checked releases/%repack files.', array('%checked' => $count_check, '%repack' => $count_files, '@ms' => $time));
   }
 
   return array($count_check, $count_files, $time);

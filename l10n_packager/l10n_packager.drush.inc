@@ -8,7 +8,7 @@
 
 /**
  * Implementation of hook_drush_command().
- * 
+ *
  * @see drush_parse_command() for a list of recognized keys.
  *
  * @return
@@ -33,5 +33,5 @@ function l10n_packager_drush_update() {
     '!updated' => $updated,
     '!ms' => $time,
   );
-  drush_print(dt("Checked !checked releases for updates (max !checkmax). Updated !updated files in !ms microseconds.", $vars)); 
+  drush_print(dt("!ms ms for !checked releases/!updated files.", $vars));
 }
