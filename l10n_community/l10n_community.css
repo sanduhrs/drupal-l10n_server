@@ -116,3 +116,7 @@ em.l10n-community-marker {
 #l10n-community-explore-projects-jump-form {
   text-align: center;
 }
+
+#autocomplete {
+  text-align:left;
+}
