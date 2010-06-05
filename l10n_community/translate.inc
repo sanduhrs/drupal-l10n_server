@@ -856,7 +856,6 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $sql_args = array_merge($join_args, $where_args);
   $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
   $sql = $select .' '. $sql_where;
-  $sql .= ' ORDER BY s.value ASC';
   $sql_count = $select_count .' '. $sql_where;
 
   // We either need a pager or a full result.
