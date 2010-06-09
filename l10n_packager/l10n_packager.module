@@ -253,7 +253,7 @@ function l10n_packager_l10n_community_build_page($page_key, $params) {
       '#block' => array(
         'title' => t('Download translations'),
         'description' => t('@project translations are available on the following links', array('@project' => $project->title)),
-        'content' => theme('item_list', array($list)),
+        'content' => theme('item_list', $list),
       )
     );
 
