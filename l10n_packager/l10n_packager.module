@@ -195,7 +195,7 @@ function l10n_packager_create_path($path) {
 /**
  * Build target filepath from release object based on the set pattern.
  */
-function l10n_packager_get_filepath($release, $language) {
+function l10n_packager_get_filepath($release, $language = NULL, $pattern = NULL) {
    // Get version information from release title
    if ($release->uri == 'drupal') {
      // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
@@ -214,7 +214,49 @@ function l10n_packager_get_filepath($release, $language) {
     '%core'     => $core,
     '%version'  => $version,
     '%extra'    => !empty($extra) ? '-'. $extra : '',
-    '%language' => $language->language,
+    '%language' => isset($language) ? $language->language : '',
    );
-   return strtr(variable_get('l10n_packager_filepath', L10N_PACKAGER_FILEPATH), $replace);
+   if (!isset($pattern)) {
+     $pattern = variable_get('l10n_packager_filepath', L10N_PACKAGER_FILEPATH);
+   }
+   return strtr($pattern, $replace);
+}
+
+/**
+ * Implementation of hook_l10n_community_build_page().
+ */
+function l10n_packager_l10n_community_build_page($page_key, $params) {
+  if ($page_key == 'project') {
+    list($project, $languages) = $params;
+    $page = array();
+    $releases = l10n_server_get_releases($project->uri, FALSE);
+
+    // Build list of paths by core compatibility for all releases.
+    $paths = array();
+    foreach ($releases as $release) {
+      $release->uri = $project->uri;
+      // @todo: this should not be hard-wired.
+      $paths[l10n_packager_get_filepath($release, NULL, '%core/%project/')] = TRUE;
+    }
+
+    // Generate a list of download links based on that.
+    $url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
+    $list = array();
+    foreach ($paths as $path => $dummy) {
+      list ($core, $name) = explode('/', $path);
+      $list[] = l(t('Translations for @core_version', array('@core_version' => $core)), $url .'/'. $path);
+    }
+
+    // Wrap it in a block.
+    $page['#right'][] = array(
+      '#weight' => -2,
+      '#block' => array(
+        'title' => t('Download translations'),
+        'description' => t('@project translations are available on the following links', array('@project' => $project->title)),
+        'content' => theme('item_list', array($list)),
+      )
+    );
+
+    return $page;
+  }
 }

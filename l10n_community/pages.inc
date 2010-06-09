@@ -272,48 +272,64 @@ function l10n_community_overview_project($uri = NULL) {
     return '';
   }
 
-  $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">';
-
   $project = l10n_server_get_projects(array('uri' => $uri));
-  $output .= l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'));
+  $page_structure = module_invoke_all('l10n_community_build_page', 'project', array($project, $languages));
+  drupal_alter('l10n_community_page', $page_structure, 'project', array($project, $languages));
+  return theme('l10n_community_page', $page_structure);
+}
 
-  $output .= '</div><div class="right clear-block">';
+/**
+ * Implementation of hook_l10n_community_build_page().
+ */
+function l10n_community_l10n_community_build_page($page_key, $params) {
+  if ($page_key == 'project') {
+    list($project, $languages) = $params;
+    $page = array();
 
-  $block = array(
-    'title' => t('Contribute'),
-    'description' => t('Export, translate, review'),
-    'content' => '<p class="info">'. t('Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages.') .'</p>'
-  );
-  $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
+    // Stats information on current project status per language.
+    $page['#left'][] = array(
+      '#weight' => 1,
+      '#block' => l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'))
+    );
 
-  $num_source = l10n_community_get_string_count('project', $project->pid);
+    // Call for contributions.
+    $page['#right'][] = array(
+      '#weight' => 1,
+      '#block' => array(
+        'title' => t('Contribute'),
+        'description' => t('Export, translate, review'),
+        'content' => '<p class="info">'. t('Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages.') .'</p>'
+      ),
+      '#classes' => array('admin-panel-contribute'),
+    );
 
-  // Get information on releases, and the number of parsed ones.
-  $releases = l10n_server_get_releases($uri, FALSE);
-  $num_parsed = 0;
-  foreach ($releases as $release) {
-    if ($release->last_parsed > 0) {
-      $num_parsed++;
+    // Summary of some interesting data about the project.
+    $num_source = l10n_community_get_string_count('project', $project->pid);
+    $releases = l10n_server_get_releases($project->uri, FALSE);
+    $num_parsed = 0;
+    foreach ($releases as $release) {
+      if ($release->last_parsed > 0) {
+        $num_parsed++;
+      }
     }
+    $num_warnings = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $project->uri));
+    $page['#right'][] = array(
+      '#weight' => 2,
+      '#block' => array(
+        'title' => t('@project summary', array('@project' => $project->title)),
+        'description' => t('Some details we know about this project'),
+        'content' => theme('item_list', array(
+          t('Project home') .': '. (!empty($project->home_link) ? ('<a href="'. check_url($project->home_link) .'">'. check_plain($project->home_link) .'</a>') : t('Not available')),
+          format_plural(count($releases), '1 release known', '@count releases known'),
+          format_plural($num_parsed, '1 release parsed', '@count releases parsed'),
+          format_plural($num_source, '1 source string in total', '@count source strings in total'),
+          ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings')),
+        ))
+      )
+    );
+
+    return $page;
   }
-
-  // Get information on warnings.
-  $num_warnings = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri));
-
-  $block = array(
-    'title' => t('@project summary', array('@project' => $project->title)),
-    'description' => t('Some details we know about this project'),
-    'content' => theme('item_list', array(
-      t('Project home') .': '. (!empty($project->home_link) ? ('<a href="'. check_url($project->home_link) .'">'. check_plain($project->home_link) .'</a>') : t('Not available')),
-      format_plural(count($releases), '1 release known', '@count releases known'),
-      format_plural($num_parsed, '1 release parsed', '@count releases parsed'),
-      format_plural($num_source, '1 source string in total', '@count source strings in total'),
-      ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings')),
-    ))
-  );
-  $output .= theme('admin_block', $block);
-  $output .= '</div></div>';
-  return $output;
 }
 
 /**
@@ -356,7 +372,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     array('class' => 'l10n-community-overview')
   ) .'<div class="clear-block"></div>';
 
-  return theme('admin_block', $block);
+  return $block;
 }
 
 /**

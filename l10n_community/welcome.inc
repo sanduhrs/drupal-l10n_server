@@ -32,7 +32,7 @@ function l10n_community_welcome_page() {
   if ($project = l10n_community_get_highlighted_project()) {
     // Display progress status of the highlighted project.
     include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
-    $highlight_output = l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project'));
+    $highlight_output = theme('admin_block', l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project')));
   }
 
   // Build contribution call to action block.

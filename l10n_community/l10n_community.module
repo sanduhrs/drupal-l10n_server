@@ -703,6 +703,9 @@ function l10n_community_project_uri_by_title($title) {
  */
 function l10n_community_theme($existing, $type, $theme, $path) {
   return array(
+    'l10n_community_page' => array(
+      'arguments' => array('page' => NULL),
+    ),
     // pages.inc
     'l10n_community_progress_columns' => array(
       'arguments' => array('sum' => NULL, 'translated' => NULL, 'has_suggestion' => NULL),
@@ -739,6 +742,29 @@ function l10n_community_theme($existing, $type, $theme, $path) {
       'arguments' => array('element' => NULL),
     ),
   );
+}
+
+/**
+ * Theme an l10n_community summary page with 4 'regions'.
+ */
+function theme_l10n_community_page($page) {
+  $output = '<div id="l10n-community-summary" class="admin clear-block">';
+  foreach (array('top', 'left', 'right', 'bottom') as $container) {
+    if (isset($page['#'. $container])) {
+      $output .= '<div class="'. $container .' clear-block">';
+      uasort($page['#'. $container], 'element_sort');
+      foreach ($page['#'. $container] as $item) {
+        $admin_block = theme('admin_block', $item['#block']);
+        if (isset($item['#classes'])) {
+          $admin_block = str_replace('class="admin-panel"', 'class="admin-panel '. join(' ', $item['#classes']) .'"', $admin_block);
+        }
+        $output .= $admin_block;
+      }
+      $output .= '</div>';
+    }
+  }
+  $output .= '</div>';
+  return $output;
 }
 
 /**
