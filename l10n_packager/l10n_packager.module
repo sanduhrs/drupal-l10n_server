@@ -35,6 +35,15 @@ define('L10N_PACKAGER_API_VERSION', '1.1');
  * Implementation of hook_menu().
  */
 function l10n_packager_menu() {
+  // Downloads link printer, accessed from drupal.org via a little JS widget.
+  $items['translate/remote/downloads/%'] = array(
+    'title' => 'Download links for a project',
+    'page callback' => 'l10n_packager_build_download_links_page',
+    'page arguments' => array(3),
+    'access arguments' => TRUE,
+  );
+
+  // Administration tools.
   $items['admin/l10n_server/packager'] = array(
     'title' => 'Packaging tools',
     'description' => 'Select project, releases and languages to repackage.',
@@ -229,23 +238,6 @@ function l10n_packager_l10n_community_build_page($page_key, $params) {
   if ($page_key == 'project') {
     list($project, $languages) = $params;
     $page = array();
-    $releases = l10n_server_get_releases($project->uri, FALSE);
-
-    // Build list of paths by core compatibility for all releases.
-    $paths = array();
-    foreach ($releases as $release) {
-      $release->uri = $project->uri;
-      // @todo: this should not be hard-wired.
-      $paths[l10n_packager_get_filepath($release, NULL, '%core/%project/')] = TRUE;
-    }
-
-    // Generate a list of download links based on that.
-    $url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
-    $list = array();
-    foreach ($paths as $path => $dummy) {
-      list ($core, $name) = explode('/', $path);
-      $list[] = l(t('Translations for @core_version', array('@core_version' => $core)), $url .'/'. $path);
-    }
 
     // Wrap it in a block.
     $page['#right'][] = array(
@@ -253,7 +245,7 @@ function l10n_packager_l10n_community_build_page($page_key, $params) {
       '#block' => array(
         'title' => t('Downloads'),
         'description' => t('@project translations are available', array('@project' => $project->title)),
-        'content' => theme('item_list', $list),
+        'content' => l10n_packager_build_download_links($project->uri),
       )
     );
 
@@ -272,4 +264,53 @@ function l10n_packager_l10n_community_build_page($page_key, $params) {
     );
     return $page;
   }
+}
+
+/**
+ * Build a list of download links per core compatibility for a project.
+ */
+function l10n_packager_build_download_links($uri) {
+
+  // Expire old entries and then try to look up our entry.
+  cache_clear_all(NULL, 'cache_l10n_packager');
+  $rendered = cache_get('project:'. $uri, 'cache_l10n_packager');
+
+  // Not found, generate the list from our data.
+  if (empty($rendered)) {
+    // Get all releases for this project.
+    $releases = l10n_server_get_releases($uri, FALSE);
+
+    // Build list of paths by core compatibility for all releases.
+    $paths = array();
+    foreach ($releases as $release) {
+      $release->uri = $uri;
+      // @todo: this should not be hard-wired.
+      $paths[l10n_packager_get_filepath($release, NULL, '%core/%project/')] = TRUE;
+    }
+
+    // Generate a list of download links based on that.
+    $url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
+    $list = array();
+    foreach ($paths as $path => $dummy) {
+      list ($core, $name) = explode('/', $path);
+      $list[] = l(t('Translations for @core_version', array('@core_version' => $core)), $url .'/'. $path);
+    }
+
+    $rendered = count($list) ? theme('item_list', $list) : t('No downloads available for this project.');
+    // Store for later use.
+    cache_set('project:'. $uri, $rendered, 'cache_l10n_packager', time()+60*60*24);
+  }
+  else {
+    $rendered = $rendered->data;
+  }
+
+  return $rendered;
+}
+
+/**
+ * Page callback version for download link renderer.
+ */
+function l10n_packager_build_download_links_page($uri) {
+  print l10n_packager_build_download_links($uri);
+  exit;
 }

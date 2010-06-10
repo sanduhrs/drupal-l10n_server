@@ -1,4 +1,4 @@
-<?php 
+<?php
 // $Id$
 
 /**
@@ -76,6 +76,8 @@ function l10n_packager_schema() {
     ),
     'primary key' => array('drid'),
   );
+  $schema['cache_l10n_packager'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_l10n_packager']['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
   return $schema;
 }
 
@@ -91,4 +93,15 @@ function l10n_packager_install() {
  */
 function l10n_packager_uninstall() {
   drupal_uninstall_schema('l10n_packager');
+}
+
+/**
+ * Add cache_l10n_packager table to cache downloads information.
+ */
+function l10n_packager_update_6001() {
+  $ret = array();
+  $table = drupal_get_schema_unprocessed('system', 'cache');
+  $table['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
+  db_create_table($ret, 'cache_l10n_packager', $table);
+  return $ret;
 }
