@@ -232,7 +232,7 @@ function l10n_community_l10n_community_build_page($page_key, $params) {
           format_plural(count($releases), '1 release known', '@count releases known'),
           format_plural($num_parsed, '1 release parsed', '@count releases parsed'),
           format_plural($num_source, '1 source string in total', '@count source strings in total'),
-          ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings')),
+          ($num_warnings == 0 ? t('No source code warnings') : l(format_plural($num_warnings, '1 source code warning', '@count source code warnings'), 'translate/projects/'. $project->uri .'/warnings')),
         ))
       )
     );
