@@ -251,12 +251,25 @@ function l10n_packager_l10n_community_build_page($page_key, $params) {
     $page['#right'][] = array(
       '#weight' => -2,
       '#block' => array(
-        'title' => t('Download translations'),
-        'description' => t('@project translations are available on the following links', array('@project' => $project->title)),
+        'title' => t('Downloads'),
+        'description' => t('@project translations are available', array('@project' => $project->title)),
         'content' => theme('item_list', $list),
       )
     );
 
+    return $page;
+  }
+  elseif ($page_key == 'language') {
+    list($language) = $params;
+    // Wrap it in a block.
+    $page['#right'][] = array(
+      '#weight' => -2,
+      '#block' => array(
+        'title' => t('Downloads'),
+        'description' => t('@language translations are available', array('@language' => $language->name)),
+        'content' => l(t('Browse and download translations'), variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory())))
+      )
+    );
     return $page;
   }
 }

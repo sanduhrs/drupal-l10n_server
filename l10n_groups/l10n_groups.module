@@ -340,3 +340,64 @@ function l10n_groups_broadcast($langcode) {
   include_once drupal_get_path('module', 'og') .'/og.pages.inc';
   return drupal_get_form('og_broadcast_form', node_load($groups[$langcode]));
 }
+
+// = Summary page outputs ======================================================
+
+/**
+ * Implementation of hook_l10n_community_build_page().
+ */
+function l10n_groups_l10n_community_build_page($page_key, $params) {
+  if ($page_key == 'language') {
+    list($language) = $params;
+
+    $content_output = $next_action = '';
+    $groups = l10n_groups_get_groups();
+    if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
+      $content_output = node_view($group_node, FALSE, TRUE);
+      if (!isset($user->og_groups[$groups[$language->language]])) {
+        $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
+      }
+    }
+    else {
+      $content_output = '<p>'. t('Group not found or not accessible. No posts to display') .'</p>';
+    }
+
+    // Urge people to join this group.
+    if (empty($next_action) && user_access('submit suggestions')) {
+      $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $language->language .'/translate') .'</div>';
+    }
+    $page['#right']['contribute'] = array(
+      '#weight' => -1,
+      '#block' => array(
+        'title' => t('Contribute'),
+        'description' => t('Review, translate, import'),
+        'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use for offline work.') .'</p>'
+      ),
+      '#classes' => array('admin-panel-contribute'),
+    );
+
+    // Add group posts to left column.
+    $page['#left']['posts'] = array(
+      '#weight' => -1,
+      '#block' => array (
+        'title' => t('Highlighted content'),
+        'content' => $content_output,
+      ),
+    );
+
+    // Add group block into right column.
+    $og_block = module_invoke('og', 'block_details');
+    if (!empty($og_block)) {
+      $page['#right']['group'] = array(
+        '#weight' => 10,
+        '#block' => array(
+          'title' => t('Group links'),
+          'description' => t('Create content, manage your membership'),
+          'content' => $og_block['content'],
+        ),
+      );
+    }
+    
+    return $page;
+  }
+}

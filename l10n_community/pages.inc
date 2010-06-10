@@ -136,101 +136,8 @@ function l10n_community_overview_language($langcode = NULL) {
     return '';
   }
 
-  $languages = l10n_community_get_languages('name');
-  drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]))));
-
-  $content_output = $next_action = '';
-  if (module_exists('l10n_groups')) {
-    // If l10n_groups available, try to load group frontpage.
-    $groups = l10n_groups_get_groups();
-    if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
-      $content_output = node_view($group_node, FALSE, TRUE);
-      if (!isset($user->og_groups[$groups[$langcode]])) {
-        $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
-      }
-    }
-    else {
-      $content_output .= '<p>'. t('Group not found or not accessible. No posts to display') .'</p>';
-    }
-  }
-  elseif (module_exists('taxonomy')) {
-    if ($term = taxonomy_get_term_by_name('l10n-server-'. $langcode)) {
-      // Found tag, look for posts.
-      $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-      while ($node = db_fetch_object($result)) {
-        $content_output .= node_view(node_load($node->nid), 1);
-      }
-    }
-    if (empty($content_output)) {
-      // Either no such tag, or that tag has no posts currently.
-      $output .= '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $langcode)) .'</p>';
-    }
-  }
-  else {
-    // Neither l10n_groups, neither taxonomy available.
-    $content_output .= '<p>'. t('No posts to display') .'</p>';
-  }
-
-  // If we don't know the next action yet, and the user can submit suggestions,
-  // call for submitting those.
-  if (empty($next_action) && user_access('submit suggestions')) {
-    $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $langcode .'/translate') .'</div>';
-  }
-
-  $output = '<div id="l10n-community-summary" class="admin clear-block"><div class="left clear-block">'. $content_output .'</div><div class="right clear-block">';
-
-  $block = array(
-    'title' => t('Contribute'),
-    'description' => t('Review, translate, import'),
-    'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use or  offline work.') .'</p>'
-  );
-  $output .= str_replace('class="admin-panel"', 'class="admin-panel admin-panel-contribute"', theme('admin_block', $block));
-
-  $stats_numbers = l10n_community_get_stats($langcode);
-
-  $block = array(
-    'title' => t('Progress status'),
-    'description' => t('Status overview'),
-    'content' => theme('item_list', array(
-      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-    ))
-  );
-  $output .= theme('admin_block', $block);
-
-  $people = l10n_community_get_string_count('top-people', $langcode);
-  $block = array(
-    'title' => t('Top contributors'),
-    'description' => t('People with most approved translations'),
-  );
-  $list = array();
-  foreach ($people as $translator) {
-    // $translator can be passed to theme('username'), since it has 'name' and 'uid'.
-    $list[] = format_plural($translator->sum, '!name - 1 translation', '!name - @count translations', array('!name' => theme('username', $translator)));
-  }
-  if ($list) {
-    $block['content'] = theme('item_list', $list);
-  }
-  else {
-    $block['content'] = '<p>'. t('Nobody contributed to this translation yet.') .'</p>';
-  }
-  $output .= theme('admin_block', $block);
-
-  if (module_exists('l10n_groups')) {
-    $og_block = module_invoke('og', 'block_details');
-    if (!empty($og_block)) {
-      $block = array(
-        'title' => t('Group links'),
-        'description' => t('Create content, manage your membership'),
-        'content' => $og_block['content'],
-      );
-      $output .= theme('admin_block', $block);
-    }
-  }
-
-  $output .= '</div></div>';
+  $languages = l10n_community_get_languages();
+  drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]->name))));
 
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
@@ -241,7 +148,9 @@ function l10n_community_overview_language($langcode = NULL) {
     )
   );
 
-  return $output;
+  $page_structure = module_invoke_all('l10n_community_build_page', 'language', array($languages[$langcode]));
+  drupal_alter('l10n_community_page', $page_structure, 'language', array($languages[$langcode]));
+  return theme('l10n_community_page', $page_structure);
 }
 
 /**
@@ -287,13 +196,13 @@ function l10n_community_l10n_community_build_page($page_key, $params) {
     $page = array();
 
     // Stats information on current project status per language.
-    $page['#left'][] = array(
+    $page['#left']['stats'] = array(
       '#weight' => 1,
       '#block' => l10n_community_language_progress_for_project($project, $languages, t('Translations overview'), t('Overall status of translations'))
     );
 
     // Call for contributions.
-    $page['#right'][] = array(
+    $page['#right']['contribute'] = array(
       '#weight' => 1,
       '#block' => array(
         'title' => t('Contribute'),
@@ -313,7 +222,7 @@ function l10n_community_l10n_community_build_page($page_key, $params) {
       }
     }
     $num_warnings = db_result(db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $project->uri));
-    $page['#right'][] = array(
+    $page['#right']['summary'] = array(
       '#weight' => 2,
       '#block' => array(
         'title' => t('@project summary', array('@project' => $project->title)),
@@ -329,6 +238,108 @@ function l10n_community_l10n_community_build_page($page_key, $params) {
     );
 
     return $page;
+  }
+  elseif ($page_key == 'language') {
+    list($language) = $params;
+
+    // Provide a summary of the activity.
+    $stats_numbers = l10n_community_get_stats($language->language);
+    $page['#right']['summary'] = array(
+      '#weight' => 1,
+      '#block' => array(
+        'title' => t('Progress status'),
+        'description' => t('Status overview'),
+        'content' => theme('item_list', array(
+          format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+          format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+          format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+          format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+        ))
+      )
+    );
+
+    // Provide a summary of top contributors.
+    $people = l10n_community_get_string_count('top-people', $language->language);
+    $block = array(
+      'title' => t('Top contributors'),
+      'description' => t('People with most approved translations'),
+    );
+    $list = array();
+    foreach ($people as $translator) {
+      // $translator can be passed to theme('username'), since it has 'name' and 'uid'.
+      $list[] = format_plural($translator->sum, '!name - 1 translation', '!name - @count translations', array('!name' => theme('username', $translator)));
+    }
+    if ($list) {
+      $block['content'] = theme('item_list', $list);
+    }
+    else {
+      $block['content'] = '<p>'. t('Nobody contributed to this translation yet.') .'</p>';
+    }
+    $page['#right']['top-contributors'] = array(
+      '#weight' => 5,
+      '#block' => $block
+    );
+
+    return $page;
+  }
+}
+
+/**
+ * Implementation of hook_l10n_community_page_alter().
+ */
+function l10n_community_l10n_community_page_alter(&$page, $page_key, $params) {
+  if ($page_key == 'language') {
+    list($language) = $params;
+
+    // If another module did not fill in the posts.
+    if (!isset($page['#left']['posts'])) {
+      $content_output = '';
+
+      // Try to fill in with taxonomy.
+      if (module_exists('taxonomy')) {
+        if ($term = taxonomy_get_term_by_name('l10n-server-'. $language->language)) {
+          // Found tag, look for posts.
+          $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
+          while ($node = db_fetch_object($result)) {
+            $content_output .= node_view(node_load($node->nid), 1);
+          }
+        }
+        if (empty($content_output)) {
+          // Either no such tag, or that tag has no posts currently.
+          $content_output = '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $language->language)) .'</p>';
+        }
+      }
+      else {
+        // No way found to fill in content here.
+        $content_output = '<p>'. t('No posts to display') .'</p>';
+      }
+
+      $page['#left']['posts'] = array(
+        '#weight' => -1,
+        '#block' => array (
+          'title' => t('Highlighted content'),
+          'description' => t('Posts published for @language', array('@language' => $language->name)),
+          'content' => $content_output,
+        ),
+      );
+    }
+
+    if (!isset($page['#right']['contribute'])) {
+      // Urge people to join and contribute.
+      $next_action = '';
+      if (user_access('submit suggestions')) {
+        $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $language->language .'/translate') .'</div>';
+      }
+      $page['#right']['contribute'] = array(
+        '#weight' => -1,
+        '#block' => array(
+          'title' => t('Contribute'),
+          'description' => t('Review, translate, import'),
+          'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use for offline work.') .'</p>'
+        ),
+        '#classes' => array('admin-panel-contribute'),
+      );
+    }
   }
 }
 
