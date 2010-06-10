@@ -137,9 +137,12 @@ function l10n_community_overview_language($langcode = NULL) {
   }
 
   $languages = l10n_community_get_languages();
-  drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]->name))));
+  $page_structure = module_invoke_all('l10n_community_build_page', 'language', array($languages[$langcode]));
+  drupal_alter('l10n_community_page', $page_structure, 'language', array($languages[$langcode]));
 
-  // Add missing breadcrumb.
+  // Set title and breadcrumb. Do this late since the OG code will attempt to
+  // set a title and a breadcrumb that is not fitting for us.
+  drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]->name))));
   drupal_set_breadcrumb(
     array(
       l(t('Home'), NULL),
@@ -148,8 +151,6 @@ function l10n_community_overview_language($langcode = NULL) {
     )
   );
 
-  $page_structure = module_invoke_all('l10n_community_build_page', 'language', array($languages[$langcode]));
-  drupal_alter('l10n_community_page', $page_structure, 'language', array($languages[$langcode]));
   return theme('l10n_community_page', $page_structure);
 }
 
