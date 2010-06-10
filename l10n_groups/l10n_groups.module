@@ -381,6 +381,7 @@ function l10n_groups_l10n_community_build_page($page_key, $params) {
       '#weight' => -1,
       '#block' => array (
         'title' => t('Highlighted content'),
+        'description' => t('Important posts for @language', array('@language' => $language->name)),
         'content' => $content_output,
       ),
     );
@@ -397,7 +398,7 @@ function l10n_groups_l10n_community_build_page($page_key, $params) {
         ),
       );
     }
-    
+
     return $page;
   }
 }

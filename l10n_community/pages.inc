@@ -318,7 +318,7 @@ function l10n_community_l10n_community_page_alter(&$page, $page_key, $params) {
         '#weight' => -1,
         '#block' => array (
           'title' => t('Highlighted content'),
-          'description' => t('Posts published for @language', array('@language' => $language->name)),
+          'description' => t('Important posts for @language', array('@language' => $language->name)),
           'content' => $content_output,
         ),
       );
