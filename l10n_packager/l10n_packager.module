@@ -40,7 +40,7 @@ function l10n_packager_menu() {
     'title' => 'Download links for a project',
     'page callback' => 'l10n_packager_build_download_links_page',
     'page arguments' => array(3),
-    'access arguments' => TRUE,
+    'access arguments' => array('access localization community'),
   );
 
   // Administration tools.
