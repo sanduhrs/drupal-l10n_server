@@ -35,14 +35,6 @@ define('L10N_PACKAGER_API_VERSION', '1.1');
  * Implementation of hook_menu().
  */
 function l10n_packager_menu() {
-  // Downloads link printer, accessed from drupal.org via a little JS widget.
-  $items['translate/remote/downloads/%'] = array(
-    'title' => 'Download links for a project',
-    'page callback' => 'l10n_packager_build_download_links_page',
-    'page arguments' => array(3),
-    'access arguments' => array('access localization community'),
-  );
-
   // Administration tools.
   $items['admin/l10n_server/packager'] = array(
     'title' => 'Packaging tools',
@@ -108,6 +100,48 @@ function l10n_packager_check_updates() {
   }
 
   return array($count_check, $count_files, $time);
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks = array(
+        'download' => array(
+          'info' => t('Localization packager downloads'),
+        ),
+      );
+      return $blocks;
+
+    case 'view':
+      switch ($delta) {
+        case 'download':
+          if (user_access('access localization community')) {
+            if (arg(0) == 'translate') {
+              $arg1 = arg(1);
+              $arg2 = arg(2);
+              $arg3 = arg(3);
+              if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
+                $project = l10n_server_get_projects(array('uri' => $arg2));
+                // Return contribution call to action on the project pages.
+                return array(
+                  'subject' => t('Downloads'),
+                  'content' => l10n_packager_build_download_links($project->uri)
+                );
+              }
+              elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
+                return array(
+                  'subject' => t('Downloads'),
+                  'content' => l(t('Browse and download translations'), variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory())))
+                );
+              }
+            }
+          }
+          return;
+      }
+  }
 }
 
 // == Language list export =====================================================
@@ -232,41 +266,6 @@ function l10n_packager_get_filepath($release, $language = NULL, $pattern = NULL)
 }
 
 /**
- * Implementation of hook_l10n_community_build_page().
- */
-function l10n_packager_l10n_community_build_page($page_key, $params) {
-  if ($page_key == 'project') {
-    list($project, $languages) = $params;
-    $page = array();
-
-    // Wrap it in a block.
-    $page['#right'][] = array(
-      '#weight' => -2,
-      '#block' => array(
-        'title' => t('Downloads'),
-        'description' => t('@project translations are available', array('@project' => $project->title)),
-        'content' => l10n_packager_build_download_links($project->uri),
-      )
-    );
-
-    return $page;
-  }
-  elseif ($page_key == 'language') {
-    list($language) = $params;
-    // Wrap it in a block.
-    $page['#right'][] = array(
-      '#weight' => -2,
-      '#block' => array(
-        'title' => t('Downloads'),
-        'description' => t('@language translations are available', array('@language' => $language->name)),
-        'content' => l(t('Browse and download translations'), variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory())))
-      )
-    );
-    return $page;
-  }
-}
-
-/**
  * Build a list of download links per core compatibility for a project.
  */
 function l10n_packager_build_download_links($uri) {
@@ -305,32 +304,4 @@ function l10n_packager_build_download_links($uri) {
   }
 
   return $rendered;
-}
-
-/**
- * Page callback version for download link renderer.
- *
- * Use this to present a list of downloads on a remote server. Example use:
- *
- * @code
- * <div id="l10n-server-download-links">Loading...</a>
- * <script type="text/javascript">
- * function l10nPackagerDownloadLinks(markup) {
- *  jQuery('#l10n-server-download-links').html(markup);
- * }
- * </script>
- * <script type="text/javascript" src="http://l10nserver-host/translate/remote/downloads/myproject"></script>
- * @endcode
- */
-function l10n_packager_build_download_links_page($uri) {
-  // Buffer the output, since drupal_json() will set an HTTP header.
-  ob_start();
-  // Invoke a function which is expected to be implemented by the client.
-  // This is the current possible way to do cross-domain AHAH communication.
-  echo 'l10nPackagerDownloadLinks(';
-  drupal_json(l10n_packager_build_download_links($uri));
-  echo ');';
-  // Now ready to flush the buffer and end the response.
-  ob_end_flush();
-  exit;
 }

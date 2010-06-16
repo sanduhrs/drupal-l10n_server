@@ -336,10 +336,13 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
           'info' => t('Localization server help'),
         ),
         'stats' => array(
-          'info' => t('Localization server quick statistics'),
+          'info' => t('Localization server statistics'),
         ),
         'contribute' => array(
           'info' => t('Localization server contribute'),
+        ),
+        'contributors' => array(
+          'info' => t('Localization server contributors'),
         ),
       );
       return $blocks;
@@ -353,13 +356,72 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
           return;
         case 'stats':
           if (user_access('access localization community')) {
-            return l10n_community_block_stats();
+            if (arg(0) == 'translate') {
+              $arg1 = arg(1);
+              $arg2 = arg(2);
+              $arg3 = arg(3);
+              if (empty($arg1)) {
+                return l10n_community_block_stats_front();
+              }
+              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
+                $project = l10n_server_get_projects(array('uri' => $arg2));
+                include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+                return l10n_community_block_stats_project($project);
+              }
+              elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
+                $languages = l10n_community_get_languages();
+                include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+                return l10n_community_block_stats_language($languages[$arg2]);
+              }
+            }
           }
           return;
         case 'contribute':
           if (user_access('access localization community')) {
-            include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
-            return l10n_community_block_contribute();
+            if (arg(0) == 'translate') {
+              $arg1 = arg(1);
+              $arg2 = arg(2);
+              $arg3 = arg(3);
+              if (empty($arg1)) {
+                include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
+                return l10n_community_block_contribute_front();
+              }
+              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
+                // Return contribution call to action on the project pages.
+                return array(
+                  'subject' => t('Contribute'),
+                  'content' => '<p class="info">'. t('Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages.') .'</p>'
+                );
+              }
+              elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
+                $languages = l10n_community_get_languages();
+                $next_action = '';
+                if ($groups = module_invoke('l10n_groups', 'get_groups')) {
+                  if (isset($groups[$languages[$arg2]->language]) && node_access('view', $group_node = node_load($groups[$language->language])) && !isset($user->og_groups[$groups[$languages[$arg2]->language]])) {
+                    $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
+                  }
+                }
+                if (empty($next_action) && user_access('submit suggestions')) {
+                  $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $languages[$arg2]->language .'/translate') .'</div>';
+                }
+                // Return contribution call to action on language pages.
+                return array(
+                  'subject' => t('Contribute'),
+                  'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use for offline work.') .'</p>'
+                );
+              }
+            }
+          }
+          return;
+        case 'contributors':
+          if (user_access('access localization community')) {
+            $arg2 = arg(2);
+            $arg3 = arg(3);
+            if (arg(0) == 'translate' && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
+              $languages = l10n_community_get_languages();
+              include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+              return l10n_community_block_contributors_language($languages[$arg2]);
+            }
           }
           return;
       }
@@ -456,7 +518,7 @@ function l10n_community_block_help() {
 /**
  * Stats block, also reused on welcome.inc.
  */
-function l10n_community_block_stats() {
+function l10n_community_block_stats_front() {
   $stats = array();
   $stats_numbers = l10n_community_get_stats();
   if (isset($stats_numbers['groups'])) {

@@ -44,6 +44,7 @@ div.admin .l10n-next-action a {
 }
 .l10n-community-overview td.rowhead, .l10n-community-overview thead th.rowhead {
   text-align: left;
+  padding: 0.4em;
 }
 .l10n-community-progress {
   height: 1em;
@@ -121,4 +122,8 @@ em.l10n-community-marker {
 
 #autocomplete {
   text-align:left;
+}
+
+.page-translate .item-list .pager {
+  padding: 1em;
 }

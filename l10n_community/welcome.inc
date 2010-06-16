@@ -32,7 +32,7 @@ function l10n_community_welcome_page() {
 /**
  * Block builder function to generate the main contribution block.
  */
-function l10n_community_block_contribute() {
+function l10n_community_block_contribute_front() {
   // Build contribution call to action block.
   $content = '';
   if (!$GLOBALS['user']->uid) {
