@@ -337,12 +337,15 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
         ),
         'stats' => array(
           'info' => t('Localization server statistics'),
+          'cache' => BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE,
         ),
         'contribute' => array(
           'info' => t('Localization server contribute'),
+          'cache' => BLOCK_NO_CACHE,
         ),
         'contributors' => array(
           'info' => t('Localization server contributors'),
+          'cache' => BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE,
         ),
       );
       return $blocks;
