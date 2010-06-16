@@ -91,6 +91,29 @@ function l10n_groups_set_context($langcode) {
   }
 }
 
+/**
+ * Implementation of hook_block().
+ */
+function l10n_groups_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      $blocks = array(
+        'info' => array(
+          'info' => t('Localization group information'),
+        ),
+      );
+      return $blocks;
+
+    case 'view':
+      switch ($delta) {
+        case 'info':
+          if ((arg(0) == 'translate') && (arg(1) = 'languages') && !empty($arg3 = arg(3)) && empty($arg4 = arg(4))) {
+            return module_invoke('og', 'block_details');
+          }
+      }
+  }
+}
+
 // = Organic groups node type ==================================================
 
 /**
