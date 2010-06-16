@@ -25,17 +25,10 @@ div.admin .form-submit {
 div.admin form {
   margin-bottom: 0 !important;
 }
-div.admin .l10n-next-action {
-  text-align: center;
+.l10n-next-action {
+  float: right;
   font-weight: bold;
-  font-size: 1.3em;
-  position: absolute;
-  top: 0.8em;
-  right: 0.6em;
-}
-div.admin .l10n-next-action a {
-  padding: 0.3em;
-  font-weight: bold;
+  margin: 0 0 0.7em 0.7em;
 }
 
 /* Overview navigation tables for projects and languages */
@@ -48,13 +41,13 @@ div.admin .l10n-next-action a {
 }
 .l10n-community-progress {
   height: 1em;
-  background-color: #e2ddd9;
+  background-color: #eaeae1;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
 }
 .l10n-community-progress-translated,
 .l10n-community-progress-untranslated {
-  background-color: #6ea45a;
+  background-color: #96bc44;
   height: 1em;
   float: left;
   -moz-border-radius: 4px 0 0 4px;
@@ -67,7 +60,7 @@ div.admin .l10n-next-action a {
 
 /* String search filtering form */
 .l10n-server-filter {
-  background-color: #f5f5f5;
+  background-color: #f6f6f2;
   padding: 0.6em 150px 1.5em 0.6em;
   position: relative;
 }
@@ -90,7 +83,6 @@ div.admin .l10n-next-action a {
   position: absolute;
   top: 0;
   right: 0;
-  font-size: 2em;
   margin: 0.5em;
   display: block;
 }
@@ -126,4 +118,5 @@ em.l10n-community-marker {
 
 .page-translate .item-list .pager {
   padding: 1em;
+  text-align: center;
 }

@@ -15,8 +15,12 @@ body {
   padding:0;
 }
 
+.l10n-table {
+  margin-bottom: 1em;
+}
 .l10n-table td {
   vertical-align:top;
+  padding: 0.5em;
 }
 
 .l10n-table ul { margin:0; padding:0; }
@@ -306,7 +310,7 @@ border-color:rgba(0,0,0,0.2);
   clear: both;
   visibility: hidden;
   }
-  
+
 html.js .js-hide {
   display: none;
 }
