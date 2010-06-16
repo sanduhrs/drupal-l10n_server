@@ -333,16 +333,13 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
     case 'list':
       $blocks = array(
         'help' => array(
-          'info' => t('Translation help'),
-          'weight' => 2,
-          'enabled' => 1,
-          'region' => 'left'
+          'info' => t('Localization server help'),
         ),
         'stats' => array(
-          'info' => t('Quick statistics'),
-          'weight' => 3,
-          'enabled' => 1,
-          'region' => 'left'
+          'info' => t('Localization server quick statistics'),
+        ),
+        'contribute' => array(
+          'info' => t('Localization server contribute'),
         ),
       );
       return $blocks;
@@ -357,6 +354,12 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
         case 'stats':
           if (user_access('access localization community')) {
             return l10n_community_block_stats();
+          }
+          return;
+        case 'contribute':
+          if (user_access('access localization community')) {
+            include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
+            return l10n_community_block_contribute();
           }
           return;
       }
@@ -463,7 +466,7 @@ function l10n_community_block_stats() {
   }
 
   $block = array(
-    'subject' => t('Quick community statistics'),
+    'subject' => t('Quick statistics'),
     'content' => theme('item_list', array_merge($stats, array(
       format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
       format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),

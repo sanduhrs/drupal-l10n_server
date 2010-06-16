@@ -7,9 +7,11 @@ div.admin .admin-panel-contribute {
   position: relative;
 }
 table.l10n-community-overview {
+  float: left;
+}
+table.l10n-community-overview-2col {
   width: 45%;
   margin-left: 1em;
-  float: left;
 }
 table.l10n-community-overview td {
   vertical-align: middle;

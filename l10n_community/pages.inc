@@ -494,8 +494,8 @@ function theme_l10n_community_progress_headers($mainhead) {
  */
 function theme_l10n_community_table($header, $table) {
   if (($row_count = count($table)) > 1) {
-    $output = theme('table', $header, array_slice($table, 0, ceil($row_count/2)), array('class' => 'l10n-community-overview'));
-    $output .= theme('table', $header, array_slice($table, ceil($row_count/2)), array('class' => 'l10n-community-overview'));
+    $output = theme('table', $header, array_slice($table, 0, ceil($row_count/2)), array('class' => 'l10n-community-overview l10n-community-overview-2col'));
+    $output .= theme('table', $header, array_slice($table, ceil($row_count/2)), array('class' => 'l10n-community-overview l10n-community-overview-2col'));
     return $output;
   }
   else {
