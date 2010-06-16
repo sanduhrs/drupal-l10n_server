@@ -16,7 +16,7 @@ body {
 }
 
 .l10n-table {
-  margin-bottom: 1em;
+  margin: 1em 0;
 }
 .l10n-table td {
   vertical-align:top;
