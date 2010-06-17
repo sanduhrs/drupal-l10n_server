@@ -100,7 +100,7 @@ function l10n_groups_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array(
         'info' => array(
           'info' => t('Localization group information'),
-          'cache' => BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE,
+          'cache' => BLOCK_NO_CACHE,
         ),
       );
       return $blocks;

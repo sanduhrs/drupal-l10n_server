@@ -111,7 +111,7 @@ function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
       $blocks = array(
         'download' => array(
           'info' => t('Localization packager downloads'),
-          'cache' => BLOCK_CACHE_PER_PAGE | BLOCK_CACHE_PER_ROLE,
+          'cache' => BLOCK_NO_CACHE,
         ),
       );
       return $blocks;
