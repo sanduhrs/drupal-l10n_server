@@ -305,8 +305,6 @@ function l10n_community_init() {
     drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
     // For the translation overview pages. This is used to present admin page like panels.
     drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
-    // Tell them that robots are not welcome here. This is a web app, not content.
-    drupal_set_html_head('<meta name="robots" content="noindex, nofollow" />');
   }
 }
 
