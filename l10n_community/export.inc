@@ -253,6 +253,9 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
     }
     $comment = '#: '. join('; ', $comment) ."\n";
+    if ($export_string['has_suggestion']) {
+      $comment .= "# (has suggestion on localization server)\n";
+    }
 
     // File location is dependent on export format and string location.
     if ($version == 'all-in-one') {
@@ -428,8 +431,8 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
     $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid  $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 $translation_filter WHERE f.pid = %d $type_limit";
-    $sql_args = array($language->language, $project->pid);
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE f.pid = %d $type_limit";
+    $sql_args = array($language->language, $language->language, $project->pid);
   }
 
   if (isset($release)) {
@@ -456,13 +459,14 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       // Now fill in the new string values.
       $previous_sid = $string->sid;
       $export_string = array(
-        'comment'     => array($string->location => array($string->lineno)),
-        'value'       => $string->value,
-        'context'     => $string->context,
-        'translation' => isset($string->translation) ? $string->translation : '',
-        'revisions'   => array($string->revision),
-        'changed'     => isset($string->time_approved) ? $string->time_approved : 0,
-        'type'        => $string->type,
+        'comment'        => array($string->location => array($string->lineno)),
+        'value'          => $string->value,
+        'context'        => $string->context,
+        'translation'    => isset($string->translation) ? $string->translation : '',
+        'revisions'      => array($string->revision),
+        'changed'        => isset($string->time_approved) ? $string->time_approved : 0,
+        'type'           => $string->type,
+        'has_suggestion' => $string->has_suggestion,
       );
     }
     else {
