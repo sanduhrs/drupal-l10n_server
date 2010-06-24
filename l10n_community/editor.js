@@ -31,7 +31,7 @@
     });
 
   $(function () {
-    
+
     // Replace "More information" link with AJAX output.
     $('.l10n-more-link').click(function() {
       if ($(this).siblings('.l10n-more-info').css('display') == 'none') {
@@ -50,19 +50,22 @@
       // Prevent the actual link click from happening.
       return false;
     });
-    
+
     // Callback to show all filters.
     var showAllFilters = function() {
       $('#l10n-community-filter-form .reveal-link').hide();
       $('#l10n-community-filter-form .filter-widget:hidden').removeClass('js-hide').fadeIn();
       return false;
     }
-    
+
     // If we did hide items, add a link to show all.
     if ($('#l10n-community-filter-form .filter-widget:hidden')) {
       $('#l10n-community-filter-form .l10n-server-filter').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
       $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
     }
+
+    // Add click behavior to the show ids hash.
+    $('#l10n-show-ids a').click(function() { $('td.source .l10n-sid').removeClass('js-hide').fadeIn(); $('#l10n-show-ids a').hide(); return false; });
 
      // Add title to all decline buttons. Will be modified dynamically.
      $('.actions .declined label').attr('title', Drupal.t('Decline'));
@@ -80,7 +83,7 @@
 
       // Add markers for newlines.
       string = string.replace(/\n/g, '<span class="l10n-nl"></span>$&');
-      
+
       return string;
     };
 
@@ -260,5 +263,5 @@
       });
     });
   });
-  
+
 })(jQuery);

@@ -32,12 +32,27 @@ body {
   margin:0;
 }
 
+#l10n-show-ids {
+  float: right;
+  color: #000;
+  opacity: 0.4;
+  cursor: pointer;
+}
+#l10n-show-ids a {
+  text-decoration: none;
+}
 td.source {
   width:45%;
 }
-  td.source .l10n-string {
-    padding:4px 6px;
+  td.source .l10n-sid {
+    padding-right: 6px;
+    font-size: 10px;
+    color: #000;
+    opacity: 0.4;
+    float: right;
+    clear: both;
   }
+
   td.source .l10n-usage {
     padding:0 6px 6px 16px;
     font-size:10px;

@@ -964,6 +964,7 @@ function l10n_community_build_filter_values($params) {
     // Dropdown, validated by form API.
     'context' => isset($params['context']) ? (string) $params['context'] : 'all',
     'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30))) ? (int) $params['limit'] : 10,
+    'sid'   => (!empty($params['sid']) && is_numeric($params['sid'])) ? $params['sid'] : 0,
   );
 
   // The project can be a dropdown or text field depending on number of

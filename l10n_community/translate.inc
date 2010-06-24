@@ -45,6 +45,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
       'author'  => isset($filters['author'])  ? $filters['author']->name   : '',
       'search'  => isset($filters['search'])  ? $filters['search']         : '',
       'limit'   => isset($filters['limit'])   ? $filters['limit']          : 10,
+      'sid'     => isset($filters['sid'])     ? $filters['sid']            : 0,
     );
   }
 
@@ -150,6 +151,15 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#display_none' => empty($form_state['values']['search']),
   );
 
+  $form['sid'] = array(
+    '#title' => t('String ID'),
+    '#type' => 'textfield',
+    '#default_value' => empty($form_state['values']['sid']) ? '' : $form_state['values']['sid'],
+    '#size' => 10,
+    '#attributes' => array('class' => empty($form_state['values']['sid']) ? 'is-default' : 'is-not-default'),
+    '#display_none' => empty($form_state['values']['sid']),
+  );
+
   $form['limit'] = array(
     '#type' => 'select',
     '#title' => t('Limit'),
@@ -179,7 +189,7 @@ function theme_l10n_community_filter_form($form) {
   $output = '<div class="l10n-server-filter clear-block">';
 
   // Only display these elements individually.
-  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit');
+  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit', 'sid');
   foreach ($form as $id => &$element) {
     if (in_array($id, $elements)) {
       $title = $element['#title'];
@@ -540,7 +550,7 @@ function l10n_community_translate_byline($string) {
  */
 function theme_l10n_community_translate_table($element) {
   $header = array(
-    t('Source Text'),
+    '<div id="l10n-show-ids"><a href="#">#</a></div>'. t('Source text'),
     t('Translations'),
   );
 
@@ -563,6 +573,7 @@ function theme_l10n_community_translate_source($element) {
   $output = theme('l10n_community_translate_actions', $element['source']);
   $output .= '<label class="l10n-string'. ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') .'">'. drupal_render($element['source']['string']) .'</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
+  $output .= '<div class="l10n-sid js-hide">'. l(t('ID: @id', array('@id' => $element['#string']->sid)), $_GET['q'], array('query' => array('sid' => $element['#string']->sid))) .'</div>';
   $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
   return $output;
 }
@@ -791,6 +802,12 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $join[] = "LEFT JOIN {l10n_server_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
   $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
   $join[] = "LEFT JOIN {users} u2 ON u2.uid = t.uid_approved";
+
+  // Add sid filtering.
+  if (!empty($filters['sid'])) {
+    $where[] = "s.sid = %d";
+    $where_args[] = $filters['sid'];
+  }
 
   // Add submitted by condition
   if (!empty($filters['author'])) {
