@@ -86,6 +86,17 @@ function l10n_packager_schema() {
  */
 function l10n_packager_install() {
   drupal_install_schema('l10n_packager');
+
+  // Set up blocks for this module.
+  $theme_key = variable_get('theme_default', 'garland');
+  $blocks = array(-8 => 'download');
+  $module = 'l10n_packager';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
 }
 
 /**
@@ -104,4 +115,20 @@ function l10n_packager_update_6001() {
   $table['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
   db_create_table($ret, 'cache_l10n_packager', $table);
   return $ret;
+}
+
+/**
+ * Set up blocks that were newly introduced.
+ */
+function l10n_packager_update_6002() {
+  $theme_key = variable_get('theme_default', 'garland');
+  $blocks = array(-8 => 'download');
+  $module = 'l10n_packager';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
+  return array();
 }

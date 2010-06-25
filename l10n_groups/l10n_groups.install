@@ -12,6 +12,17 @@ function l10n_groups_install() {
   drupal_install_schema('l10n_groups');
   // Designate our node type as an OG group node type.
   variable_set('og_content_type_usage_l10n_group', 'group');
+
+  // Set up blocks for this module.
+  $theme_key = variable_get('theme_default', 'garland');
+  $blocks = array(10 => 'info');
+  $module = 'l10n_groups';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
 }
 
 /**
@@ -130,4 +141,21 @@ function l10n_groups_update_6000() {
   db_drop_field($ret, 'l10n_groups_group', 'model');
 
   return $ret;
+}
+
+/**
+ * Set up the new groups block.
+ */
+function l10n_groups_update_6001() {
+  // Set up blocks for this module.
+  $theme_key = variable_get('theme_default', 'garland');
+  $blocks = array(10 => 'info');
+  $module = 'l10n_groups';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
+  return array();
 }

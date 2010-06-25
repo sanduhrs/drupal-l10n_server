@@ -20,6 +20,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
   }
 
   public function setUp() {
+    // Set the theme early, so the modules set blocks with proper themes when
+    // being installed.
+    variable_set('theme_default', 'garland');
+
     // Set up required modules for l10n_community.
     parent::setUp('locale', 'potx', 'l10n_server', 'l10n_community', 'l10n_drupal');
 
@@ -72,13 +76,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Non-priviledged users should not have access to the welcome screen.
     $this->drupalLogin($this->u_anon);
     $this->drupalGet('translate');
-    $this->assertNoText(t('Quick stats'), t('Welcome screen not visible to non-priviledged user.'));
+    $this->assertNoText(t('Quick statistics'), t('Welcome screen not visible to non-priviledged user.'));
     $this->drupalGet('user/logout');
 
     // Priviledged users should have access to the welcome screen.
     $this->drupalLogin($this->u_auth);
     $this->drupalGet('translate');
-    $this->assertText(t('Quick stats'), t('Welcome screen visible to priviledged user.'));
+    $this->assertText(t('Quick statistics'), t('Welcome screen visible to priviledged user.'));
     $this->drupalGet('user/logout');
   }
 

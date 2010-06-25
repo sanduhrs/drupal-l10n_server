@@ -6,6 +6,23 @@
  *   Localization community UI installation, update and uninstallation.
  */
 
+/**
+ * Implementation of hook_install().
+ */
+function l10n_community_install() {
+  $theme_key = variable_get('theme_default', 'garland');
+  // Set up these blocks.
+  $blocks = array(-6 => 'stats', -7 => 'contribute', 8 => 'contributions');
+  $module = 'l10n_community';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
+  cache_clear_all();
+}
+
 // -- Drupal 5 updates ---------------------------------------------------------
 
 /**
@@ -368,4 +385,21 @@ function l10n_community_update_6016() {
   }
 
   return $ret;
+}
+
+/**
+ * Set up blocks that were newly introduced.
+ */
+function l10n_community_update_6017() {
+  $theme_key = variable_get('theme_default', 'garland');
+  // Set up these blocks.
+  $blocks = array(-6 => 'stats', -7 => 'contribute', 8 => 'contributions');
+  $module = 'l10n_community';
+  foreach ($blocks as $weight => $delta) {
+    // Update all instances of this block even if we just added it.
+    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
+      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    }
+  }
+  return array();
 }
