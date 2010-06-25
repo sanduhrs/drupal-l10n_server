@@ -33,7 +33,7 @@ body {
 }
 
 #l10n-show-ids {
-  float: right;
+  float: right; /* LTR */
   color: #000;
   opacity: 0.4;
   cursor: pointer;
@@ -43,6 +43,7 @@ body {
 }
 td.source {
   width:45%;
+  direction:ltr;
 }
   td.source .l10n-sid {
     padding-right: 6px;
@@ -82,36 +83,35 @@ td.source {
   }
 
 li.translation {
-  padding:4px 0;
-  padding-left:20px;
-  clear:left;
+  padding:4px 0 4px 20px; /* LTR */
+  clear:left; /* LTR */
   position:relative;
   -webkit-transition: opacity 0.2s ease-out;
 }
 
 li.translation > .selector {
   position:absolute;
-  left:2px;
+  left:2px; /* LTR */
   top:5px;
   margin:0;
 }
 
 
 .l10n-table ul.actions {
-  float:right;
+  float:right; /* LTR */
 }
   li.translation.is-active > .actions li.declined { display:none; }
   .l10n-table ul.actions {
     overflow:hidden;
-    float: right;
-    margin-right:4px;
+    float: right; /* LTR */
+    margin-right:4px; /* LTR */
     -webkit-user-select:none;
   }
   .l10n-table ul.actions li {
-    float:right;
+    float:right; /* LTR */
     font-size:80%;
     line-height:20px;
-    padding:0 0 4px 4px;
+    padding:0 0 4px 4px; /* LTR */
   }
   .l10n-table ul.actions li label {
     width:16px;
@@ -126,13 +126,13 @@ li.translation > .selector {
     position:relative; top:1px;
   }
   .l10n-table ul.actions li.declined label {
-    background:url(images/decline.png) no-repeat right top;
+    background:url(images/decline.png) no-repeat right top; /* LTR */
   }
   .l10n-table ul.actions li.edit label {
-    background:url(images/edit.png) no-repeat right top;
+    background:url(images/edit.png) no-repeat right top; /* LTR */
   }
   li.translation.is-declined > .actions li.declined label {
-    background-image:url(images/undecline.png);
+    background-image:url(images/undecline.png); /* LTR */
   }
   li.translation:hover > .actions li label {
     opacity:1;
@@ -170,7 +170,7 @@ td.source .l10n-string {
 
 li.translation > .author {
   font-size:10px;
-  padding-left:10px;
+  padding-left:10px; /* LTR */
   line-height:12px;
   color:#999;
 }
@@ -194,7 +194,7 @@ li.translation > .author {
     li.new-translation .l10n-string {
       display:block;
       margin-bottom:4px;
-      margin-right:6px;
+      margin-right:6px; /* LTR */
     }
     li.new-translation .l10n-string > span:after {
       content:"*";
@@ -213,7 +213,7 @@ li.translation > .author {
   }
   li.new-translation textarea {
     height:60px;
-    clear:left;
+    clear:left; /* LTR */
     width:100%;
     padding:0;
     margin:0;
@@ -246,7 +246,7 @@ li.translation > .author {
     -webkit-border-radius: 3px;
     border-color: #cdcdcd;
     border-style: solid;
-    border-width: 0 1px 1px 0;
+    border-width: 0 1px 1px 0; /* LTR */
     margin: 0 0 5px;
   }
 
