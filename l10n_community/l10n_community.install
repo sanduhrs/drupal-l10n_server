@@ -403,3 +403,14 @@ function l10n_community_update_6017() {
   }
   return array();
 }
+
+/**
+ * Fix previously faulty l10n_community_update_6010() column addition.
+ */
+function l10n_community_update_6018() {
+  $ret = array();
+  db_drop_unique_key($ret, 'l10n_server_string', 'hashkey');
+  db_change_field($ret, 'l10n_server_string', 'hashkey', 'hashkey', array('type' => 'char', 'not null' => TRUE, 'length' => 32));
+  db_add_unique_key($ret, 'l10n_server_string', 'hashkey', array('hashkey'));
+  return $ret;
+}
