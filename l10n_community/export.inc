@@ -576,7 +576,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   if ($version == 'all-in-one') {
     // Output a single PO(T) file in this case.
-    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '.pot' : '.po'));
+    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'));
   }
   else {
     // Output a package in this case.
