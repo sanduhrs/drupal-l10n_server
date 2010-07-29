@@ -158,6 +158,10 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       '#options' => array(0 => t('Verbose files useful for desktop translation'), 1 => t('Compact files optimized for size, not desktop editing')),
       '#default_value' => 0,
     );
+    $form['format']['suggestions'] = array(
+      '#title' => t('Include suggestions (as fuzzy if untranslated, in comment if translated)'),
+      '#type' => 'checkbox',
+    );
   }
   $form['submit'] = array(
     '#type' => 'submit',
@@ -217,7 +221,9 @@ function l10n_community_export_form_submit($form, &$form_state) {
     ($type != 'translation'),
     // If not set (exporting a template for a module), stick to all-in-one.
     isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one',
-    $form_state['values']['compact']
+    $form_state['values']['compact'],
+    FALSE,
+    $form_state['values']['suggestions']
   );
 
   if (isset($export_result) && is_array($export_result)) {
@@ -239,7 +245,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
 /**
  * Helper function to store the export string.
  */
-function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string, $compact = FALSE) {
+function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string, $compact = FALSE, $suggestions = FALSE) {
   $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
   $output = '';
 
@@ -253,9 +259,6 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
     }
     $comment = '#: '. join('; ', $comment) ."\n";
-    if ($export_string['has_suggestion']) {
-      $comment .= "# (has suggestion on localization server)\n";
-    }
 
     // File location is dependent on export format and string location.
     if ($version == 'all-in-one') {
@@ -305,12 +308,42 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     // Append extension.
     $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
 
+    if (!$compact) {
+      $output = $comment;
+    }
+
+    $fuzzy = FALSE;
+    if ($suggestions) {
+      // Export information about suggestions if inclusion was requested.
+      if ($export_string['has_suggestion']) {
+        // If we had suggestions, add comment to let reviewers know.
+        $output .= count($export_string['suggestions']) > 1 ? "# Suggestions on the localization server:\n" : "# Suggestion on the localization server:\n";
+      }
+      if (empty($export_string['translation']) && !empty($export_string['suggestions'])) {
+        // If no translation, make the translation the first identified suggestion
+        // and mark the translation fuzzy (so it keeps to be a suggestion on
+        // reimport).
+        $export_string['translation'] = array_shift($export_string['suggestions']);
+        $fuzzy = TRUE;
+      }
+      if (!empty($export_string['suggestions'])) {
+        if (strpos($export_string['value'], "\0")) {
+          foreach ($export_string['suggestions'] as $i => $suggestion) {
+            // Format the suggestions in a readable format, if plurals.
+            $export_string['suggestions'][$i] = str_replace("\0", ' / ', $suggestion);
+          }
+        }
+        // Add all other suggestions as comment lines.
+        $output .= '# '. join("\n# ", $export_string['suggestions']) ."\n";
+      }
+    }
+    if ($fuzzy) {
+      $output .= "#, fuzzy\n";
+    }
+
     if (strpos($export_string['value'], "\0") !== FALSE) {
       // This is a string with plural variants.
       list($singular, $plural) = explode("\0", $export_string['value']);
-      if (!$compact) {
-        $output = $comment;
-      }
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
@@ -337,9 +370,6 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     }
     else {
       // Simple string (and possibly translation pair).
-      if (!$compact) {
-        $output = $comment;
-      }
       if (!empty($export_string['context'])) {
         $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
       }
@@ -413,7 +443,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  * @todo
  *   Look into possibly exporting suggestions as fuzzy translations.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE, $installer = FALSE) {
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
   include_once 'Archive/Tar.php';
@@ -430,8 +460,10 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $translation_join = ($compact) ? 'INNER JOIN' : 'LEFT JOIN';
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
     $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
+    // Only include suggestions if requested, otherwise filter out.
+    $is_suggestion = ($suggestions ? '' : 'AND t.is_suggestion = 0');
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND is_active = 1 AND is_suggestion = 0 WHERE f.pid = %d $type_limit";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved, t.is_suggestion, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 $is_suggestion WHERE f.pid = %d $type_limit";
     $sql_args = array($language->language, $language->language, $project->pid);
   }
 
@@ -445,7 +477,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   // Source strings will be repeated as many times as they appear, so to generate
   // the export file properly, order by the source id.
-  $sql .= ' ORDER BY s.sid';
+  $sql .= ' ORDER BY s.sid ASC, t.is_suggestion ASC, t.time_entered DESC';
 
   $result = db_query($sql, $sql_args);
   $previous_sid = 0;
@@ -454,7 +486,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
-      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact);
+      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact, $suggestions);
 
       // Now fill in the new string values.
       $previous_sid = $string->sid;
@@ -462,27 +494,36 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'comment'        => array($string->location => array($string->lineno)),
         'value'          => $string->value,
         'context'        => $string->context,
-        'translation'    => isset($string->translation) ? $string->translation : '',
+        'translation'    => (!empty($string->translation) && !$string->is_suggestion) ? $string->translation : '',
+        'suggestions'    => array(),
         'revisions'      => array($string->revision),
         'changed'        => isset($string->time_approved) ? $string->time_approved : 0,
         'type'           => $string->type,
         'has_suggestion' => $string->has_suggestion,
       );
+      if ($string->is_suggestion) {
+        $export_string['suggestions'][] = $string->translation;
+      }
     }
     else {
-      // Existing string but with new location information.
-      $export_string['comment'][$string->location][] = $string->lineno;
-      $export_string['revisions'][] = $string->revision;
-      if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
-        // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
-        // the currently found string type is different to the previously found.
-        $export_string['type'] = 0;
+      if ($string->is_suggestion) {
+        $export_string['suggestions'][] = $string->translation;
+      }
+      else {
+        // Existing string but with new location information.
+        $export_string['comment'][$string->location][] = $string->lineno;
+        $export_string['revisions'][] = $string->revision;
+        if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
+          // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
+          // the currently found string type is different to the previously found.
+          $export_string['type'] = 0;
+        }
       }
     }
   }
   if ($previous_sid > 0) {
     // Store the last string.
-    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact);
+    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact, $suggestions);
   }
 
   if (empty($string_files)) {
