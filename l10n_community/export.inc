@@ -477,7 +477,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   // Source strings will be repeated as many times as they appear, so to generate
   // the export file properly, order by the source id.
-  $sql .= ' ORDER BY s.sid ASC, t.is_suggestion ASC, t.time_entered DESC';
+  $sql .= ' ORDER BY s.sid ASC'. ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
 
   $result = db_query($sql, $sql_args);
   $previous_sid = 0;
