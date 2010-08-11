@@ -256,7 +256,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
     // occurances in the respective source files.
     $comment = array();
     foreach ($export_string['comment'] as $path => $lines) {
-      $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', $lines);
+      $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', array_keys($lines));
     }
     $comment = '#: '. join('; ', $comment) ."\n";
 
@@ -314,27 +314,28 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
 
     $fuzzy = FALSE;
     if ($suggestions) {
+      $all_suggestions = array_keys($export_string['suggestions']);
       // Export information about suggestions if inclusion was requested.
       if ($export_string['has_suggestion']) {
         // If we had suggestions, add comment to let reviewers know.
-        $output .= count($export_string['suggestions']) > 1 ? "# Suggestions on the localization server:\n" : "# Suggestion on the localization server:\n";
+        $output .= count($all_suggestions) > 1 ? "# Suggestions on the localization server:\n" : "# Suggestion on the localization server:\n";
       }
-      if (empty($export_string['translation']) && !empty($export_string['suggestions'])) {
+      if (empty($export_string['translation']) && !empty($all_suggestions)) {
         // If no translation, make the translation the first identified suggestion
         // and mark the translation fuzzy (so it keeps to be a suggestion on
         // reimport).
-        $export_string['translation'] = array_shift($export_string['suggestions']);
+        $export_string['translation'] = array_shift($all_suggestions);
         $fuzzy = TRUE;
       }
-      if (!empty($export_string['suggestions'])) {
+      if (!empty($all_suggestions)) {
         if (strpos($export_string['value'], "\0")) {
-          foreach ($export_string['suggestions'] as $i => $suggestion) {
+          foreach ($all_suggestions as $i => $suggestion) {
             // Format the suggestions in a readable format, if plurals.
-            $export_string['suggestions'][$i] = str_replace("\0", ' / ', $suggestion);
+            $all_suggestions[$i] = str_replace("\0", ' / ', $suggestion);
           }
         }
         // Add all other suggestions as comment lines.
-        $output .= '# '. join("\n# ", $export_string['suggestions']) ."\n";
+        $output .= '# '. join("\n# ", $all_suggestions) ."\n";
       }
     }
     if ($fuzzy) {
@@ -410,7 +411,7 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       if (!$template) {
         $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
       }
-      $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], $export_string['revisions']));
+      $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], array_keys($export_string['revisions'])));
     }
   }
 }
@@ -491,34 +492,30 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       // Now fill in the new string values.
       $previous_sid = $string->sid;
       $export_string = array(
-        'comment'        => array($string->location => array($string->lineno)),
+        'comment'        => array(),
         'value'          => $string->value,
         'context'        => $string->context,
         'translation'    => (!empty($string->translation) && !$string->is_suggestion) ? $string->translation : '',
         'suggestions'    => array(),
-        'revisions'      => array($string->revision),
+        'revisions'      => array(),
         'changed'        => isset($string->time_approved) ? $string->time_approved : 0,
         'type'           => $string->type,
         'has_suggestion' => $string->has_suggestion,
       );
-      if ($string->is_suggestion) {
-        $export_string['suggestions'][] = $string->translation;
-      }
     }
     else {
-      if ($string->is_suggestion) {
-        $export_string['suggestions'][] = $string->translation;
+      // Existing string but with new location information.
+      if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
+        // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
+        // the currently found string type is different to the previously found.
+        $export_string['type'] = 0;
       }
-      else {
-        // Existing string but with new location information.
-        $export_string['comment'][$string->location][] = $string->lineno;
-        $export_string['revisions'][] = $string->revision;
-        if ($export_string['type'] != 0 && $export_string['type'] != $string->type) {
-          // Elevate string type if it is not already 0 (POTX_STRING_BOTH), and
-          // the currently found string type is different to the previously found.
-          $export_string['type'] = 0;
-        }
-      }
+    }
+    // Uniquely collected, so we use array keys for speed.
+    $export_string['comment'][$string->location][$string->lineno] = 1;
+    $export_string['revisions'][$string->revision] = 1;
+    if ($string->is_suggestion) {
+      $export_string['suggestions'][$string->translation] = 1;
     }
   }
   if ($previous_sid > 0) {
