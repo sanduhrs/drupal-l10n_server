@@ -95,6 +95,7 @@ function l10n_packager_show_downloads() {
     $majors[intval($item->title)] = TRUE;
     $files[$item->language][intval($item->title)][$item->title] = $item;
   }
+  var_dump($files);
 
   if (empty($majors)) {
     drupal_set_message(t('No translation downloads found for %project.', array('%project' => $project->title)), 'warning');
@@ -116,7 +117,6 @@ function l10n_packager_show_downloads() {
     foreach ($majors as $major) {
       $major_cell = array();
       // Generate a cell for each major version.
-      var_dump($files[$langcode][$major]);
       if (!empty($files[$langcode][$major])) {
         ksort($files[$langcode][$major]);
         foreach ($files[$langcode][$major] as $item) {
