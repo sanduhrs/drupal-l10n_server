@@ -25,7 +25,7 @@ function l10n_packager_download_project_form(&$form_state, $projects) {
   }
   $form['project'] = array(
     '#default_value' => $form_state['values']['project'],
-    '#title' => t('Pick a project'),
+    '#title' => t('Pick a project'),
   );
   if (($count = count($projects)) <= 30) {
     // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
