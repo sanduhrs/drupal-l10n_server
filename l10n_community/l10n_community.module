@@ -362,7 +362,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
               $arg1 = arg(1);
               $arg2 = arg(2);
               $arg3 = arg(3);
-              if (empty($arg1)) {
+              if (empty($arg1) || ($arg1 == 'downloads')) {
                 return l10n_community_block_stats_front();
               }
               elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
@@ -384,7 +384,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
               $arg1 = arg(1);
               $arg2 = arg(2);
               $arg3 = arg(3);
-              if (empty($arg1)) {
+              if (empty($arg1) || ($arg1 == 'downloads')) {
                 include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
                 return l10n_community_block_contribute_front();
               }

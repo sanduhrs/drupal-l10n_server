@@ -137,8 +137,12 @@ function l10n_packager_show_downloads($project) {
         foreach ($files[$langcode][$branch] as $item) {
           $attributes = array(
             'title' =>
-              t('Generated: @time, Size: @size',
-                array('@time' => format_date($item->timestamp, 'custom', 'r', 0), '@size' => format_size($item->filesize))
+              t('Generated: @generated, Up to date as of: @checked, Size: @size',
+                array(
+                  '@generated' => format_date($item->timestamp, 'custom', 'r', 0),
+                  '@checked' => format_date($item->checked, 'custom', 'r', 0),
+                  '@size' => format_size($item->filesize)
+                )
               )
           );
           if (!$highlighted) {
