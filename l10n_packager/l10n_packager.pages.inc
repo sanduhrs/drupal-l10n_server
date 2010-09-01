@@ -93,7 +93,8 @@ function l10n_packager_show_downloads() {
   $branches = array();
   $result = db_query('SELECT * FROM {l10n_server_release} r INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
   while ($item = db_fetch_object($result)) {
-    $branch = preg_replace('!^(\d\.x-\d\.)(.+)$!', '\1', $item->title) .'x';
+    // @todo: bad, bad harcoding of Drupal versioning schemes.
+    $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) .'x';
     $branches[$branch] = TRUE;
     $files[$item->language][$branch][$item->rid] = $item;
   }
@@ -147,5 +148,5 @@ function l10n_packager_show_downloads() {
   }
 
   $header = array_merge(array(t('Languages')), array_keys($branches));
-  return theme('table', $header, $table);
+  return theme('table', $header, $table, array('class' => 'l10n-packager-table'));
 }

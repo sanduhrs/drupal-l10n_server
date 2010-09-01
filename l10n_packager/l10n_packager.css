@@ -7,7 +7,11 @@
   display: inline;
 }
 
-a.package-highlight {
-  font-size: 1.1em;
+.l10n-packager-table td {
+  font-size: 0.9em;
+}
+.l10n-packager-table td.rowhead,
+.l10n-packager-table .package-highlight {
+  font-size: 1.2em;
   font-weight: bold;
 }
