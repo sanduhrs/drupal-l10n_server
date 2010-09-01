@@ -93,7 +93,7 @@ function l10n_packager_show_downloads() {
   $branches = array();
   $result = db_query('SELECT * FROM {l10n_server_release} r INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
   while ($item = db_fetch_object($result)) {
-    $branch = preg_replace('!(^\d\.x-\d\.)!', '\1', $item->title) .'x';
+    $branch = preg_replace('!^(\d\.x-\d\.)(.+)$!', '\1', $item->title) .'x';
     $branches[$branch] = TRUE;
     $files[$item->language][$branch][$item->rid] = $item;
   }
@@ -119,20 +119,25 @@ function l10n_packager_show_downloads() {
       $branch_cell = array();
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {
-        ksort($files[$langcode][$branch]);
-        $highlights = array();
+        krsort($files[$langcode][$branch]);
+        $hilighted = FALSE;
         foreach ($files[$langcode][$branch] as $item) {
+          $attributes = array(
+            'title' =>
+              t('Generated: @time, Size: @size',
+                array('@time' => format_date($item->timestamp, 'custom', 'r', 0), '@size' => format_size($item->filesize))
+              )
+          );
+          if (!$highlighted) {
+            // Highlight the first package in this series.
+            $attributes['class'] = 'package-highlight';
+            $highlighted = TRUE;
+          }
           $branch_cell[] = l(
             $item->title,
             // @todo: bad, bad practice to hardcode the path format here.
             $download_url .'/'. $major .'.x/'. $project->uri .'/'. $item->filename,
-            array('attributes' =>
-              array('title' =>
-                t('Generated: @time, Size: @size',
-                  array('@time' => format_date($item->timestamp, 'custom', 'r', 0), '@size' => format_size($item->filesize))
-                )
-              )
-            )
+            array('attributes' => $attributes)
           );
         }
       }
