@@ -10,6 +10,7 @@ function l10n_packager_explore_downloads() {
   $projects = l10n_server_get_projects();
   $output = drupal_get_form('l10n_packager_download_project_form', $projects);
   $output .= l10n_packager_show_downloads();
+  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
   return $output;
 }
 
@@ -89,14 +90,15 @@ function l10n_packager_show_downloads() {
   }
 
   $files = array();
-  $majors = array();
+  $branches = array();
   $result = db_query('SELECT * FROM {l10n_server_release} r INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
   while ($item = db_fetch_object($result)) {
-    $majors[intval($item->title)] = TRUE;
-    $files[$item->language][intval($item->title)][$item->title] = $item;
+    $branch = preg_replace('!(^\d\.x-\d\.)!', '\1', $item->title) .'x';
+    $branches[$branch] = TRUE;
+    $files[$item->language][$branch][$item->rid] = $item;
   }
 
-  if (empty($majors)) {
+  if (empty($branches)) {
     drupal_set_message(t('No translation downloads found for %project.', array('%project' => $project->title)), 'warning');
     return '';
   }
@@ -104,7 +106,7 @@ function l10n_packager_show_downloads() {
   // Set proper title for given project.
   drupal_set_title(t('@project translation downloads', array('@project' => $project->title)));
 
-  ksort($majors);
+  ksort($branches);
   $languages = l10n_community_get_languages();
   $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
 
@@ -113,13 +115,14 @@ function l10n_packager_show_downloads() {
     $row = array();
     // Start off the row with the language name and code.
     $row[] = array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead');
-    foreach (array_keys($majors) as $major) {
-      $major_cell = array();
+    foreach (array_keys($branches) as $branch) {
+      $branch_cell = array();
       // Generate a cell for each major version.
-      if (!empty($files[$langcode][$major])) {
-        ksort($files[$langcode][$major]);
-        foreach ($files[$langcode][$major] as $item) {
-          $major_cell[] = l(
+      if (!empty($files[$langcode][$branch])) {
+        ksort($files[$langcode][$branch]);
+        $highlights = array();
+        foreach ($files[$langcode][$branch] as $item) {
+          $branch_cell[] = l(
             $item->title,
             // @todo: bad, bad practice to hardcode the path format here.
             $download_url .'/'. $major .'.x/'. $project->uri .'/'. $item->filename,
@@ -133,15 +136,11 @@ function l10n_packager_show_downloads() {
           );
         }
       }
-      $row[] = join(', ', $major_cell);
+      $row[] = join(', ', $branch_cell);
     }
     $table[] = $row;
   }
 
-  $header = array(t('Languages'));
-  foreach (array_keys($majors) as $major) {
-    $header[] = $major .'.x';
-  }
-
+  $header = array_merge(array(t('Languages')), array_keys($branches));
   return theme('table', $header, $table);
 }
