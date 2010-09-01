@@ -35,6 +35,15 @@ define('L10N_PACKAGER_API_VERSION', '1.1');
  * Implementation of hook_menu().
  */
 function l10n_packager_menu() {
+  $items['translate/downloads'] = array(
+    'title' => 'Download translations',
+    'description' => 'Download pre-generated translation packages.',
+    'page callback' => 'l10n_packager_explore_downloads',
+    'file' => 'l10n_packager.pages.inc',
+    'access arguments' => array('access localization community'),
+    'weight' => 20,
+  );
+
   // Administration tools.
   $items['admin/l10n_server/packager'] = array(
     'title' => 'Packaging tools',
