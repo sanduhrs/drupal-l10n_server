@@ -141,7 +141,7 @@ function l10n_packager_show_downloads() {
             array('attributes' => $attributes)
           );
         }
-        $cell = array_shift($brach_cell);
+        $cell = array_shift($branch_cell);
         if (count($branch_cell)) {
           $cell .= '<br />'. t('Others: !downloads', array('!downloads' => join(', ', $branch_cell)));
         }

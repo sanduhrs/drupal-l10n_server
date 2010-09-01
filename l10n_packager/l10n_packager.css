@@ -7,13 +7,13 @@
   display: inline;
 }
 
-.l10n-packager-table td {
-  font-size: 0.9em;
-}
 .l10n-packager-table td.rowhead {
   font-weight: bold;
 }
-.l10n-packager-table .package-highlight {
+.l10n-packager-table td a {
+  font-size: 0.9em;
+}
+.l10n-packager-table td a.package-highlight {
   font-size: 1.2em;
   font-weight: bold;
 }
