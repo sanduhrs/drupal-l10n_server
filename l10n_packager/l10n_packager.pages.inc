@@ -7,10 +7,42 @@
  */
 
 function l10n_packager_explore_downloads() {
+  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
+
   $projects = l10n_server_get_projects();
   $output = drupal_get_form('l10n_packager_download_project_form', $projects);
-  $output .= l10n_packager_show_downloads();
-  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
+
+  // @todo: remove hard-wired Drupal default from here.
+  if (empty($_GET['project'])) {
+    if ($drupal = l10n_server_get_projects(array('uri' => 'drupal'))) {
+      $project = $drupal;
+    }
+  }
+  else {
+    $project = l10n_server_get_projects(array('uri' => $_GET['project']));
+  }
+  if (empty($project)) {
+    drupal_set_message(t('Requested project not found.'), 'warning');
+    return $output;
+  }
+
+  // Set proper title for given project.
+  drupal_set_title(t('@project translation downloads', array('@project' => $project->title)));
+
+  // Expire old entries and then try to look up our entry.
+  cache_clear_all(NULL, 'cache_l10n_packager');
+  $rendered = cache_get('download:'. $project->uri, 'cache_l10n_packager');
+  // Not found, generate the list from our data.
+  if (empty($rendered)) {
+    $downloads = l10n_packager_show_downloads($project);
+    // Store for later use.
+    cache_set('download:'. $project->uri, $downloads, 'cache_l10n_packager', time()+60*60*24);
+    $output .= $downloads;
+  }
+  else {
+    $output .= $rendered->data;
+  }
+
   return $output;
 }
 
@@ -72,23 +104,7 @@ function l10n_packager_download_project_form_submit($form, $form_state) {
 /**
  * Generate list of file downloads for given project.
  */
-function l10n_packager_show_downloads() {
-  if (empty($_GET['project'])) {
-    if ($drupal = l10n_server_get_projects(array('uri' => 'drupal'))) {
-      $project = $drupal;
-    }
-    else {
-      return '';
-    }
-  }
-  else {
-    $project = l10n_server_get_projects(array('uri' => $_GET['project']));
-    if (empty($project)) {
-      drupal_set_message(t('Requested project not found.'), 'warning');
-      return '';
-    }
-  }
-
+function l10n_packager_show_downloads($project) {
   $files = array();
   $branches = array();
   $result = db_query('SELECT * FROM {l10n_server_release} r INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
@@ -100,12 +116,8 @@ function l10n_packager_show_downloads() {
   }
 
   if (empty($branches)) {
-    drupal_set_message(t('No translation downloads found for %project.', array('%project' => $project->title)), 'warning');
-    return '';
+    return t('No translation downloads found for %project.', array('%project' => $project->title));
   }
-
-  // Set proper title for given project.
-  drupal_set_title(t('@project translation downloads', array('@project' => $project->title)));
 
   ksort($branches);
   $languages = l10n_community_get_languages();
