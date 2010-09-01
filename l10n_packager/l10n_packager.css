@@ -1,0 +1,13 @@
+/* $Id$ */
+
+#l10n-packager-download-project-form {
+  margin-bottom: 2em;
+}
+#l10n-packager-download-project-form #edit-project-wrapper {
+  display: inline;
+}
+
+a.package-highlight {
+  font-size: 1.1em;
+  font-weight: bold;
+}

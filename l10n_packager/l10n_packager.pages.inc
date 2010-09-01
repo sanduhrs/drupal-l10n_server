@@ -120,7 +120,7 @@ function l10n_packager_show_downloads() {
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {
         krsort($files[$langcode][$branch]);
-        $hilighted = FALSE;
+        $highlighted = FALSE;
         foreach ($files[$langcode][$branch] as $item) {
           $attributes = array(
             'title' =>
@@ -136,7 +136,7 @@ function l10n_packager_show_downloads() {
           $branch_cell[] = l(
             $item->title,
             // @todo: bad, bad practice to hardcode the path format here.
-            $download_url .'/'. $major .'.x/'. $project->uri .'/'. $item->filename,
+            $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $item->filename,
             array('attributes' => $attributes)
           );
         }
