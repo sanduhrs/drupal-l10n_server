@@ -8,6 +8,7 @@
 
 function l10n_packager_explore_downloads() {
   drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
+  drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css');
 
   $projects = l10n_server_get_projects();
   $output = drupal_get_form('l10n_packager_download_project_form', $projects);
