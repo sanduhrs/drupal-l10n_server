@@ -19,11 +19,13 @@ function l10n_packager_explore_downloads() {
 function l10n_packager_download_project_form(&$form_state, $projects) {
   if (empty($form_state['values'])) {
     $form_state['values'] = array(
-      'project' => (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : ''),
+      // @todo: bad, bad hardcoding of Drupal as project.
+      'project' => (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : 'Drupal core'),
     );
   }
   $form['project'] = array(
     '#default_value' => $form_state['values']['project'],
+    '#title' => t('Pick a project'),
   );
   if (($count = count($projects)) <= 30) {
     // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
@@ -114,6 +116,7 @@ function l10n_packager_show_downloads() {
     foreach ($majors as $major) {
       $major_cell = array();
       // Generate a cell for each major version.
+      var_dump($files[$langcode][$major]);
       if (!empty($files[$langcode][$major])) {
         ksort($files[$langcode][$major]);
         foreach ($files[$langcode][$major] as $item) {
