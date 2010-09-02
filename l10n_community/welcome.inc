@@ -47,10 +47,15 @@ function l10n_community_block_contribute_front() {
   );
 }
 
-function l10n_community_pick_go() {
+function l10n_community_pick_go(&$form_state) {
   $form = array();
   $languages = l10n_community_get_languages();
   $projects = l10n_server_get_projects();
+
+  // Set default project based on possible URL argument (eg. used on downloads page).
+  if (empty($form_state['values']['project']) && !empty($_GET['project']) && isset($projects[$_GET['project']])) {
+    $form_state['values']['project'] = $projects[$_GET['project']]->title;
+  }
 
   // Drop languages without a plural formula from the options.
   $language_list = array();
@@ -101,7 +106,8 @@ function l10n_community_pick_go() {
   }
   $form['project'] = array(
     '#title' => $projects_title,
-    '#description' => t('Alternatively you can <a href="@explore">explore projects</a>.', array('@explore' => url('translate/projects')))
+    '#description' => t('Alternatively you can <a href="@explore">explore projects</a>.', array('@explore' => url('translate/projects'))),
+    '#default_value' => $form_state['values']['project'],
   );
   if (($count = count($projects)) <= 30) {
     // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
