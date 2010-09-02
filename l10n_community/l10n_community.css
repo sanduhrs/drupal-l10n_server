@@ -104,8 +104,8 @@ em.l10n-community-marker {
   font-weight: bold;
 }
 
-#l10n-community-pick-go #edit-project {
-  width:100%
+#l10n-community-pick-go .form-text {
+  width: 100%;
 }
 
 #l10n-community-explore-projects-jump-form {
