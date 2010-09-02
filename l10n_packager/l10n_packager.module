@@ -135,12 +135,12 @@ function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
               $arg3 = arg(3);
               if (empty($arg1) || ($arg1 == 'languages' && !empty($arg2) && empty($arg3))) {
                 return array(
-                  'content' => l(t('Download translations'), 'translate/downloads', array('attributes' => array('class' => 'link-button'))),
+                  'content' => l('<span>'. t('Download translations') .'</span>', 'translate/downloads', array('html' => TRUE, 'attributes' => array('class' => 'link-button'))),
                 );
               }
               elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
                 return array(
-                  'content' => l(t('Download translations'), 'translate/downloads', array('query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
+                  'content' => l('<span>'. t('Download translations') .'</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
                 );
               }
             }
