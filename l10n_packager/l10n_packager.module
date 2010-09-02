@@ -140,7 +140,7 @@ function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
               }
               elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
                 return array(
-                  'content' => l(t('Download translations'), 'translate/downloads', array('query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
+                  'content' => l(t('Download translations'), 'translate/downloads', array('query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
                 );
               }
             }
