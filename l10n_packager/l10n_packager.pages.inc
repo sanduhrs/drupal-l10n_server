@@ -108,7 +108,7 @@ function l10n_packager_download_project_form_submit($form, $form_state) {
 function l10n_packager_show_downloads($project) {
   $files = array();
   $branches = array();
-  $result = db_query('SELECT * FROM {l10n_server_release} r INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
+  $result = db_query('SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
   while ($item = db_fetch_object($result)) {
     // @todo: bad, bad harcoding of Drupal versioning schemes.
     $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) .'x';
@@ -141,7 +141,7 @@ function l10n_packager_show_downloads($project) {
               t('Generated: @generated, Up to date as of: @checked, Size: @size',
                 array(
                   '@generated' => format_date($item->timestamp, 'custom', 'r', 0),
-                  '@checked' => format_date($item->checked, 'custom', 'r', 0),
+                  '@checked' => format_date(max($item->checked, $item->release_checked) 'custom', 'r', 0),
                   '@size' => format_size($item->filesize)
                 )
               )

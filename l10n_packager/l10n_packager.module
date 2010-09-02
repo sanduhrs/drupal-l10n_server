@@ -133,18 +133,14 @@ function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
               $arg1 = arg(1);
               $arg2 = arg(2);
               $arg3 = arg(3);
-              if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
-                $project = l10n_server_get_projects(array('uri' => $arg2));
-                // Return contribution call to action on the project pages.
+              if (empty($arg1) || ($arg1 == 'languages' && !empty($arg2) && empty($arg3))) {
                 return array(
-                  'subject' => t('Downloads'),
-                  'content' => l10n_packager_build_download_links($project->uri)
+                  'content' => l(t('Download translations'), 'translate/downloads', array('attributes' => array('class' => 'link-button'))),
                 );
               }
-              elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
+              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
                 return array(
-                  'subject' => t('Downloads'),
-                  'content' => l(t('Browse and download translations'), variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory())))
+                  'content' => l(t('Download translations'), 'translate/downloads', array('query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
                 );
               }
             }
