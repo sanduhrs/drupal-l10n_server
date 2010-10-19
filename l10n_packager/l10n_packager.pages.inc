@@ -128,44 +128,22 @@ function l10n_packager_show_downloads($project) {
   foreach ($languages as $langcode => $language) {
     $row = array();
     // Start off the row with the language name and code.
-    $row[] = array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead');
+    $row[] = t($language->name);
     foreach (array_keys($branches) as $branch) {
-      $branch_cell = array();
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {
         krsort($files[$langcode][$branch]);
-        $highlighted = FALSE;
-        foreach ($files[$langcode][$branch] as $item) {
-          $attributes = array(
-            'title' =>
-              t('Generated: @generated, Up to date as of: @checked, Size: @size',
-                array(
-                  '@generated' => format_date($item->timestamp, 'custom', 'r', 0),
-                  '@checked' => format_date(max($item->checked, $item->release_checked), 'custom', 'r', 0),
-                  '@size' => format_size($item->filesize)
-                )
-              )
-          );
-          if (!$highlighted) {
-            // Highlight the first package in this series.
-            $attributes['class'] = 'package-highlight';
-            $highlighted = TRUE;
-          }
-          $branch_cell[] = l(
-            $item->title,
-            // @todo: bad, bad practice to hardcode the path format here.
-            $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $item->filename,
-            array('attributes' => $attributes)
-          );
-        }
-        $cell = array_shift($branch_cell);
-        if (count($branch_cell)) {
-          $cell .= '<br />'. t('Others: !downloads', array('!downloads' => join(', ', $branch_cell)));
+        $latest_item = array_shift($files[$langcode][$branch]);
+        $cell = '<p>'. l($latest_item->title .' ('. format_size($item->filesize) . ')', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename) .'</p>';
+        $cell .= '<p class="meta">'. t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0))) .'</p>';
+        $up_to_date = max($latest_item->checked, $latest_item->release_checked);
+        if ($up_to_date > $latest_item->timestamp) {
+          $cell .= '<p class="meta">'. t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d', 0))) .'</p>';
         }
         $row[] = $cell;
       }
       else {
-        $row[] = '';
+        $row[] = t('n/a');
       }
     }
     $table[] = $row;
