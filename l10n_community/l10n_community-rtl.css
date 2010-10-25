@@ -51,3 +51,9 @@ div.admin .l10n-next-action {
   text-align:right;
   text-indent:-0.5em;
 }
+
+/* Existing translations and editing UI */
+td.translation label.l10n-string,
+td.translation textarea {
+  direction: rtl;
+}
