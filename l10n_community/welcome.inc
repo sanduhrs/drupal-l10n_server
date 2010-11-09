@@ -19,15 +19,13 @@ function l10n_community_welcome_page() {
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
     include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
-    $block = array(
-      'title' => t('Translation status for %project', array('%project' => $project->title)),
-      'description' => t('Highlighted project'),
-    );
+    drupal_set_title(t('@project translations', array('@project' => $project->title)));
+    
+    $languages = l10n_community_get_languages();
     $num_source = l10n_community_get_string_count('project', $project->pid);
     $string_counts = l10n_community_get_string_count('languages', $project->pid);
   
     $table = array();
-    $languages = l10n_community_get_languages();
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
         $table[] = array(
@@ -44,20 +42,27 @@ function l10n_community_welcome_page() {
         ));
         $table[] = array(
           array(
-            array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
+            'data' => l(t($language->name), 'translate/languages/'. $langcode),
+            'class' => 'rowhead',
           ),
           $progress
         );
       }
     }
-    $block['content'] = theme(
+    
+    $output = theme(
       'table',
       array(array('data' => t('Language'), 'class' => 'rowhead'), t('Progress')),
       $table,
       array('class' => 'l10n-community-overview')
-    ) .'<div class="clear-block"></div>';
+    );
 
-    $output = theme('admin_block', $block);
+    $projects = l10n_server_get_projects();
+    $project_count = count($projects);
+    if ($project_count > 1) {
+      $output .= '<p>'. format_plural($project_count, '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', array('@project' => $project->title, '@projects' => url('translate/projects'))) .'<p>';
+    }
+
   }
   else {
     $output = t('No highlighted project set.');
@@ -88,9 +93,15 @@ function l10n_community_pick_go(&$form_state) {
   $languages = l10n_community_get_languages();
   $projects = l10n_server_get_projects();
 
-  // Set default project based on possible URL argument (eg. used on downloads page).
-  if (empty($form_state['values']['project']) && !empty($_GET['project']) && isset($projects[$_GET['project']])) {
-    $form_state['values']['project'] = $projects[$_GET['project']]->title;
+  if (empty($form_state['values']['project'])) {
+    if (!empty($_GET['project']) && isset($projects[$_GET['project']])) {
+      // Set default project based on possible URL argument (eg. used on downloads page).
+      $form_state['values']['project'] = $projects[$_GET['project']]->title;
+    }
+    else {
+      // Set default if it was not defined.
+      $form_state['values']['project'] = '';
+    }
   }
 
   // Drop languages without a plural formula from the options.
