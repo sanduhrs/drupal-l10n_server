@@ -408,7 +408,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
 function theme_l10n_community_progress_headers($mainhead) {
   return array(
     array('data' => $mainhead, 'class' => 'rowhead'),
-    t('Overall status'),
+    t('Progress'),
     t('Untranslated'),
     t('Suggestions'),
   );

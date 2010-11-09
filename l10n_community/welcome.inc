@@ -9,19 +9,53 @@
 /**
  * Introduction page for an l10n_community setup.
  *
- * All string are in PHP source code, so translators can translate
- * them to their own language, without resorting to i18n module or
- * some other solution for node translation.
- *
  * This page is based on the admin page layout from system.module,
  * so we are using classes and concepts from there. This might not
  * fit perfectly with all listings, so I bended some stuff more to comply.
  */
 function l10n_community_welcome_page() {
   if ($project = l10n_community_get_highlighted_project()) {
-    // Display progress status of the highlighted project.
-    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
-    $output = theme('admin_block', l10n_community_language_progress_for_project($project, l10n_community_get_languages(), t('Translation status for %project', array('%project' => $project->title)), t('Highlighted project')));
+
+    // Similar to l10n_community_language_progress_for_project() with simpler
+    // output more suitable for a welcoming overview.
+    $block = array(
+      'title' => t('Translation status for %project', array('%project' => $project->title)),
+      'description' => t('Highlighted project'),
+    );
+    $num_source = l10n_community_get_string_count('project', $project->pid);
+    $string_counts = l10n_community_get_string_count('languages', $project->pid);
+  
+    $table = array();
+    foreach ($languages as $langcode => $language) {
+      if (empty($language->plurals)) {
+        $table[] = array(
+          array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
+          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
+        );
+      }
+      else {
+        $progress = array_shift(theme(
+          'l10n_community_progress_columns',
+          $num_source,
+          @$string_counts[$langcode]['translations'],
+          @$string_counts[$langcode]['suggestions']
+        ));
+        $table[] = array(
+          array(
+            array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
+          ),
+          $progress
+        );
+      }
+    }
+    $block['content'] = theme(
+      'table',
+      array(array('data' => t('Language'), 'class' => 'rowhead'), t('Progress')),
+      $table,
+      array('class' => 'l10n-community-overview')
+    ) .'<div class="clear-block"></div>';
+
+    $output = theme('admin_block', $block);
   }
   else {
     $output = t('No highlighted project set.');
