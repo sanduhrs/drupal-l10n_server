@@ -18,6 +18,7 @@ function l10n_community_welcome_page() {
 
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
+    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
     $block = array(
       'title' => t('Translation status for %project', array('%project' => $project->title)),
       'description' => t('Highlighted project'),
