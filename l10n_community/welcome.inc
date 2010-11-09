@@ -27,11 +27,12 @@ function l10n_community_welcome_page() {
     $string_counts = l10n_community_get_string_count('languages', $project->pid);
   
     $table = array();
+    $languages = l10n_community_get_languages();
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
         $table[] = array(
-          array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
-          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
+          array('data' => t($language->name), 'class' => 'rowhead'),
+          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error')
         );
       }
       else {
