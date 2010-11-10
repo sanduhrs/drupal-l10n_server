@@ -76,7 +76,7 @@ function l10n_server_schema() {
       'weight' => array(
         'description' => 'Project weight used for sorting. Lower weights float up to the top.',
         'type' => 'int',
-        'not null' => FALSE,
+        'not null' => TRUE,
       ),
     ),
     'primary key' => array('pid'),
@@ -136,7 +136,7 @@ function l10n_server_schema() {
       'weight' => array(
         'description' => 'Release weight used for sorting. Lower weights float up to the top.',
         'type' => 'int',
-        'not null' => FALSE,
+        'not null' => TRUE,
       ),
     ),
     'primary key' => array('rid'),

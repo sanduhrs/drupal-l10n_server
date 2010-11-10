@@ -431,3 +431,24 @@ function l10n_community_update_6019() {
 
   return $ret;
 }
+
+/**
+ * Update weight fields to be 0 by default instead of NULL.
+ */
+function l10n_community_update_6020() {
+  $ret = array();
+
+  // Modify weight field on projects.
+  $ret[] = update_sql("UPDATE {l10n_server_project} SET weight = 0 WHERE weight IS NULL");
+  db_drop_index($ret, 'l10n_server_project', 'weight');
+  db_change_field($ret, 'l10n_server_project', 'weight', 'weight', array('type' => 'int', 'not null' => TRUE));
+  db_add_index($ret, 'l10n_server_project', 'weight', array('weight'));
+
+  // Modify weight field on releases.
+  $ret[] = update_sql("UPDATE {l10n_server_release} SET weight = 0 WHERE weight IS NULL");
+  db_drop_index($ret, 'l10n_server_release', 'weight');
+  db_change_field($ret, 'l10n_server_release', 'weight', 'weight', array('type' => 'int', 'not null' => TRUE));
+  db_add_index($ret, 'l10n_server_release', 'weight', array('weight'));
+
+  return $ret;
+}

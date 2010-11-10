@@ -357,7 +357,7 @@ function l10n_packager_project_downloads($project, $language) {
   }
 
   if (empty($branches)) {
-    return array($project->title, array('data' => t('Not available.'), 'colspan' => 4));
+    return array(array($project->title, array('data' => t('Not available for download yet.'), 'colspan' => 4)));
   }
 
   ksort($branches);
@@ -372,7 +372,7 @@ function l10n_packager_project_downloads($project, $language) {
     $up_to_date = max($latest_item->checked, $latest_item->release_checked);
 
     $rows[] = array(
-      l(t($project->title), 'translate/projects/'. $project->uri),
+      l($project->title, 'translate/projects/'. $project->uri),
       $latest_item->title,
       l(t('Download') .' ('. format_size($latest_item->filesize) . ')', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename),
       format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
