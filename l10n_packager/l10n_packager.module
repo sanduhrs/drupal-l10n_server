@@ -325,10 +325,10 @@ function l10n_packager_l10n_community_build_language_page($language) {
     $output .= '<div class="download-table download-table-ok view-project-release-download-table"><h4>'. $project->title .'</h4>';
     $output .= theme('table', $download_headers, $highlighted_downloads);
     $output .= '</div>';
-    $results = db_query_range('SELECT title, uri, pid FROM {l10n_server_project} WHERE status = 1 AND pid != %d ORDER BY weight ASC', $project->pid, 0, 20);
+    $result = db_query_range('SELECT title, uri, pid FROM {l10n_server_project} WHERE status = 1 AND pid != %d ORDER BY weight ASC', $project->pid, 0, 20);
   }
   else {
-    $results = db_query_range('SELECT title, uri, pid FROM {l10n_server_project} WHERE status = 1 ORDER BY weight ASC', 0, 20);
+    $result = db_query_range('SELECT title, uri, pid FROM {l10n_server_project} WHERE status = 1 ORDER BY weight ASC', 0, 20);
   }
   
   // Make a list of up and coming 20 projects as well.
