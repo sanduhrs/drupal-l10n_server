@@ -311,3 +311,59 @@ function l10n_packager_build_download_links($uri) {
 
   return $rendered;
 }
+
+/**
+ * Build download table contents for the language view pages.
+ */
+function l10n_packager_l10n_community_build_language_page($language) {
+  $output = '<h3 id="downloads">'. t('Top downloads') .'</h3>';
+  $download_headers = array(t('Project', t('Version'), t('Downloads'), t('Date created'), t('Up to date as of')));
+  if ($project = l10n_community_get_highlighted_project()) {
+    $highlighted_downloads = l10n_packager_project_downloads($project, $language);
+    $output .= '<div class="download-table download-table-ok view-project-release-download-table"><h4>'. $project->title .'</h4>';
+    $output .= theme('table', $download_headers, $highlighted_downloads);
+    $output .= '</div>';
+  }
+  return $output;
+}
+
+/**
+ * Build download table rows for the language view pages.
+ */
+function l10n_packager_project_downloads($project, $language) {
+  $files = array();
+  $branches = array();
+  $result = db_query("SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d AND lf.language = '%s'", $project->pid, $language->language);
+  while ($item = db_fetch_object($result)) {
+    // @todo: bad, bad harcoding of Drupal versioning schemes.
+    $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) .'x';
+    $branches[$branch] = TRUE;
+    $files[$branch][$item->rid] = $item;
+  }
+
+  if (empty($branches)) {
+    return array($project->title, array('data' => t('Not available.'), 'colspan' => 4));
+  }
+
+  ksort($branches);
+  $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
+
+  $rows = array();
+  foreach (array_keys($branches) as $branch) {
+
+    // Grab the latest item and compute its up to date stats.
+    krsort($files[$branch]);
+    $latest_item = array_shift($files[$branch]);
+    $up_to_date = max($latest_item->checked, $latest_item->release_checked);
+
+    $rows[] = array(
+      l(t($project->title), 'translate/projects/'. $project->uri),
+      $latest_item->title,
+      l(t('Download') .' ('. format_size($latest_item->filesize) . ')', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename),
+      format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
+      format_date($up_to_date, 'custom', 'Y-M-d', 0),
+    );
+  }
+
+  return $rows;
+}

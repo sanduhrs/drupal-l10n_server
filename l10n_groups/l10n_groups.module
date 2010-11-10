@@ -21,6 +21,14 @@ function l10n_groups_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 200,
   );
+  $items['translate/languages/%l10n_community_language/posts'] = array(
+    'title' => 'Group posts',
+    'page callback' => 'l10n_groups_posts_page',
+    'page arguments' => array(2),
+    'access arguments' => array('access localization community'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 100,
+  );
   return $items;
 }
 
@@ -374,9 +382,9 @@ function l10n_groups_broadcast($langcode) {
 /**
  * Language page content creator.
  */
-function l10n_groups_l10n_community_build_language_page($language) {
+function l10n_groups_posts_page($langcode) {
   $groups = l10n_groups_get_groups();
-  if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
+  if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
     return node_view($group_node, FALSE, TRUE);
   }
   else {

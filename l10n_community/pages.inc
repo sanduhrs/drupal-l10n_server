@@ -137,7 +137,7 @@ function l10n_community_overview_language($langcode = NULL) {
   }
 
   $languages = l10n_community_get_languages();
-  $content_output = module_invoke('l10n_groups', 'l10n_community_build_language_page', $languages[$langcode]);
+  $content_output = module_invoke('l10n_packager', 'l10n_community_build_language_page', $languages[$langcode]);
   if (empty($content_output)) {
     // Try to fill in with taxonomy.
     if (module_exists('taxonomy')) {
