@@ -23,7 +23,7 @@
 
 /* Per language per project download tables */
 .l10n-packager-download-table {
-  padding-top: 2em;
+  padding-bottom: 2em;
 }
 .l10n-packager-download-table table {
   width: 100%;

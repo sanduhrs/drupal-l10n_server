@@ -334,9 +334,12 @@ function l10n_packager_l10n_community_build_language_page($language) {
   }
   
   // Make a list of up and coming 20 projects as well.
+  $downloads = array();
   while ($project = db_fetch_object($result)) {
-    $downloads = l10n_packager_project_downloads($project, $language);
-    $output .= '<div class="l10n-packager-download-table"><h4>'. $project->title .'</h4>';
+    $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language));
+  }
+  if (!empty($downloads)) {
+    $output .= '<div class="l10n-packager-download-table"><h4>'. t('Further top projects') .'</h4>';
     $output .= theme('table', $download_headers, $downloads);
     $output .= '</div>';
   }
