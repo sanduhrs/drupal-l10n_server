@@ -414,3 +414,20 @@ function l10n_community_update_6018() {
   db_add_unique_key($ret, 'l10n_server_string', 'hashkey', array('hashkey'));
   return $ret;
 }
+
+/**
+ * Add weight support to projects and releases.
+ */
+function l10n_community_update_6019() {
+  $ret = array();
+
+  // Add weight field to projects.
+  db_add_field($ret, 'l10n_server_project', 'weight', array('type' => 'int', 'not null' => FALSE));
+  db_add_index($ret, 'l10n_server_project', 'weight', array('weight'));
+
+  // Add weight field to releases.
+  db_add_field($ret, 'l10n_server_release', 'weight', array('type' => 'int', 'not null' => FALSE));
+  db_add_index($ret, 'l10n_server_release', 'weight', array('weight'));
+
+  return $ret;
+}

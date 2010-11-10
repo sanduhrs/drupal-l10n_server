@@ -211,6 +211,9 @@ function l10n_server_admin_releases_form(&$form_state, $project, $releases) {
       'last_parsed' => array(
         '#value' => (!empty($release->last_parsed) ? format_date($release->last_parsed) : t('n/a')),
       ),
+      'weight' => array(
+        '#value' => (!empty($release->weight) ? $release->weight : t('n/a')),
+      ),
       'operations' => array(
         '#value' => array(
           ($source == 'uploads' ? l(t('Edit'), 'admin/l10n_server/projects/releases/'. $project->uri .'/edit/'. $release->rid) : ''),
@@ -243,6 +246,7 @@ function theme_l10n_server_admin_releases_form($form) {
       drupal_render($release_element['download_link']),
       drupal_render($release_element['file_date']),
       drupal_render($release_element['last_parsed']),
+      drupal_render($release_element['weight']),
     );
     $max_operations = max($max_operations, count($release_element['operations']));
     foreach ($release_element['operations']['#value'] as $operation) {
@@ -252,7 +256,7 @@ function theme_l10n_server_admin_releases_form($form) {
     // Mark as rendered, already included its output above.
     drupal_render($release_element['operations']);
   }
-  $headers = array(array('data' => t('Release'), 'colspan' => 2), t('Download link'), t('File date'), t('Last parsed'), array('data' => t('Operations'), 'colspan' => $max_operations));
+  $headers = array(array('data' => t('Release'), 'colspan' => 2), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array('data' => t('Operations'), 'colspan' => $max_operations));
   $output .= theme('table', $headers, $table);
   $output .= drupal_render($form);
   return $output;
@@ -334,6 +338,12 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
     '#default_value' => $project->connector_module,
     '#disabled' => !empty($project->pid)
   );
+  $form['weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#description' => t('Weight of the project. Lighter projects float up when ordering by weight.'),
+    '#default_value' => $project->weight,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save project')
@@ -364,11 +374,13 @@ function l10n_server_admin_projects_edit_form_validate($form, &$form_state) {
  */
 function l10n_server_admin_projects_edit_form_submit($form, &$form_state) {
   $new_project = $form_state['values']['previous_project'];
-  foreach (array('uri', 'title', 'home_link', 'connector_module') as $property) {
+  foreach (array('uri', 'title', 'home_link', 'connector_module', 'weight') as $property) {
     if (isset($form_state['values'][$property])) {
       $new_project->$property = $form_state['values'][$property];
     }
   }
+  $new_project->weight = (int) $new_project->weight;
+
   drupal_write_record('l10n_server_project', $new_project, !empty($new_project->pid) ? 'pid' : array());
   drupal_set_message(t('Project data saved.'));
   $form_state['redirect'] = 'admin/l10n_server/projects';
@@ -411,6 +423,12 @@ function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri
     '#description' => t('Download link for this release of the software.'),
     '#default_value' => $release->download_link,
   );
+  $form['weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Weight'),
+    '#description' => t('Weight of the release. Lighter releases float up when ordering by weight.'),
+    '#default_value' => $release->weight,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save release'),
@@ -424,11 +442,12 @@ function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri
  */
 function l10n_server_admin_projects_release_edit_form_submit($form, &$form_state) {
   $new_release = $form_state['values']['previous_release'];
-  foreach (array('title', 'download_link') as $property) {
+  foreach (array('title', 'download_link', 'weight') as $property) {
     if (isset($form_state['values'][$property])) {
       $new_release->$property = $form_state['values'][$property];
     }
   }
+  $new_release->weight = (int) $new_release->weight;
 
   drupal_write_record('l10n_server_release', $new_release, !empty($new_release->rid) ? 'rid' : array());
   drupal_set_message(t('Release data saved.'));

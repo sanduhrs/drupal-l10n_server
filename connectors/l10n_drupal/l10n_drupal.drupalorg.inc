@@ -171,6 +171,9 @@ function l10n_drupal_drupalorg_scan() {
     }
   }
 
+  $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
+  $last_saved_timestamp = variable_get('l10n_drupal_drupalorg_last_saved_timestamp', 0);
+
   // Go back to projects database for releases.
   db_set_active('projects');
 
@@ -179,7 +182,6 @@ function l10n_drupal_drupalorg_scan() {
   // previous cron run will not be a problem, but we only look at a relatively
   // small list of releases at any given time. We only sync tagged releases,
   // which will not get rebuilt later anytime.
-  $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
   $result = db_query("
     SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
     FROM project_projects pp INNER JOIN
@@ -197,6 +199,23 @@ function l10n_drupal_drupalorg_scan() {
   $releases = array();
   while ($release = db_fetch_object($result)) {
     $releases[] = $release;
+  }
+
+  // Save last reporting timestamp for getting latest usage data.
+  $project_usage = array();
+  $last_usage_timestamp = db_result(db_query('SELECT timestamp FROM project_usage_week_release ORDER BY timestamp DESC LIMIT 1'));
+  if ($last_saved_timestamp < $last_usage_timestamp) {
+    $result = db_query("
+      SELECT pp.uri, prn.version, puwr.count
+      FROM project_projects pp INNER JOIN
+           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
+           project_usage_week_release puwr ON puwr.nid = prn.nid
+      WHERE prn.rebuild = 0 AND puwr.timestamp = %d",
+      $last_usage_timestamp
+    );
+    while ($release = db_fetch_object($result)) {
+      $project_usage[$release->uri][$release->version] = $release->count;
+    }
   }
 
   // Switch back to our local database.
@@ -221,9 +240,32 @@ function l10n_drupal_drupalorg_scan() {
       );
     }
   }
+  
+  // Project usage data will only be present if we have updates.
+  foreach ($project_usage as $uri => $project_data) {
+    if (!isset($projects[$uri]->pid)) {
+      // Not a project the upper project list knows about (eg. a translation).
+      continue;
+    }
+    
+    // We save project usage as negative weight because the lower the weight,
+    // the earlier an item will be in the list (Drupal standard). But usage
+    // stats are better if higher, so we need to reverse the effect.
+    
+    // Add up and save all project usage as negative weight.
+    $all_project_usage = array_sum($project_data);
+    db_query("UPDATE {l10n_server_project} SET weight = %d WHERE uri = '%s'", -$all_project_usage, $uri);
+    
+    // Save individual release count data as negative weight.
+    foreach ($project_data as $title => $count) {
+      db_query("UPDATE {l10n_server_release} SET weight = %d WHERE pid = %d AND title = '%s'", -$count, $projects[$uri]->pid, $title);
+    }
+  }
 
   // Set last sync time to limit number of releases to look at next time.
   variable_set('l10n_server_connector_l10n_project_drupalorg_last_sync', time());
+  // Remember last usage timestamp we handled.
+  variable_set('l10n_drupal_drupalorg_last_saved_timestamp', $last_usage_timestamp);
 }
 
 /**

@@ -72,14 +72,20 @@ function l10n_server_schema() {
         'description' => 'Status flag. 1 if new project releases should be looked for, 0 if new scanning and parsing is disabled.',
         'type' => 'int',
         'not null' => TRUE,
-      )
+      ),
+      'weight' => array(
+        'description' => 'Project weight used for sorting. Lower weights float up to the top.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
     ),
     'primary key' => array('pid'),
     'indexes' => array(
-      'uri' => array('uri')
+      'uri' => array('uri'),
+      'weight' => array('weight'),
     ),
     'unique keys' => array(
-      'uri_connector_module' => array('uri', 'connector_module')
+      'uri_connector_module' => array('uri', 'connector_module'),
     ),
   );
 
@@ -126,11 +132,17 @@ function l10n_server_schema() {
         'type' => 'int',
         'not null' => FALSE,
         'disp-width' => '11'
-      )
+      ),
+      'weight' => array(
+        'description' => 'Release weight used for sorting. Lower weights float up to the top.',
+        'type' => 'int',
+        'not null' => FALSE,
+      ),
     ),
     'primary key' => array('rid'),
     'indexes' => array(
-      'pid' => array('pid')
+      'pid' => array('pid'),
+      'weight' => array('weight'),
     ),
   );
 
