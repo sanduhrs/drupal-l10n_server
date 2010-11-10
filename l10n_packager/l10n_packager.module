@@ -316,13 +316,15 @@ function l10n_packager_build_download_links($uri) {
  * Build download table contents for the language view pages.
  */
 function l10n_packager_l10n_community_build_language_page($language) {
+  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
+
   $output = '<h3 id="downloads">'. t('Top downloads') .'</h3>';
   $download_headers = array(t('Project'), t('Version'), t('Downloads'), t('Date created'), t('Up to date as of'));
 
   // Output the highlighted project first and foremost.
   if ($project = l10n_community_get_highlighted_project()) {
     $highlighted_downloads = l10n_packager_project_downloads($project, $language);
-    $output .= '<div class="download-table download-table-ok view-project-release-download-table"><h4>'. $project->title .'</h4>';
+    $output .= '<div class="l10n-packager-download-table"><h4>'. $project->title .'</h4>';
     $output .= theme('table', $download_headers, $highlighted_downloads);
     $output .= '</div>';
     $result = db_query_range('SELECT title, uri, pid FROM {l10n_server_project} WHERE status = 1 AND pid != %d ORDER BY weight ASC', $project->pid, 0, 20);
@@ -334,7 +336,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
   // Make a list of up and coming 20 projects as well.
   while ($project = db_fetch_object($result)) {
     $downloads = l10n_packager_project_downloads($project, $language);
-    $output .= '<div class="download-table download-table-ok view-project-release-download-table"><h4>'. $project->title .'</h4>';
+    $output .= '<div class="l10n-packager-download-table"><h4>'. $project->title .'</h4>';
     $output .= theme('table', $download_headers, $downloads);
     $output .= '</div>';
   }
@@ -374,7 +376,7 @@ function l10n_packager_project_downloads($project, $language) {
     $rows[] = array(
       l($project->title, 'translate/projects/'. $project->uri),
       $latest_item->title,
-      l(t('Download') .' ('. format_size($latest_item->filesize) . ')', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename),
+      l(t('Download') .' <span class="filesize">('. format_size($latest_item->filesize) . ')</span>', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename, array('html' => TRUE)),
       format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
       format_date($up_to_date, 'custom', 'Y-M-d', 0),
     );

@@ -7,6 +7,7 @@
   display: inline;
 }
 
+/* Per project overall download tables */
 .l10n-packager-table {
   width: 100%;
 }
@@ -18,4 +19,19 @@
 }
 .l10n-packager-table p.l10n-packager-meta {
   font-size: 0.8em;
+}
+
+/* Per language per project download tables */
+.l10n-packager-download-table {
+  padding-top: 2em;
+}
+.l10n-packager-download-table table {
+  width: 100%;
+}
+.l10n-packager-download-table th {
+  width: 20%;
+}
+.l10n-packager-download-table td .filesize {
+  font-size: 80%;
+  display: block;
 }
