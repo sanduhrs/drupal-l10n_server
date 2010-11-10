@@ -380,14 +380,31 @@ function l10n_groups_broadcast($langcode) {
 // = Summary page outputs ======================================================
 
 /**
+ * Organic groups group welcome info for language page.
+ */
+function l10n_groups_l10n_community_build_language_page($language) {
+  $groups = l10n_groups_get_groups();
+  if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
+    $output = check_markup($group_node->body, $group_node->format, FALSE) .'</div>'; 
+  }
+  else {
+    $output = t('Group not found or not accessible. No information to display.');
+  }
+  return '<div id="mission" class="og-mission">'. $output .'</div>';
+}
+
+/**
  * Language page content creator.
  */
 function l10n_groups_posts_page($langcode) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
+    // Empty out body, so we do not repeat info from the welcome page. We do
+    // node rendering to get the attached view added by organic groups though.
+    $group_node->body = '';
     return node_view($group_node, FALSE, TRUE);
   }
   else {
-    return '<p>'. t('Group not found or not accessible. No posts to display') .'</p>';
+    return '<p>'. t('Group not found or not accessible. No posts to display.') .'</p>';
   }
 }
