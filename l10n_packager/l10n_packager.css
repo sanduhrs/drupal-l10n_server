@@ -35,3 +35,6 @@
   font-size: 80%;
   display: block;
 }
+.l10n-packager-download-table tr.l10n-packager-detail {
+  display: none;
+}

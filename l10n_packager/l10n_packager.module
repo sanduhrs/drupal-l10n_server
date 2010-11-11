@@ -317,6 +317,7 @@ function l10n_packager_build_download_links($uri) {
  */
 function l10n_packager_l10n_community_build_language_page($language) {
   drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
+  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.js');
 
   $output = '<h3 id="downloads">'. t('Top downloads') .'</h3>';
   $download_headers = array(t('Project'), t('Version'), t('Downloads'), t('Date created'), t('Up to date as of'));
@@ -336,7 +337,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
   // Make a list of up and coming 20 projects as well.
   $downloads = array();
   while ($project = db_fetch_object($result)) {
-    $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language));
+    $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language, TRUE));
   }
   if (!empty($downloads)) {
     $output .= '<div class="l10n-packager-download-table"><h4>'. t('Further top projects') .'</h4>';
@@ -350,7 +351,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
 /**
  * Build download table rows for the language view pages.
  */
-function l10n_packager_project_downloads($project, $language) {
+function l10n_packager_project_downloads($project, $language, $summary = FALSE) {
   $files = array();
   $branches = array();
   $result = db_query("SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d AND lf.language = '%s'", $project->pid, $language->language);
@@ -369,6 +370,8 @@ function l10n_packager_project_downloads($project, $language) {
   $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
 
   $rows = array();
+  $summary_list = array();
+  $uri_class = str_replace('_', '-', $project->uri);
   foreach (array_keys($branches) as $branch) {
 
     // Grab the latest item and compute its up to date stats.
@@ -377,12 +380,25 @@ function l10n_packager_project_downloads($project, $language) {
     $up_to_date = max($latest_item->checked, $latest_item->release_checked);
 
     $rows[] = array(
-      l($project->title, 'translate/projects/'. $project->uri),
-      $latest_item->title,
-      l(t('Download') .' <span class="filesize">('. format_size($latest_item->filesize) . ')</span>', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename, array('html' => TRUE)),
-      format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
-      format_date($up_to_date, 'custom', 'Y-M-d', 0),
+      'class' => 'l10n-packager-detail l10n-packager-detail-'. $uri_class,
+      'data' => array(
+        l($project->title, 'translate/projects/'. $project->uri),
+        $latest_item->title,
+        l(t('Download') .' <span class="filesize">('. format_size($latest_item->filesize) . ')</span>', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename, array('html' => TRUE)),
+        format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
+        format_date($up_to_date, 'custom', 'Y-M-d', 0),
+      ),
     );
+    $summary_list[] = l($latest_item->title, $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename);
+  }
+  
+  if (count($summary_list) && $summary) { 
+    $summary_row = array(
+      'class' => 'l10n-packager-summary',
+      'id' => 'l10n-packager-summary-'. $uri_class,
+      'data' => array(l('&#9658; '. check_plain($project->title), 'translate/projects/'. $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array('data' => join(', ', $summary_row), 'colspan' => 4))
+    );
+    array_unshift($rows, $summary_row);
   }
 
   return $rows;
