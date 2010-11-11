@@ -396,7 +396,7 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE) 
     $summary_row = array(
       'class' => 'l10n-packager-summary',
       'id' => 'l10n-packager-summary-'. $uri_class,
-      'data' => array(l('&#9658; '. check_plain($project->title), 'translate/projects/'. $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array('data' => join(', ', $summary_row), 'colspan' => 4))
+      'data' => array(l('&#9658; '. check_plain($project->title), 'translate/projects/'. $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array('data' => join(', ', $summary_list), 'colspan' => 4))
     );
     array_unshift($rows, $summary_row);
   }
