@@ -14,8 +14,10 @@
   }
   
   function fixL10nPackagerTableClasses() {
-    $('l10n-packager-download-dynamic tbody tr:visible:odd').addClass('odd').removeClass('even');
-    $('l10n-packager-download-dynamic tbody tr:visible:even').addClass('even').removeClass('odd');
+    // The fist row is the header, so we need to add even classes to odd rows,
+    // and odd classes to even rows so the top row is right in the table.
+    $('.l10n-packager-download-dynamic tbody tr:visible:odd').addClass('even').removeClass('odd');
+    $('.l10n-packager-download-dynamic tbody tr:visible:even').addClass('odd').removeClass('even');
   }
  
 })(jQuery);
