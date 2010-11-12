@@ -317,7 +317,7 @@ function l10n_packager_build_download_links($uri) {
  */
 function l10n_packager_l10n_community_build_language_page($language) {
   drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
-  drupal_add_jss(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.js');
 
   $output = '<h3 id="downloads">'. t('Top downloads') .'</h3>';
   $download_headers = array(t('Project'), t('Version'), t('Downloads'), t('Date created'), t('Up to date as of'));
