@@ -399,7 +399,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
                 $languages = l10n_community_get_languages();
                 $next_action = '';
                 if ($groups = module_invoke('l10n_groups', 'get_groups')) {
-                  if (isset($groups[$languages[$arg2]->language]) && node_access('view', $group_node = node_load($groups[$language->language])) && !isset($user->og_groups[$groups[$languages[$arg2]->language]])) {
+                  if (isset($groups[$languages[$arg2]->language]) && node_access('view', $group_node = node_load($groups[$languages[$arg2]->language])) && !isset($user->og_groups[$groups[$languages[$arg2]->language]])) {
                     $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
                   }
                 }
