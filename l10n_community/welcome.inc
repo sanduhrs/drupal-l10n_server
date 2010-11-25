@@ -19,7 +19,7 @@ function l10n_community_welcome_page() {
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
     include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
-    drupal_set_title(t('@project translations', array('@project' => $project->title)));
+    drupal_set_title(t('Translations'));
     
     $languages = l10n_community_get_languages();
     $num_source = l10n_community_get_string_count('project', $project->pid);
@@ -34,6 +34,7 @@ function l10n_community_welcome_page() {
         );
       }
       else {
+        $stats = l10n_community_get_stats($langcode);
         $progress = array_shift(theme(
           'l10n_community_progress_columns',
           $num_source,
@@ -45,16 +46,17 @@ function l10n_community_welcome_page() {
             'data' => l(t($language->name), 'translate/languages/'. $langcode),
             'class' => 'rowhead',
           ),
-          $progress
+          $progress,
+          $stats['users'],
         );
       }
     }
     
     $output = theme(
       'table',
-      array(array('data' => t('Language'), 'class' => 'rowhead'), t('Progress')),
+      array(array('data' => t('Language'), 'class' => 'rowhead'), t('@project progress', array('@project' => $project->title)), t('Contributors')),
       $table,
-      array('class' => 'l10n-community-overview')
+      array('class' => 'l10n-community-overview l10n-community-highlighted')
     );
 
     $projects = l10n_server_get_projects();
@@ -68,24 +70,6 @@ function l10n_community_welcome_page() {
     $output = t('No highlighted project set.');
   }
   return $output;
-}
-
-/**
- * Block builder function to generate the main contribution block.
- */
-function l10n_community_block_contribute_front() {
-  // Build contribution call to action block.
-  $content = '';
-  if (!$GLOBALS['user']->uid) {
-    // Only display account creation task if not logged in.
-    $content = '<div class="l10n-next-action">'. l(t('Register'), 'user/register') .'</div>';
-    $content .= '<p>'. t('You can review the work being done here, but to participate, first you need to <a href="@register">create an account and/or log in</a>.', array('@register' => url('user/login'))) .'</p>';
-  }
-  $content .= drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>';
-  return array(
-    'subject' => t('Contribute'),
-    'content' => $content
-  );
 }
 
 function l10n_community_pick_go(&$form_state) {
@@ -177,7 +161,7 @@ function l10n_community_pick_go(&$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#prefix' => '<div class="clearing"></div>',
-    '#value' => t('Choose'),
+    '#value' => t('Go there'),
   );
   return $form;
 }

@@ -22,12 +22,12 @@ function l10n_groups_menu() {
     'weight' => 200,
   );
   $items['translate/languages/%l10n_community_language/board'] = array(
-    'title' => 'Group board',
-    'page callback' => 'l10n_groups_posts_page',
+    'title' => 'Board',
+    'page callback' => 'l10n_groups_board_page',
     'page arguments' => array(2),
     'access arguments' => array('access localization community'),
     'type' => MENU_LOCAL_TASK,
-    'weight' => 100,
+    'weight' => -15,
   );
   return $items;
 }
@@ -282,35 +282,33 @@ function l10n_groups_og_create_links($node) {
   return $links;
 }
 
-// = API functions =============================================================
-
 /**
- * Plugin for l10n_community_block_help().
+ * Implementation of hook_og_links_alter().
  *
- * Note that help texts link to groups which might not exist yet, therefore
- * these links might be broken. This is just a transitional problem though,
- * as once the functionality is set up, translation groups should form.
+ * @todo: move this to a localize.drupal.org specific module
  */
-function l10n_groups_block_help($perm, $langcode = NULL) {
-  global $user;
-
-  // Only return anything if we have a language group code.
-  if (!isset($langcode)) {
-    return '';
+function l10n_groups_og_links_alter(&$links, $node) {
+  $link = NULL;
+  if (isset($links['my_membership'])) {
+    $link = &$links['my_membership'];
   }
-
-  $groups = l10n_groups_get_groups();
-  $permission_help = '';
-
-  if (empty($user->og_groups) || empty($user->og_groups[$groups[$langcode]])) {
-    $permission_help = t('You are not a member of this translation group.') .' '. ($user->uid ? t('<a href="@group">Subscribe to this group</a> if you would like to help out.', array('@group' => url('node/'. $groups[$langcode]))) : t('<a href="@register">Create an account or log in</a> and <a href="@group">subscribe to this group</a> if you would like to help out.', array('@register' => url('user'), '@group' => url('node/'. $groups[$langcode]))));
+  if (isset($links['subscribe'])) {
+    $link = &$links['subscribe'];
   }
-  elseif (!empty($user->og_groups[$groups[$langcode]]['is_admin'])) {
-    $permission_help = t('You are an administrator in this translation group.');
+  if (!empty($link)) {
+    if ($node->og_selective == OG_MODERATED) {
+      $txt = t('Request membership');
+    }
+    elseif ($node->og_selective == OG_OPEN) {
+      $txt = t('Join');
+    }
+    if (isset($txt)) {
+      $link = l('<span>'. $txt .'</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => 'link-button'), 'html' => TRUE, 'query' => drupal_get_destination()));
+    }
   }
-
-  return !empty($permission_help) ? '<p>'. $permission_help .'</p>' : '';
 }
+
+// = API functions =============================================================
 
 /**
  * Helper function for group listing.

@@ -264,10 +264,10 @@ function l10n_community_block_contributors_language($language) {
   $list = array();
   foreach ($people as $translator) {
     // $translator can be passed to theme('username'), since it has 'name' and 'uid'.
-    $list[] = format_plural($translator->sum, '!name - 1 translation', '!name - @count translations', array('!name' => theme('username', $translator)));
+    $list[] = array(theme('username', $translator), $translator->sum);
   }
   if ($list) {
-    $block['content'] = theme('item_list', $list);
+    $block['content'] = theme('table', array(t('Name'), t('Translation count')), $list);
   }
   else {
     $block['content'] = '<p>'. t('Nobody contributed to this translation yet.') .'</p>';

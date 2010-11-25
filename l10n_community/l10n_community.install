@@ -12,7 +12,7 @@
 function l10n_community_install() {
   $theme_key = variable_get('theme_default', 'garland');
   // Set up these blocks.
-  $blocks = array(-6 => 'stats', -7 => 'contribute', 8 => 'contributions');
+  $blocks = array(-6 => 'stats', -7 => 'jump', 8 => 'contributions');
   $module = 'l10n_community';
   foreach ($blocks as $weight => $delta) {
     // Update all instances of this block even if we just added it.
@@ -451,4 +451,12 @@ function l10n_community_update_6020() {
   db_add_index($ret, 'l10n_server_release', 'weight', array('weight'));
 
   return $ret;
+}
+
+/**
+ * Contribute block renamed "jump", since it serves a more generic purpose.
+ */
+function l10n_community_update_6021() {
+  db_query("UPDATE {blocks} SET delta = 'jump' WHERE delta = 'contribute' AND module = 'l10n_community'");
+  return array();
 }

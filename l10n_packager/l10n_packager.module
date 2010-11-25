@@ -133,12 +133,7 @@ function l10n_packager_block($op = 'list', $delta = 0, $edit = array()) {
               $arg1 = arg(1);
               $arg2 = arg(2);
               $arg3 = arg(3);
-              if (empty($arg1) || ($arg1 == 'languages' && !empty($arg2) && empty($arg3))) {
-                return array(
-                  'content' => l('<span>'. t('Download translations') .'</span>', 'translate/downloads', array('html' => TRUE, 'attributes' => array('class' => 'link-button'))),
-                );
-              }
-              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
+              if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
                 return array(
                   'content' => l('<span>'. t('Download translations') .'</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
                 );
@@ -358,6 +353,13 @@ function l10n_packager_l10n_community_build_language_page($language) {
     $output .= '<div class="l10n-packager-download-table l10n-packager-download-dynamic"><h4>'. t('Further top projects') .'</h4>';
     $output .= theme('table', NULL, $downloads);
     $output .= '</div>';
+  }
+  
+  // Add a link directing to more downloads if we have more projects.
+  $projects = l10n_server_get_projects();
+  $project_count = count($projects);
+  if ($project_count > 20) {
+    $output .= '<p>'. format_plural($project_count, '<a href="@download">More downloads</a> are available. These are just the top projects among @count projects translated on this server.', '<a href="@download">More downloads</a> are available. These are just the top projects among @count projects translated on this server.', array('@download' => url('translate/downloads'))) .'<p>';
   }
   
   cache_set('download:language:'. $language->language, $output, 'cache_l10n_packager', time()+60*60*24);

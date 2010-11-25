@@ -9,6 +9,10 @@ div.admin .admin-panel-contribute {
 table.l10n-community-overview {
   float: left; /* LTR */
 }
+table.l10n-community-overview.l10n-community-highlighted {
+  float: none;
+  width: 100%;
+}
 table.l10n-community-overview-2col {
   width: 45%;
   margin-left: 1em; /* LTR */
@@ -123,4 +127,11 @@ em.l10n-community-marker {
 
 #edit-release {
   direction:ltr;
+}
+
+#block-l10n_community-contributors table {
+  width: 100%;
+}
+#block-l10n_community-contributors tr.even, #block-l10n_community-contributors tr.odd {
+  background-color: transparent;
 }

@@ -330,16 +330,12 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
   switch ($op) {
     case 'list':
       $blocks = array(
-        'help' => array(
-          'info' => t('Localization server help'),
-          'cache' => BLOCK_NO_CACHE,
-        ),
         'stats' => array(
           'info' => t('Localization server statistics'),
           'cache' => BLOCK_NO_CACHE,
         ),
-        'contribute' => array(
-          'info' => t('Localization server contribute'),
+        'jump' => array(
+          'info' => t('Localization server jump form'),
           'cache' => BLOCK_NO_CACHE,
         ),
         'contributors' => array(
@@ -351,11 +347,6 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
 
     case 'view':
       switch ($delta) {
-        case 'help':
-          if (user_access('browse translations')) {
-            return l10n_community_block_help();
-          }
-          return;
         case 'stats':
           if (user_access('access localization community')) {
             if (arg(0) == 'translate') {
@@ -378,38 +369,15 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
             }
           }
           return;
-        case 'contribute':
+        case 'jump':
           if (user_access('access localization community')) {
             if (arg(0) == 'translate') {
               $arg1 = arg(1);
-              $arg2 = arg(2);
-              $arg3 = arg(3);
               if (empty($arg1) || ($arg1 == 'downloads')) {
                 include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
-                return l10n_community_block_contribute_front();
-              }
-              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
-                // Return contribution call to action on the project pages.
                 return array(
-                  'subject' => t('Contribute'),
-                  'content' => '<p class="info">'. t('Select a language from the overview to review translations and contribute to the translation efforts. The export tab allows exporting of translation templates, but translations can also be exported on the language pages.') .'</p>'
-                );
-              }
-              elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
-                $languages = l10n_community_get_languages();
-                $next_action = '';
-                if ($groups = module_invoke('l10n_groups', 'get_groups')) {
-                  if (isset($groups[$languages[$arg2]->language]) && node_access('view', $group_node = node_load($groups[$languages[$arg2]->language])) && !isset($user->og_groups[$groups[$languages[$arg2]->language]])) {
-                    $next_action = '<div class="l10n-next-action">'. og_subscribe_link($group_node) .'</div>';
-                  }
-                }
-                if (empty($next_action) && user_access('submit suggestions')) {
-                  $next_action = '<div class="l10n-next-action">'. l(t('Translate'), 'translate/languages/'. $languages[$arg2]->language .'/translate') .'</div>';
-                }
-                // Return contribution call to action on language pages.
-                return array(
-                  'subject' => t('Contribute'),
-                  'content' => $next_action .'<p class="info">'. t('Different tabs allow you to view existing translations, suggest new ones, import translations completed offline or export translations for use for offline work.') .'</p>'
+                  'subject' => t('Quick navigation'),
+                  'content' => drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>'
                 );
               }
             }
@@ -427,93 +395,6 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
           }
           return;
       }
-  }
-}
-
-/**
- * Help block.
- */
-function l10n_community_block_help() {
-  global $user, $theme_key;
-
-  $block = array(
-    'subject' => t('Translation help'),
-    'content' => '',
-  );
-
-  if ($_GET['q'] == 'translate') {
-    $customizable = db_result(db_query("SELECT custom FROM {blocks} WHERE theme = '%s' AND module = 'l10n_community' AND delta = 'help'", $theme_key));
-    $block['content'] = '<p>'. t('Welcome to the translation server. This block will show you tips and advice throughout the application.') . (($user->uid && $customizable) ? ' '. t('Once you are familiar with the system, feel free to disable help in <a href="@user-page">your user settings</a>.', array('@user-page' => url('user/'. $user->uid .'/edit'))) : '') .'</p>';
-    return $block;
-  }
-
-  // Match actual translation editing or review pages with the two different path models they could have.
-  if (preg_match('!translate/languages/(?P<langcode>[^/]+)(/(?P<action>translate|import|export))?$!', $_GET['q'], $args) ||
-      preg_match('!translate/projects/(?P<uri>[^/]+)(/(?P<action>|export))??$!', $_GET['q'], $args)) {
-    $permission_help = $permission_notes = array();
-    if (module_exists('l10n_groups')) {
-      // We are dealing with a groups based permission model.
-      $permission_help[] = l10n_groups_block_help($perm, isset($args['langcode']) ? $args['langcode'] : NULL);
-    }
-    if (user_access('submit suggestions')) {
-      $permission_notes[] = t('You can suggest translations to be reviewed by moderators of the team.');
-    }
-    if (user_access('moderate suggestions from others')) {
-      $permission_notes[] = t('Moderation of suggestions submitted by others is possible.');
-    }
-    if (user_access('moderate own suggestions')) {
-      $permission_notes[] = t('You are empowered to directly submit translations.');
-    }
-    if (user_access('import gettext files')) {
-      $permission_notes[] = t('Import complete Gettext translation files to suggest multiple translations at once.');
-    }
-    if (user_access('export gettext templates and translations')) {
-      $permission_notes[] = t('To work offline, export a translation template, which contains the current state of the translation.');
-    }
-    if (!empty($permission_notes)) {
-      $permission_help[] = '<p><ul><li>'. join('</li><li>', $permission_notes) .'</li></ul></p>';
-    }
-    $permission_help = join(' ', $permission_help);
-
-    // Now construct the actual help text depending on whether we have project or language values from the address.
-    if (isset($args['action'])) {
-      // We have an import or export action.
-      switch ($args['action']) {
-
-        case 'import':
-          $block['content'] = '<p>'. t('Because all project translations are shared, an imported file might provide translations for strings used in any project.') .'</p>'. $permission_help;
-          return $block;
-
-        case 'export':
-          $block['content'] = '<p>'. t('The GNU Gettext Portable Object (Template) format is used for exports, which is understood by Drupal and desktop translation editing tools.') .'</p>'. $permission_help;
-          return $block;
-
-        case 'translate':
-          // Language code and project both present.
-          $items = array();
-          $items[] = t('Remember to include a line break in the same positions in the translation where they appear in the source string. Beginning and ending line breaks are saved properly, even if you forget to include them.');
-          $items[] = t('Variables are designated with !, @ and % (like %example, !example or @example), and should be kept in the translated text as-is.');
-          $languages = l10n_community_get_languages();
-          $formula = join(' ', preg_split('!(&&|\\|\\||%|<=|>=|==|\\!=|\\?|:)!', $languages[$args['langcode']]->formula, -1, PREG_SPLIT_DELIM_CAPTURE));
-          $items[] = t('The plural formula in use with this language is %formula.', array('%formula' => str_replace('$n', 'n', $formula)));
-
-          $block['content'] = $permission_help . theme('item_list', $items);
-          return $block;
-      }
-    }
-    else {
-      // We are on some overview page.
-      if (!isset($args['uri'])) {
-        // Only language code is present => translation listing is shown.
-        $block['content'] = $permission_help;
-        return $block;
-      }
-      elseif (!isset($args['langcode'])) {
-        // Only project code is present => language list is shown.
-        $block['content'] = '<p>'. t('This page shows a list of all languages and their overall translation status (accumulated for all releases). Exporting translation works for all languages. Importing your translations is only possible to languages where you have sufficient privileges to do so.') .'</p>';
-        return $block;
-      }
-    }
   }
 }
 
