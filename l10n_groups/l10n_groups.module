@@ -21,8 +21,8 @@ function l10n_groups_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 200,
   );
-  $items['translate/languages/%l10n_community_language/posts'] = array(
-    'title' => 'Group posts',
+  $items['translate/languages/%l10n_community_language/board'] = array(
+    'title' => 'Group board',
     'page callback' => 'l10n_groups_posts_page',
     'page arguments' => array(2),
     'access arguments' => array('access localization community'),
@@ -394,9 +394,9 @@ function l10n_groups_l10n_community_build_language_page($language) {
 }
 
 /**
- * Language page content creator.
+ * Overview dashboard for the group (to be).
  */
-function l10n_groups_posts_page($langcode) {
+function l10n_groups_board_page($langcode) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
     // Empty out body, so we do not repeat info from the welcome page. We do
