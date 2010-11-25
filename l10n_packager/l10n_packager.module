@@ -319,8 +319,23 @@ function l10n_packager_l10n_community_build_language_page($language) {
   drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
   drupal_add_js(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.js');
 
+  // Expire old entries and then try to look up our entry.
+  cache_clear_all(NULL, 'cache_l10n_packager');
+  $rendered = cache_get('download:language:'. $language->language, 'cache_l10n_packager');
+  // Not found, generate the list from our data.
+  if (!empty($rendered)) {
+    return $rendered->data;
+  }
+
   $output = '<h3 id="downloads">'. t('Top downloads') .'</h3>';
-  $download_headers = array(t('Project'), t('Version'), t('Downloads'), t('Date created'), t('Up to date as of'));
+  // Include header marker with each cell individually since we'll reuse this.
+  $download_headers = array(
+    array('data' => t('Project'), 'header' => TRUE),
+    array('data' => t('Version'), 'header' => TRUE),
+    array('data' => t('Downloads'), 'header' => TRUE),
+    array('data' => t('Date created'), 'header' => TRUE),
+    array('data' => t('Up to date as of'), 'header' => TRUE),
+  );
 
   // Output the highlighted project first and foremost.
   if ($project = l10n_community_get_highlighted_project()) {
@@ -337,21 +352,22 @@ function l10n_packager_l10n_community_build_language_page($language) {
   // Make a list of up and coming 20 projects as well.
   $downloads = array();
   while ($project = db_fetch_object($result)) {
-    $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language, TRUE));
+    $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language, TRUE, $download_headers));
   }
   if (!empty($downloads)) {
     $output .= '<div class="l10n-packager-download-table l10n-packager-download-dynamic"><h4>'. t('Further top projects') .'</h4>';
-    $output .= theme('table', $download_headers, $downloads);
+    $output .= theme('table', NULL, $downloads);
     $output .= '</div>';
   }
   
+  cache_set('download:language:'. $language->language, $output, 'cache_l10n_packager', time()+60*60*24);
   return $output;
 }
 
 /**
  * Build download table rows for the language view pages.
  */
-function l10n_packager_project_downloads($project, $language, $summary = FALSE) {
+function l10n_packager_project_downloads($project, $language, $summary = FALSE, $headers = array()) {
   $files = array();
   $branches = array();
   $result = db_query("SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d AND lf.language = '%s'", $project->pid, $language->language);
@@ -398,6 +414,8 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE) 
       'id' => 'l10n-packager-summary-'. $uri_class,
       'data' => array(l('&#9658; '. check_plain($project->title), 'translate/projects/'. $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array('data' => join(', ', $summary_list), 'colspan' => 4))
     );
+    $headers = array('class' => 'l10n-packager-detail l10n-packager-detail-'. $uri_class, 'data' => $headers);
+    array_unshift($rows, $headers);
     array_unshift($rows, $summary_row);
   }
 
