@@ -295,7 +295,7 @@ function l10n_groups_og_links_alter(&$links, $node) {
   if (isset($links['subscribe'])) {
     $link = &$links['subscribe'];
   }
-  if (!empty($link)) {
+  if (!empty($link) && (strpos($link, t('Request membership')) || strpos($link, t('Join')))) {
     if ($node->og_selective == OG_MODERATED) {
       $txt = t('Request membership');
     }
