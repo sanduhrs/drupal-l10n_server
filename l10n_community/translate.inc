@@ -245,6 +245,11 @@ function l10n_community_translate_page($langcode) {
   l10n_community_add_url_modifiers($langcode, $filters);
   $strings = l10n_community_get_strings($langcode, $filters, $filters['limit']);
 
+  // Add RTL style if the current language's direction is RTL
+  if ($language->direction == LANGUAGE_RTL) {
+    drupal_add_css(drupal_get_path('module', 'l10n_community') .'/editor-rtl.css');
+  }
+
   // Set the most appropriate title.
   if ($filters['project']) {
     drupal_set_title(t('Translate %project to @language', array('%project' => $filters['project']->title, '@language' => t($language->name))));

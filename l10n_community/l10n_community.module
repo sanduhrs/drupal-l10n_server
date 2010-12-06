@@ -306,6 +306,17 @@ function l10n_community_init() {
     // For the translation overview pages. This is used to present admin page like panels.
     drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
   }
+
+  // Check if language is RTL
+  if (array_key_exists(arg(2), locale_language_list())) {
+    $langcode = arg(2);
+    $language = l10n_community_get_language($langcode);
+
+    // Add RTL style if the current language's direction is RTL
+    if ($language->direction == LANGUAGE_RTL) {
+      drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community-rtl.css', 'module');
+    }
+  }
 }
 
 /**
