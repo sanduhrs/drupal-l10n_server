@@ -464,7 +464,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     // Only include suggestions if requested, otherwise filter out.
     $is_suggestion = ($suggestions ? '' : 'AND t.is_suggestion = 0');
     // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.uid_approved, t.time_approved, t.is_suggestion, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 $is_suggestion WHERE f.pid = %d $type_limit";
+    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.is_suggestion, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 $is_suggestion WHERE f.pid = %d $type_limit";
     $sql_args = array($language->language, $language->language, $project->pid);
   }
 

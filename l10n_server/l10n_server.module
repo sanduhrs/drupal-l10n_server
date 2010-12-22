@@ -6,6 +6,41 @@
  *   Base localization server module.
  */
 
+/**
+ * Action flag for backwards compatibility.
+ */
+define('L10N_SERVER_ACTION_ADD_UNKNOWN', 0);
+
+/**
+ * Action flag for web based addition.
+ */
+define('L10N_SERVER_ACTION_ADD_WEB', 1);
+
+/**
+ * Action flag for web based import.
+ */
+define('L10N_SERVER_ACTION_ADD_IMPORT', 2);
+
+/**
+ * Action flag for remote addition.
+ */
+define('L10N_SERVER_ACTION_ADD_REMOTE', 3);
+
+/**
+ * Action flag for approval.
+ */
+define('L10N_SERVER_ACTION_APPROVE', 4);
+
+/**
+ * Action flag for denial.
+ */
+define('L10N_SERVER_ACTION_DECLINE', 3);
+
+/**
+ * Action flag for demotes.
+ */
+define('L10N_SERVER_ACTION_DEMOTE', 5);
+
 // = Core hooks ================================================================
 
 /**

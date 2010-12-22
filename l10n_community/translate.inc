@@ -381,7 +381,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 
   // When there are suggestions, load them from the database.
   if ($source->has_suggestion) {
-    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $language->language, $source->sid);
+    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", $language->language, $source->sid);
     while ($suggestion = db_fetch_object($result)) {
       $suggestion->translation = l10n_community_unpack_string($suggestion->translation);
       // Add the suggestion to the list.
@@ -532,20 +532,7 @@ function l10n_community_translate_byline($string) {
     '@date' => format_date($string->time_entered),
     '@ago' => t('@time ago', array('@time' => format_interval(time() - $string->time_entered))),
   );
-  if (!empty($string->uid_approved) && $string->uid_entered === $string->uid_approved && $string->time_entered === $string->time_approved) {
-    return t('translated and approved by !author <span title="@ago">on @date</span>', $params);
-  }
-  else {
-    $title = t('suggested by !author <span title="@ago">on @date</span>', $params);
-    if (!empty($string->uid_approved)) {
-      $title .= '<br />'. t('approved by !author <span title="@ago">on @date</span>', array(
-        '!author' => theme('username', (object)array('name' => $string->username_approved, 'uid' => $string->uid_approved)),
-        '@date' => format_date($string->time_approved),
-        '@ago' => t('@time ago', array('@time' => format_interval(time() - $string->time_approved))),
-      ));
-    }
-    return $title;
-  }
+  return t('suggested by !author <span title="@ago">on @date</span>', $params);
 }
 
 // = Translation form theming ==================================================
@@ -728,7 +715,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
         }
         // If we had value in any of the textareas, add new suggestion.
         if ($tid === 'new' && count($options['value']) > $empty_values) {
-          $tid = l10n_community_add_suggestion($sid, l10n_community_pack_string($options['value']), $langcode, $user->uid);
+          $tid = l10n_community_add_suggestion($sid, l10n_community_pack_string($options['value']), $langcode, $user->uid, L10N_SERVER_ACTION_ADD_WEB);
           if ($tid) {
             if ($string['active'] === 'new') {
               // This new string was selected to be approved, so remember $tid
@@ -758,7 +745,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
         elseif (!empty($options['declined'])) {
           // The decline checkbox for this suggestion was checked.
           l10n_community_counter($options['original']->is_suggestion ? L10N_COUNT_SUGGESTION_DECLINED : L10N_COUNT_DECLINED);
-          l10n_community_decline_string($langcode, $sid, $tid);
+          l10n_community_decline_string($langcode, $sid, $tid, $user->uid);
         }
       }
     }
@@ -800,13 +787,12 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
 
-  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
+  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
   $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_string} s";
   $join[] = "LEFT JOIN {l10n_server_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
   $join_args[] = $langcode;
   $join[] = "LEFT JOIN {l10n_server_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
   $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
-  $join[] = "LEFT JOIN {users} u2 ON u2.uid = t.uid_approved";
 
   // Add sid filtering.
   if (!empty($filters['sid'])) {
@@ -891,7 +877,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   while ($string = db_fetch_object($strings)) {
     if ($string->is_suggestion) {
       // This string is not a translation, but we need that as a "parent" to display.
-      if ($string->has_translation && ($translation = db_fetch_array(db_query("SELECT t.tid, t.translation, t.uid_entered, t.uid_approved, t.time_entered, t.time_approved, t.is_suggestion, t.is_active, u.name as username, u2.name as username_approved FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered LEFT JOIN {users} u2 ON u2.uid = t.uid_approved WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 0", $string->language, $string->sid)))) {
+      if ($string->has_translation && ($translation = db_fetch_array(db_query("SELECT t.tid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = '%s' AND t.sid = %d AND t.is_active = 1 AND t.is_suggestion = 0", $string->language, $string->sid)))) {
         // It does have a translation however, so let's load it, and override.
         foreach ($translation as $key => $value) {
           $string->$key = $value;

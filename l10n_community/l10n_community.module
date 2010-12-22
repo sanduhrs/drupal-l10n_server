@@ -972,9 +972,11 @@ function l10n_community_ahah_releases() {
  * @param $langcode
  *   The language of the new translation.
  * @param $uid
- *  User ID to use to save the string.
+ *   User ID to use to save the string.
+ * @param $type
+ *   Action type constant L10N_SERVER_ACTION_*
  */
-function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
+function l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $type) {
 
   // Load source string and adjust translation whitespace based on source.
   $source_string = db_result(db_query('SELECT value FROM {l10n_server_string} WHERE sid = %d', $sid));
@@ -985,13 +987,15 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
     return NULL;
   }
 
+  $time = time();
+
   // Look for an existing active translation, if any.
   // Use BINARY matching to avoid marking case-corrections as duplicate.
   $existing = db_fetch_object(db_query("SELECT tid, is_active, is_suggestion FROM {l10n_server_translation} WHERE sid = %d AND language = '%s' AND translation = BINARY '%s'", $sid, $langcode, $translation));
   if (!empty($existing)) {
     if ($existing->is_active == 0) {
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
-      db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, is_active = 1, uid_approved = 0, time_approved = 0 WHERE tid = %d", $existing->tid);
+      db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, is_active = 1, time_changed = %d WHERE tid = %d", $time, $existing->tid);
       $tid = $existing->tid;
     }
     else {
@@ -1000,9 +1004,10 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
   }
   else {
     // Insert the new suggestion.
-    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, 1, 1)", $sid, $translation, $langcode, $uid, time());
+    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, time_changed, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, 1, 1)", $sid, $translation, $langcode, $uid, $time, $time);
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
   }
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $uid, $type, $time);
 
   // Mark the existing or mock translation as having suggestions.
   l10n_community_update_string_status($langcode, $sid);
@@ -1019,9 +1024,13 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid) {
  *   The string ID the translation belongs to.
  * @param $tid
  *   The translation ID of the translation.
+ * @param $uid
+ *   The user performing the action.
  */
-function l10n_community_decline_string($langcode, $sid, $tid) {
-  db_query("UPDATE {l10n_server_translation} SET is_active = 0 WHERE tid = %d", $tid);
+function l10n_community_decline_string($langcode, $sid, $tid, $uid) {
+  $time = time();
+  db_query("UPDATE {l10n_server_translation} SET is_active = 0, time_changed = %d WHERE tid = %d", $time, $tid);
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $uid, L10N_SERVER_ACTION_DECLINE, $time);
   l10n_community_update_string_status($langcode, $sid);
 }
 
@@ -1061,10 +1070,18 @@ function l10n_community_update_string_status($langcode, $sid) {
 function l10n_community_approve_string($langcode, $sid, $tid) {
   global $user;
 
+  $time = time();
+
   // Make the existing approved string a suggestion (if applicable).
-  db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1 WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode);
+  // There should only ever be one string like this.
+  if ($existing_tid = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode))) {
+    db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, time_changed = %d WHERE tid = %d", $time, $existing_tid);
+    db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $existing_tid, $user->uid, L10N_SERVER_ACTION_DEMOTE, $time);
+  }
 
   // Mark this exact suggestion as active translation, and set approval time.
-  db_query("UPDATE {l10n_server_translation} SET time_approved = %d, uid_approved = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", time(), $user->uid, $tid);
+  db_query("UPDATE {l10n_server_translation} SET time_changed = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", $time, $tid);
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $user->uid, L10N_SERVER_ACTION_APPROVE, $time);
+
   l10n_community_update_string_status($langcode, $sid);
 }

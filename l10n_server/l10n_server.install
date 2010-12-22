@@ -328,22 +328,15 @@ function l10n_server_schema() {
         'default' => 0,
         'disp-width' => '11'
       ),
-      'uid_approved' => array(
-        'description' => 'Reference to the {users}.uid who approved this translation or suggestion.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11'
-      ),
       'time_entered' => array(
-        'description' => 'Unix timestamp of time when the translation or suggestion was entered.',
+        'description' => 'Unix timestamp of when the string was entered into the database.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
         'disp-width' => '11'
       ),
-      'time_approved' => array(
-        'description' => 'Unix timestamp of time when the translation or suggestion was approved.',
+      'time_changed' => array(
+        'description' => 'Unix timestamp of last action (cached version of MAX({l10n_server_translation_history}.time_action) for this tid).',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
@@ -369,6 +362,42 @@ function l10n_server_schema() {
       'uid_entered' => array('uid_entered'),
       'is_suggestion_is_active_language' => array('is_suggestion', 'is_active', 'language'),
       'sid_language_is_suggestion_is_active' => array('sid', 'language', 'is_suggestion', 'is_active')
+    ),
+  );
+  
+  $schema['l10n_server_translation_history'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => 'References {l10n_server_translation}.tid',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'uid_action' => array(
+        'description' => 'Reference to the {users}.uid who performed the action.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'time_action' => array(
+        'description' => 'Unix timestamp of time when the action happened.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'type_action' => array(
+        'description' => 'Numeric identifier of the action that happened.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+    ),
+    'indexes' => array(
+      'tid' => array('tid'),
     ),
   );
 

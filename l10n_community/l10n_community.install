@@ -460,3 +460,65 @@ function l10n_community_update_6021() {
   db_query("UPDATE {blocks} SET delta = 'jump' WHERE delta = 'contribute' AND module = 'l10n_community'");
   return array();
 }
+
+/**
+ * Refactor translation history tracking to a separate table.
+ */
+function l10n_community_update_6022() {
+  $ret = array();
+
+  db_create_table($ret, 'l10n_community_translation_history', array(
+    'fields' => array(
+      'tid' => array(
+        'description' => 'References {l10n_server_translation}.tid',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'uid_action' => array(
+        'description' => 'Reference to the {users}.uid who performed the action.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'time_action' => array(
+        'description' => 'Unix timestamp of time when the action happened.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+      'type_action' => array(
+        'description' => 'Numeric identifier of the action that happened.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
+    ),
+    'indexes' => array(
+      'tid' => array('tid'),
+    ),
+  ));
+
+  // Save submission history data with L10N_SERVER_ACTION_ADD_UNKNOWN (0), since
+  // we don't know how was the string added really.
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) SELECT tid, uid_entered, 0, time_entered FROM {l10n_server_translation}");
+
+  // Save approval history data with L10N_SERVER_ACTION_APPROVE (4).
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) SELECT tid, uid_approved, 4, time_approved FROM {l10n_server_translation} WHERE is_active = 1 AND is_suggestion = 0");
+  
+  // Add the time_changed field.
+  db_add_field($ret, 'l10n_server_translation', 'time_changed', array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'disp-width' => '11'));
+  
+  // The last change date we know is either the submission or approval time.
+  $ret[] = update_sql("UPDATE {l10n_server_translation} SET time_changed = GREATEST(time_entered, time_approved)");
+  
+  // Drop fields not needed anymore in the translation table, now we track these separately.
+  db_drop_field($ret, 'l10n_server_translation', 'uid_approved');
+  db_drop_field($ret, 'l10n_server_translation', 'time_approved');
+
+  return $ret;
+}
