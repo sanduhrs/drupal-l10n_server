@@ -198,7 +198,12 @@ function l10n_drupal_drupalorg_scan() {
   // details.
   $releases = array();
   while ($release = db_fetch_object($result)) {
-    $releases[] = $release;
+    // Drupal.org builds both .zip and .tar.gz files but we should only
+    // include tar.gz files here. Not done in the SQL query to avoid
+    // affecting performance of that.
+    if (strpos($release->filepath, '.tar.gz') !== FALSE) {
+      $releases[] = $release;
+    }
   }
 
   // Save last reporting timestamp for getting latest usage data.
