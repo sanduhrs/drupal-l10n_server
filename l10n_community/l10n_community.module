@@ -136,14 +136,16 @@ function l10n_community_menu() {
     'access arguments' => array('access localization community'),
     'weight' => -5,
   );
-  // Unique path to avoid clashing with other items.
+
+  // Autocomplete callback for project textfields.
   $items['translate/project-autocomplete'] = array(
     'title' => 'Project autocomplete',
     'page callback' => 'l10n_community_projects_autocomplete',
     'access arguments' => array('access localization community'),
     'type' => MENU_CALLBACK
   );
-  // Serve a list of releases for a given project.
+
+  // Form API AHAH release selector.
   $items['translate/releases-ahah'] = array(
     'title' => 'AHAH release picker callback',
     'page callback' => 'l10n_community_ahah_releases',
@@ -151,13 +153,21 @@ function l10n_community_menu() {
     'type' => MENU_CALLBACK
   );
 
-
-  // AJAX callbacks for easy translation management. These are expected to be
-  // used only onsite (not as remote API endpoints), so they have no versioning.
-  $items['translate/details/%l10n_community_language/%'] = array(
+  // Callback to provide details about a certain source string.
+  $items['translate/source-details/%'] = array(
     'title' => 'Source string usage details',
     'page callback' => 'l10n_community_string_details',
-    'page arguments' => array(2, 3),
+    'page arguments' => array(2),
+    'file' => 'translate.inc',
+    'access arguments' => array('browse translations'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // Callback to provide details about translation history.
+  $items['translate/translation-details/%'] = array(
+    'title' => 'Translation history information',
+    'page callback' => 'l10n_community_translation_details',
+    'page arguments' => array(2),
     'file' => 'translate.inc',
     'access arguments' => array('browse translations'),
     'type' => MENU_CALLBACK,
@@ -971,12 +981,14 @@ function l10n_community_ahah_releases() {
  *   String representing the new translation.
  * @param $langcode
  *   The language of the new translation.
- * @param $uid
+ * @param $uid_attribution
  *   User ID to use to save the string.
- * @param $type
- *   Action type constant L10N_SERVER_ACTION_*
+ * @param $uid_user
+ *   User ID to use to keep history of.
+ * @param $medium
+ *   Medium type constant L10N_SERVER_MEDIUM_*
  */
-function l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $type) {
+function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attribution, $uid_user, $medium) {
 
   // Load source string and adjust translation whitespace based on source.
   $source_string = db_result(db_query('SELECT value FROM {l10n_server_string} WHERE sid = %d', $sid));
@@ -997,6 +1009,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $typ
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
       db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, is_active = 1, time_changed = %d WHERE tid = %d", $time, $existing->tid);
       $tid = $existing->tid;
+      $type = L10N_SERVER_ACTION_READD;
     }
     else {
       return FALSE;
@@ -1004,10 +1017,11 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $typ
   }
   else {
     // Insert the new suggestion.
-    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, time_changed, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, 1, 1)", $sid, $translation, $langcode, $uid, $time, $time);
+    db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, time_changed, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, 1, 1)", $sid, $translation, $langcode, $uid_attribution, $time, $time);
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
+    $type = L10N_SERVER_ACTION_ADD;
   }
-  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $uid, $type, $time);
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $uid_user, $type, $time, $medium);
 
   // Mark the existing or mock translation as having suggestions.
   l10n_community_update_string_status($langcode, $sid);
@@ -1030,7 +1044,8 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $typ
 function l10n_community_decline_string($langcode, $sid, $tid, $uid) {
   $time = time();
   db_query("UPDATE {l10n_server_translation} SET is_active = 0, time_changed = %d WHERE tid = %d", $time, $tid);
-  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $uid, L10N_SERVER_ACTION_DECLINE, $time);
+  // ATM we only support this through the web, so always save the web medium.
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $uid, L10N_SERVER_ACTION_DECLINE, $time, L10N_SERVER_MEDIUM_WEB);
   l10n_community_update_string_status($langcode, $sid);
 }
 
@@ -1076,12 +1091,14 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
   // There should only ever be one string like this.
   if ($existing_tid = db_result(db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = %d AND language = '%s' AND is_suggestion = 0 AND is_active = 1", $sid, $langcode))) {
     db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, time_changed = %d WHERE tid = %d", $time, $existing_tid);
-    db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $existing_tid, $user->uid, L10N_SERVER_ACTION_DEMOTE, $time);
+    // ATM we only support this through the web, so always save the web medium.
+    db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $existing_tid, $user->uid, L10N_SERVER_ACTION_DEMOTE, $time, L10N_SERVER_MEDIUM_WEB);
   }
 
   // Mark this exact suggestion as active translation, and set approval time.
   db_query("UPDATE {l10n_server_translation} SET time_changed = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", $time, $tid);
-  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) VALUES (%d, %d, %d, %d)", $tid, $user->uid, L10N_SERVER_ACTION_APPROVE, $time);
+  // ATM we only support this through the web, so always save the web medium.
+  db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $user->uid, L10N_SERVER_ACTION_APPROVE, $time, L10N_SERVER_MEDIUM_WEB);
 
   l10n_community_update_string_status($langcode, $sid);
 }

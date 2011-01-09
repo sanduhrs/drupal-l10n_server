@@ -467,7 +467,7 @@ function l10n_community_update_6021() {
 function l10n_community_update_6022() {
   $ret = array();
 
-  db_create_table($ret, 'l10n_community_translation_history', array(
+  db_create_table($ret, 'l10n_server_translation_history', array(
     'fields' => array(
       'tid' => array(
         'description' => 'References {l10n_server_translation}.tid',
@@ -497,25 +497,52 @@ function l10n_community_update_6022() {
         'default' => 0,
         'disp-width' => '11'
       ),
+      'medium_action' => array(
+        'description' => 'Numeric identifier of the medium the action happened through.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
     ),
     'indexes' => array(
       'tid' => array('tid'),
     ),
   ));
 
-  // Save submission history data with L10N_SERVER_ACTION_ADD_UNKNOWN (0), since
-  // we don't know how was the string added really.
-  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) SELECT tid, uid_entered, 0, time_entered FROM {l10n_server_translation}");
+  // Save submission history data with L10N_SERVER_ACTION_ADD (1), and
+  // L10N_SERVER_MEDIUM_UNKNOWN (0) since we don't know how was the string
+  // added really.
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, uid_entered, 0, time_entered, 0 FROM {l10n_server_translation}");
 
-  // Save approval history data with L10N_SERVER_ACTION_APPROVE (4).
-  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action) SELECT tid, uid_approved, 4, time_approved FROM {l10n_server_translation} WHERE is_active = 1 AND is_suggestion = 0");
+  // Save approval history data with L10N_SERVER_ACTION_APPROVE (2) and
+  // L10N_SERVER_MEDIUM_WEB (1).
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, uid_approved, 2, time_approved, 1 FROM {l10n_server_translation} WHERE is_active = 1 AND is_suggestion = 0");
   
+  // Save somewhat padded decline data with L10N_SERVER_ACTION_DECLINE (3) and
+  // L10N_SERVER_MEDIUM_WEB (1). Use a second later time based on submission
+  // time, so in time ordering of events, it will appear later. Actual display
+  // of this action will not consider the time, so it is known to be fake
+  // based on the uid being zero.
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, 0, 3, time_entered + 1, 1 FROM {l10n_server_translation} WHERE is_active = 0");
+
+  // Do nothing for L10N_SERVER_ACTION_DEMOTE (4) and
+  // L10N_SERVER_ACTION_READD (5). We don't know if these happened to any of the
+  // strings, since there is not yet lasting indication of these actions in the
+  // database.
+
   // Add the time_changed field.
   db_add_field($ret, 'l10n_server_translation', 'time_changed', array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'disp-width' => '11'));
   
-  // The last change date we know is either the submission or approval time.
-  $ret[] = update_sql("UPDATE {l10n_server_translation} SET time_changed = GREATEST(time_entered, time_approved)");
+  // The last change date we know is either the submission or approval time
+  // for active strings.
+  $ret[] = update_sql("UPDATE {l10n_server_translation} SET time_changed = GREATEST(time_entered, time_approved) WHERE is_active = 1");
   
+  // The last change date for declined strings is faked above to time_entered + 1,
+  // so use that for consistency. That is sure to be later to time_entered and
+  // will be consistent with the last history action on the string.
+  $ret[] = update_sql("UPDATE {l10n_server_translation} SET time_changed = time_entered + 1 WHERE is_active = 0");
+
   // Drop fields not needed anymore in the translation table, now we track these separately.
   db_drop_field($ret, 'l10n_server_translation', 'uid_approved');
   db_drop_field($ret, 'l10n_server_translation', 'time_approved');

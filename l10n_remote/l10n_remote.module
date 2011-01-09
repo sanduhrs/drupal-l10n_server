@@ -165,7 +165,7 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
   }
 
   // Attempt to add this as a suggestion.
-  $tid = l10n_community_add_suggestion($sid, $translation, $langcode, $uid, L10N_SERVER_ACTION_ADD_REMOTE);
+  $tid = l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $uid, L10N_SERVER_MEDIUM_REMOTE);
   
   if ($tid === FALSE) {
     //watchdog('l10n_community', 'Duplicate translation submitted.', NULL, WATCHDOG_WARNING);

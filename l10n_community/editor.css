@@ -69,6 +69,7 @@ td.source {
     color: #000;
     opacity: 0.4;
   }
+  td.translation .l10n-byline .l10n-more-link:before,
   td.source .l10n-usage .l10n-more-link:before {
     content: "▾ ";
   }
@@ -181,9 +182,6 @@ li.translation > .author {
   }
   li.translation > .author a {
     color: #666;
-  }
-  li.translation > .author span[title] {
-    cursor: pointer;
   }
 
 

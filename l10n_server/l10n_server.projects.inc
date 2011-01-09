@@ -297,7 +297,7 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
   if (!isset($project_uri)) {
     $connector_list = l10n_server_get_add_enabled_project_connectors();
     // Provide sensible default for project if adding new one.
-    $project = (object) array('pid' => NULL, 'uri' => '', 'title' => '', 'home_link' => '', 'connector_module' => array_shift(array_keys($connector_list)), 'status' => 1);
+    $project = (object) array('pid' => NULL, 'uri' => '', 'title' => '', 'home_link' => '', 'connector_module' => array_shift(array_keys($connector_list)), 'status' => 1, 'weight' => 0);
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $project_uri));
@@ -394,7 +394,7 @@ function l10n_server_admin_projects_edit_form_submit($form, &$form_state) {
 function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri, $release_rid = NULL) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   if (empty($release_rid)) {
-    $release = (object) array('pid' => $project->pid, 'title' => '', 'rid' => NULL, 'download_link' => '');
+    $release = (object) array('pid' => $project->pid, 'title' => '', 'rid' => NULL, 'download_link' => '', 'weight' => 0);
   }
   else {
     $releases = l10n_server_get_releases($project_uri, FALSE);

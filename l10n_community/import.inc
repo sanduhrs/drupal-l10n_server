@@ -120,8 +120,6 @@ function l10n_community_import_form_validate($form, &$form_state) {
  * Process the locale import form submission.
  */
 function l10n_community_import_form_submit($form, &$form_state) {
-  global $user;
-
   // Save file in the local file system.
   if ($file = file_save_upload('file')) {
 
@@ -183,7 +181,7 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 
       // Add this as a suggestion first.
-      $tid = l10n_community_add_suggestion($sid, $value['msgstr'], $langcode, $uid, L10N_SERVER_ACTION_ADD_IMPORT);
+      $tid = l10n_community_add_suggestion($sid, $value['msgstr'], $langcode, $uid, $user->uid, L10N_SERVER_MEDIUM_IMPORT);
 
       if ($tid) {
         if ($is_suggestion) {

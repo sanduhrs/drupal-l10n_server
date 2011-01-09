@@ -513,9 +513,12 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
         );
       }
       if (isset($string->username)) {
-        $title = l10n_community_translate_byline($string);
+        $title = l10n_community_translate_byline($string->username, $string->uid_entered, $string->time_entered, -1, -1, FALSE);
+        
         $form['author'] = array(
           '#value' => $title,
+          '#prefix' => '<div class="l10n-byline"><a href="'. url('translate/translation-details/'. $string->tid) .'" class="l10n-more-link" title="'. t('Show full history for translation.') .'">',
+          '#suffix' => '</a><div class="l10n-more-info"></div></div>',
         );
       }
     }
@@ -526,13 +529,50 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
 /**
  * Generates the byline containing meta information about a string.
  */
-function l10n_community_translate_byline($string) {
+function l10n_community_translate_byline($name, $uid, $time, $medium, $type, $link_user = TRUE) {
   $params = array(
-    '!author' => theme('username', (object)array('name' => $string->username, 'uid' => $string->uid_entered)),
-    '@date' => format_date($string->time_entered),
-    '@ago' => t('@time ago', array('@time' => format_interval(time() - $string->time_entered))),
+    '!author' => $uid ? ($link_user ? theme('username', (object)array('name' => $name, 'uid' => $uid)) : check_plain($name)) : t('uknown user'),
+    // Also skip handling time if uid was not specified (for decline entries
+    // in the update, which have time for ordering reasons, but no uid).
+    '@date' => $time && $uid ? format_date($time) : t('unknown time'),
+    '@ago' => $time ? t('@time ago', array('@time' => format_interval(time() - $time))) : t('no time record available'),
   );
-  return t('suggested by !author <span title="@ago">on @date</span>', $params);
+  switch ($type) {
+    case L10N_SERVER_ACTION_ADD:
+      switch ($medium) {
+        case L10N_SERVER_MEDIUM_IMPORT:
+          return t('imported by !author <span title="@ago">on @date</span>', $params);
+        case L10N_SERVER_MEDIUM_REMOTE:
+          return t('remotely submitted by !author <span title="@ago">on @date</span>', $params);
+        case L10N_SERVER_MEDIUM_WEB:
+          return t('suggested on the web by !author <span title="@ago">on @date</span>', $params);
+        case L10N_SERVER_MEDIUM_UNKNOWN:
+          return t('suggested by !author <span title="@ago">on @date</span> (source unknown)', $params);
+      }
+      return;
+    case L10N_SERVER_ACTION_READD:
+      switch ($medium) {
+        case L10N_SERVER_MEDIUM_IMPORT:
+          return t('re-imported by !author <span title="@ago">on @date</span>', $params);
+        case L10N_SERVER_MEDIUM_REMOTE:
+          return t('remotely re-submitted by !author <span title="@ago">on @date</span>', $params);
+        case L10N_SERVER_MEDIUM_WEB:
+          return t('re-suggested on the web by !author <span title="@ago">on @date</span>', $params);
+        // L10N_SERVER_MEDIUM_UNKNOWN does not apply, because we only have that
+        // for backwards compatibility and L10N_SERVER_ACTION_READD did not
+        // happen with data migrated (at least we did not know about it).
+      }
+      return;
+    case L10N_SERVER_ACTION_APPROVE:
+      return t('approved by !author <span title="@ago">on @date</span>', $params);
+    case L10N_SERVER_ACTION_DECLINE:
+      return t('declined by !author <span title="@ago">on @date</span>', $params);
+    case L10N_SERVER_ACTION_DEMOTE:
+      return t('demoted by !author <span title="@ago">on @date</span>', $params);
+    default:
+      // Default byline that work as a click-target to get more information.
+      return t('by !author <span title="@ago">on @date</span>', $params);
+  }
 }
 
 // = Translation form theming ==================================================
@@ -566,7 +606,7 @@ function theme_l10n_community_translate_source($element) {
   $output .= '<label class="l10n-string'. ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') .'">'. drupal_render($element['source']['string']) .'</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
   $output .= '<div class="l10n-sid js-hide">'. l(t('ID: @id', array('@id' => $element['#string']->sid)), $_GET['q'], array('query' => array('sid' => $element['#string']->sid))) .'</div>';
-  $output .= '<div class="l10n-usage"><a href="'. url('translate/details/'. $element['#langcode'] .'/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
+  $output .= '<div class="l10n-usage"><a href="'. url('translate/source-details/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
   return $output;
 }
 
@@ -715,7 +755,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
         }
         // If we had value in any of the textareas, add new suggestion.
         if ($tid === 'new' && count($options['value']) > $empty_values) {
-          $tid = l10n_community_add_suggestion($sid, l10n_community_pack_string($options['value']), $langcode, $user->uid, L10N_SERVER_ACTION_ADD_WEB);
+          $tid = l10n_community_add_suggestion($sid, l10n_community_pack_string($options['value']), $langcode, $user->uid, $user->uid, L10N_SERVER_MEDIUM_WEB);
           if ($tid) {
             if ($string['active'] === 'new') {
               // This new string was selected to be approved, so remember $tid
@@ -927,24 +967,22 @@ function l10n_community_pack_string($strings) {
 // = AJAX callbacks ============================================================
 
 /**
- * Return a HTML list of projects, releases and counts of where strings
- * appear in the managed projects.
+ * Generate list of projects and releases of where a string appears.
  *
- * We could provide much more information, but usability should also be kept
- * in mind. It is possible to investigate hidden information sources though,
- * like tooltips on the release titles presented.
+ * We could provide much more information (down to line numbers of files), but
+ * usability should also be kept in mind. It is possible to investigate hidden
+ * information sources though, like tooltips on the release titles presented.
  *
  * This callback is invoked from JavaScript and is used as an AHAH provider.
  *
- * @param $langcode
- *   Language code.
  * @param $sid
  *   Source string id.
  * @param $ahah
  *   Whether the request came through AHAH, in which case no page
- *   theming should be applied.
+ *   theming should be applied. Non-AHAH support is a fallback if JS is
+ *   turned off.
  */
-function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
+function l10n_community_string_details($sid = 0, $ahah = 0) {
 
   $output = '';
   if ($ahah) {
@@ -986,6 +1024,64 @@ function l10n_community_string_details($langcode = NULL, $sid = 0, $ahah = 0) {
   }
   else {
     $output .= $usage_list;
+    return $output;
+  }
+}
+
+/**
+ * Provide full history information about translation.
+ *
+ * @param $tid
+ *   Translation id.
+ * @param $ahah
+ *   Whether the request came through AHAH, in which case no page
+ *   theming should be applied. Non-AHAH support is a fallback if JS is
+ *   turned off.
+ */
+function l10n_community_translation_details($tid = 0, $ahah = 0) {
+
+  // Get data about this translation.
+  $string = db_fetch_object(db_query('SELECT * FROM {l10n_server_translation} WHERE tid = %d', $tid));
+
+  $output = '';
+  if ($ahah) {
+    // Prevent devel module information if doing AHAH.
+    $GLOBALS['devel_shutdown'] = FALSE;
+  }
+  else {
+    $unpacked = l10n_community_unpack_string($string->translation);
+    $output .= '<h3>'. t('Translation') .'</h3>'. theme('item_list', $unpacked) . '<h3>'. t('History') .'</h3>';
+  }
+
+  // List of project releases, where this string is used.
+  $result = db_query('SELECT h.*, u.name FROM {l10n_server_translation_history} h INNER JOIN {users} u ON h.uid_action = u.uid WHERE tid = %d ORDER BY time_action DESC, type_action DESC', $tid);
+
+  $uid_submitted = 0;
+  $history_list = array();
+  while ($item = db_fetch_object($result)) {
+    $history_list[] = l10n_community_translate_byline($item->name, $item->uid_action, $item->time_action, $item->medium_action, $item->type_action);
+    if ($item->type_action == L10N_SERVER_ACTION_ADD) {
+      // Remember the first uid who submitted this. This will get overwritten, and since we are going backwards in time,
+      // the last value kept will be the first uid who submitted this string. We need this in case it is different to
+      // the user we used for attribution, so we can display the difference to the translator/moderator.
+      $uid_submitted = $item->uid_action;
+    }
+  }
+  if (!empty($uid_submitted) && ($uid_submitted != $string->uid_entered)) {
+    // Turns out the user used for attribution is different to the user used for
+    // the string storage.
+    $account = user_load($string->uid_entered);
+    $author = theme('username', $account);
+    array_unshift($history_list, t('by !author', array('!author' => $author)));
+  }
+  if (count($history_list)) {
+    $output .= theme('item_list', $history_list);
+  }
+  if ($ahah) {
+    print $output;
+    exit;
+  }
+  else {
     return $output;
   }
 }

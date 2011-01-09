@@ -395,6 +395,13 @@ function l10n_server_schema() {
         'default' => 0,
         'disp-width' => '11'
       ),
+      'medium_action' => array(
+        'description' => 'Numeric identifier of the medium the action happened through.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11'
+      ),
     ),
     'indexes' => array(
       'tid' => array('tid'),

@@ -33,7 +33,7 @@
   $(function () {
 
     // Replace "More information" link with AJAX output.
-    $('.l10n-more-link').click(function() {
+    $('.l10n-usage .l10n-more-link').click(function() {
       if ($(this).siblings('.l10n-more-info').css('display') == 'none') {
         // Was shown before but is currently hidden.
         $(this).html(Drupal.t('Hide related projects')).siblings('.l10n-more-info').toggle();
@@ -46,6 +46,17 @@
         // Was not yet loaded, we want to load the information fresh from the server.
         // Append /1 to the href, telling the server we want AHAH targeted output.
         $(this).html(Drupal.t('Loading...')).siblings('.l10n-more-info').load(this.href + '/1', function(){$(this).siblings('.l10n-more-link').html(Drupal.t('Hide related projects'));});
+      }
+      // Prevent the actual link click from happening.
+      return false;
+    });
+
+    // Provide more history about string submissions.
+    $('.l10n-byline .l10n-more-link').click(function() {
+      if (!$(this).siblings('.l10n-more-info').html()) {
+        // Was not yet loaded, we want to load the information fresh from the server.
+        // Append /1 to the href, telling the server we want AHAH targeted output.
+        $(this).html(Drupal.t('Loading...')).siblings('.l10n-more-info').load(this.href + '/1', function(){$(this).siblings('.l10n-more-link').hide();});
       }
       // Prevent the actual link click from happening.
       return false;
@@ -177,11 +188,6 @@
         // Update decline status based on checkbox values.
         translation.find('> .actions .declined :checkbox').change(function() {
           setStatus(translation, 'declined', this.checked);
-        });
-
-        translation.find('> .author span[title]').click(function() {
-          var $this = $(this), html = $this.html();
-          $this.html($this.attr('title')).attr('title', html);
         });
 
         if (isTranslation) {

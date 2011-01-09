@@ -7,29 +7,14 @@
  */
 
 /**
- * Action flag for backwards compatibility.
+ * Action flag for string addition.
  */
-define('L10N_SERVER_ACTION_ADD_UNKNOWN', 0);
-
-/**
- * Action flag for web based addition.
- */
-define('L10N_SERVER_ACTION_ADD_WEB', 1);
-
-/**
- * Action flag for web based import.
- */
-define('L10N_SERVER_ACTION_ADD_IMPORT', 2);
-
-/**
- * Action flag for remote addition.
- */
-define('L10N_SERVER_ACTION_ADD_REMOTE', 3);
+define('L10N_SERVER_ACTION_ADD', 1);
 
 /**
  * Action flag for approval.
  */
-define('L10N_SERVER_ACTION_APPROVE', 4);
+define('L10N_SERVER_ACTION_APPROVE', 2);
 
 /**
  * Action flag for denial.
@@ -39,7 +24,32 @@ define('L10N_SERVER_ACTION_DECLINE', 3);
 /**
  * Action flag for demotes.
  */
-define('L10N_SERVER_ACTION_DEMOTE', 5);
+define('L10N_SERVER_ACTION_DEMOTE', 4);
+
+/**
+ * Action flag for re-additions.
+ */
+define('L10N_SERVER_ACTION_READD', 5);
+
+/**
+ * Action medium flag for unknown sources.
+ */
+define('L10N_SERVER_MEDIUM_UNKNOWN', 0);
+
+/**
+ * Action medium flag for web based actions.
+ */
+define('L10N_SERVER_MEDIUM_WEB', 1);
+
+/**
+ * Action medium flag for web based import.
+ */
+define('L10N_SERVER_MEDIUM_IMPORT', 2);
+
+/**
+ * Action medium flag for remote action.
+ */
+define('L10N_SERVER_MEDIUM_REMOTE', 3);
 
 // = Core hooks ================================================================
 
