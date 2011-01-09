@@ -513,7 +513,7 @@ function l10n_community_update_6022() {
   // Save submission history data with L10N_SERVER_ACTION_ADD (1), and
   // L10N_SERVER_MEDIUM_UNKNOWN (0) since we don't know how was the string
   // added really.
-  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, uid_entered, 0, time_entered, 0 FROM {l10n_server_translation}");
+  $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, uid_entered, 1, time_entered, 0 FROM {l10n_server_translation}");
 
   // Save approval history data with L10N_SERVER_ACTION_APPROVE (2) and
   // L10N_SERVER_MEDIUM_WEB (1).
