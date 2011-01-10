@@ -34,15 +34,6 @@ body {
   margin: 0;
 }
 
-#l10n-show-ids {
-  float: right; /* LTR */
-  color: #000;
-  opacity: 0.4;
-  cursor: pointer;
-}
-#l10n-show-ids a {
-  text-decoration: none;
-}
 td.source {
   width: 45%;
   direction: ltr;
@@ -150,7 +141,8 @@ li.translation > .selector {
   }
 
 li.translation .l10n-string,
-td.source .l10n-string {
+td.source .l10n-string,
+td.sid a {
   display: block;
   line-height: 16px;
 }

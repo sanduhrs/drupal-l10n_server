@@ -582,7 +582,7 @@ function l10n_community_translate_byline($name, $uid, $time, $medium, $type, $li
  */
 function theme_l10n_community_translate_table($element) {
   $header = array(
-    '<div id="l10n-show-ids"><a href="#">#</a></div>'. t('Source text'),
+    array('data' => t('Source text'), 'colspan' => 2),
     t('Translations'),
   );
 
@@ -590,6 +590,7 @@ function theme_l10n_community_translate_table($element) {
 
   foreach (element_children($element) as $key) {
     $rows[] = array(
+      array('class' => 'sid', 'data' => l('#', $_GET['q'], array('query' => array('sid' => $element[$key]['#string']->sid), 'attributes' => array('title' => t('Direct and permanent link to this string.'))))),
       array('class' => 'source', 'data' => theme('l10n_community_translate_source', $element[$key])),
       array('class' => 'translation', 'data' => theme('l10n_community_translate_translation_list', $element[$key])),
     );
@@ -605,7 +606,7 @@ function theme_l10n_community_translate_source($element) {
   $output = theme('l10n_community_translate_actions', $element['source']);
   $output .= '<label class="l10n-string'. ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') .'">'. drupal_render($element['source']['string']) .'</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
-  $output .= '<div class="l10n-sid js-hide">'. l(t('ID: @id', array('@id' => $element['#string']->sid)), $_GET['q'], array('query' => array('sid' => $element['#string']->sid))) .'</div>';
+
   $output .= '<div class="l10n-usage"><a href="'. url('translate/source-details/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
   return $output;
 }

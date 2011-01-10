@@ -75,9 +75,6 @@
       $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
     }
 
-    // Add click behavior to the show ids hash.
-    $('#l10n-show-ids a').click(function() { $('td.source .l10n-sid').removeClass('js-hide').fadeIn(); $('#l10n-show-ids a').hide(); return false; });
-
      // Add title to all decline buttons. Will be modified dynamically.
      $('.actions .declined label').attr('title', Drupal.t('Decline'));
 
