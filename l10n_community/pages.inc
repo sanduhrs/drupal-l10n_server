@@ -388,7 +388,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
 
   // Reproduce the basic release information from the parent page.
   $output .= '<h3>'. t('Basic release information') .'</h3>';
-  $basic_info = l10n_communinty_project_releases_table(array($release), $uri, $project_name, FALSE);
+  $output .= l10n_communinty_project_releases_table(array($release), $uri, $project_name, FALSE);
 
   // List the files that we looked at.
   $output .= '<h3>'. t('Files parsed in this release') .'</h3>';
@@ -407,7 +407,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
 
   // List of release parse warnings we found.
   $output .= '<h3>'. t('Source code warnings identified') .'</h3>';
-  $result = db_query("SELECT * FROM {l10n_server_release} WHERE rid = %d", $release->rid);
+  $result = db_query("SELECT * FROM {l10n_server_error} WHERE rid = %d", $release->rid);
   $rows = array();
   while ($warning = db_fetch_object($result)) {
     $rows[] = array($warning->value);
