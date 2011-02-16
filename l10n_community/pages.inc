@@ -319,34 +319,107 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
 }
 
 /**
- * Displays a page with source code warnings for a given project.
+ * Displays a page with a list of releases for a given project.
  *
  * @param $uri
  *   Project URI.
  */
-function l10n_community_project_warnings($uri = NULL) {
+function l10n_community_project_releases($uri = NULL) {
   if (!isset($uri)) {
     drupal_set_message(t('No project selected.'), 'error');
     return '';
   }
-  drupal_set_title(t('@project project source code warnings', array('@project' => drupal_get_title())));
+  $project_name = drupal_get_title();
+  drupal_set_title(t('@project releases', array('@project' => $project_name)));
 
-  if (!$warnings = l10n_community_get_warnings($uri)) {
-    drupal_set_message(t('No source code warnings recorded for any of the parsed releases of this project.'));
+  $releases = l10n_server_get_releases($uri);
+  if (empty($releases)) {
+    drupal_set_message(t('No releases found for this project.'));
     return '';
   }
 
-  $output = '';
-  $releases = l10n_server_get_releases($uri);
+  return l10n_communinty_project_releases_table($releases, $project_name);
+}
+
+/**
+ * Display metadata based on a list of releases.
+ */
+function l10n_communinty_project_releases_table($releases, $project_name, $link_releases = TRUE) {
+  $rows = array();
   foreach ($releases as $release) {
-    $output .= '<h3>'. $release->title .'</h3>';
-    if (!isset($warnings[$release->rid])) {
-      $output .= '<p>'. t('No source code warnings recorded for this release.') .'</p>';
-    }
-    else {
-      $output .= theme('item_list', $warnings[$release->rid]);
-    }
+    $file_count = db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid);
+    $error_count = db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid);
+    $release_title = $project_name .' '. $release->title;
+    $row[] = array(
+      $link_releases ? l($release_title, 'translate/projects/'. $uri .'/releases/'. $release->rid) : $release_title,
+      empty($release->download_link) ? t('n/a') : l($release->download_link, $release->download_link),
+      format_date($relase->file_date),
+      empty($relase->last_parsed) ? t('in queue') : format_date($relase->last_parsed),
+      $file_count,
+      $release->sid_count,
+      $error_count,
+    );
   }
+  $header = array(t('Release'), t('Download'), t('File date'), t('Last parsed'), t('Files'), t('Strings'), t('Warnings'));
+  return theme('table', $header, $rows);
+}
+
+/**
+ * Displays a page with detailed information about a release.
+ *
+ * @param $uri
+ *   Project URI.
+ * @param $rid
+ *   Release identifier.
+ */
+function l10n_community_project_release($uri = NULL, $rid = NULL) {
+  if (!isset($uri) || !isset($rid)) {
+    drupal_set_message(t('No project or release selected.'), 'error');
+    return '';
+  }
+  $project_name = drupal_get_title();
+  $releases = l10n_server_get_releases($uri);
+  if (empty($releases) || !isset($releases[$rid])) {
+    drupal_set_message(t('The requested release could not be found.'));
+    return '';
+  }
+  $release = $releases[$rid];
+  drupal_set_title(t('@project @release information', array('@project' => $project_name, '@release' => $release->title)));
+
+  // Reproduce the basic release information from the parent page.
+  $output .= '<h3>'. t('Basic release information') .'</h3>';
+  $basic_info = l10n_communinty_project_releases_table(array($release), $project_name, FALSE);
+
+  // List the files that we looked at.
+  $output .= '<h3>'. t('Files parsed in this release') .'</h3>';
+  $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = %d', $release->rid);
+  $rows = array();
+  while ($file = db_fetch_object($result)) {
+    $rows[] = array($file->location, $file->revision);
+  }
+  $headers = array(t('File location'), t('Version information'));
+  if (count($rows)) {
+    $output .= theme('table', $headers, $rows);
+  }
+  else {
+    $output .= '<p>'. t('No files found to parse in this release.') .'</p>';
+  }
+
+  // List of release parse warnings we found.
+  $output .= '<h3>'. t('Source code warnings identified') .'</h3>';
+  $result = db_query("SELECT * FROM {l10n_server_release} WHERE rid = %d", $release->rid);
+  $rows = array();
+  while ($warning = db_fetch_object($result)) {
+    $rows[] = array($warning->value);
+  }
+  $headers = array(t('Warning value'));
+  if (count($rows)) {
+    $output .= theme('table', $headers, $rows);
+  }
+  else {
+    $output .= '<p>'. t('No source code warnings identified in this release.') .'</p>';
+  }
+
   return $output;
 }
 

@@ -244,17 +244,24 @@ function l10n_community_menu() {
     'access arguments' => array('export gettext templates and translations'),
     'file' => 'export.inc',
     'type' => MENU_LOCAL_TASK,
-    'weight' => 0,
+    'weight' => 100,
   );
-  $items['translate/projects/%l10n_community_project/warnings'] = array(
-    'title' => 'Source code warnings',
-    'page callback' => 'l10n_community_project_warnings',
+  $items['translate/projects/%l10n_community_project/releases'] = array(
+    'title' => 'Releases',
+    'page callback' => 'l10n_community_project_releases',
     'page arguments' => array(2),
-    'access callback' => 'l10n_community_access_warnings',
-    'access arguments' => array(2),
+    'access arguments' => array('access localization community'),
     'file' => 'pages.inc',
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
+  );
+  $items['translate/projects/%l10n_community_project/releases/%'] = array(
+    'title' => 'Release information',
+    'page callback' => 'l10n_community_project_release',
+    'page arguments' => array(2, 4),
+    'access arguments' => array('access localization community'),
+    'file' => 'pages.inc',
+    'type' => MENU_CALLBACK,
   );
 
   return $items;
@@ -521,24 +528,6 @@ function l10n_community_get_language($langcode) {
  */
 function l10n_community_review_access() {
   return user_access('moderate suggestions from others') || user_access('moderate own suggestions');
-}
-
-/**
- * Get all source code warnings for a project grouped by release.
- *
- * @param $uri
- *   Project code to look up warnings for.
- * @return
- *   Array of array lists of warnings. The outer array is indexed by release id.
- */
-function l10n_community_get_warnings($uri) {
-  $warnings = array();
-  // Inner JOIN used, so if no warnings are found, no rows are returned.
-  $result = db_query("SELECT e.rid, e.value FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid INNER JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = '%s'", $uri);
-  while ($warning = db_fetch_object($result)) {
-    $warnings[$warning->rid][] = $warning->value;
-  }
-  return $warnings;
 }
 
 /**
