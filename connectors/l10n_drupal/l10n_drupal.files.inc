@@ -215,7 +215,7 @@ function l10n_drupal_parse_package($package_file, $release) {
       l10n_drupal_rmdir_recursive($temp_path);
 
       // Record changes of the scanned project in the database.
-      $message = t('Contents of %filename have been scanned.', array('%filename' => $package_file));
+      $message = t('@filename with @num files scanned.', array('@filename' => basename($package_file), '@num' => count($files)));
 
       // Parsed this releases files.
       db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);

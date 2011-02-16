@@ -245,22 +245,22 @@ function l10n_drupal_drupalorg_scan() {
       );
     }
   }
-  
+
   // Project usage data will only be present if we have updates.
   foreach ($project_usage as $uri => $project_data) {
     if (!isset($projects[$uri]->pid)) {
       // Not a project the upper project list knows about (eg. a translation).
       continue;
     }
-    
+
     // We save project usage as negative weight because the lower the weight,
     // the earlier an item will be in the list (Drupal standard). But usage
     // stats are better if higher, so we need to reverse the effect.
-    
+
     // Add up and save all project usage as negative weight.
     $all_project_usage = array_sum($project_data);
     db_query("UPDATE {l10n_server_project} SET weight = %d WHERE uri = '%s'", -$all_project_usage, $uri);
-    
+
     // Save individual release count data as negative weight.
     foreach ($project_data as $title => $count) {
       db_query("UPDATE {l10n_server_release} SET weight = %d WHERE pid = %d AND title = '%s'", -$count, $projects[$uri]->pid, $title);
@@ -376,9 +376,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
-        $message_arguments = array('%filename' => $package_file);
-        $message_t = t('Contents of %filename have been scanned.', $message_arguments);
-        $message = 'Contents of %filename have been scanned.';
+        $message_arguments = array('@filename' => basename($package_file), '@num' => count($files));
+        $message_t = t('@filename with @num files scanned.', $message_arguments);
+        $message = '@filename with @num files scanned.';
 
         // Parsed this releases files.
         db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);

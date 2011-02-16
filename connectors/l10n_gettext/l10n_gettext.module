@@ -37,12 +37,14 @@ function l10n_gettext_upload_handler($form, $form_state) {
     // Save file info and mark the file parsed.
     db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $project->pid, $release->rid, $file->filename, '');
     $fid = db_result(db_query("SELECT fid FROM {l10n_server_file} WHERE rid = %d and location = '%s'", $release->rid, $file->filename));
-    db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
 
     // Do the actual parsing on the local file.
     if (l10n_server_parse_po($file, 'l10n_gettext_store_string', array($project->pid, $release->rid, $fid))) {
       drupal_set_message(format_plural(l10n_gettext_store_string(), 'The source file was successfully imported. One source string was added.', 'The source file was successfully imported. @count source strings were added.'));
     }
+
+    // Update this only once the parsing process succeeds.
+    db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
   }
   else {
     drupal_set_message(t('File to import not found. Did you choose a file to upload which was under %maxsize?', array('%maxsize' => format_size(file_upload_max_size()))), 'error');
