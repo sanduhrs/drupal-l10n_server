@@ -338,23 +338,23 @@ function l10n_community_project_releases($uri = NULL) {
     return '';
   }
 
-  return l10n_communinty_project_releases_table($releases, $project_name);
+  return l10n_communinty_project_releases_table($releases, $uri, $project_name);
 }
 
 /**
  * Display metadata based on a list of releases.
  */
-function l10n_communinty_project_releases_table($releases, $project_name, $link_releases = TRUE) {
+function l10n_communinty_project_releases_table($releases, $project_uri, $project_name, $link_releases = TRUE) {
   $rows = array();
   foreach ($releases as $release) {
-    $file_count = db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid);
-    $error_count = db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid);
+    $file_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid));
+    $error_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid));
     $release_title = $project_name .' '. $release->title;
     $rows[] = array(
-      $link_releases ? l($release_title, 'translate/projects/'. $uri .'/releases/'. $release->rid) : $release_title,
-      empty($release->download_link) ? t('n/a') : l($release->download_link, $release->download_link),
-      format_date($relase->file_date),
-      empty($relase->last_parsed) ? t('in queue') : format_date($relase->last_parsed),
+      $link_releases ? l($release_title, 'translate/projects/'. $project_uri .'/releases/'. $release->rid) : $release_title,
+      empty($release->download_link) ? t('n/a') : l(basename($release->download_link), $release->download_link),
+      format_date($release->file_date),
+      empty($release->last_parsed) ? t('in queue') : format_date($release->last_parsed),
       $file_count,
       $release->sid_count,
       $error_count,
@@ -388,7 +388,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
 
   // Reproduce the basic release information from the parent page.
   $output .= '<h3>'. t('Basic release information') .'</h3>';
-  $basic_info = l10n_communinty_project_releases_table(array($release), $project_name, FALSE);
+  $basic_info = l10n_communinty_project_releases_table(array($release), $uri, $project_name, FALSE);
 
   // List the files that we looked at.
   $output .= '<h3>'. t('Files parsed in this release') .'</h3>';
