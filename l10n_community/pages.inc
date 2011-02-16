@@ -350,7 +350,7 @@ function l10n_communinty_project_releases_table($releases, $project_name, $link_
     $file_count = db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid);
     $error_count = db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid);
     $release_title = $project_name .' '. $release->title;
-    $row[] = array(
+    $rows[] = array(
       $link_releases ? l($release_title, 'translate/projects/'. $uri .'/releases/'. $release->rid) : $release_title,
       empty($release->download_link) ? t('n/a') : l($release->download_link, $release->download_link),
       format_date($relase->file_date),
