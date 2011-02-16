@@ -377,18 +377,18 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
     drupal_set_message(t('No project or release selected.'), 'error');
     return '';
   }
-  $project_name = drupal_get_title();
+  $project = l10n_server_get_projects(array('uri' => $uri));
   $releases = l10n_server_get_releases($uri);
   if (empty($releases) || !isset($releases[$rid])) {
     drupal_set_message(t('The requested release could not be found.'));
     return '';
   }
   $release = $releases[$rid];
-  drupal_set_title(t('@project @release information', array('@project' => $project_name, '@release' => $release->title)));
+  drupal_set_title(t('@project @release information', array('@project' => $project->title, '@release' => $release->title)));
 
   // Reproduce the basic release information from the parent page.
   $output .= '<h3>'. t('Basic release information') .'</h3>';
-  $output .= l10n_communinty_project_releases_table(array($release), $uri, $project_name, FALSE);
+  $output .= l10n_communinty_project_releases_table(array($release), $uri, $project->title, FALSE);
 
   // List the files that we looked at.
   $output .= '<h3>'. t('Files parsed in this release') .'</h3>';
