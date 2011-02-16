@@ -228,7 +228,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
 
   if (isset($export_result) && is_array($export_result)) {
     // If we got an array back from the export build, tear that into pieces.
-    list($mime_type, $file_name, $serve_name) = $export_result;
+    list($mime_type, $file_name, $serve_name, $sid_count) = $export_result;
     // Return compressed archive to user.
     header('Content-Disposition: attachment; filename='. $serve_name);
     header('Content-Type: '. $mime_type);
@@ -481,7 +481,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $sql .= ' ORDER BY s.sid ASC'. ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
 
   $result = db_query($sql, $sql_args);
-  $previous_sid = 0;
+  $previous_sid = $sid_count = 0;
   $export_string = $string_files = array();
 
   while ($string = db_fetch_object($result)) {
@@ -502,6 +502,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'type'           => $string->type,
         'has_suggestion' => $string->has_suggestion,
       );
+      $sid_count++;
     }
     else {
       // Existing string but with new location information.
@@ -521,6 +522,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   if ($previous_sid > 0) {
     // Store the last string.
     _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact, $suggestions);
+    $sid_count++;
   }
 
   if (empty($string_files)) {
@@ -614,11 +616,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   if ($version == 'all-in-one') {
     // Output a single PO(T) file in this case.
-    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'));
+    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'), $sid_count);
   }
   else {
     // Output a package in this case.
-    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '-templates' : '-translations') .'.tgz');
+    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '-templates' : '-translations') .'.tgz', $sid_count);
   }
 }
 

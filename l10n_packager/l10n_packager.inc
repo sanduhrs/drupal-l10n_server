@@ -123,7 +123,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
   if (!empty($export_result) && is_array($export_result)) {
 
     // If we got an array back from the export build, tear that into pieces.
-    list($mime_type, $export_name, $serve_name) = $export_result;
+    list($mime_type, $export_name, $serve_name, $sid_count) = $export_result;
 
     // Get the destination file path.
     $file_path = l10n_packager_get_filepath($release, $language);
@@ -143,6 +143,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file->filepath = $file_path;
     file_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
     $file->filesize = filesize($file->filepath);
+    $file->sid_count = $sid_count;
 
     // Create / update file record and link to release.
     drupal_write_record('files', $file, !empty($file->fid) ? 'fid' : array());

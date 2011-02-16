@@ -40,7 +40,9 @@ function l10n_gettext_upload_handler($form, $form_state) {
 
     // Do the actual parsing on the local file.
     if (l10n_server_parse_po($file, 'l10n_gettext_store_string', array($project->pid, $release->rid, $fid))) {
-      drupal_set_message(format_plural(l10n_gettext_store_string(), 'The source file was successfully imported. One source string was added.', 'The source file was successfully imported. @count source strings were added.'));
+      $sid_count = l10n_gettext_store_string();
+      drupal_set_message(format_plural($sid_count, 'The source file was successfully imported. One source string was added.', 'The source file was successfully imported. @count source strings were added.'));
+      db_query("UPDATE {l10n_server_release} SET sid_count = %d WHERE rid = %d", $sid_count, $release->rid);
     }
 
     // Update this only once the parsing process succeeds.
@@ -55,7 +57,7 @@ function l10n_gettext_upload_handler($form, $form_state) {
  * Store one source string as being available.
  */
 function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid = NULL) {
-  static $added = 0;
+  static $sids = array();
 
   if (!empty($value['msgid'])) {
     // Initialize empty context if not speficied.
@@ -75,9 +77,9 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
       // Location does not exist with this string.
       db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, 0, 2 /*POTX_STRING_RUNTIME*/);
     }
-    $added++;
+    $sids[$sid] = 1;
   }
   else {
-    return $added;
+    return count($sids);
   }
 }

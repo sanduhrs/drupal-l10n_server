@@ -865,7 +865,7 @@ function l10n_community_build_filter_values($params) {
     'author' => !empty($params['author']) && ($account = user_load(array('name' => $params['author']))) ? $account : NULL,
     // Dropdown, validated by form API.
     'context' => isset($params['context']) ? (string) $params['context'] : 'all',
-    'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30))) ? (int) $params['limit'] : 10,
+    'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30, 50))) ? (int) $params['limit'] : 10,
     'sid'   => (!empty($params['sid']) && is_numeric($params['sid'])) ? $params['sid'] : 0,
   );
 

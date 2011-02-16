@@ -207,18 +207,20 @@ function l10n_drupal_parse_package($package_file, $release) {
       $files = _potx_explore_dir($temp_path);
       l10n_drupal_save_file(array($release->pid, $release->rid));
       $version = l10n_drupal_detect_major_version($package_file);
+      l10n_drupal_added_string_counter(NULL, TRUE);
       foreach ($files as $name) {
         _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
       }
+      $sid_count = l10n_drupal_added_string_counter();
 
       // Delete the extracted files.
       l10n_drupal_rmdir_recursive($temp_path);
 
       // Record changes of the scanned project in the database.
-      $message = t('@filename with @num files scanned.', array('@filename' => basename($package_file), '@num' => count($files)));
+      $message = t('@filename (@files files, @sids strings) scanned.', array('@filename' => basename($package_file), '@files' => count($files), '@sids' => $sid_count));
 
       // Parsed this releases files.
-      db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+      db_query("UPDATE {l10n_server_release} SET sid_count = %d, last_parsed = %d WHERE rid = %d", $sid_count, time(), $release->rid);
 
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
@@ -358,6 +360,24 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
       // Location does not exist with this string.
       db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type);
     }
+    l10n_drupal_added_string_counter($sid);
+  }
+}
+
+/**
+ * A counter we use for strings added. Each source strings is counted once.
+ */
+function l10n_drupal_added_string_counter($sid = NULL, $reset = FALSE) {
+  static $sids = array();
+
+  if ($reset) {
+    $sids = array();
+  }
+  elseif (empty($sid)) {
+    return count($sids);
+  }
+  else {
+    $sids[$sid] = 1;
   }
 }
 

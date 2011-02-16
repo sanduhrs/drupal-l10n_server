@@ -163,7 +163,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $form['limit'] = array(
     '#type' => 'select',
     '#title' => t('Limit'),
-    '#options' => drupal_map_assoc(array(5, 10, 20, 30)),
+    '#options' => drupal_map_assoc(array(5, 10, 20, 30, 50)),
     '#default_value' => $form_state['values']['limit'],
     '#attributes' => array('class' => $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default'),
     '#display_none' => $form_state['values']['limit'] == 10,
@@ -514,7 +514,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
       }
       if (isset($string->username)) {
         $title = l10n_community_translate_byline($string->username, $string->uid_entered, $string->time_entered, -1, -1, FALSE);
-        
+
         $form['author'] = array(
           '#value' => $title,
           '#prefix' => '<div class="l10n-byline"><a href="'. url('translate/translation-details/'. $string->tid) .'" class="l10n-more-link" title="'. t('Show full history for translation.') .'">',

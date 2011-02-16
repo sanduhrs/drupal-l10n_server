@@ -73,6 +73,12 @@ function l10n_packager_schema() {
         'not null' => FALSE,
         'disp-width' => '11'
       ),
+      'sid_count' => array(
+        'description' => 'Count of source strings exported in this file.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('drid'),
   );
@@ -131,4 +137,13 @@ function l10n_packager_update_6002() {
     }
   }
   return array();
+}
+
+/**
+ * Add sid_count to release exports.
+ */
+function l10n_packager_update_6003() {
+  $ret = array();
+  db_add_field($ret, 'l10n_packager_file', 'sid_count', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
+  return $ret;
 }

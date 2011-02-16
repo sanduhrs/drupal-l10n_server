@@ -518,7 +518,7 @@ function l10n_community_update_6022() {
   // Save approval history data with L10N_SERVER_ACTION_APPROVE (2) and
   // L10N_SERVER_MEDIUM_WEB (1).
   $ret[] = update_sql("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) SELECT tid, uid_approved, 2, time_approved, 1 FROM {l10n_server_translation} WHERE is_active = 1 AND is_suggestion = 0");
-  
+
   // Save somewhat padded decline data with L10N_SERVER_ACTION_DECLINE (3) and
   // L10N_SERVER_MEDIUM_WEB (1). Use a second later time based on submission
   // time, so in time ordering of events, it will appear later. Actual display
@@ -533,11 +533,11 @@ function l10n_community_update_6022() {
 
   // Add the time_changed field.
   db_add_field($ret, 'l10n_server_translation', 'time_changed', array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'disp-width' => '11'));
-  
+
   // The last change date we know is either the submission or approval time
   // for active strings.
   $ret[] = update_sql("UPDATE {l10n_server_translation} SET time_changed = GREATEST(time_entered, time_approved) WHERE is_active = 1");
-  
+
   // The last change date for declined strings is faked above to time_entered + 1,
   // so use that for consistency. That is sure to be later to time_entered and
   // will be consistent with the last history action on the string.
@@ -546,6 +546,23 @@ function l10n_community_update_6022() {
   // Drop fields not needed anymore in the translation table, now we track these separately.
   db_drop_field($ret, 'l10n_server_translation', 'uid_approved');
   db_drop_field($ret, 'l10n_server_translation', 'time_approved');
+
+  return $ret;
+}
+
+/**
+ * Add sid_count to releases.
+ */
+function l10n_community_update_6023() {
+  $ret = array();
+
+  db_add_field($ret, 'l10n_server_release', 'sid_count', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
+
+  // Fill in with sid_count based on line data.
+  $sid_counts = db_query('SELECT rid, COUNT(DISTINCT sid) sid_count FROM {l10n_server_line} GROUP BY rid');
+  while ($row = db_fetch_object($sid_counts)) {
+    db_query('UPDATE {l10n_server_release} SET sid_count = %d WHERE rid = %d', $row->sid_count, $row->rid);
+  }
 
   return $ret;
 }

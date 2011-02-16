@@ -367,21 +367,23 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         $files = _potx_explore_dir($temp_path);
         l10n_drupal_save_file(array($release->pid, $release->rid));
         $version = l10n_drupal_detect_major_version($package_file);
+        l10n_drupal_added_string_counter(NULL, TRUE);
         foreach ($files as $name) {
           _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
         }
+        $sid_count = l10n_drupal_added_string_counter();
 
         // Delete directory now that parsing is done.
         l10n_drupal_drupalorg_exec('rm -rf '. escapeshellarg($temp_path));
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
-        $message_arguments = array('@filename' => basename($package_file), '@num' => count($files));
-        $message_t = t('@filename with @num files scanned.', $message_arguments);
-        $message = '@filename with @num files scanned.';
+        $message_arguments = array('@filename' => basename($package_file), '@files' => count($files), '@sids' => $sid_count);
+        $message_t = t('@filename (@files files, @sids strings) scanned.', $message_arguments);
+        $message = '@filename (@files files, @sids strings) scanned.';
 
         // Parsed this releases files.
-        db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+        db_query("UPDATE {l10n_server_release} SET sid_count = %d, last_parsed = %d WHERE rid = %d", $sid_count, time(), $release->rid);
 
         // Update error list for this release. Although the errors are related to
         // files, we are not interested in the fine details, the file names are in
