@@ -295,7 +295,7 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
     else {
       // New file in this release.
       db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision);
-      $fid = db_result(db_query("SELECT fid FROM {l10n_server_file} WHERE rid = %d and location = '%s'", $rid, $file));
+      $fid = db_last_insert_id('l10n_server_file', 'fid');
     }
     $files[$file] = $fid;
   }
@@ -354,7 +354,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $value . $context))) {
       // String does not exist.
       db_query("INSERT INTO {l10n_server_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
-      $sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $value . $context));
+      $sid = db_last_insert_id('l10n_server_string', 'sid');
     }
     if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
       // Location does not exist with this string.
