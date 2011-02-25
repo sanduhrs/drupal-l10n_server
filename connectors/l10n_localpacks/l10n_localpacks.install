@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  *   Localization community for local packages, update and uninstallation.

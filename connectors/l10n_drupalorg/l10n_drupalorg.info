@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization community for drupal.org"
 description = "Maintains a copy of project and release listings, extracts translateable strings from project files. WARNING: don't use when setting up your own Localization server!"
 dependencies = l10n_community potx

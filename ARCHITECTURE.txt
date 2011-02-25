@@ -1,4 +1,3 @@
-$Id$
 
 This document explains how the l10n_server suite (and l10n_client) modules are
 intended to work together, and interact with other modules. The figures attached
