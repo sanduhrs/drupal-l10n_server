@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization remote API"
 description = Provides an XML-RPC server interface to handle remote translation submissions.
 dependencies[] = l10n_community

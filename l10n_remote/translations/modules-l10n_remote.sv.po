@@ -1,4 +1,3 @@
-# $Id$
 #
 # Swedish translation of Drupal (l10n_remote)
 # Generated from files:

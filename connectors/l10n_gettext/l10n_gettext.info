@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization server for Gettext files"
 description = Manages translatable strings with Gettext standard input/output.
 dependencies[] = l10n_server

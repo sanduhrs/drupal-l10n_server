@@ -1,4 +1,3 @@
-// $Id$
 
 Drupal.behaviors.replaceL10nServerURLs = function(context) {
   // Act on links if we have URL replacements to do.
