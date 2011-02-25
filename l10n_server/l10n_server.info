@@ -1,4 +1,3 @@
-; $Id$
 name = Localization server
 description = Base backend module for localization server
 package = "Localization server"

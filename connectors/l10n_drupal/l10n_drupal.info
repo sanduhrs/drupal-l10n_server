@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization server for Drupal"
 description = Extracts translatable strings from Drupal packages.
 dependencies[] = l10n_server

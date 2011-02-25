@@ -1,4 +1,3 @@
-# $Id$
 #
 # Swedish translation of Drupal (modules-l10_community)
 # Generated from files:

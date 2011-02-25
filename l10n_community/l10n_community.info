@@ -1,4 +1,3 @@
-; $Id$
 name = Localization community UI
 description = Community interface for string translation
 dependencies[] = jquery_update

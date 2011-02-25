@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization packager"
 description = "Translation packaging tools for the localization server"
 package = "Localization server"
