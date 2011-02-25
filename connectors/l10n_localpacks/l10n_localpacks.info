@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization community for local packages"
 description = Extracts translateable strings from local package files.
 dependencies[] = l10n_community

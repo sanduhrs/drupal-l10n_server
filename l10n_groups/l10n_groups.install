@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file
  *   Localization groups installation, update and uninstallation.

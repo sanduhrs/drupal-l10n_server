@@ -1,4 +1,3 @@
-// $Id$
 
 l10nCommunity = {};
 

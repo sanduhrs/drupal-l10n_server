@@ -1,4 +1,3 @@
-; $Id$
 name = "Localization community"
 description = A community interface for string translation
 dependencies[] = locale
