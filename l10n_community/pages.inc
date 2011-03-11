@@ -72,7 +72,7 @@ function l10n_community_explore_languages() {
       array('data' => t('Contributors'), 'field' => 'contributors'),
     ),
     $table,
-    array('class' => 'l10n-community-overview')
+    array('class' => 'l10n-community-overview l10n-community-highlighted')
   );
 }
 
