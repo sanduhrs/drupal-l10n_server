@@ -29,21 +29,62 @@ function l10n_community_explore_languages() {
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
       $table[] = array(
-        array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
+        array('data' => t($language->name), 'sortdata' => t($language->name), 'class' => 'rowhead'),
+        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error'),
+        array('data' => ''),
       );
     }
     else {
-      $table[] = array_merge(
+      $stats = l10n_community_get_stats($langcode);
+      $progress = array_shift(theme(
+        'l10n_community_progress_columns',
+        $num_source,
+        @$string_counts[$langcode]['translations'],
+        @$string_counts[$langcode]['suggestions']
+      ));
+      $table[] = array(
         array(
-          array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode), 'class' => 'rowhead'),
+          'data' => l(t($language->name), 'translate/languages/'. $langcode),
+          'sortdata' => t($language->name),
+          'class' => 'rowhead',
         ),
-        isset($string_counts[$langcode]) ? theme('l10n_community_progress_columns', $num_source, @$string_counts[$langcode]['translations'], @$string_counts[$langcode]['suggestions']) : theme('l10n_community_progress_columns', $num_source, 0, 0)
+        array(
+          'data' => $progress,
+          'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2))
+        ),
+        array(
+          'data' => $stats['users'],
+          'sortdata' => $stats['users']
+        ),
       );
     }
   }
-  $header = theme('l10n_community_progress_headers', t('Language'));
-  return theme('l10n_community_table', $header, $table) .'<div class="clear-block"></div>';
+
+  if (!empty($_GET['sort']) && !empty($_GET['order'])) {
+    usort($table, 'l10n_server_sort_by_column_language');
+  }
+
+  return theme(
+    'table',
+    array(
+      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+      array('data' => t('Overall progress'), 'field' => 'progress'),
+      array('data' => t('Contributors'), 'field' => 'contributors'),
+    ),
+    $table,
+    array('class' => 'l10n-community-overview')
+  );
+}
+
+/**
+ * Order listing table by column for language overview columns.
+ */
+function l10n_server_sort_by_column_language($a, $b) {
+  $sortkey = ($_GET['order'] == t('Language') ? 0 : ($_GET['order'] == t('Contributors') ? 2 : 1));
+  if (@$a[$sortkey]['sortdata'] == @$b[$sortkey]['sortdata']) {
+    return 0;
+  }
+  return ((@$a[$sortkey]['sortdata'] < @$b[$sortkey]['sortdata']) ? -1 : 1) * ($_GET['sort'] == 'asc' ? 1 : -1);
 }
 
 /**

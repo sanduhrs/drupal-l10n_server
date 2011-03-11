@@ -237,7 +237,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // WARNINGS ====
 
     // 3 in the module.
-    $this->drupalGet('translate/projects/'. $this->project_names[5] .'/warnings');
+    $this->drupalGet('translate/projects/'. $this->project_names[5] .'/releases/'. );
     $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 5 project releases.'));
     // 3 in both releases of modules, 1 in the JS (in one release).
     $this->drupalGet('translate/projects/'. $this->project_names[6] .'/warnings');

@@ -19,17 +19,18 @@ function l10n_community_welcome_page() {
     // output more suitable for a welcoming overview.
     include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
     drupal_set_title(t('Translations'));
-    
+
     $languages = l10n_community_get_languages();
     $num_source = l10n_community_get_string_count('project', $project->pid);
     $string_counts = l10n_community_get_string_count('languages', $project->pid);
-  
+
     $table = array();
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
         $table[] = array(
-          array('data' => t($language->name), 'class' => 'rowhead'),
-          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error')
+          array('data' => t($language->name), 'sortdata' => t($language->name), 'class' => 'rowhead'),
+          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error'),
+          array('data' => ''),
         );
       }
       else {
@@ -43,17 +44,32 @@ function l10n_community_welcome_page() {
         $table[] = array(
           array(
             'data' => l(t($language->name), 'translate/languages/'. $langcode),
+            'sortdata' => t($language->name),
             'class' => 'rowhead',
           ),
-          $progress,
-          $stats['users'],
+          array(
+            'data' => $progress,
+            'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2))
+          ),
+          array(
+            'data' => $stats['users'],
+            'sortdata' => $stats['users']
+          ),
         );
       }
     }
-    
+
+    if (!empty($_GET['sort']) && !empty($_GET['order'])) {
+      usort($table, 'l10n_server_sort_by_column_language');
+    }
+
     $output = theme(
       'table',
-      array(array('data' => t('Language'), 'class' => 'rowhead'), t('@project progress', array('@project' => $project->title)), t('Contributors')),
+      array(
+        array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+        array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
+        array('data' => t('Contributors'), 'field' => 'contributors'),
+      ),
       $table,
       array('class' => 'l10n-community-overview l10n-community-highlighted')
     );
