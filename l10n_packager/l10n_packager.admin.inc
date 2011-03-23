@@ -290,7 +290,7 @@ function l10n_packager_admin_installer_form_submit($form, $form_state) {
 
   $languages = l10n_community_get_languages();
   foreach ($languages as $language) {
-    $output = l10n_community_export($form_state['values']['project']->uri, $form_state['values']['release'], $language, FALSE, 'all-in-one', TRUE, TRUE);
+    $output = l10n_community_export($form_state['values']['project']->uri, $form_state['values']['release'], $language, FALSE, TRUE, TRUE);
     // Add file to the tgz. We need to purely use the language code because
     // Drupal 6 uses that to identify the language.
     $tar->addString($language->language .'.po', file_get_contents($output[1]));

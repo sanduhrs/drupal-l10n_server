@@ -236,7 +236,7 @@ function l10n_community_menu() {
     'weight' => -10,
   );
   $items['translate/projects/%l10n_community_project/export'] = array(
-    'title' => 'Export template',
+    'title' => 'Export',
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(2),
     'access callback' => 'user_access',
@@ -937,20 +937,18 @@ function l10n_community_ahah_releases() {
   $form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
   // End of AHAH copy paste.
 
-  // Pick and render our changed element for output.
-  $changed_element = ($form_id == 'l10n_community_export_form') ? $form['data']['release'] : $form['release'];
   // Prevent duplicate wrappers.
-  unset($changed_element['#prefix'], $changed_element['#suffix']);
+  unset($form['release']['#prefix'], $form['release']['#suffix']);
 
   if ($form_id == 'l10n_community_filter_form') {
     // Prevent duplicate titles (due to how we render the elements).
-    unset($changed_element['#title']);
+    unset($form['release']['#title']);
   }
 
   drupal_json(
     array(
       'status' => TRUE,
-      'data'   => theme('status_messages') . drupal_render($changed_element),
+      'data'   => theme('status_messages') . drupal_render($form['release']),
     )
   );
 }

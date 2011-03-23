@@ -57,20 +57,16 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   }
 
   $form = array();
-  $form['data'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Source data'),
-  );
   if ($hide_projects) {
     // This only happens if we have a project to export via $uri.
     // In this case, $uri is already verified via the menu system.
-    $form['data']['project'] = array(
+    $form['project'] = array(
       '#type' => 'value',
       '#value' => $form_state['values']['project'],
     );
   }
   else {
-    $form['data']['project'] = array(
+    $form['project'] = array(
       '#title' => t('Project'),
       '#required' => TRUE,
       '#default_value' => $form_state['values']['project'],
@@ -83,16 +79,16 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
     );
     if (($count = count($projects)) <= 30) {
       // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
-      $form['data']['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
-      $form['data']['project']['#options'] = array();
+      $form['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+      $form['project']['#options'] = array();
       foreach ($projects as $project) {
         // Title used to conform to the autocomplete behavior.
-        $form['data']['project']['#options'][$project->title] = $project->title;
+        $form['project']['#options'][$project->title] = $project->title;
       }
     }
     else {
       // Autocomplete field for more then 30 projects.
-      $form['data']['project'] += array(
+      $form['project'] += array(
         '#type' => 'textfield',
         '#autocomplete_path' => 'translate/project-autocomplete',
       );
@@ -110,7 +106,7 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
   if (!isset($release_options[$form_state['values']['release']])) {
     $form_state['values']['release'] = 'all';
   }
-  $form['data']['release'] = array(
+  $form['release'] = array(
     '#title' => t('Release'),
     '#required' => TRUE,
     '#type' => 'select',
@@ -127,50 +123,36 @@ function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL)
       '#value' => $langcode,
     );
 
-    $form['format'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Format'),
-    );
     // Only include the type selector if we are not presenting
     // a template export page (which does not have a language).
-    $form['format']['type'] = array(
-      '#title' => t('Type'),
-      '#type' => 'radios',
-      '#options' => array('translation' => t('Include both English originals and translations'), 'template' => t('Just export English originals')),
-      '#default_value' => 'translation',
-    );
-    $form['format']['version'] = array(
-      '#title' => t('Packaging'),
-      '#type' => 'radios',
-      '#options' => array(
-        'drupal-7' => t('Drupal 7 core package format (translations directories)'),
-        'drupal-6' => t('Drupal 6 core package format (translations directories)'),
-        'drupal-5' => t('Drupal 5 core package format (for autolocale module)'),
-        'flat-package' => t('Drupal 5/6 core flat package format (for CVS commit)'),
-        'all-in-one' => t('All in one file')
-      ),
-      '#default_value' => 'drupal-6',
-    );
-    $form['format']['compact'] = array(
-      '#title' => t('Verbosity'),
-      '#type' => 'radios',
-      '#options' => array(0 => t('Verbose files useful for desktop translation'), 1 => t('Compact files optimized for size, not desktop editing')),
-      '#default_value' => 0,
-    );
-    $form['format']['suggestions'] = array(
-      '#title' => t('Include suggestions (as fuzzy if untranslated, in comment if translated)'),
+    $languages = l10n_community_get_languages();
+    $form['translations'] = array(
+      '#title' => t('Add @language translations', array('@language' => $languages[$langcode]->name)),
       '#type' => 'checkbox',
+      '#default_value' => 1,
+    );
+    $form['suggestions'] = array(
+      '#title' => t('Add @language suggestions', array('@language' => $languages[$langcode]->name)),
+      '#type' => 'checkbox',
+      '#description' => t('For untranslated strings, the first suggestion will be exported as a fuzzy translation. All other suggestions are exported in comments.'),
+    );
+    $form['verbose'] = array(
+      '#title' => t('Verbose output'),
+      '#type' => 'checkbox',
+      '#description' => t('Verbose files are ideal for desktop editing, compact files are better for download size.'),
+      '#default_value' => 1,
     );
   }
+
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Export'),
+    '#value' => isset($langcode) ? t('Export Gettext file') : t('Export Gettext template'),
   );
   return $form;
 }
 
 /**
- * Release field is mandatory.
+ * Project field is mandatory.
  */
 function l10n_community_export_form_validate($form, &$form_state) {
   if (!$project = l10n_community_project_uri_by_title($form_state['values']['project'])) {
@@ -210,17 +192,14 @@ function l10n_community_export_form_submit($form, &$form_state) {
     $languages = l10n_community_get_languages();
     $language = $languages[$form_state['values']['langcode']];
   }
-  $type = (isset($form_state['values']['type']) ? $form_state['values']['type'] : 'template');
 
   // Generate tarball or PO file and get file name.
   $export_result = l10n_community_export(
     $uri,
     ($form_state['values']['release'] == 'all' ? NULL : $form_state['values']['release']),
     $language,
-    ($type != 'translation'),
-    // If not set (exporting a template for a module), stick to all-in-one.
-    isset($form_state['values']['version']) ? $form_state['values']['version'] : 'all-in-one',
-    $form_state['values']['compact'],
+    empty($form_state['values']['translations']),
+    empty($form_state['values']['verbose']),
     FALSE,
     $form_state['values']['suggestions']
   );
@@ -228,7 +207,6 @@ function l10n_community_export_form_submit($form, &$form_state) {
   if (isset($export_result) && is_array($export_result)) {
     // If we got an array back from the export build, tear that into pieces.
     list($mime_type, $file_name, $serve_name, $sid_count) = $export_result;
-    // Return compressed archive to user.
     header('Content-Disposition: attachment; filename='. $serve_name);
     header('Content-Type: '. $mime_type);
     echo file_get_contents($file_name);
@@ -244,8 +222,7 @@ function l10n_community_export_form_submit($form, &$form_state) {
 /**
  * Helper function to store the export string.
  */
-function _l10n_community_export_string_files(&$string_files, $uri, $language, $template, $version, $export_string, $compact = FALSE, $suggestions = FALSE) {
-  $po_folder = ($version == 'drupal-5' ? 'po' : 'translations');
+function _l10n_community_export_string_files(&$po_data, $uri, $language, $template, $export_string, $compact = FALSE, $suggestions = FALSE) {
   $output = '';
 
   if (!empty($export_string)) {
@@ -258,55 +235,6 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', array_keys($lines));
     }
     $comment = '#: '. join('; ', $comment) ."\n";
-
-    // File location is dependent on export format and string location.
-    if ($version == 'all-in-one') {
-      // Fold all strings into this one file.
-      $filename = 'general';
-    }
-    elseif ((strpos($comment, '.info') && $uri == 'drupal') || count(array_keys($export_string['comment'])) > 1) {
-      // An .info file string in Drupal core (which is folded into
-      // general.po, so that later the module screen has all module info
-      // translated for the admin). Or appeared in more then one file, so
-      // goes to general.po for that reason.
-
-      // Note that some modules like ubercart might not have their
-      // root module in the root folder, so this needs to be rethought.
-      $filename = ($version != 'flat-package' ? $po_folder .'/' : '') .'general';
-    }
-    else {
-      // Putting into a file named after the specific directory.
-      $filename = dirname(preg_replace('!(^[^/]+/)!', '', array_shift(array_keys($export_string['comment']))));
-      if (empty($filename) || $filename == '.') {
-        $filename = ($version != 'flat-package' ? ($po_folder .'/') : '') .'root';
-      }
-      elseif ($version != 'flat-package') {
-        $filename .= '/'. $po_folder .'/'. str_replace('/', '-', $filename);
-      }
-      else {
-        $filename = str_replace('/', '-', $filename);
-      }
-    }
-
-    // Temporary hack to make the core exports put the system module
-    // files to the right place. See http://drupal.org/node/212594
-    // This should be solved more elegantly with a knowledge on the
-    // non-module files (non-info file based directories in Drupal 6)
-    // and a default location for each project.
-    if (!in_array($version, array('flat-package', 'all-in-one')) && ($uri == 'drupal')) {
-      $system_files = array(
-        $po_folder .'/general',
-        "includes/$po_folder/includes",
-        "misc/$po_folder/misc"
-      );
-      if (in_array($filename, $system_files)) {
-        $filename = "modules/system/$po_folder/". basename($filename);
-      }
-    }
-
-    // Append extension.
-    $filename .= ($template ? '.pot' : ($version != 'flat-package' ? ('.'. $language->language) : '') .'.po');
-
     if (!$compact) {
       $output = $comment;
     }
@@ -382,36 +310,19 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
       }
     }
 
-    $profilename = ($version == 'drupal-7' ? 'standard' : 'default');
-    $file_outputs = array($filename);
-    if ($export_string['type'] != 2 /* POTX_STRING_RUNTIME */ && $version != 'all-in-one') {
-      // Not runtime-only, so make sure we try to have an installer entry.
-      $file_outputs[] = ($uri == 'drupal' ?
-        (($version == 'flat-package') ?
-          ('installer'. ($template ? '.pot' : '.po')) :
-          ('profiles/'. $profilename .'/'. $po_folder .'/'. ($template ? 'installer.pot' : ($language->language .'.po')))) :
-        ($po_folder .'/installer'. ($template ? '.pot' : ('.'. $language->language .'.po')))
-      );
-      if ($export_string['type'] == 1 /* POTX_STRING_INSTALLER */) {
-        // Installer-only, remove runtime entry.
-        $file_outputs = array($file_outputs[1]);
-      }
+    if (empty($po_data)) {
+      $po_data = array('file' => '', 'changed' => 0, 'revisions' => array());
     }
-    foreach ($file_outputs as $filename) {
-      if (!isset($string_files[$filename])) {
-        // Prepare new file storage for use.
-        $string_files[$filename] = array('file' => '', 'changed' => 0, 'revisions' => array());
-      }
-      // Add to existing file storage.
-      $string_files[$filename]['file'] .= $output;
-      if (!$compact) {
-        $string_files[$filename]['file'] .= "\n";
-      }
-      if (!$template) {
-        $string_files[$filename]['changed'] = max($string_files[$filename]['changed'], $export_string['changed']);
-      }
-      $string_files[$filename]['revisions'] = array_unique(array_merge($string_files[$filename]['revisions'], array_keys($export_string['revisions'])));
+
+    // Add to existing file storage.
+    $po_data['file'] .= $output;
+    if (!$compact) {
+      $po_data['file'] .= "\n";
     }
+    if (!$template) {
+      $po_data['changed'] = max($po_data['changed'], $export_string['changed']);
+    }
+    $po_data['revisions'] = array_unique(array_merge($po_data['revisions'], array_keys($export_string['revisions'])));
   }
 }
 
@@ -428,22 +339,14 @@ function _l10n_community_export_string_files(&$string_files, $uri, $language, $t
  *   Language object.
  * @param $template
  *   TRUE if templates should be exported, FALSE if translations.
- * @param $version
- *   Version to export with: 'drupal-7', 'drupal-6', 'drupal-5', 'flat-package'
- *   and 'all-in-one'. 'all-in-one' means one .po file, 'flat-package' means no
- *   directory structure generated, the others are suitable packages for the
- *   given Drupal version.
  * @param $compact
  *   A compact export will skip outputting the comments, superfluous
  *   newlines, empty translations and the list of files. TRUE or FALSE.
  * @param $installer
  *   Whether we should only export the translations needed for the installer
  *   and not those needed for the runtime site.
- *
- * @todo
- *   Look into possibly exporting suggestions as fuzzy translations.
  */
-function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $version = NULL, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
+function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
   include_once 'Archive/Tar.php';
@@ -481,12 +384,12 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   $result = db_query($sql, $sql_args);
   $previous_sid = $sid_count = 0;
-  $export_string = $string_files = array();
+  $export_string = $po_data = array();
 
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
-      _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact, $suggestions);
+      _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);
 
       // Now fill in the new string values.
       $previous_sid = $string->sid;
@@ -499,7 +402,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'revisions'      => array(),
         'changed'        => isset($string->time_approved) ? $string->time_approved : 0,
         'type'           => $string->type,
-        'has_suggestion' => $string->has_suggestion,
+        'has_suggestion' => @$string->has_suggestion,
       );
       $sid_count++;
     }
@@ -520,11 +423,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   }
   if ($previous_sid > 0) {
     // Store the last string.
-    _l10n_community_export_string_files($string_files, $uri, $language, $template, $version, $export_string, $compact, $suggestions);
+    _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);
     $sid_count++;
   }
 
-  if (empty($string_files)) {
+  if (empty($po_data)) {
     // No strings were found.
     if (isset($release)) {
       $message = t('There are no strings in the %release release of %project to export.', array('%project' => $project->title, '%release' => $release->title));
@@ -542,85 +445,67 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   // Generate a 'unique' temporary filename for this package.
   $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $uri);
 
-  if ($version != 'all-in-one') {
-    // Generate tgz file with all files added.
-    $tar = new Archive_Tar($tempfile, 'gz');
-  }
-  foreach ($string_files as $filename => $fileinfo) {
-    if (!$compact) {
-      if (count($fileinfo['revisions']) == 1) {
-        $file_list = '# Generated from file: '. $fileinfo['revisions'][0] ."\n";
-      }
-      else {
-        $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $fileinfo['revisions']) ."\n";
-      }
+  if (!$compact) {
+    if (count($po_data['revisions']) == 1) {
+      $file_list = '# Generated from file: '. $po_data['revisions'][0] ."\n";
     }
     else {
-      $file_list = '';
+      $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $po_data['revisions']) ."\n";
     }
-
-    $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
-    if (!$template) {
-      $header = '# '. $language->name .' translation of '. $release_title ."\n";
-      $header .= "# Copyright (c) ". date('Y') .' by the '. $language->name ." translation team\n";
-      $header .= $file_list;
-      $header .= "#\n";
-      $header .= "msgid \"\"\n";
-      $header .= "msgstr \"\"\n";
-      $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
-      $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
-      // Use date placeholder, if we have no date information (no translation here yet).
-      $header .= "\"PO-Revision-Date: ". (!empty($fileinfo['changed']) ? date("Y-m-d H:iO", $fileinfo['changed']) : 'YYYY-mm-DD HH:MM+ZZZZ') ."\\n\"\n";
-      $header .= "\"Language-Team: ". $language->name ."\\n\"\n";
-      $header .= "\"MIME-Version: 1.0\\n\"\n";
-      $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
-      $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
-      if ($language->formula && $language->plurals) {
-        $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
-      }
-    }
-    else {
-      $language_title = (isset($language) ? $language->name : 'LANGUAGE');
-      $header = "# ". $language_title ." translation of ". $release_title ."\n";
-      $header .= "# Copyright (c) ". date('Y') ."\n";
-      $header .= $file_list;
-      $header .= "#\n";
-      $header .= "msgid \"\"\n";
-      $header .= "msgstr \"\"\n";
-      $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
-      $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
-      $header .= "\"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n\"\n";
-      $header .= "\"Language-Team: ". $language_title ."\\n\"\n";
-      $header .= "\"MIME-Version: 1.0\\n\"\n";
-      $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
-      $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
-      if (isset($language) && $language->formula && $language->plurals) {
-        $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
-      }
-      else {
-        $header .= "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"\n";
-      }
-    }
-    if ($version == 'all-in-one') {
-      // Write to file directly. We should only do this once.
-      $fh = fopen($tempfile, 'w');
-      fwrite($fh, $header ."\n". $fileinfo['file']);
-      fclose($fh);
-    }
-    else {
-      // Add file to the tgz.
-      $tar->addString($filename, $header ."\n". $fileinfo['file']);
-    }
-  }
-
-  if ($version == 'all-in-one') {
-    // Output a single PO(T) file in this case.
-    return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'), $sid_count);
   }
   else {
-    // Output a package in this case.
-    return array('application/x-compressed', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '-'. $language->language : '') . ($template ? '-templates' : '-translations') .'.tgz', $sid_count);
+    $file_list = '';
   }
+
+  $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
+  if (!$template) {
+    $header = '# '. $language->name .' translation of '. $release_title ."\n";
+    $header .= "# Copyright (c) ". date('Y') .' by the '. $language->name ." translation team\n";
+    $header .= $file_list;
+    $header .= "#\n";
+    $header .= "msgid \"\"\n";
+    $header .= "msgstr \"\"\n";
+    $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
+    $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
+    // Use date placeholder, if we have no date information (no translation here yet).
+    $header .= "\"PO-Revision-Date: ". (!empty($po_data['changed']) ? date("Y-m-d H:iO", $po_data['changed']) : 'YYYY-mm-DD HH:MM+ZZZZ') ."\\n\"\n";
+    $header .= "\"Language-Team: ". $language->name ."\\n\"\n";
+    $header .= "\"MIME-Version: 1.0\\n\"\n";
+    $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
+    $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
+    if ($language->formula && $language->plurals) {
+      $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
+    }
+  }
+  else {
+    $language_title = (isset($language) ? $language->name : 'LANGUAGE');
+    $header = "# ". $language_title ." translation of ". $release_title ."\n";
+    $header .= "# Copyright (c) ". date('Y') ."\n";
+    $header .= $file_list;
+    $header .= "#\n";
+    $header .= "msgid \"\"\n";
+    $header .= "msgstr \"\"\n";
+    $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
+    $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
+    $header .= "\"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n\"\n";
+    $header .= "\"Language-Team: ". $language_title ."\\n\"\n";
+    $header .= "\"MIME-Version: 1.0\\n\"\n";
+    $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
+    $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
+    if (isset($language) && $language->formula && $language->plurals) {
+      $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
+    }
+    else {
+      $header .= "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"\n";
+    }
+  }
+  // Write to file directly. We should only do this once.
+  $fh = fopen($tempfile, 'w');
+  fwrite($fh, $header ."\n". $po_data['file']);
+  fclose($fh);
+
+  // Output a single PO(T) file.
+  return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'), $sid_count);
 }
 
 /**

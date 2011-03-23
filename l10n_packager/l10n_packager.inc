@@ -116,8 +116,8 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file->language = $language->language;
   }
 
-  // Generate PO file. Always export all-in-one format in compact form.
-  $export_result = l10n_community_export($release->uri, $release->rid, $language, FALSE, 'all-in-one', TRUE);
+  // Generate PO file. Always export in compact form.
+  $export_result = l10n_community_export($release->uri, $release->rid, $language, FALSE, TRUE);
 
   if (!empty($export_result) && is_array($export_result)) {
 
