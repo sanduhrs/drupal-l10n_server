@@ -818,17 +818,17 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  *     From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
  *     the default, if the code does not specify a context otherwise.
  * @param $pager
- *   Number of strings to be returned in a pager. Should be NULL if
- *   no pager should be used.
+ *   Number of strings to be returned in the pager.
  * @return
  *   An array of string records from database.
  */
-function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
+function l10n_community_get_strings($langcode, $filters, $pager) {
   $join = $join_args = $where = $where_args = array();
   $sql = $sql_count = '';
 
-  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
+  $select_sid = "SELECT DISTINCT s.sid FROM {l10n_server_string} s";
   $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_string} s";
+  $select = "SELECT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
   $join[] = "LEFT JOIN {l10n_server_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
   $join_args[] = $langcode;
   $join[] = "LEFT JOIN {l10n_server_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
@@ -900,19 +900,33 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     }
   }
 
-  // Build the queries
+  // Prepare query arguments to be used in pager and final query.
   $sql_args = array_merge($join_args, $where_args);
-  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
-  $sql = $select .' '. $sql_where;
-  $sql_count = $select_count .' '. $sql_where;
 
-  // We either need a pager or a full result.
-  if (isset($pager)) {
-    $strings = pager_query($sql, $pager, 0, $sql_count, $sql_args);
+  // Build a list of sids to use to get the data to ensure we have the right
+  // paging. If the sid was already provided, we can skip this.
+  if (empty($filters['sid'])) {
+
+    $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
+    $sql_sid = $select_sid .' '. $sql_where;
+    $sql_count = $select_count .' '. $sql_where;
+
+    $strings_sid = pager_query($sql_sid, $pager, 0, $sql_count, $sql_args);
+    $sid_array = array();
+    while ($string = db_fetch_object($strings_sid)) {
+      $sid_array[] = (int) $string->sid;
+    }
+    if (count($sid_array)) {
+      // $sid_array can only contain integers, see above. Now we skip the rest
+      // of the filters, since we already have the sids.
+      $where = array('s.sid IN ('. implode(',', $sid_array) .')');
+      $sql_args = $join_args;
+    }
   }
-  else {
-    $strings = db_query($sql, $sql_args);
-  }
+
+  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
+  $strings = db_query($select .' '. $sql_where, $sql_args);
+
   $result = array();
   while ($string = db_fetch_object($strings)) {
     if ($string->is_suggestion) {
