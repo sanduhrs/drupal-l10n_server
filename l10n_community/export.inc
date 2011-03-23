@@ -261,8 +261,9 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
             $all_suggestions[$i] = str_replace("\0", ' / ', $suggestion);
           }
         }
-        // Add all other suggestions as comment lines.
-        $output .= '# '. join("\n# ", $all_suggestions) ."\n";
+        // Add all other suggestions as comment lines. Multiline suggestions will
+        // appear on multiple lines, people need to figure these out manually.
+        $output .= '# '. str_replace("\n", "\n# ", join("\n", $all_suggestions)) ."\n";
       }
     }
     if ($fuzzy) {
