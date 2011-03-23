@@ -134,3 +134,11 @@ em.l10n-community-marker {
 #block-l10n_community-contributors tr.even, #block-l10n_community-contributors tr.odd {
   background-color: transparent;
 }
+
+/* Alphabetic pager for browsing projects */
+.item-list ul.pager-alphabetic {
+  margin: -1em 0 1em;
+  padding: 0.5em;
+  font-size: 14px;
+  background-color: #f6f6f2;
+}

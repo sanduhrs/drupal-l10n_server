@@ -94,13 +94,20 @@ function l10n_server_sort_by_column_language($a, $b) {
  * a pager on this screen.
  */
 function l10n_community_explore_projects() {
+  $output = '';
+
   $pager_setting = variable_get('l10n_community_project_per_page', 10);
 
-  $output = '';
-  if (!$projects = l10n_server_get_projects(array('pager' => $pager_setting))) {
+  $options = array('pager' => $pager_setting);
+  if (isset($_GET['initial'])) {
+    $options['initial'] = $_GET['initial'];
+  }
+
+  if (!$projects = l10n_server_get_projects($options)) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
+
   $languages = l10n_community_get_languages('name');
   $language_count = count($languages);
   $string_counts = l10n_community_get_string_count('projects');
@@ -111,7 +118,11 @@ function l10n_community_explore_projects() {
     $output .= drupal_get_form('l10n_community_explore_projects_jump_form');
   }
 
-  $output .= theme('pager', NULL, $pager_setting, 0);
+  $pager = theme('pager', NULL, $pager_setting, 0);
+
+  $output .= _l10n_community_alphabetic_pager();
+  $output .= $pager;
+
   $table = array();
   foreach ($projects as $project) {
     $table[] = array_merge(
@@ -129,7 +140,7 @@ function l10n_community_explore_projects() {
     $table,
     array('class' => 'l10n-community-overview')
   );
-  $output .= theme('pager', NULL, $pager_setting, 0);
+  $output .= $pager;
   return $output .'<div class="clear-block"></div>';
 }
 
@@ -668,4 +679,45 @@ function l10n_community_get_string_count($type, $id = NULL) {
       }
       return $accounts;
   }
+}
+
+/**
+ * Create an alphabetic pager for browsing projects.
+ */
+function _l10n_community_alphabetic_pager() {
+  $output = '';
+
+  // Grab the unique initials of all active projects
+  $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = 1 ORDER BY initial ASC');
+
+  // Create an array of pager elements, setting a special class on the active element
+  $items = array(
+    array(
+      'class' => !empty($_GET['initial']) ? 'pager-item' : 'pager-current',
+      'data' => l(t('All'), 'translate/projects'),
+    ),
+  );
+  while ($initial = db_fetch_object($result)) {
+    if (isset($_GET['initial']) && $_GET['initial'] == $initial->initial) {
+      $items[] = array(
+        'class' => 'pager-current',
+        'data' => strtoupper($initial->initial),
+      );
+    }
+    else {
+      $items[] = array(
+        'class' => 'pager-item',
+        'data' => l(strtoupper($initial->initial), 'translate/projects', array('query' => array('initial' => $initial->initial))),
+      );
+    }
+  }
+
+  // Only display this pager if there was over 2 items. 'All' is the first item
+  // and then if we only have one item to filter additionally, we only have one
+  // possible letter. Not much value for displaying this pager.
+  if (count($items) > 2) {
+    $output .= theme('item_list', $items, NULL, 'ul', array('class' => 'pager pager-alphabetic'));
+  }
+
+  return $output;
 }

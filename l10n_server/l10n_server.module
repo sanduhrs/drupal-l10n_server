@@ -487,11 +487,21 @@ function l10n_server_get_projects($options = array()) {
   static $projects = array();
 
   // Consider returning all projects or just published ones.
-  $published = (empty($options['all']) ? 'WHERE status = 1 ' : '');
+  $where = (empty($options['all']) ? 'WHERE status = 1 ' : '');
 
   if (isset($options['pager'])) {
+    $arguments = array();
+
+    if (isset($options['initial'])) {
+      if (!empty($where)) {
+        $where .= 'AND ';
+      }
+      $where .= "SUBSTR(title, 1, 1) = '%s' ";
+      $arguments[] = $options['initial'];
+    }
+
     // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY title', $options['pager'], 0, NULL);
+    $results = pager_query('SELECT * FROM {l10n_server_project} '. $where .'ORDER BY title', $options['pager'], 0, NULL, $arguments);
     $pager_results = array();
     while ($project = db_fetch_object($results)) {
       $pager_results[$project->uri] = $project;
@@ -516,7 +526,7 @@ function l10n_server_get_projects($options = array()) {
     }
     else {
       // A list of *all* projects was asked for.
-      $results = db_query('SELECT * FROM {l10n_server_project} '. $published .'ORDER BY uri');
+      $results = db_query('SELECT * FROM {l10n_server_project} '. $where .'ORDER BY uri');
       while ($project = db_fetch_object($results)) {
         $projects[$project->uri] = $project;
       }
