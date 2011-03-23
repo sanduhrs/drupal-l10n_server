@@ -1,16 +1,3 @@
-
-table.l10n-community-overview {
-  float: right;
-}
-table.l10n-community-overview-2col {
-  margin-right: 1em;
-  margin-left: 0;
-}
-div.admin .l10n-next-action {
-  float: left;
-  margin: 0 0.7em 0.7em 0;
-}
-
 /* Overview navigation tables for projects and languages */
 .l10n-community-overview td.rowhead, .l10n-community-overview thead th.rowhead {
   text-align: right;
@@ -50,5 +37,3 @@ div.admin .l10n-next-action {
   text-align: right;
   text-indent: -0.5em;
 }
-
-/* Existing translations and editing UI */

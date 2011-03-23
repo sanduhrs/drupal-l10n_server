@@ -134,12 +134,7 @@ function l10n_community_explore_projects() {
       theme('l10n_community_progress_columns', (@$string_counts[$project->pid]['count'] * $language_count), @$string_counts[$project->pid]['translations'], @$string_counts[$project->pid]['suggestions'])
     );
   }
-  $output .= theme(
-    'l10n_community_table',
-    theme('l10n_community_progress_headers', t('Project')),
-    $table,
-    array('class' => 'l10n-community-overview')
-  );
+  $output .= theme('table', theme('l10n_community_progress_headers', t('Project')), $table, array('class' => 'l10n-community-overview'));
   $output .= $pager;
   return $output .'<div class="clear-block"></div>';
 }
@@ -537,25 +532,6 @@ function theme_l10n_community_progress_headers($mainhead) {
     t('Untranslated'),
     t('Suggestions'),
   );
-}
-
-/**
- * Generate a summary table for l10n_community screens.
- *
- * @param $headers
- *   An array of table headers.
- * @param $table
- *   An array of table rows.
- */
-function theme_l10n_community_table($header, $table) {
-  if (($row_count = count($table)) > 1) {
-    $output = theme('table', $header, array_slice($table, 0, ceil($row_count/2)), array('class' => 'l10n-community-overview l10n-community-overview-2col'));
-    $output .= theme('table', $header, array_slice($table, ceil($row_count/2)), array('class' => 'l10n-community-overview l10n-community-overview-2col'));
-    return $output;
-  }
-  else {
-    return theme('table', $header, $table, array('class' => 'l10n-community-overview'));
-  }
 }
 
 // = API functions =============================================================

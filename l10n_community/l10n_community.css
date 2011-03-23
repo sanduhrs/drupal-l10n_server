@@ -1,42 +1,10 @@
-
-div.admin .admin-panel-contribute {
-  background: #ffb;
-  margin-bottom: 2em;
-  padding-bottom: 0.3em;
-  position: relative;
-}
+/* Overview navigation tables for projects and languages */
 table.l10n-community-overview {
-  float: left; /* LTR */
-}
-table.l10n-community-overview.l10n-community-highlighted {
-  float: none;
   width: 100%;
 }
-table.l10n-community-overview-2col {
-  width: 45%;
-  margin-left: 1em; /* LTR */
-}
-table.l10n-community-overview td {
-  vertical-align: middle;
-}
-div.admin table.l10n-community-overview {
-  width: auto;
-}
-div.admin .form-submit {
-  margin-top: 0;
-}
-div.admin form {
-  margin-bottom: 0 !important;
-}
-.l10n-next-action {
-  float: right; /* LTR */
-  font-weight: bold;
-  margin: 0 0 0.7em 0.7em; /* LTR */
-}
-
-/* Overview navigation tables for projects and languages */
 .l10n-community-overview td, .l10n-community-overview thead th {
   text-align: center;
+  vertical-align: middle;
 }
 .l10n-community-overview td.rowhead, .l10n-community-overview thead th.rowhead {
   text-align: left; /* LTR */

@@ -670,9 +670,6 @@ function l10n_community_theme($existing, $type, $theme, $path) {
     'l10n_community_progress_headers' => array(
       'arguments' => array('mainhead' => NULL),
     ),
-    'l10n_community_table' => array(
-      'arguments' => array('header' => NULL, 'table' => NULL),
-    ),
     // translate.inc
     'l10n_community_filter_form' => array(
       'arguments' => array('form' => NULL),
