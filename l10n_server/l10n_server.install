@@ -214,7 +214,8 @@ function l10n_server_schema() {
     ),
     'primary key' => array('fid'),
     'indexes' => array(
-      'rid' => array('rid')
+      'rid' => array('rid'),
+      'pid' => array('pid'),
     ),
   );
 
@@ -451,5 +452,3 @@ function l10n_server_schema() {
 
   return $schema;
 }
-
-?>

@@ -565,3 +565,12 @@ function l10n_community_update_6023() {
 
   return $ret;
 }
+
+/**
+ * Add an index to the l10n_server_file table to improve performance.
+ */
+function l10n_community_update_6024() {
+  $ret = array();
+  db_add_index($ret, 'l10n_server_file', 'pid', array('pid'));
+  return $ret;
+}
