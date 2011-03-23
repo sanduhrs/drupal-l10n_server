@@ -123,7 +123,8 @@ function l10n_drupal_drupalorg_scan() {
      FROM project_projects pp INNER JOIN
           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
           node n ON pp.nid = n.nid
-     WHERE pp.nid NOT IN (". join(', ', $exclude_projects) .")
+     WHERE pp.nid NOT IN (". join(', ', $exclude_projects) .") AND
+           prn.rebuild = 0
      ORDER BY pp.nid"
   );
 
@@ -138,6 +139,7 @@ function l10n_drupal_drupalorg_scan() {
   db_set_active();
 
   // Record all projects in our local database.
+  $local_projects = l10n_server_get_projects(array('all' => TRUE));
   foreach ($projects as $project) {
     if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $project->uri))) {
       if ($existing_project->connector_module == 'l10n_project_drupalorg') {
@@ -168,6 +170,14 @@ function l10n_drupal_drupalorg_scan() {
       $project->pid = db_last_insert_id('l10n_server_project', 'pid');
       $projects[$project->uri] = $project;
     }
+    unset($local_projects[$project->uri]);
+  }
+  if (count($local_projects)) {
+    // If we still have local projects lingering, those are not anymore
+    // available with non-dev releases on drupal.org, so we should turn off
+    // their listing in our database.
+    $disabled_projects = array_keys($local_projects);
+    db_query('UPDATE {l10n_server_project} SET status = 0 WHERE uri IN ('. db_placeholders($disabled_projects, 'varchar') .')', $disabled_projects);
   }
 
   $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
