@@ -500,7 +500,6 @@ function l10n_server_get_projects($options = array()) {
         }
         $where .= 'SUBSTR(title, 1, 1) IN ('. db_placeholders($initials[$options['initial']]['values'], 'varchar') .') ';
         $arguments = $initials[$options['initial']]['values'];
-        drupal_set_message($where . var_export($arguments, TRUE));
       }
    }
 
