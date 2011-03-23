@@ -709,7 +709,7 @@ function _l10n_community_alphabetic_pager() {
   $items = array(
     array(
       'class' => !empty($_GET['initial']) ? 'pager-item' : 'pager-current',
-      'data' => l(t('All'), 'translate/projects'),
+      'data' => !empty($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
     ),
   );
   foreach ($initials as $link => $title) {
