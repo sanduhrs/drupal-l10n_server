@@ -493,18 +493,16 @@ function l10n_server_get_projects($options = array()) {
     $arguments = array();
 
     if (isset($options['initial'])) {
-      if (!empty($where)) {
-        $where .= 'AND ';
+      $initials = l10n_server_get_project_initials();
+      if (isset($initials[$options['initial']])) {
+        if (!empty($where)) {
+          $where .= 'AND ';
+        }
+        $where .= 'SUBSTR(title, 1, 1) IN ('. db_placeholders($initials[$options['initial']]['values'], 'varchar') .') ';
+        $arguments = $initials[$options['initial']]['values'];
+        drupal_set_message($where . var_export($arguments, TRUE));
       }
-
-      if ($options['initial'] == '0') {
-        $where .= "SUBSTR(title, 1, 1) NOT RLIKE '[[:alpha:]]' ";
-      }
-      else {
-        $where .= "SUBSTR(title, 1, 1) = '%s' ";
-        $arguments[] = $options['initial'];
-      }
-    }
+   }
 
     // If a pager view was asked for, collect data independently.
     $results = pager_query('SELECT * FROM {l10n_server_project} '. $where .'ORDER BY title', $options['pager'], 0, NULL, $arguments);
@@ -539,6 +537,30 @@ function l10n_server_get_projects($options = array()) {
       return $projects;
     }
   }
+}
+
+/**
+ * Build a list of initials of active projects for listings.
+ */
+function l10n_server_get_project_initials() {
+  // Grab the unique initials of all active projects
+  $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = 1 ORDER BY initial ASC');
+
+  // Create an array of elements, all non-letters are grouped in '#'.
+  $initials = array();
+  while ($row = db_fetch_object($result)) {
+    $initial = $row->initial;
+    if (preg_match('/[A-Za-z]/', $initial)) {
+      $initials[strtolower($initial)] = array('title' => strtoupper($initial), 'values' => array(strtoupper($initial)));
+    }
+    elseif (!isset($initials[0])) {
+      $initials[0] = array('title' => '#', 'values' => array($initial));
+    }
+    else {
+      $initials[0]['values'][] = $initial;
+    }
+  }
+  return $initials;
 }
 
 /*

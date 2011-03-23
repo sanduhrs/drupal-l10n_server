@@ -100,7 +100,7 @@ function l10n_community_explore_projects() {
 
   $options = array('pager' => $pager_setting);
   if (isset($_GET['initial'])) {
-    $options['initial'] = $_GET['initial'];
+    $options['initial'] = strtolower($_GET['initial']);
   }
 
   if (!$projects = l10n_server_get_projects($options)) {
@@ -687,42 +687,25 @@ function l10n_community_get_string_count($type, $id = NULL) {
 function _l10n_community_alphabetic_pager() {
   $output = '';
 
-  // Grab the unique initials of all active projects
-  $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = 1 ORDER BY initial ASC');
-
-  // Create an array of pager elements, all non-letters are grouped in the '#'
-  // element. We don't do any sorting of this array since the result should
-  // already be sorted correctly.
-  $initials = array();
-  while ($row = db_fetch_object($result)) {
-    $initial = $row->initial;
-
-    if (preg_match('/[A-Za-z]/', $initial)) {
-      $initials[strtolower($initial)] = strtoupper($initial);
-    }
-    else {
-      $initials[0] = '#';
-    }
-  }
-
   // Create an array of pager elements, setting a special class on the active element
+  $initials = l10n_server_get_project_initials();
   $items = array(
     array(
-      'class' => !empty($_GET['initial']) ? 'pager-item' : 'pager-current',
-      'data' => !empty($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
+      'class' => isset($_GET['initial']) ? 'pager-item' : 'pager-current',
+      'data' => isset($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
     ),
   );
-  foreach ($initials as $link => $title) {
-    if (isset($_GET['initial']) && strtoupper($_GET['initial']) == (string) $title) {
+  foreach ($initials as $link => $data) {
+    if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string) $link) {
       $items[] = array(
         'class' => 'pager-current',
-        'data' => $title,
+        'data' => $data['title'],
       );
     }
     else {
       $items[] = array(
         'class' => 'pager-item',
-        'data' => l($title, 'translate/projects', array('query' => array('initial' => $link))),
+        'data' => l($data['title'], 'translate/projects', array('query' => array('initial' => $link))),
       );
     }
   }
