@@ -496,8 +496,14 @@ function l10n_server_get_projects($options = array()) {
       if (!empty($where)) {
         $where .= 'AND ';
       }
-      $where .= "SUBSTR(title, 1, 1) = '%s' ";
-      $arguments[] = $options['initial'];
+
+      if ($options['initial'] == '0') {
+        $where .= "SUBSTR(title, 1, 1) NOT RLIKE '[[:alpha:]]' ";
+      }
+      else {
+        $where .= "SUBSTR(title, 1, 1) = '%s' ";
+        $arguments[] = $options['initial'];
+      }
     }
 
     // If a pager view was asked for, collect data independently.

@@ -690,6 +690,21 @@ function _l10n_community_alphabetic_pager() {
   // Grab the unique initials of all active projects
   $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = 1 ORDER BY initial ASC');
 
+  // Create an array of pager elements, all non-letters are grouped in the '#'
+  // element. We don't do any sorting of this array since the result should
+  // already be sorted correctly.
+  $initials = array();
+  while ($row = db_fetch_object($result)) {
+    $initial = $row->initial;
+
+    if (preg_match('/[A-Za-z]/', $initial)) {
+      $initials[strtolower($initial)] = strtoupper($initial);
+    }
+    else {
+      $initials[0] = '#';
+    }
+  }
+
   // Create an array of pager elements, setting a special class on the active element
   $items = array(
     array(
@@ -697,17 +712,17 @@ function _l10n_community_alphabetic_pager() {
       'data' => l(t('All'), 'translate/projects'),
     ),
   );
-  while ($initial = db_fetch_object($result)) {
-    if (isset($_GET['initial']) && $_GET['initial'] == $initial->initial) {
+  foreach ($initials as $link => $title) {
+    if (isset($_GET['initial']) && strtoupper($_GET['initial']) == (string) $title) {
       $items[] = array(
         'class' => 'pager-current',
-        'data' => strtoupper($initial->initial),
+        'data' => $title,
       );
     }
     else {
       $items[] = array(
         'class' => 'pager-item',
-        'data' => l(strtoupper($initial->initial), 'translate/projects', array('query' => array('initial' => $initial->initial))),
+        'data' => l($title, 'translate/projects', array('query' => array('initial' => $link))),
       );
     }
   }
