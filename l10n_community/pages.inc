@@ -458,7 +458,11 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = %d', $release->rid);
   $rows = array();
   while ($file = db_fetch_object($result)) {
-    $rows[] = array(str_replace('/', '/<wbr />', $file->location), str_replace('/', '/<wbr />', $file->revision));
+    // Insert word break hints for the browser to avoid breaking the page layout
+    // for long file names and paths.
+    $replace_before = array('/', '_', ',v');
+    $replace_after = array('/<wbr />', '_<wbr />', ', v');
+    $rows[] = array(str_replace($replace_before, $replace_after, $file->location), str_replace($replace_before, $replace_after, $file->revision));
   }
   $headers = array(t('File location'), t('Version information'));
   if (count($rows)) {
