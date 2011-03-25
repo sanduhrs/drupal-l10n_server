@@ -458,7 +458,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = %d', $release->rid);
   $rows = array();
   while ($file = db_fetch_object($result)) {
-    $rows[] = array($file->location, $file->revision);
+    $rows[] = array(str_replace('/', '/<wbr />', $file->location), str_replace('/', '/<wbr />', $file->revision));
   }
   $headers = array(t('File location'), t('Version information'));
   if (count($rows)) {
