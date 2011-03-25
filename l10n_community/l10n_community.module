@@ -383,7 +383,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
               if (empty($arg1) || ($arg1 == 'downloads')) {
                 return l10n_community_block_stats_front();
               }
-              elseif ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
+              elseif ($arg1 == 'projects' && !empty($arg2)) {
                 $project = l10n_server_get_projects(array('uri' => $arg2));
                 include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
                 return l10n_community_block_stats_project($project);
