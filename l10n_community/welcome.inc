@@ -120,9 +120,15 @@ function l10n_community_pick_go(&$form_state) {
     return $form;
   }
 
+  $default_language = '';
   if (module_exists('l10n_groups')) {
     // We are dealing with a groups based permission model.
     $form['groups'] = l10n_groups_pick_go();
+    if (isset($form['groups']['#l10n_groups']) && is_array($form['groups']['#l10n_groups'])) {
+      // Pick the first language as default. Most people are only member of one
+      // language, so this should be a safe default.
+      $default_language = current($form['groups']['#l10n_groups']);
+    }
   }
 
   if (count($language_list) > 1) {
@@ -132,7 +138,8 @@ function l10n_community_pick_go(&$form_state) {
       '#type' => (count($language_list) <= 3) ? 'radios' : 'select',
       '#title' => t('Pick a language'),
       '#options' => array('' => t('All')) + $language_list,
-      '#description' => t('Alternatively you can <a href="@explore">explore languages</a>.', array('@explore' => url('translate/languages')))
+      '#description' => t('Alternatively you can <a href="@explore">explore languages</a>.', array('@explore' => url('translate/languages'))),
+      '#default_value' => $default_language,
     );
   }
   else {
