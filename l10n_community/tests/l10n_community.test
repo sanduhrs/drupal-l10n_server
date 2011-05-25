@@ -123,11 +123,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
       $this->drupalGet('translate/projects/'. $name);
       $this->assertText('Hungarian', t('Language shows up on project page.'));
       if ($api == 6) {
-        $this->assertText(t('@count releases known', array('@count' => 2)), t('Two releases known on project.'));
+        $this->assertText(t('@count known', array('@count' => 2)), t('Two releases known on project.'));
         $this->assertText(t('@count releases parsed', array('@count' => 2)), t('Two releases parsed on project.'));
       }
       else {
-        $this->assertText(t('1 release known'), t('One release known on project.'));
+        $this->assertText(t('1 known'), t('One release known on project.'));
         $this->assertText(t('1 release parsed'), t('One release parsed on project.'));
       }
     }
@@ -237,14 +237,16 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // WARNINGS ====
 
     // 3 in the module.
-    $this->drupalGet('translate/projects/'. $this->project_names[5] .'/releases/'. );
+    $this->drupalGet('translate/projects/'. $this->project_names[5] .'/releases/1');
     $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 5 project releases.'));
-    // 3 in both releases of modules, 1 in the JS (in one release).
-    $this->drupalGet('translate/projects/'. $this->project_names[6] .'/warnings');
-    $this->assertCount($this->empty_error, 7, t('7 warnings found in Drupal 5 project releases.'));
+    // 3 in both releases of modules, 1 in the JS (in the first release).
+    $this->drupalGet('translate/projects/'. $this->project_names[6] .'/releases/2');
+    $this->assertCount($this->empty_error, 4, t('4 warnings found in Drupal 6 project releases.'));
+    $this->drupalGet('translate/projects/'. $this->project_names[6] .'/releases/3');
+    $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 6 project releases.'));
     // 2 in the module, 1 in the JS.
-    $this->drupalGet('translate/projects/'. $this->project_names[7] .'/warnings');
-    $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 5 project releases.'));
+    $this->drupalGet('translate/projects/'. $this->project_names[7] .'/releases/4');
+    $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 7 project releases.'));
   }
 
   /**
