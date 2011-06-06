@@ -23,19 +23,19 @@ function l10n_packager_schema() {
         'type' => 'int',
         'not null' => TRUE,
         'default value' => 1,
-        'disp-width' => '11'
+        'disp-width' => '11',
       ),
       'checked' => array(
         'description' => 'Unix timestamp of last time this release was checked.',
         'type' => 'int',
         'not null' => FALSE,
-        'disp-width' => '11'
+        'disp-width' => '11',
       ),
       'updated' => array(
         'description' => 'Unix timestamp of last time files for this release were updated.',
         'type' => 'int',
         'not null' => FALSE,
-        'disp-width' => '11'
+        'disp-width' => '11',
       ),
     ),
     'primary key' => array('rid'),
@@ -58,7 +58,7 @@ function l10n_packager_schema() {
         'description' => 'Reference to the {languages}.language for the translation package.',
         'type' => 'varchar',
         'length' => '12',
-        'not null' => TRUE
+        'not null' => TRUE,
       ),
       'fid' => array(
         'description' => 'Reference to {files}.fid.',
@@ -70,7 +70,7 @@ function l10n_packager_schema() {
         'description' => 'Unix timestamp of last time translation for this language was checked.',
         'type' => 'int',
         'not null' => FALSE,
-        'disp-width' => '11'
+        'disp-width' => '11',
       ),
       'sid_count' => array(
         'description' => 'Count of source strings exported in this file.',

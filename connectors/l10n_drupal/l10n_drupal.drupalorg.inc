@@ -69,7 +69,7 @@ function l10n_drupal_drupalorg_batch_parse_form_submit() {
     'init_message' => t('First release is being selected'),
     'progress_message' => t('Parsed @current out of @total.'),
     'error_message' => t('Parsing process has encountered an error.'),
-    'file' => drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.drupalorg.inc',
+    'file' => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.drupalorg.inc',
   );
   batch_set($batch);
 }
@@ -123,7 +123,7 @@ function l10n_drupal_drupalorg_scan() {
      FROM project_projects pp INNER JOIN
           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
           node n ON pp.nid = n.nid
-     WHERE pp.nid NOT IN (". join(', ', $exclude_projects) .") AND
+     WHERE pp.nid NOT IN (" . join(', ', $exclude_projects) . ") AND
            prn.rebuild = 0
      ORDER BY pp.nid"
   );
@@ -154,7 +154,11 @@ function l10n_drupal_drupalorg_scan() {
       else {
         // Log error on existing project with another connector and skip the
         // rest of this function.
-        $t_args = array('%uri' => $project->uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_project_drupalorg');
+        $t_args = array(
+          '%uri' => $project->uri,
+          '%other_connector' => $existing_project->connector_module,
+          '%this_connector' => 'l10n_project_drupalorg',
+        );
         watchdog('l10n_drupalorg', 'An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args);
         drupal_set_message(t('An existing project under the URI %uri is already handled by the %other_connector module. Not possible to add it with %this_connector.', $t_args), 'error');
         continue;
@@ -164,7 +168,7 @@ function l10n_drupal_drupalorg_scan() {
       // New project, not recorded before.
       db_query(
         "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
-        $project->uri, $project->title, time(), 'http://drupal.org/project/'. $project->uri, 'l10n_project_drupalorg', $project->status
+        $project->uri, $project->title, time(), 'http://drupal.org/project/' . $project->uri, 'l10n_project_drupalorg', $project->status
       );
       // Save last insert ID for release update code.
       $project->pid = db_last_insert_id('l10n_server_project', 'pid');
@@ -177,7 +181,7 @@ function l10n_drupal_drupalorg_scan() {
     // available with non-dev releases on drupal.org, so we should turn off
     // their listing in our database.
     $disabled_projects = array_keys($local_projects);
-    db_query('UPDATE {l10n_server_project} SET status = 0 WHERE uri IN ('. db_placeholders($disabled_projects, 'varchar') .')', $disabled_projects);
+    db_query('UPDATE {l10n_server_project} SET status = 0 WHERE uri IN (' . db_placeholders($disabled_projects, 'varchar') . ')', $disabled_projects);
   }
 
   $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
@@ -200,7 +204,7 @@ function l10n_drupal_drupalorg_scan() {
          files f ON prf.fid = f.fid INNER JOIN
          node nn ON prn.nid = nn.nid
     WHERE prn.rebuild = 0 AND f.timestamp > %d",
-    $last_sync - 60*60*24
+    $last_sync - 60 * 60 * 24
   );
 
   // Fill in an array, so we can go back to our database and add in these
@@ -290,7 +294,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
   @set_time_limit(0);
 
   $filename = basename($release->download_link);
-  $file = file_directory_temp() .'/'. $filename;
+  $file = file_directory_temp() . '/' . $filename;
 
   // Check filename for a limited set of allowed chars. Help make sure
   // that all the command line code later is not exploited.
@@ -311,7 +315,10 @@ function l10n_drupal_drupalorg_parse_release($release) {
 
   // Download the tar.gz file from drupal.org and save it in the local filesystem.
   elseif (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($file, $contents->data))) {
-    $error_arguments = array('%download_link' => $release->download_link, '%error' => $contents->code .' '. $contents->error);
+    $error_arguments = array(
+      '%download_link' => $release->download_link,
+      '%error' => $contents->code . ' ' . $contents->error,
+    );
     $error_t = t('Unable to download and save %download_link file (%error).', $error_arguments);
     $error = 'Unable to download and save %download_link file (%error).';
   }
@@ -342,8 +349,8 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   $error = $message = '';
 
   // Potx module is already a dependency.
-  include_once drupal_get_path('module', 'potx') .'/potx.inc';
-  include_once drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.files.inc';
+  include_once drupal_get_path('module', 'potx') . '/potx.inc';
+  include_once drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.files.inc';
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -352,7 +359,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
   $temp_name = tempnam(file_directory_temp(), 'l10n_drupal_drupalorg_');
-  $temp_path = $temp_name .'_dir';
+  $temp_path = $temp_name . '_dir';
 
   // Nothing to do if the file is not there or the extraction folder is taken.
   if (!file_exists($package_file)) {
@@ -368,9 +375,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
 
   // Extract the local file to the temporary directory.
   else {
-    if (l10n_drupal_drupalorg_exec('mkdir '. escapeshellarg($temp_path))) {
+    if (l10n_drupal_drupalorg_exec('mkdir ' . escapeshellarg($temp_path))) {
       // Try extracting the tarball to this directory.
-      if (l10n_drupal_drupalorg_exec('tar -xvvzf '. escapeshellarg($package_file) .' -C '. escapeshellarg($temp_path))) {
+      if (l10n_drupal_drupalorg_exec('tar -xvvzf ' . escapeshellarg($package_file) . ' -C ' . escapeshellarg($temp_path))) {
 
         // Get all source files and save strings with our callback for this release.
         $files = _potx_explore_dir($temp_path);
@@ -383,11 +390,15 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         $sid_count = l10n_drupal_added_string_counter();
 
         // Delete directory now that parsing is done.
-        l10n_drupal_drupalorg_exec('rm -rf '. escapeshellarg($temp_path));
+        l10n_drupal_drupalorg_exec('rm -rf ' . escapeshellarg($temp_path));
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
-        $message_arguments = array('@filename' => basename($package_file), '@files' => count($files), '@sids' => $sid_count);
+        $message_arguments = array(
+          '@filename' => basename($package_file),
+          '@files' => count($files),
+          '@sids' => $sid_count,
+        );
         $message_t = t('@filename (@files files, @sids strings) scanned.', $message_arguments);
         $message = '@filename (@files files, @sids strings) scanned.';
 
@@ -408,7 +419,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
       }
       else {
         // Delete directory if we did not manage to extract the tarball.
-        l10n_drupal_drupalorg_exec('rm -rf '. escapeshellarg($temp_path));
+        l10n_drupal_drupalorg_exec('rm -rf ' . escapeshellarg($temp_path));
       }
     }
   }

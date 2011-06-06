@@ -48,7 +48,7 @@ function l10n_community_settings_form() {
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/projects/autocomplete',
     );
-    $form['l10n_community_highlighted_project']['#description'] .= ' '. t('Can be set to empty string to not pick any project.');
+    $form['l10n_community_highlighted_project']['#description'] .= ' ' . t('Can be set to empty string to not pick any project.');
   }
   return system_settings_form($form);
 }

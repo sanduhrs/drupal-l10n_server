@@ -17,7 +17,7 @@ function l10n_community_welcome_page() {
 
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
-    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+    include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
     drupal_set_title(t('Translations'));
 
     $languages = l10n_community_get_languages();
@@ -28,8 +28,15 @@ function l10n_community_welcome_page() {
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
         $table[] = array(
-          array('data' => t($language->name), 'sortdata' => t($language->name), 'class' => 'rowhead'),
-          array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error'),
+          array(
+            'data' => t($language->name),
+            'sortdata' => t($language->name),
+            'class' => 'rowhead',
+          ),
+          array(
+            'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))),
+            'class' => 'error',
+          ),
           array('data' => ''),
         );
       }
@@ -43,17 +50,17 @@ function l10n_community_welcome_page() {
         ));
         $table[] = array(
           array(
-            'data' => l(t($language->name), 'translate/languages/'. $langcode),
+            'data' => l(t($language->name), 'translate/languages/' . $langcode),
             'sortdata' => t($language->name),
             'class' => 'rowhead',
           ),
           array(
             'data' => $progress,
-            'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2))
+            'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2)),
           ),
           array(
             'data' => $stats['users'],
-            'sortdata' => $stats['users']
+            'sortdata' => $stats['users'],
           ),
         );
       }
@@ -77,7 +84,7 @@ function l10n_community_welcome_page() {
     $projects = l10n_server_get_projects();
     $project_count = count($projects);
     if ($project_count > 1) {
-      $output .= '<p>'. format_plural($project_count, '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', array('@project' => $project->title, '@projects' => url('translate/projects'))) .'<p>';
+      $output .= '<p>' . format_plural($project_count, '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', array('@project' => $project->title, '@projects' => url('translate/projects'))) . '<p>';
     }
 
   }
@@ -114,9 +121,12 @@ function l10n_community_pick_go(&$form_state) {
   if (!count($language_list) || !count($projects)) {
     $pconfig_tip = '';
     if (!module_exists('l10n_pconfig')) {
-      $pconfig_tip = ' '. t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
+      $pconfig_tip = ' ' . t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
     }
-    $form['dummy'] = array('#type' => 'markup', '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/settings/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip);
+    $form['dummy'] = array(
+      '#type' => 'markup',
+      '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/settings/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
+    );
     return $form;
   }
 
@@ -147,7 +157,7 @@ function l10n_community_pick_go(&$form_state) {
     list($language_code, $language_name) = each($language_list);
     $form['langcode'] = array(
       '#type' => 'value',
-      '#value' => $language_code
+      '#value' => $language_code,
     );
   }
 
@@ -207,20 +217,20 @@ function l10n_community_pick_go_submit($form, &$form_state) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
       if (user_access('browse translations')) {
-        drupal_goto('translate/languages/'. $form_state['values']['langcode'] .'/translate', 'project='. $uri);
+        drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', 'project=' . $uri);
       }
       else {
         // Both language and project set, no access to browse > go to project.
-        drupal_goto('translate/projects/'. $uri);
+        drupal_goto('translate/projects/' . $uri);
       }
     }
     else {
       // Only project set.
-      drupal_goto('translate/projects/'. $uri);
+      drupal_goto('translate/projects/' . $uri);
     }
   }
   elseif (!empty($form_state['values']['langcode'])) {
     // Only language set.
-    drupal_goto('translate/languages/'. $form_state['values']['langcode']);
+    drupal_goto('translate/languages/' . $form_state['values']['langcode']);
   }
 }

@@ -36,14 +36,14 @@ function l10n_server_admin_connectors_form(&$form_state, $connectors, $sources) 
       // Build configure/scan links based on source info.
       $links = array();
       if (!empty($sources[$source]['form'])) {
-        $links[] = l(t('configure'), 'admin/l10n_server/connectors/config/'. $name .'/'. $source);
+        $links[] = l(t('configure'), 'admin/l10n_server/connectors/config/' . $name . '/' . $source);
       }
       else {
         $links[] = '';
       }
 
-      if (!empty($sources[$source]['scan']) && variable_get('l10n_server_connector_'. $name .'_'. $source .'_enabled', 0)) {
-        $links[] = l(t('scan'), 'admin/l10n_server/connectors/scan/'. $name .'/'. $source);
+      if (!empty($sources[$source]['scan']) && variable_get('l10n_server_connector_' . $name . '_' . $source . '_enabled', 0)) {
+        $links[] = l(t('scan'), 'admin/l10n_server/connectors/scan/' . $name . '/' . $source);
       }
       else {
         $links[] = '';
@@ -51,14 +51,14 @@ function l10n_server_admin_connectors_form(&$form_state, $connectors, $sources) 
 
       // Add checkbox and links.
       $form['connectors'][] = array(
-        'l10n_server_connector_'. $name .'_'. $source .'_enabled' => array(
+        'l10n_server_connector_' . $name . '_' . $source . '_enabled' => array(
           '#title' => t('@title from @source', array('@title' => $info['title'], '@source' => $sources[$source]['title'])),
           '#type' => 'checkbox',
-          '#default_value' => variable_get('l10n_server_connector_'. $name .'_'. $source .'_enabled', 0),
+          '#default_value' => variable_get('l10n_server_connector_' . $name . '_' . $source . '_enabled', 0),
           '#l10n_server_source' => $source,
           '#l10n_server_connector' => $name,
         ),
-        'l10n_server_connector_'. $name .'_'. $source .'_links' => array(
+        'l10n_server_connector_' . $name . '_' . $source . '_links' => array(
           '#type' => 'value',
           '#value' => $links,
         ),
@@ -76,7 +76,7 @@ function l10n_server_admin_connectors_form(&$form_state, $connectors, $sources) 
 function theme_l10n_server_admin_connectors_form($form) {
   $rows = array();
   $max_operations = 1;
-  foreach($form['connectors'] as $id => &$elements) {
+  foreach ($form['connectors'] as $id => &$elements) {
     $row = array('', '');
     if (is_array($elements)) {
       foreach ($elements as &$item) {
@@ -97,7 +97,10 @@ function theme_l10n_server_admin_connectors_form($form) {
   }
 
   // Put our overview into a table and add remaining form items.
-  $headers = array(t('Enabled'), t('Connector'), array('colspan' => $max_operations, 'data' => t('Operations')));
+  $headers = array(t('Enabled'), t('Connector'), array(
+    'colspan' => $max_operations,
+    'data' => t('Operations'),
+  ));
   $output = theme('table', $headers, $rows);
   $output .= drupal_render($form);
   return $output;
@@ -135,26 +138,26 @@ function l10n_server_connector_configure($connector = NULL, $source = NULL) {
 function l10n_server_connectors_files_settings_form(&$form_state, $connector_name, $source_name) {
   $form['#connector_name'] = $connector_name;
 
-  $form['l10n_server_connector_'. $connector_name .'_'. $source_name .'_directory'] = array(
+  $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory'] = array(
     '#title' => t('Source directory'),
     '#description' => t('The directory on the local file system to be scanned for source data. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Fishbowl/fishbowl-1.2.tar.gz is from project "Fishbowl" in version 1.2, while campwizard-3.4.tar.gz is project "campwizard" in version 3.4.'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value' => variable_get('l10n_server_connector_'. $connector_name .'_'. $source_name .'_directory', file_directory_path() .'/'. $connector_name),
+    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory', file_directory_path() . '/' . $connector_name),
     // Create directory by default if possible.
     '#after_build' => array('l10n_server_connectors_files_check_directory'),
   );
-  $form['l10n_server_connector_'. $connector_name .'_'. $source_name .'_limit'] = array(
+  $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_limit'] = array(
     '#title' => t('Number of releases to look at once'),
     '#description' => t('The number of releases to scan on a manual or cron run. Scanning is synchronous, so you need to wait while extraction and parsing of file content is underway.'),
     '#type' => 'select',
     '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20)),
-    '#default_value' => variable_get('l10n_server_connector_'. $connector_name .'_'. $source_name .'_limit', 1),
+    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_limit', 1),
   );
-  $form['l10n_server_connector_'. $connector_name .'_'. $source_name .'_cron'] = array(
+  $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_cron'] = array(
     '#title' => t('Run scanning on cron'),
     '#type' => 'checkbox',
-    '#default_value' => variable_get('l10n_server_connector_'. $connector_name .'_'. $source_name .'_cron', 0),
+    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_cron', 0),
     '#description' => t('It is advised to set up a regular cron run to parse new files, instead of hitting the Scan tab manually.'),
   );
   return system_settings_form($form);

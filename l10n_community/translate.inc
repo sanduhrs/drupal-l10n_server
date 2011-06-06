@@ -19,13 +19,13 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $projects = l10n_server_get_projects();
 
   $translation_options = array(
-    L10N_STATUS_ALL            => '<'. t('Any') .'>',
+    L10N_STATUS_ALL            => '<' . t('Any') . '>',
     L10N_STATUS_UNTRANSLATED   => t('Untranslated'),
     L10N_STATUS_TRANSLATED     => t('Translated'),
     L10N_STATUS_IS_TRANSLATION => t('Is translation'),
   );
   $suggestion_options = array(
-    L10N_STATUS_ALL            => '<'. t('Any') .'>',
+    L10N_STATUS_ALL            => '<' . t('Any') . '>',
     L10N_STATUS_NO_SUGGESTION  => t('Has no suggestion'),
     L10N_STATUS_HAS_SUGGESTION => t('Has suggestion'),
     L10N_STATUS_IS_SUGGESTION  => t('Is suggestion'),
@@ -115,22 +115,22 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $form['status'] = array(
     '#title' => t('Status'),
     '#tree' => TRUE,
-    '#prefix' => '<div class="'. ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default' : 'is-not-default') .'">',
+    '#prefix' => '<div class="' . ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default' : 'is-not-default') . '">',
     '#suffix' => '</div>',
     '#display_none' => $form_state['values']['status'] == L10N_STATUS_ALL,
   );
   $form['status']['translation'] = array(
     '#type' => 'select',
     '#options' => $translation_options,
-    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED | L10N_STATUS_IS_TRANSLATION),
+    '#default_value' => (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED | L10N_STATUS_IS_TRANSLATION),
   );
   $form['status']['suggestion'] = array(
     '#type' => 'select',
     '#options' => $suggestion_options,
-    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
+    '#default_value' => (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
   );
 
-  $form['author']= array(
+  $form['author'] = array(
     '#type' => 'textfield',
     '#title' => t('Submitted by'),
     '#maxlength' => 60,
@@ -173,7 +173,7 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#type' => 'submit',
   );
   $form['reset'] = array(
-    '#value' => '<div class="reset-link">'. l(t('Clear all filters'), 'translate/languages/'. $langcode .'/translate', array('attributes' => array('class' => 'filter-exclude'))) .'</div>',
+    '#value' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => 'filter-exclude'))) . '</div>',
     '#type' => 'markup',
   );
   $form['#theme'] = 'l10n_community_filter_form';
@@ -200,12 +200,12 @@ function theme_l10n_community_filter_form($form) {
         $class = ' js-hide';
       }
 
-      $output .= '<div class="filter-widget'. $class .'"><label>'. $title .'</label>'. drupal_render($element) .'</div>';
+      $output .= '<div class="filter-widget' . $class . '"><label>' . $title . '</label>' . drupal_render($element) . '</div>';
     }
   }
 
   // Render the rest of the form as one filter-widget.
-  $output .= '<div class="filter-submit">'. drupal_render($form) .'</div>';
+  $output .= '<div class="filter-submit">' . drupal_render($form) . '</div>';
   $output .= '</div>';
 
   return $output;
@@ -234,10 +234,10 @@ function l10n_community_filter_form_submit($form, &$form_state) {
  * Menu callback: List translations and suggestions.
  */
 function l10n_community_translate_page($langcode) {
-  drupal_add_css(drupal_get_path('module', 'l10n_community') .'/editor.css');
-  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/jquery.worddiff.js');
-  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/editor.js');
-  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
+  drupal_add_css(drupal_get_path('module', 'l10n_community') . '/editor.css');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') . '/jquery.worddiff.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') . '/editor.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') . '/l10n_community.js');
 
   $language = l10n_community_get_language($langcode);
   $filters = l10n_community_build_filter_values($_GET);
@@ -246,7 +246,7 @@ function l10n_community_translate_page($langcode) {
 
   // Add RTL style if the current language's direction is RTL
   if ($language->direction == LANGUAGE_RTL) {
-    drupal_add_css(drupal_get_path('module', 'l10n_community') .'/editor-rtl.css');
+    drupal_add_css(drupal_get_path('module', 'l10n_community') . '/editor-rtl.css');
   }
 
   // Set the most appropriate title.
@@ -303,28 +303,28 @@ function l10n_community_translate_form(&$form_state, $language, $filters, $strin
   $form = array(
     '#redirect' => array(
       $_GET['q'],
-      $redirect_url
+      $redirect_url,
     ),
     'langcode' => array(
       '#type' => 'value',
-      '#value' => $language->language
+      '#value' => $language->language,
     ),
     'pager_top' => array(
       '#weight' => -10,
-      '#value' => $pager
+      '#value' => $pager,
     ),
     'strings' => array(
       '#tree' => TRUE,
-      '#theme' => 'l10n_community_translate_table'
+      '#theme' => 'l10n_community_translate_table',
     ),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Save changes'),
-      '#access' => user_access('submit suggestions')
+      '#access' => user_access('submit suggestions'),
     ),
     'pager_bottom' => array(
       '#weight' => 10,
-      '#value' => $pager
+      '#value' => $pager,
     ),
   );
 
@@ -369,7 +369,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
   if (user_access('submit suggestions')) {
     $form['source']['edit'] = array(
       '#value' => t('Translate'),
-      '#prefix' => '<label title="'. t('Translate') .'">',
+      '#prefix' => '<label title="' . t('Translate') . '">',
       '#suffix' => '</label>',
     );
   }
@@ -407,8 +407,8 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 function _l10n_community_translate_render_textarray($textarray, $empty = '') {
   // data-empty is a proprietary attribute used in editor.css to be displayed when
   // starting to submit a new suggestion.
-  $empty = !empty($empty) ? ' data-empty="'. check_plain($empty) .'"' : '';
-  return "<span$empty>". implode("</span><br /><span$empty>", array_map('check_plain', $textarray)) .'</span>';
+  $empty = !empty($empty) ? ' data-empty="' . check_plain($empty) . '"' : '';
+  return "<span$empty>" . implode("</span><br /><span$empty>", array_map('check_plain', $textarray)) . '</span>';
 }
 
 /**
@@ -507,7 +507,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
       if (user_access('submit suggestions')) {
         $form['edit'] = array(
           '#value' => t('Edit a copy'),
-          '#prefix' => '<label title="'. t('Edit a copy') .'">',
+          '#prefix' => '<label title="' . t('Edit a copy') . '">',
           '#suffix' => '</label>',
         );
       }
@@ -516,7 +516,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
 
         $form['author'] = array(
           '#value' => $title,
-          '#prefix' => '<div class="l10n-byline"><a href="'. url('translate/translation-details/'. $string->tid) .'" class="l10n-more-link" title="'. t('Show full history for translation.') .'">',
+          '#prefix' => '<div class="l10n-byline"><a href="' . url('translate/translation-details/' . $string->tid) . '" class="l10n-more-link" title="' . t('Show full history for translation.') . '">',
           '#suffix' => '</a><div class="l10n-more-info"></div></div>',
         );
       }
@@ -530,7 +530,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
  */
 function l10n_community_translate_byline($name, $uid, $time, $medium, $type, $link_user = TRUE) {
   $params = array(
-    '!author' => $uid ? ($link_user ? theme('username', (object)array('name' => $name, 'uid' => $uid)) : check_plain($name)) : t('uknown user'),
+    '!author' => $uid ? ($link_user ? theme('username', (object) array('name' => $name, 'uid' => $uid)) : check_plain($name)) : t('uknown user'),
     // Also skip handling time if uid was not specified (for decline entries
     // in the update, which have time for ordering reasons, but no uid).
     '@date' => $time && $uid ? format_date($time) : t('unknown time'),
@@ -581,7 +581,10 @@ function l10n_community_translate_byline($name, $uid, $time, $medium, $type, $li
  */
 function theme_l10n_community_translate_table($element) {
   $header = array(
-    array('data' => t('Source text'), 'colspan' => 2),
+    array(
+      'data' => t('Source text'),
+      'colspan' => 2,
+    ),
     t('Translations'),
   );
 
@@ -589,9 +592,18 @@ function theme_l10n_community_translate_table($element) {
 
   foreach (element_children($element) as $key) {
     $rows[] = array(
-      array('class' => 'sid', 'data' => l('#', $_GET['q'], array('query' => array('sid' => $element[$key]['#string']->sid), 'attributes' => array('title' => t('Direct and permanent link to this string.'))))),
-      array('class' => 'source', 'data' => theme('l10n_community_translate_source', $element[$key])),
-      array('class' => 'translation', 'data' => theme('l10n_community_translate_translation_list', $element[$key])),
+      array(
+        'class' => 'sid',
+        'data' => l('#', $_GET['q'], array('query' => array('sid' => $element[$key]['#string']->sid), 'attributes' => array('title' => t('Direct and permanent link to this string.')))),
+      ),
+      array(
+        'class' => 'source',
+        'data' => theme('l10n_community_translate_source', $element[$key]),
+      ),
+      array(
+        'class' => 'translation',
+        'data' => theme('l10n_community_translate_translation_list', $element[$key]),
+      ),
     );
   }
 
@@ -603,10 +615,10 @@ function theme_l10n_community_translate_table($element) {
  */
 function theme_l10n_community_translate_source($element) {
   $output = theme('l10n_community_translate_actions', $element['source']);
-  $output .= '<label class="l10n-string'. ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') .'">'. drupal_render($element['source']['string']) .'</label>';
+  $output .= '<label class="l10n-string' . ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') . '">' . drupal_render($element['source']['string']) . '</label>';
   $output .= theme('l10n_community_in_context', $element['#string']);
 
-  $output .= '<div class="l10n-usage"><a href="'. url('translate/source-details/'. $element['#string']->sid) .'" class="l10n-more-link" title="'. t('Show list of projects and releases where this text is used.') .'">'. t('Show related projects') .'</a><div class="l10n-more-info"></div></div>';
+  $output .= '<div class="l10n-usage"><a href="' . url('translate/source-details/' . $element['#string']->sid) . '" class="l10n-more-link" title="' . t('Show list of projects and releases where this text is used.') . '">' . t('Show related projects') . '</a><div class="l10n-more-info"></div></div>';
   return $output;
 }
 
@@ -617,11 +629,11 @@ function theme_l10n_community_translate_actions($element) {
   $actions = '';
   foreach (array('declined', 'edit') as $type) {
     if (isset($element[$type])) {
-      $actions .= '<li class="'. $type .'">'. drupal_render($element[$type]) .'</li>';
+      $actions .= '<li class="' . $type . '">' . drupal_render($element[$type]) . '</li>';
     }
   }
   if (!empty($actions)) {
-    return '<ul class="actions">'. $actions .'</ul>';
+    return '<ul class="actions">' . $actions . '</ul>';
   }
   else {
     return '';
@@ -636,7 +648,7 @@ function theme_l10n_community_translate_actions($element) {
  */
 function theme_l10n_community_in_context($string) {
   if (!empty($string->context)) {
-    return '<div class="string-context">'. t('in context: @context', array('@context' => $string->context)) .'</div>';
+    return '<div class="string-context">' . t('in context: @context', array('@context' => $string->context)) . '</div>';
   }
   return '';
 }
@@ -677,19 +689,19 @@ function theme_l10n_community_translate_translation($element) {
   }
   $element['#attributes']['class'] = trim($element['#attributes']['class']);
 
-  $output = '<li'. drupal_attributes($element['#attributes']) .'>';
+  $output = '<li' . drupal_attributes($element['#attributes']) . '>';
   $output .= theme('l10n_community_translate_actions', $element);
   // Add the radio box to pick the active translation.
   $output .= drupal_render($element['active']);
 
   if (isset($element['author'])) {
-    $output .= '<div class="author">'. drupal_render($element['author']) .'</div>';
+    $output .= '<div class="author">' . drupal_render($element['author']) . '</div>';
   }
 
   if (isset($element['value'])) {
     $output .= drupal_render($element['value']);
   }
-  return $output  .'</li>';
+  return $output  . '</li>';
 }
 
 /**
@@ -698,14 +710,14 @@ function theme_l10n_community_translate_translation($element) {
 function theme_l10n_community_translate_radio($element) {
   _form_set_class($element, array('form-radio'));
   $output = '<input type="radio" ';
-  $output .= 'id="'. $element['#id'] .'" ';
-  $output .= 'name="'. $element['#name'] .'" ';
-  $output .= 'value="'. $element['#return_value'] .'" ';
+  $output .= 'id="' . $element['#id'] . '" ';
+  $output .= 'name="' . $element['#name'] . '" ';
+  $output .= 'value="' . $element['#return_value'] . '" ';
   $output .= (check_plain($element['#value']) == $element['#return_value']) ? ' checked="checked" ' : ' ';
-  $output .= drupal_attributes($element['#attributes']) .' />';
+  $output .= drupal_attributes($element['#attributes']) . ' />';
 
   if (isset($element['#title'])) {
-    $output .= '<label class="l10n-string" for="'. $element['#id'] .'">'. $element['#title'] .'</label>';
+    $output .= '<label class="l10n-string" for="' . $element['#id'] . '">' . $element['#title'] . '</label>';
   }
   return $output;
 }
@@ -902,9 +914,9 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
 
   // Build the queries
   $sql_args = array_merge($join_args, $where_args);
-  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE '. implode(' AND ', $where)) : '');
-  $sql = $select .' '. $sql_where;
-  $sql_count = $select_count .' '. $sql_where;
+  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE ' . implode(' AND ', $where)) : '');
+  $sql = $select . ' ' . $sql_where;
+  $sql_count = $select_count . ' ' . $sql_where;
 
   // We either need a pager or a full result.
   if (isset($pager)) {
@@ -993,8 +1005,8 @@ function l10n_community_string_details($sid = 0, $ahah = 0) {
     // Get data about this source string.
     $string = db_fetch_object(db_query('SELECT value, context FROM {l10n_server_string} WHERE sid = %d', $sid));
     $unpacked = l10n_community_unpack_string($string->value);
-    $output .= '<h3>'. t('Source string') .'</h3>'. theme('item_list', $unpacked);
-    $output .= '<h3>'. (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) .'</h3>';
+    $output .= '<h3>' . t('Source string') . '</h3>' . theme('item_list', $unpacked);
+    $output .= '<h3>' . (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) . '</h3>';
   }
 
   // List of project releases, where this string is used.
@@ -1004,12 +1016,12 @@ function l10n_community_string_details($sid = 0, $ahah = 0) {
   $project_list = array();
   $previous_project = '';
   while ($instance = db_fetch_object($result)) {
-    $release_info = $instance->release_title .' <span title="'. format_plural($instance->occurrence_count, 'Appears once in this release.', 'Appears @count times in this release.') .'">('. $instance->occurrence_count .')</span>';
+    $release_info = $instance->release_title . ' <span title="' . format_plural($instance->occurrence_count, 'Appears once in this release.', 'Appears @count times in this release.') . '">(' . $instance->occurrence_count . ')</span>';
     if ($instance->project_title != $previous_project) {
       if (!empty($version_list)) {
         $project_list[] = join(', ', $version_list);
       }
-      $version_list = array('<em>'. $instance->project_title .':</em> '. $release_info);
+      $version_list = array('<em>' . $instance->project_title . ':</em> ' . $release_info);
     }
     else {
       $version_list[] = $release_info;
@@ -1050,7 +1062,7 @@ function l10n_community_translation_details($tid = 0, $ahah = 0) {
   }
   else {
     $unpacked = l10n_community_unpack_string($string->translation);
-    $output .= '<h3>'. t('Translation') .'</h3>'. theme('item_list', $unpacked) . '<h3>'. t('History') .'</h3>';
+    $output .= '<h3>' . t('Translation') . '</h3>' . theme('item_list', $unpacked) . '<h3>' . t('History') . '</h3>';
   }
 
   // List of project releases, where this string is used.

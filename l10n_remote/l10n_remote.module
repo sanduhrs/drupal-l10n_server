@@ -66,7 +66,7 @@ function l10n_remote_user_page($client_token) {
  * This API key will contain a visible user id and a signature from the server.
  */
 function l10n_remote_user_api_key($uid, $client_token) {
-  return $uid .':'. md5('l10n_community'. $uid . drupal_get_private_key() . $client_token);
+  return $uid . ':' . md5('l10n_community' . $uid . drupal_get_private_key() . $client_token);
 }
 
 /**
@@ -84,7 +84,8 @@ function l10n_remote_xmlrpc() {
       'l10n.submit.translation',
       'l10n_remote_xmlrpc_string_submit',
       array('struct', 'string', 'string', 'string', 'int', 'string', 'string'),
-      t('Handle remote string submissions.'))
+      t('Handle remote string submissions.'),
+    ),
   );
 }
 
@@ -165,7 +166,7 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
 
   // Attempt to add this as a suggestion.
   $tid = l10n_community_add_suggestion($sid, $translation, $langcode, $uid, $uid, L10N_SERVER_MEDIUM_REMOTE);
-  
+
   if ($tid === FALSE) {
     //watchdog('l10n_community', 'Duplicate translation submitted.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Suggested translation already appears as active translation or suggestion.');

@@ -72,22 +72,22 @@ function l10n_groups_update_6000() {
   $ret = array();
 
   /*
-    Permissions table.
+   Permissions table.
 
-    'access localization community',             -- expected to be given to authenticated users
-    'browse translations',                       -- see prev.
-    'administer localization community',         -- expected to be given to admins
+   'access localization community',             -- expected to be given to authenticated users
+   'browse translations',                       -- see prev.
+   'administer localization community',         -- expected to be given to admins
 
-    'export gettext templates and translations', -- given to "translation team mamber"
-    'import gettext files',                      -- given to "translation team member"
-    'submit suggestions',                        -- given to "translation team member"
+   'export gettext templates and translations', -- given to "translation team mamber"
+   'import gettext files',                      -- given to "translation team member"
+   'submit suggestions',                        -- given to "translation team member"
 
-    'moderate suggestions from others',          -- given to "translation community moderator"
+   'moderate suggestions from others',          -- given to "translation community moderator"
 
-    'moderate own suggestions',                  -- given to "translation self-moderator"
+   'moderate own suggestions',                  -- given to "translation self-moderator"
 
-    'configure member roles',                    -- given to "translation community manager"
-  */
+   'configure member roles',                    -- given to "translation community manager"
+   */
 
   // Remove permissions which are to be granted via og_user_roles from now on.
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");

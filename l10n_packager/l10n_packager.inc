@@ -42,7 +42,7 @@ function l10n_packager_release_check($release, $force = FALSE, $limit = 0, $lang
 
   // Get only the languages we have translations for, that need updating
   $languages = array();
-  foreach($check_languages as $langcode => $language) {
+  foreach ($check_languages as $langcode => $language) {
     if (!empty($last_updated[$langcode]) && ($force || empty($files[$langcode]) || ($last_updated[$langcode] > $files[$langcode]->checked))) {
       $languages[$langcode] = $language;
     }
@@ -51,7 +51,7 @@ function l10n_packager_release_check($release, $force = FALSE, $limit = 0, $lang
   // For this special case we check we didn't stop before in the middle of a
   // release. Otherwise it could stick on a release forever when forcing.
   if ($force && $cron && $release->checked < $release->updated) {
-    foreach($files as $lang => $file) {
+    foreach ($files as $lang => $file) {
       if (!empty($file->checked) && ($file->checked > $release->checked)) {
         unset($languages[$lang]);
       }
@@ -107,7 +107,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
   $timestamp = $timestamp ? $timestamp : time();
   $variables = array(
     '%release'  => l10n_packager_release_name($release),
-    '%language' => $language->name
+    '%language' => $language->name,
   );
 
   if (!$file) {
@@ -195,7 +195,7 @@ function _l10n_packager_build_batch($operations = array(), $title = '') {
     'title' => $title ? $title : t('Translations packager.'),
     'operations' => $operations,
     // Tell the batch engine which file to load before calling operations.
-    'file' => drupal_get_path('module', 'l10n_packager') .'/l10n_packager.inc',
+    'file' => drupal_get_path('module', 'l10n_packager') . '/l10n_packager.inc',
   );
   return $batch;
 }
@@ -238,7 +238,7 @@ function l10n_packager_get_release($rid) {
  */
 function l10n_packager_release_name($rid) {
   if ($release = l10n_packager_get_release($rid)) {
-    return $release->uri .'-'. $release->title;
+    return $release->uri . '-' . $release->title;
   }
   else {
     return '';

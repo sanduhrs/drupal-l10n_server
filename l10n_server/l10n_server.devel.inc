@@ -89,8 +89,8 @@ function l10n_server_generate_translations_form() {
   }
   else {
     $form['submit'] = array(
-     '#type' => 'submit',
-     '#value' => t('Do it!'),
+      '#type' => 'submit',
+      '#value' => t('Do it!'),
     );
     return $form;
   }

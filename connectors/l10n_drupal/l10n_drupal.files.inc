@@ -31,7 +31,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
         // Get rid of $workdir prefix on file names, eg.
         // files/Drupal/drupal-4.6.7.tar.gz or
         // files/Ubercart/ubercart-5.x-1.0-alpha8.tar.gz.
-        $path = $package = trim(preg_replace('!(^'. preg_quote($workdir, '!') .')(.+)\.tar\.gz!', '\2', $path), '/');
+        $path = $package = trim(preg_replace('!(^' . preg_quote($workdir, '!') . ')(.+)\.tar\.gz!', '\2', $path), '/');
 
         $project_title = '';
         if (strpos($path, '/')) {
@@ -45,7 +45,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
           // eg. drupal-4.6.7 or ubercart-5.x-1.0-alpha8.
           list($project_uri, $release_version) = explode('-', $package, 2);
 
-          l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path .'.tar.gz', filemtime($file->filename));
+          l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path . '.tar.gz', filemtime($file->filename));
         }
         else {
           // File name not formatted properly.
@@ -60,7 +60,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   while ($release = db_fetch_object($results)) {
 
     // Only parse file if something changed since we last parsed it.
-    $file_name = $workdir .'/'. $release->download_link;
+    $file_name = $workdir . '/' . $release->download_link;
 
     if (file_exists($file_name)) {
       if (filemtime($file_name) > $release->last_parsed) {
@@ -123,7 +123,11 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
     }
     else {
       // Log error on existing project with another connector and skip the rest of this function.
-      $t_args = array('%uri' => $project_uri, '%other_connector' => $existing_project->connector_module, '%this_connector' => 'l10n_drupal_files');
+      $t_args = array(
+        '%uri' => $project_uri,
+        '%other_connector' => $existing_project->connector_module,
+        '%this_connector' => 'l10n_drupal_files',
+      );
       watchdog('l10n_drupal', 'An existing project under the URI %uri is already handled by %other_connector. Not possible to add it with %this_connector.', $t_args);
       drupal_set_message(t('An existing project under the URI %uri is already handled by %other_connector. Not possible to add it with %this_connector.', $t_args), 'error');
       return;
@@ -132,7 +136,7 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
   else {
     db_query(
       "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
-      $project_uri, $project_title, 0, (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? ('http://drupal.org/project/'. $project_uri) : ''), 'l10n_drupal_files', 1
+      $project_uri, $project_title, 0, (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? ('http://drupal.org/project/' . $project_uri) : ''), 'l10n_drupal_files', 1
     );
   }
 
@@ -173,7 +177,7 @@ function l10n_drupal_parse_package($package_file, $release) {
   include_once 'Archive/Tar.php';
 
   // Potx module is already a dependency.
-  include_once drupal_get_path('module', 'potx') .'/potx.inc';
+  include_once drupal_get_path('module', 'potx') . '/potx.inc';
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -182,7 +186,7 @@ function l10n_drupal_parse_package($package_file, $release) {
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
   $temp_name = tempnam(file_directory_temp(), 'l10n_drupal_');
-  $temp_path = $temp_name .'_dir';
+  $temp_path = $temp_name . '_dir';
 
   // Nothing to do if the file is not there or the extraction folder is taken.
   if (!file_exists($package_file)) {
@@ -395,16 +399,16 @@ function l10n_drupal_rmdir_recursive($directory) {
   }
   if ($handle = opendir($directory)) {
     while ($file = readdir($handle)) {
-        if ($file == '.' or $file == '..') {
-          continue;
-        }
-        $path = $directory .'/'. $file;
-        if (is_dir($path)) {
-          l10n_drupal_rmdir_recursive($path);
-        }
-        else {
-          unlink($path);
-        }
+      if ($file == '.' or $file == '..') {
+        continue;
+      }
+      $path = $directory . '/' . $file;
+      if (is_dir($path)) {
+        l10n_drupal_rmdir_recursive($path);
+      }
+      else {
+        unlink($path);
+      }
     }
     rmdir($directory);
     closedir($handle);

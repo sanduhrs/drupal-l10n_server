@@ -87,7 +87,7 @@ function l10n_community_import_form($form_state, $langcode) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Import')
+    '#value' => t('Import'),
   );
   return $form;
 }
@@ -131,7 +131,7 @@ function l10n_community_import_form_submit($form, &$form_state) {
     if (l10n_server_parse_po($file, '_l10n_community_import_one_string', array($form_state['values']['langcode'], $form_state['values']['is_suggestion'], $form_state['values']['import_uid']))) {
       drupal_set_message(t('The translation was successfully imported.'));
       l10n_community_update_message();
-      cache_clear_all('l10n:stats:'. $form_state['values']['langcode'], 'cache');
+      cache_clear_all('l10n:stats:' . $form_state['values']['langcode'], 'cache');
     }
   }
   else {
@@ -185,7 +185,8 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
       if ($tid) {
         if ($is_suggestion) {
           l10n_community_counter(L10N_COUNT_SUGGESTED);
-        } else {
+        }
+        else {
           l10n_community_approve_string($langcode, $sid, $tid);
           l10n_community_counter(L10N_COUNT_ADDED);
         }

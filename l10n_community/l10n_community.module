@@ -141,7 +141,7 @@ function l10n_community_menu() {
     'title' => 'Project autocomplete',
     'page callback' => 'l10n_community_projects_autocomplete',
     'access arguments' => array('access localization community'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
 
   // Form API AHAH release selector.
@@ -149,7 +149,7 @@ function l10n_community_menu() {
     'title' => 'AHAH release picker callback',
     'page callback' => 'l10n_community_ahah_releases',
     'access arguments' => array('access localization community'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
 
   // Callback to provide details about a certain source string.
@@ -318,9 +318,9 @@ function l10n_community_access_warnings($uri) {
  */
 function l10n_community_init() {
   if (arg(0) == 'translate') {
-    drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css', 'module');
+    drupal_add_css(drupal_get_path('module', 'l10n_community') . '/l10n_community.css', 'module');
     // For the translation overview pages. This is used to present admin page like panels.
-    drupal_add_css(drupal_get_path('module', 'system') .'/admin.css', 'module');
+    drupal_add_css(drupal_get_path('module', 'system') . '/admin.css', 'module');
   }
 
   // Check if language is RTL
@@ -330,7 +330,7 @@ function l10n_community_init() {
 
     // Add RTL style if the current language's direction is RTL
     if ($language->direction == LANGUAGE_RTL) {
-      drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community-rtl.css', 'module');
+      drupal_add_css(drupal_get_path('module', 'l10n_community') . '/l10n_community-rtl.css', 'module');
     }
   }
 }
@@ -385,12 +385,12 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
               }
               elseif ($arg1 == 'projects' && !empty($arg2)) {
                 $project = l10n_server_get_projects(array('uri' => $arg2));
-                include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+                include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
                 return l10n_community_block_stats_project($project);
               }
               elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
                 $languages = l10n_community_get_languages();
-                include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+                include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
                 return l10n_community_block_stats_language($languages[$arg2]);
               }
             }
@@ -401,10 +401,10 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
             if (arg(0) == 'translate') {
               $arg1 = arg(1);
               if (empty($arg1) || ($arg1 == 'downloads')) {
-                include_once drupal_get_path('module', 'l10n_community') .'/welcome.inc';
+                include_once drupal_get_path('module', 'l10n_community') . '/welcome.inc';
                 return array(
                   'subject' => t('Quick navigation'),
-                  'content' => drupal_get_form('l10n_community_pick_go') .'<div class="clearing"></div>'
+                  'content' => drupal_get_form('l10n_community_pick_go') . '<div class="clearing"></div>',
                 );
               }
             }
@@ -416,7 +416,7 @@ function l10n_community_block($op = 'list', $delta = 0, $edit = array()) {
             $arg3 = arg(3);
             if (arg(0) == 'translate' && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
               $languages = l10n_community_get_languages();
-              include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+              include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
               return l10n_community_block_contributors_language($languages[$arg2]);
             }
           }
@@ -442,7 +442,7 @@ function l10n_community_block_stats_front() {
     'content' => theme('item_list', array_merge($stats, array(
       format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
       format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
-      format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') .' ('. format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') .')',
+      format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') . ' (' . format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') . ')',
       format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
       format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
       format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
@@ -461,7 +461,11 @@ function l10n_community_user($op, &$edit, &$account, $category = NULL) {
     $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = %d AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", $account->uid);
     $items = array();
     while ($row = db_fetch_object($result)) {
-      $items[] = array('#type' => 'user_profile_item', '#title' => l(t($languages[$row->language]), 'translate/languages/'. $row->language), '#value' => format_plural($row->sum, '1 approved translation', '@count approved translations'));
+      $items[] = array(
+        '#type' => 'user_profile_item',
+        '#title' => l(t($languages[$row->language]), 'translate/languages/' . $row->language),
+        '#value' => format_plural($row->sum, '1 approved translation', '@count approved translations'),
+      );
     }
     if ($items) {
       $account->content['l10n_server_contributions'] = array(
@@ -704,13 +708,13 @@ function l10n_community_theme($existing, $type, $theme, $path) {
 function theme_l10n_community_page($page) {
   $output = '<div id="l10n-community-summary" class="admin clear-block">';
   foreach (array('top', 'left', 'right', 'bottom') as $container) {
-    if (isset($page['#'. $container])) {
-      $output .= '<div class="'. $container .' clear-block">';
-      uasort($page['#'. $container], 'element_sort');
-      foreach ($page['#'. $container] as $item) {
+    if (isset($page['#' . $container])) {
+      $output .= '<div class="' . $container . ' clear-block">';
+      uasort($page['#' . $container], 'element_sort');
+      foreach ($page['#' . $container] as $item) {
         $admin_block = theme('admin_block', $item['#block']);
         if (isset($item['#classes'])) {
-          $admin_block = str_replace('class="admin-panel"', 'class="admin-panel '. join(' ', $item['#classes']) .'"', $admin_block);
+          $admin_block = str_replace('class="admin-panel"', 'class="admin-panel ' . join(' ', $item['#classes']) . '"', $admin_block);
         }
         $output .= $admin_block;
       }
@@ -730,7 +734,7 @@ function theme_l10n_community_page($page) {
 function l10n_community_get_stats($langcode = NULL) {
   if (!empty($langcode)) {
     // Compute based on langcode.
-    if ($stats = cache_get('l10n:stats:'. $langcode, 'cache')) {
+    if ($stats = cache_get('l10n:stats:' . $langcode, 'cache')) {
       return $stats->data;
     }
     else {
@@ -742,7 +746,7 @@ function l10n_community_get_stats($langcode = NULL) {
 
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
-      cache_set('l10n:stats:'. $langcode, $stats, 'cache', CACHE_PERMANENT);
+      cache_set('l10n:stats:' . $langcode, $stats, 'cache', CACHE_PERMANENT);
       return $stats;
     }
   }
@@ -801,7 +805,7 @@ function l10n_community_cache_clear_all() {
  */
 function l10n_communiy_rebuild_stats() {
   l10n_community_get_stats();
-  include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+  include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
   l10n_community_get_string_count('languages');
   l10n_community_get_string_count('projects');
   if ($project = l10n_community_get_highlighted_project()) {
@@ -851,7 +855,7 @@ function l10n_community_build_filter_values($params) {
     // Dropdown, validated by form API.
     'context' => isset($params['context']) ? (string) $params['context'] : 'all',
     'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30, 50))) ? (int) $params['limit'] : 10,
-    'sid'   => (!empty($params['sid']) && is_numeric($params['sid'])) ? $params['sid'] : 0,
+    'sid' => (!empty($params['sid']) && is_numeric($params['sid'])) ? $params['sid'] : 0,
   );
 
   // The project can be a dropdown or text field depending on number of
@@ -899,8 +903,8 @@ function l10n_community_flat_filters($filters) {
 function l10n_community_add_url_modifiers($langcode, $filters) {
   $filters = l10n_community_flat_filters($filters);
   $urls = array(
-    'translate/languages/'. $langcode .'/translate',
-    'translate/languages/'. $langcode .'/export'
+    'translate/languages/' . $langcode . '/translate',
+    'translate/languages/' . $langcode . '/export',
   );
   $replacements = array();
   foreach ($urls as $url) {
@@ -919,7 +923,11 @@ function l10n_community_add_url_modifiers($langcode, $filters) {
  */
 function l10n_community_ahah_releases() {
   // AHAH copy-paste from http://drupal.org/node/331941
-  $form_state = array('storage' => NULL, 'submitted' => FALSE, 'rebuild' => TRUE);
+  $form_state = array(
+    'storage' => NULL,
+    'submitted' => FALSE,
+    'rebuild' => TRUE,
+  );
   $form_build_id = $_POST['form_build_id'];
   $form = form_get_cache($form_build_id, $form_state);
   $args = $form['#parameters'];
@@ -928,7 +936,7 @@ function l10n_community_ahah_releases() {
 
   // Include the right file based on the form being used.
   $file = ($form_id == 'l10n_community_export_form') ? 'export.inc' : 'translate.inc';
-  include_once drupal_get_path('module', 'l10n_community') .'/'. $file;
+  include_once drupal_get_path('module', 'l10n_community') . '/' . $file;
 
   // AHAH copy-paste from http://drupal.org/node/331941 continued
   $form_state['post'] = $form['#post'] = $_POST;

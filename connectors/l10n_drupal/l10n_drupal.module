@@ -61,11 +61,9 @@ function l10n_drupal_l10n_server_connector_info() {
     'l10n_drupal' => array(
       'title' => t('Drupal packages'),
       'sources' => array('files', 'uploads'),
-
-      'file' => drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.files.inc',
+      'file' => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.files.inc',
       // Only provide scan functionality if enabled.
       'scan' => variable_get('l10n_server_connector_l10n_drupal_files_enabled', FALSE) ? 'l10n_drupal_files_scan' : NULL,
-
       // Display warnings tab, because we are parsing source code here.
       'warnings' => TRUE,
     ),
@@ -78,11 +76,9 @@ function l10n_drupal_l10n_server_connector_info() {
     $connectors['l10n_project'] = array(
       'title' => t('Drupal.org packages'),
       'sources' => array('drupalorg'),
-
-      'file' => drupal_get_path('module', 'l10n_drupal') .'/l10n_drupal.drupalorg.inc',
+      'file' => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.drupalorg.inc',
       // Only provide scan functionality if enabled.
       'scan' => variable_get('l10n_server_connector_l10n_project_drupalorg_enabled', FALSE) ? 'l10n_drupal_drupalorg_scan_page' : NULL,
-
       // Display warnings tab, because we are parsing source code here.
       'warnings' => TRUE,
     );
@@ -101,7 +97,7 @@ function l10n_drupal_l10n_server_source_info() {
       // Reuse file settings mostly (will be modified in form_alter()).
       'form' => 'l10n_server_connectors_files_settings_form',
       'scan' => TRUE,
-      'file' => drupal_get_path('module', 'l10n_server') .'/l10n_server.connectors.inc',
+      'file' => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
     ),
   );
 }

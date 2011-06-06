@@ -82,7 +82,7 @@ function l10n_groups_init() {
   if (($item = og_user_roles_menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
     // If on node view page for l10n_group nodes, redirect to our more full featured
     // version of the group with translation tabs and all.
-    drupal_goto('translate/languages/'. $item['page_arguments'][0]->l10n_group_language);
+    drupal_goto('translate/languages/' . $item['page_arguments'][0]->l10n_group_language);
   }
 }
 
@@ -203,7 +203,7 @@ function l10n_groups_access($op, $node, $account) {
       // Intentionally no break.
 
     case 'delete':
-      return user_access($op .' any localization group', $account) || (user_access($op .' own localization group', $account) && ($account->uid == $node->uid));
+      return user_access($op . ' any localization group', $account) || (user_access($op . ' own localization group', $account) && ($account->uid == $node->uid));
       break;
   }
 
@@ -276,7 +276,7 @@ function l10n_groups_form($node, $form_state) {
 function l10n_groups_og_create_links($node) {
   $links = array();
   if (node_access('update', $node)) {
-    $links['edit_group'] = l(t('Edit group'), 'node/'. $node->nid .'/edit');
+    $links['edit_group'] = l(t('Edit group'), 'node/' . $node->nid . '/edit');
   }
   return $links;
 }
@@ -302,7 +302,7 @@ function l10n_groups_og_links_alter(&$links, $node) {
       $txt = t('Join');
     }
     if (isset($txt)) {
-      $link = l('<span>'. $txt .'</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => 'link-button'), 'html' => TRUE, 'query' => drupal_get_destination()));
+      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => 'link-button'), 'html' => TRUE, 'query' => drupal_get_destination()));
     }
   }
 }
@@ -340,7 +340,7 @@ function l10n_groups_pick_go() {
     foreach ($user->og_groups as $group) {
       if ($group['type'] == 'l10n_group') {
         $group = node_load($group['nid']);
-        $groups[$group->l10n_group_language] = l($group->title, 'translate/languages/'. $group->l10n_group_language);
+        $groups[$group->l10n_group_language] = l($group->title, 'translate/languages/' . $group->l10n_group_language);
       }
     }
     if (!empty($groups)) {
@@ -370,7 +370,7 @@ function l10n_groups_broadcast_access($langcode) {
  */
 function l10n_groups_broadcast($langcode) {
   $groups = l10n_groups_get_groups();
-  include_once drupal_get_path('module', 'og') .'/og.pages.inc';
+  include_once drupal_get_path('module', 'og') . '/og.pages.inc';
   return drupal_get_form('og_broadcast_form', node_load($groups[$langcode]));
 }
 
@@ -382,12 +382,12 @@ function l10n_groups_broadcast($langcode) {
 function l10n_groups_l10n_community_build_language_page($language) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
-    $output = check_markup($group_node->body, $group_node->format, FALSE) .'</div>'; 
+    $output = check_markup($group_node->body, $group_node->format, FALSE) . '</div>';
   }
   else {
     $output = t('Group not found or not accessible. No information to display.');
   }
-  return '<div id="mission" class="og-mission">'. $output .'</div>';
+  return '<div id="mission" class="og-mission">' . $output . '</div>';
 }
 
 /**
@@ -402,6 +402,6 @@ function l10n_groups_board_page($langcode) {
     return node_view($group_node, FALSE, TRUE);
   }
   else {
-    return '<p>'. t('Group not found or not accessible. No posts to display.') .'</p>';
+    return '<p>' . t('Group not found or not accessible. No posts to display.') . '</p>';
   }
 }

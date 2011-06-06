@@ -43,29 +43,29 @@ function l10n_server_admin_projects_form(&$form_state, $projects) {
   foreach ($projects as $project) {
     $form['projects'][$project->pid] = array(
       'title' => array(
-        '#value' => $project->title .'<br /><small>'. (!empty($project->home_link) ? '<a href="'. $project->home_link .'">'. $project->home_link .'</a>' : t('No link available')) .'</small>',
+        '#value' => $project->title . '<br /><small>' . (!empty($project->home_link) ? '<a href="' . $project->home_link . '">' . $project->home_link . '</a>' : t('No link available')) . '</small>',
       ),
       'status' => array(
         '#type' => 'checkbox',
         '#default_value' => $project->status,
       ),
       'reset' => array(
-        '#value' => l(t('Start over'), 'admin/l10n_server/projects/reset/'. $project->uri),
+        '#value' => l(t('Start over'), 'admin/l10n_server/projects/reset/' . $project->uri),
       ),
       'delete' => array(
-        '#value' => $orphans ? '' : l(t('Delete'), 'admin/l10n_server/projects/delete/'. $project->uri),
+        '#value' => $orphans ? '' : l(t('Delete'), 'admin/l10n_server/projects/delete/' . $project->uri),
       ),
       'releases' => array(
-        '#value' => l(t('Releases'), 'admin/l10n_server/projects/releases/'. $project->uri),
+        '#value' => l(t('Releases'), 'admin/l10n_server/projects/releases/' . $project->uri),
       ),
       'edit' => array(
-        '#value' => l(t('Edit'), 'admin/l10n_server/projects/edit/'. $project->uri),
+        '#value' => l(t('Edit'), 'admin/l10n_server/projects/edit/' . $project->uri),
       ),
     );
   }
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save changes')
+    '#value' => t('Save changes'),
   );
 
   $form['#theme'] = 'l10n_server_admin_projects_form';
@@ -92,13 +92,16 @@ function theme_l10n_server_admin_projects_form($form) {
       drupal_render($project_element['delete']),
     );
   }
-  $headers = array(t('Enabled'), t('Project'), array('data' => t('Operations'), 'colspan' => 4));
+  $headers = array(t('Enabled'), t('Project'), array(
+    'data' => t('Operations'),
+    'colspan' => 4,
+  ));
   $output .= theme('table', $headers, $table);
   $output .= $pager;
   $output .= drupal_render($form);
 
   if ($form['orphans']['#value']) {
-    drupal_set_message(format_plural($form['orphans']['#value'], 'There is @count source string orphaned.', 'There are @count source strings orphaned.') .' '. t('Deleting projects will not be available until you <a href="@cleanup">clean up the database</a> or rescan projects (within connectors you use) if you have started over with some of them.', array('@cleanup' => url('admin/l10n_server/projects/cleanup'))));
+    drupal_set_message(format_plural($form['orphans']['#value'], 'There is @count source string orphaned.', 'There are @count source strings orphaned.') . ' ' . t('Deleting projects will not be available until you <a href="@cleanup">clean up the database</a> or rescan projects (within connectors you use) if you have started over with some of them.', array('@cleanup' => url('admin/l10n_server/projects/cleanup'))));
   }
   return $output;
 }
@@ -215,9 +218,9 @@ function l10n_server_admin_releases_form(&$form_state, $project, $releases) {
       ),
       'operations' => array(
         '#value' => array(
-          ($source == 'uploads' ? l(t('Edit'), 'admin/l10n_server/projects/releases/'. $project->uri .'/edit/'. $release->rid) : ''),
-          l(t('Start over'), 'admin/l10n_server/projects/releases/'. $project->uri .'/reset/'. $release->rid),
-          l(t('Delete'), 'admin/l10n_server/projects/releases/'. $project->uri .'/delete/'. $release->rid),
+          ($source == 'uploads' ? l(t('Edit'), 'admin/l10n_server/projects/releases/' . $project->uri . '/edit/' . $release->rid) : ''),
+          l(t('Start over'), 'admin/l10n_server/projects/releases/' . $project->uri . '/reset/' . $release->rid),
+          l(t('Delete'), 'admin/l10n_server/projects/releases/' . $project->uri . '/delete/' . $release->rid),
         ),
       ),
     );
@@ -296,7 +299,15 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
   if (!isset($project_uri)) {
     $connector_list = l10n_server_get_add_enabled_project_connectors();
     // Provide sensible default for project if adding new one.
-    $project = (object) array('pid' => NULL, 'uri' => '', 'title' => '', 'home_link' => '', 'connector_module' => array_shift(array_keys($connector_list)), 'status' => 1, 'weight' => 0);
+    $project = (object) array(
+      'pid' => NULL,
+      'uri' => '',
+      'title' => '',
+      'home_link' => '',
+      'connector_module' => array_shift(array_keys($connector_list)),
+      'status' => 1,
+      'weight' => 0,
+    );
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $project_uri));
@@ -307,7 +318,7 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
   $form = array();
   $form['previous_project'] = array(
     '#type' => 'value',
-    '#value' => $project
+    '#value' => $project,
   );
   $form['uri'] = array(
     '#type' => 'textfield',
@@ -335,7 +346,7 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
     '#description' => t('Data and source handler for this project. Cannot be modified later.'),
     '#options' => $connector_list,
     '#default_value' => $project->connector_module,
-    '#disabled' => !empty($project->pid)
+    '#disabled' => !empty($project->pid),
   );
   $form['weight'] = array(
     '#type' => 'textfield',
@@ -345,7 +356,7 @@ function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL)
   );
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Save project')
+    '#value' => t('Save project'),
   );
 
   if (!empty($project->pid)) {
@@ -393,7 +404,13 @@ function l10n_server_admin_projects_edit_form_submit($form, &$form_state) {
 function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri, $release_rid = NULL) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   if (empty($release_rid)) {
-    $release = (object) array('pid' => $project->pid, 'title' => '', 'rid' => NULL, 'download_link' => '', 'weight' => 0);
+    $release = (object) array(
+      'pid' => $project->pid,
+      'title' => '',
+      'rid' => NULL,
+      'download_link' => '',
+      'weight' => 0,
+    );
   }
   else {
     $releases = l10n_server_get_releases($project_uri, FALSE);
@@ -403,11 +420,11 @@ function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri
   $form = array();
   $form['project'] = array(
     '#type' => 'value',
-    '#value' => $project
+    '#value' => $project,
   );
   $form['previous_release'] = array(
     '#type' => 'value',
-    '#value' => $release
+    '#value' => $release,
   );
   $form['title'] = array(
     '#type' => 'textfield',
@@ -455,7 +472,7 @@ function l10n_server_admin_projects_release_edit_form_submit($form, &$form_state
   // (such as an uploads source handler).
   $form_state['values']['new_release'] = $new_release;
 
-  $form_state['redirect'] = 'admin/l10n_server/projects/releases/'. $form_state['values']['project']->uri;
+  $form_state['redirect'] = 'admin/l10n_server/projects/releases/' . $form_state['values']['project']->uri;
 }
 
 // = Delete a release from the database ========================================
@@ -477,7 +494,7 @@ function l10n_server_admin_projects_release_delete(&$form_state, $project_uri, $
       '#value' => $release,
     ),
   );
-  return confirm_form($form, t('Are you sure you would like to delete %project %release from this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'admin/l10n_server/projects/releases/'. $project->uri, t('This would remove all data associated with the release, including files, parsing errors, and all source strings and translations which are not applicable to remaining releases/projects. Always make database backups. This action cannot be undone.'));
+  return confirm_form($form, t('Are you sure you would like to delete %project %release from this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'admin/l10n_server/projects/releases/' . $project->uri, t('This would remove all data associated with the release, including files, parsing errors, and all source strings and translations which are not applicable to remaining releases/projects. Always make database backups. This action cannot be undone.'));
 }
 
 /**
@@ -486,7 +503,7 @@ function l10n_server_admin_projects_release_delete(&$form_state, $project_uri, $
 function l10n_server_admin_projects_release_delete_submit($form, &$form_state) {
   l10n_server_delete_release($form_state['values']['release']->rid);
   drupal_set_message(t('%project %release was deleted from the Localization server.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)));
-  $form_state['redirect'] = 'admin/l10n_server/projects/releases/'. $form_state['values']['project']->uri;
+  $form_state['redirect'] = 'admin/l10n_server/projects/releases/' . $form_state['values']['project']->uri;
 }
 
 // = Reset a release in the database ===========================================
@@ -508,7 +525,7 @@ function l10n_server_admin_projects_release_reset(&$form_state, $project_uri, $r
       '#value' => $release,
     ),
   );
-  return confirm_form($form, t('Are you sure you would like to start over with %project %release on this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'admin/l10n_server/projects/releases/'. $project->uri, t('This would remove almost all data associated with the release: files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. If you clean up the database before this release is parsed again, source strings and translations will be lost. Always make database backups. This action cannot be undone.'));
+  return confirm_form($form, t('Are you sure you would like to start over with %project %release on this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'admin/l10n_server/projects/releases/' . $project->uri, t('This would remove almost all data associated with the release: files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. If you clean up the database before this release is parsed again, source strings and translations will be lost. Always make database backups. This action cannot be undone.'));
 }
 
 /**
@@ -517,7 +534,7 @@ function l10n_server_admin_projects_release_reset(&$form_state, $project_uri, $r
 function l10n_server_admin_projects_release_reset_submit($form, &$form_state) {
   l10n_server_delete_release($form_state['values']['release']->rid, TRUE);
   drupal_set_message(t('Release data for %project %release was deleted from the Localization server. Make sure to parse this release data again before deleting a project or cleaning up the database, or you will loose existing translation data.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)));
-  $form_state['redirect'] = 'admin/l10n_server/projects/releases/'. $form_state['values']['project']->uri;
+  $form_state['redirect'] = 'admin/l10n_server/projects/releases/' . $form_state['values']['project']->uri;
 }
 
 // = API functions =============================================================

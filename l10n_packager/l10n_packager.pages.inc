@@ -6,8 +6,8 @@
  */
 
 function l10n_packager_explore_downloads() {
-  drupal_add_css(drupal_get_path('module', 'l10n_packager') .'/l10n_packager.css');
-  drupal_add_css(drupal_get_path('module', 'l10n_community') .'/l10n_community.css');
+  drupal_add_css(drupal_get_path('module', 'l10n_packager') . '/l10n_packager.css');
+  drupal_add_css(drupal_get_path('module', 'l10n_community') . '/l10n_community.css');
 
   $projects = l10n_server_get_projects();
   $output = drupal_get_form('l10n_packager_download_project_form', $projects);
@@ -31,12 +31,12 @@ function l10n_packager_explore_downloads() {
 
   // Expire old entries and then try to look up our entry.
   cache_clear_all(NULL, 'cache_l10n_packager');
-  $rendered = cache_get('download:'. $project->uri, 'cache_l10n_packager');
+  $rendered = cache_get('download:' . $project->uri, 'cache_l10n_packager');
   // Not found, generate the list from our data.
   if (empty($rendered)) {
     $downloads = l10n_packager_show_downloads($project);
     // Store for later use.
-    cache_set('download:'. $project->uri, $downloads, 'cache_l10n_packager', time()+60*60*24);
+    cache_set('download:' . $project->uri, $downloads, 'cache_l10n_packager', time() + 60 * 60 * 24);
     $output .= $downloads;
   }
   else {
@@ -76,7 +76,10 @@ function l10n_packager_download_project_form(&$form_state, $projects) {
       '#autocomplete_path' => 'translate/project-autocomplete',
     );
   }
-  $form['submit'] = array('#type' => 'submit', '#value' => t('Show downloads'));
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Show downloads'),
+  );
   return $form;
 }
 
@@ -98,7 +101,7 @@ function l10n_packager_download_project_form_validate($form, &$form_state) {
  * Form submission.
  */
 function l10n_packager_download_project_form_submit($form, $form_state) {
-  drupal_goto('translate/downloads', 'project='. $form_state['values']['uri']);
+  drupal_goto('translate/downloads', 'project=' . $form_state['values']['uri']);
 }
 
 /**
@@ -110,7 +113,7 @@ function l10n_packager_show_downloads($project) {
   $result = db_query('SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = %d', $project->pid);
   while ($item = db_fetch_object($result)) {
     // @todo: bad, bad harcoding of Drupal versioning schemes.
-    $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) .'x';
+    $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) . 'x';
     $branches[$branch] = TRUE;
     $files[$item->language][$branch][$item->rid] = $item;
   }
@@ -127,17 +130,17 @@ function l10n_packager_show_downloads($project) {
   foreach ($languages as $langcode => $language) {
     $row = array();
     // Start off the row with the language name and code.
-    $row[] = l(t($language->name), 'translate/languages/'. $langcode);
+    $row[] = l(t($language->name), 'translate/languages/' . $langcode);
     foreach (array_keys($branches) as $branch) {
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {
         krsort($files[$langcode][$branch]);
         $latest_item = array_shift($files[$langcode][$branch]);
-        $cell = '<p>'. l($latest_item->title .' ('. format_size($latest_item->filesize) . ')', $download_url .'/'. intval($branch) .'.x/'. $project->uri .'/'. $latest_item->filename) .'</p>';
-        $cell .= '<p class="l10n-packager-meta">'. t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0))) .'</p>';
+        $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename) . '</p>';
+        $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0))) . '</p>';
         $up_to_date = max($latest_item->checked, $latest_item->release_checked);
         if ($up_to_date > $latest_item->timestamp) {
-          $cell .= '<p class="l10n-packager-meta">'. t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d', 0))) .'</p>';
+          $cell .= '<p class="l10n-packager-meta">' . t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d', 0))) . '</p>';
         }
         $row[] = $cell;
       }

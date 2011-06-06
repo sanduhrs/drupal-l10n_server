@@ -29,8 +29,15 @@ function l10n_community_explore_languages() {
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
       $table[] = array(
-        array('data' => t($language->name), 'sortdata' => t($language->name), 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'class' => 'error'),
+        array(
+          'data' => t($language->name),
+          'sortdata' => t($language->name),
+          'class' => 'rowhead',
+        ),
+        array(
+          'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))),
+          'class' => 'error',
+        ),
         array('data' => ''),
       );
     }
@@ -44,17 +51,17 @@ function l10n_community_explore_languages() {
       ));
       $table[] = array(
         array(
-          'data' => l(t($language->name), 'translate/languages/'. $langcode),
+          'data' => l(t($language->name), 'translate/languages/' . $langcode),
           'sortdata' => t($language->name),
           'class' => 'rowhead',
         ),
         array(
           'data' => $progress,
-          'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2))
+          'sortdata' => ($num_source == 0 ? 0 : round(@$string_counts[$langcode]['translations'] / $num_source * 100, 2)),
         ),
         array(
           'data' => $stats['users'],
-          'sortdata' => $stats['users']
+          'sortdata' => $stats['users'],
         ),
       );
     }
@@ -136,7 +143,7 @@ function l10n_community_explore_projects() {
   }
   $output .= theme('table', theme('l10n_community_progress_headers', t('Project')), $table, array('class' => 'l10n-community-overview'));
   $output .= $pager;
-  return $output .'<div class="clear-block"></div>';
+  return $output . '<div class="clear-block"></div>';
 }
 
 /**
@@ -164,7 +171,7 @@ function l10n_community_explore_projects_jump_form() {
  */
 function l10n_community_explore_projects_jump_form_submit($form, &$form_state) {
   if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
-    drupal_goto('translate/projects/'. $uri);
+    drupal_goto('translate/projects/' . $uri);
   }
 }
 
@@ -188,7 +195,7 @@ function l10n_community_overview_language($langcode = NULL) {
   if (empty($content_output)) {
     // Try to fill in with taxonomy.
     if (module_exists('taxonomy')) {
-      if ($term = taxonomy_get_term_by_name('l10n-server-'. $languages[$langcode]->language)) {
+      if ($term = taxonomy_get_term_by_name('l10n-server-' . $languages[$langcode]->language)) {
         // Found tag, look for posts.
         $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
         while ($node = db_fetch_object($result)) {
@@ -197,12 +204,12 @@ function l10n_community_overview_language($langcode = NULL) {
       }
       if (empty($content_output)) {
         // Either no such tag, or that tag has no posts currently.
-        $content_output = '<p>'. t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-'. $languages[$langcode]->language)) .'</p>';
+        $content_output = '<p>' . t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-' . $languages[$langcode]->language)) . '</p>';
       }
     }
     else {
       // No way found to fill in content here.
-      $content_output = '<p>'. t('No posts to display') .'</p>';
+      $content_output = '<p>' . t('No posts to display') . '</p>';
     }
   }
 
@@ -278,7 +285,7 @@ function l10n_community_block_stats_project($project) {
   // Build list of links for summary.
   $list = array();
   if (!empty($project->home_link)) {
-    $list[] = t('Project home') .': <a href="'. check_url($project->home_link) .'">'. check_plain($project->home_link) .'</a>';
+    $list[] = t('Project home') . ': <a href="' . check_url($project->home_link) . '">' . check_plain($project->home_link) . '</a>';
   }
   if ($num_releases == 0) {
     // If we don't know of any releases, we do not list source string or warning
@@ -287,7 +294,7 @@ function l10n_community_block_stats_project($project) {
     $list[] = t('No releases known yet');
   }
   else {
-    $list[] = l(format_plural($num_parsed, '1 release parsed', '@count releases parsed') .' ('. format_plural($num_releases, '1 known', '@count known') .')', 'translate/projects/'. $project->uri .'/releases');
+    $list[] = l(format_plural($num_parsed, '1 release parsed', '@count releases parsed') . ' (' . format_plural($num_releases, '1 known', '@count known') . ')', 'translate/projects/' . $project->uri . '/releases');
     $list[] = ($num_source == 0 ? t('No source strings found') : format_plural($num_source, '1 source string in total', '@count source strings in total'));
     $list[] = ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings'));
   }
@@ -311,7 +318,7 @@ function l10n_community_block_stats_language($language) {
       format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
       format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
       format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-    ))
+    )),
   );
 }
 
@@ -333,7 +340,7 @@ function l10n_community_block_contributors_language($language) {
     $block['content'] = theme('table', array(t('Name'), t('Translation count')), $list);
   }
   else {
-    $block['content'] = '<p>'. t('Nobody contributed to this translation yet.') .'</p>';
+    $block['content'] = '<p>' . t('Nobody contributed to this translation yet.') . '</p>';
   }
   return $block;
 }
@@ -353,14 +360,21 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
       $table[] = array(
-        array('data' => t($language->name) .' ('. $langcode .')', 'class' => 'rowhead'),
-        array('data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))), 'colspan' => '3', 'class' => 'error')
+        array(
+          'data' => t($language->name) . ' (' . $langcode . ')',
+          'class' => 'rowhead',
+        ),
+        array(
+          'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))),
+          'colspan' => '3',
+          'class' => 'error',
+        ),
       );
     }
     else {
       $table[] = array_merge(
         array(
-          array('data' => l(t($language->name) .' ('. $langcode .')', 'translate/languages/'. $langcode .'/translate', array('query' => 'project='. $project->uri)), 'class' => 'rowhead'),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
         ),
         theme(
           'l10n_community_progress_columns',
@@ -376,7 +390,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     theme('l10n_community_progress_headers', t('Language')),
     $table,
     array('class' => 'l10n-community-overview')
-  ) .'<div class="clear-block"></div>';
+  ) . '<div class="clear-block"></div>';
 
   return $block;
 }
@@ -412,15 +426,15 @@ function l10n_communinty_project_releases_table($releases, $project_uri, $projec
   foreach ($releases as $release) {
     $file_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid));
     $error_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid));
-    $release_title = $project_name .' '. $release->title;
+    $release_title = $project_name . ' ' . $release->title;
     $rows[] = array(
-      $link_releases ? l($release_title, 'translate/projects/'. $project_uri .'/releases/'. $release->rid) : $release_title,
+      $link_releases ? l($release_title, 'translate/projects/' . $project_uri . '/releases/' . $release->rid) : $release_title,
       empty($release->download_link) ? t('n/a') : l(basename($release->download_link), $release->download_link),
       format_date($release->file_date),
       empty($release->last_parsed) ? t('in queue') : format_date($release->last_parsed),
       $file_count,
       $release->sid_count,
-      $error_count ? l($error_count, 'translate/projects/'. $project_uri .'/releases/'. $release->rid, array('fragment' => 'source-warnings')) : $error_count,
+      $error_count ? l($error_count, 'translate/projects/' . $project_uri . '/releases/' . $release->rid, array('fragment' => 'source-warnings')) : $error_count,
     );
   }
   $header = array(t('Release'), t('Download'), t('File date'), t('Last parsed'), t('Files'), t('Strings'), t('Warnings'));
@@ -450,11 +464,11 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   drupal_set_title(t('@project @release information', array('@project' => $project->title, '@release' => $release->title)));
 
   // Reproduce the basic release information from the parent page.
-  $output = '<h3>'. t('Basic release information') .'</h3>';
+  $output = '<h3>' . t('Basic release information') . '</h3>';
   $output .= l10n_communinty_project_releases_table(array($release), $uri, $project->title, FALSE);
 
   // List the files that we looked at.
-  $output .= '<h3>'. t('Files parsed in this release') .'</h3>';
+  $output .= '<h3>' . t('Files parsed in this release') . '</h3>';
   $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = %d', $release->rid);
   $rows = array();
   while ($file = db_fetch_object($result)) {
@@ -463,7 +477,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
       $revision = t('n/a');
     }
     else {
-      $revision = substr($file->revision, strpos($file->revision, ',v')+3);
+      $revision = substr($file->revision, strpos($file->revision, ',v') + 3);
     }
     // Insert word break hints for the browser to avoid breaking the page layout
     // for long file names and paths.
@@ -474,12 +488,12 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
     $output .= theme('table', $headers, $rows);
   }
   else {
-    $output .= '<p>'. t('No files found to parse in this release.') .'</p>';
+    $output .= '<p>' . t('No files found to parse in this release.') . '</p>';
   }
 
   // List of release parse warnings we found.
   $output .= '<a id="source-warnings"></a>';
-  $output .= '<h3>'. t('Source code warnings identified') .'</h3>';
+  $output .= '<h3>' . t('Source code warnings identified') . '</h3>';
   $result = db_query("SELECT * FROM {l10n_server_error} WHERE rid = %d", $release->rid);
   $rows = array();
   while ($warning = db_fetch_object($result)) {
@@ -490,7 +504,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
     $output .= theme('table', $headers, $rows);
   }
   else {
-    $output .= '<p>'. t('No source code warnings identified in this release.') .'</p>';
+    $output .= '<p>' . t('No source code warnings identified in this release.') . '</p>';
   }
 
   return $output;
@@ -525,8 +539,8 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   // Compute numbers, percentages and provide alternate text titles.
   $done_percent = round($translated / $sum * 100, 2);
   $status = array(
-    'translated'     => array((int) $translated, $done_percent, t('!percent translated')),
-    'untranslated'   => array($sum - $translated, 100 - $done_percent, t('!percent untranslated')),
+    'translated' => array((int) $translated, $done_percent, t('!percent translated')),
+    'untranslated' => array($sum - $translated, 100 - $done_percent, t('!percent untranslated')),
     // suggestions are not in the bar as they overlap with both translated and
     // untranslated strings, so we cannot display them here.
   );
@@ -535,7 +549,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
   $bar = '<div class="l10n-community-progress">';
   foreach ($status as $key => $values) {
     if ($values[1] > 0) {
-      $bar .= '<div class="l10n-community-progress-'. $key .'" style="width:'. $values[1] .'%;" title="'. strtr($values[2], array('!percent' => $values[1] .'%')) .'"></div>';
+      $bar .= '<div class="l10n-community-progress-' . $key . '" style="width:' . $values[1] . '%;" title="' . strtr($values[2], array('!percent' => $values[1] . '%')) . '"></div>';
     }
   }
   $bar .= '</div>';
@@ -545,7 +559,7 @@ function theme_l10n_community_progress_columns($sum, $translated, $has_suggestio
     ($sum - $translated),
     (int) $has_suggestion
     //t('@num untranslated', array('@num' => ($sum - $translated))),
-    //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions'))
+    //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions')),
   );
 }
 
@@ -597,7 +611,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       return db_result(db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = %d', $id));
 
     case 'languages':
-      if ($stats = cache_get('l10n:count:languages:'. $id, 'cache')) {
+      if ($stats = cache_get('l10n:count:languages:' . $id, 'cache')) {
         return $stats->data;
       }
       else {
@@ -623,7 +637,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         while ($row = db_fetch_object($result)) {
           $sums[$row->language]['suggestions'] = $row->translation_count;
         }
-        cache_set('l10n:count:languages:'. $id, $sums, 'cache', CACHE_PERMANENT);
+        cache_set('l10n:count:languages:' . $id, $sums, 'cache', CACHE_PERMANENT);
         return $sums;
       }
       break;
@@ -632,7 +646,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       // Get summaries by projects. Restricted to a specific language, if $id is set.
 
       // General community statistics.
-      if ($stats = cache_get('l10n:count:projects:'. $id, 'cache')) {
+      if ($stats = cache_get('l10n:count:projects:' . $id, 'cache')) {
         return $stats->data;
       }
       else {
@@ -666,7 +680,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         while ($row = db_fetch_object($result)) {
           $sums[$row->pid]['suggestions'] = $row->translation_count;
         }
-        cache_set('l10n:count:projects:'. $id, $sums, 'cache', CACHE_PERMANENT);
+        cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);
         return $sums;
       }
       break;

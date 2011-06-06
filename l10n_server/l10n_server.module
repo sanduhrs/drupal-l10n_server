@@ -71,10 +71,10 @@ function l10n_server_help($path, $args) {
     $help = t('Projects are created automatically or manually based on <a href="@connectors">your connector configuration</a>. File system based connectors need scanning to be run but create projects and releases automatically in that process.', array('@connectors' => url('admin/l10n_server/connectors')));
     $addenabled = l10n_server_get_add_enabled_project_connectors();
     if (count($addenabled)) {
-      $help .= ' '. t('Upload based connectors <a href="@addproject">let you add projects</a> and releases manually on the user interface and then upload translatable files under them.', array('@addproject' => url('admin/l10n_server/projects/add')));
+      $help .= ' ' . t('Upload based connectors <a href="@addproject">let you add projects</a> and releases manually on the user interface and then upload translatable files under them.', array('@addproject' => url('admin/l10n_server/projects/add')));
     }
     else {
-      $help .= ' '. t('Upload based connectors let you add projects and releases manually on the user interface and then upload translatable files under them.');
+      $help .= ' ' . t('Upload based connectors let you add projects and releases manually on the user interface and then upload translatable files under them.');
     }
     return $help;
   }
@@ -167,7 +167,7 @@ function l10n_server_menu() {
     'page arguments' => array('l10n_server_admin_projects_edit_form', 4),
     'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
   $items['admin/l10n_server/projects/delete/%l10n_server_project_admin'] = array(
     'title' => 'Delete project',
@@ -175,7 +175,7 @@ function l10n_server_menu() {
     'page arguments' => array('l10n_server_admin_projects_delete', 4),
     'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
   $items['admin/l10n_server/projects/reset/%l10n_server_project_admin'] = array(
     'title' => 'Enable project',
@@ -183,7 +183,7 @@ function l10n_server_menu() {
     'page arguments' => array('l10n_server_admin_projects_reset', 4),
     'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
   $items['admin/l10n_server/projects/releases/%l10n_server_project_admin'] = array(
     'title' => 'Releases',
@@ -191,7 +191,7 @@ function l10n_server_menu() {
     'page arguments' => array(4),
     'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'type' => MENU_CALLBACK
+    'type' => MENU_CALLBACK,
   );
   $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/list'] = array(
     'title' => 'List',
@@ -314,11 +314,11 @@ function l10n_server_get_add_enabled_project_connectors() {
     $sources = l10n_server_get_sources();
     foreach ($sources as $source => $sinfo) {
       if (!empty($sinfo['add project'])) {
-        foreach($connectors as $connector => $cinfo) {
-          if (variable_get('l10n_server_connector_'. $connector .'_'. $source .'_enabled', FALSE)) {
+        foreach ($connectors as $connector => $cinfo) {
+          if (variable_get('l10n_server_connector_' . $connector . '_' . $source . '_enabled', FALSE)) {
             // Found a connector which has manage projects possibility,
             // so we could add a project to be managed via the UI.
-            $addenabled[$connector .'_'. $source] = t('@title from @source', array('@title' => $cinfo['title'], '@source' => $sinfo['title']));
+            $addenabled[$connector . '_' . $source] = t('@title from @source', array('@title' => $cinfo['title'], '@source' => $sinfo['title']));
           }
         }
       }
@@ -339,9 +339,9 @@ function l10n_server_get_project_connectors() {
     $connectors = l10n_server_get_connectors();
     $sources = l10n_server_get_sources();
     foreach ($sources as $source => $sinfo) {
-      foreach($connectors as $connector => $cinfo) {
-        if (variable_get('l10n_server_connector_'. $connector .'_'. $source .'_enabled', FALSE)) {
-          $project_connectors[$connector .'_'. $source] = t('@title from @source', array('@title' => $cinfo['title'], '@source' => $sinfo['title']));
+      foreach ($connectors as $connector => $cinfo) {
+        if (variable_get('l10n_server_connector_' . $connector . '_' . $source . '_enabled', FALSE)) {
+          $project_connectors[$connector . '_' . $source] = t('@title from @source', array('@title' => $cinfo['title'], '@source' => $sinfo['title']));
         }
       }
     }
@@ -397,7 +397,7 @@ function l10n_server_theme($existing, $type, $theme, $path) {
  * loaded to run that function.
  */
 function l10n_server_settings_overview() {
-  include_once drupal_get_path('module', 'system') .'/system.admin.inc';
+  include_once drupal_get_path('module', 'system') . '/system.admin.inc';
   return system_admin_menu_block_page();
 }
 
@@ -412,7 +412,7 @@ function l10n_server_l10n_server_source_info() {
       'title' => t('the file system'),
       'form' => 'l10n_server_connectors_files_settings_form',
       'scan' => TRUE,
-      'file' => drupal_get_path('module', 'l10n_server') .'/l10n_server.connectors.inc',
+      'file' => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
     ),
     'uploads' => array(
       'title' => t('file uploads'),
@@ -432,7 +432,7 @@ function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$f
         '#type' => 'item',
         '#title' => t('Source last parsed'),
         '#value' => format_date($form['previous_release']['#value']->last_parsed),
-        '#description' => t('To start over this same release with a new source file, <a href="@startover">start over the release</a>, edit and upload a new source file.', array('@startover' => url('admin/l10n_server/projects/releases/'. $form['project']['#value']->uri .'/reset/'. $form['previous_release']['#value']->rid))),
+        '#description' => t('To start over this same release with a new source file, <a href="@startover">start over the release</a>, edit and upload a new source file.', array('@startover' => url('admin/l10n_server/projects/releases/' . $form['project']['#value']->uri . '/reset/' . $form['previous_release']['#value']->rid))),
         '#weight' => 100,
       );
     }
@@ -498,13 +498,13 @@ function l10n_server_get_projects($options = array()) {
         if (!empty($where)) {
           $where .= 'AND ';
         }
-        $where .= 'SUBSTR(title, 1, 1) IN ('. db_placeholders($initials[$options['initial']]['values'], 'varchar') .') ';
+        $where .= 'SUBSTR(title, 1, 1) IN (' . db_placeholders($initials[$options['initial']]['values'], 'varchar') . ') ';
         $arguments = $initials[$options['initial']]['values'];
       }
-   }
+    }
 
     // If a pager view was asked for, collect data independently.
-    $results = pager_query('SELECT * FROM {l10n_server_project} '. $where .'ORDER BY title', $options['pager'], 0, NULL, $arguments);
+    $results = pager_query('SELECT * FROM {l10n_server_project} ' . $where . 'ORDER BY title', $options['pager'], 0, NULL, $arguments);
     $pager_results = array();
     while ($project = db_fetch_object($results)) {
       $pager_results[$project->uri] = $project;
@@ -529,7 +529,7 @@ function l10n_server_get_projects($options = array()) {
     }
     else {
       // A list of *all* projects was asked for.
-      $results = db_query('SELECT * FROM {l10n_server_project} '. $where .'ORDER BY uri');
+      $results = db_query('SELECT * FROM {l10n_server_project} ' . $where . 'ORDER BY uri');
       while ($project = db_fetch_object($results)) {
         $projects[$project->uri] = $project;
       }
@@ -550,10 +550,16 @@ function l10n_server_get_project_initials() {
   while ($row = db_fetch_object($result)) {
     $initial = $row->initial;
     if (preg_match('/[A-Za-z]/', $initial)) {
-      $initials[strtolower($initial)] = array('title' => strtoupper($initial), 'values' => array(strtoupper($initial)));
+      $initials[strtolower($initial)] = array(
+        'title' => strtoupper($initial),
+        'values' => array(strtoupper($initial)),
+      );
     }
     elseif (!isset($initials[0])) {
-      $initials[0] = array('title' => '#', 'values' => array($initial));
+      $initials[0] = array(
+        'title' => '#',
+        'values' => array($initial),
+      );
     }
     else {
       $initials[0]['values'][] = $initial;
@@ -662,11 +668,11 @@ function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
 
   $context = "COMMENT"; // Parser context: COMMENT, MSGID, MSGID_PLURAL, MSGSTR and MSGSTR_ARR
   $current = array();   // Current entry being read
-  $plural = 0;          // Current plural form
-  $lineno = 0;          // Current line
+  $plural  = 0;         // Current plural form
+  $lineno  = 0;         // Current line
 
   while (!feof($fd)) {
-    $line = fgets($fd, 10*1024); // A line should not be this long
+    $line = fgets($fd, 10 * 1024); // A line should not be this long
     if ($lineno == 0) {
       // The first line might come with a UTF-8 BOM, which should be removed.
       $line = str_replace("\xEF\xBB\xBF", '', $line);
@@ -700,11 +706,11 @@ function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
         _locale_import_message('%filename contains a syntax error on line %line.', $file, $lineno);
         return FALSE;
       }
-      $current["msgid"] = $current["msgid"] ."\0". $quoted;
+      $current["msgid"] = $current["msgid"] . "\0" . $quoted;
       $context = "MSGID_PLURAL";
     }
     elseif (!strncmp("msgid", $line, 5)) {
-      if ($context == "MSGSTR") {   // End current entry, start a new one
+      if ($context == "MSGSTR") { // End current entry, start a new one
         call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
         $current = array();
       }
@@ -722,7 +728,7 @@ function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
       $context = "MSGID";
     }
     elseif (!strncmp("msgctxt", $line, 7)) {
-      if ($context == "MSGSTR") {   // End current entry, start a new one
+      if ($context == "MSGSTR") { // End current entry, start a new one
         call_user_func_array($string_callback, array_merge(array($current), $callback_arguments));
         $current = array();
       }
@@ -760,7 +766,7 @@ function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
       $context = "MSGSTR_ARR";
     }
     elseif (!strncmp("msgstr", $line, 6)) {
-      if (($context != "MSGID") && ($context != "MSGCTXT")) {   // Should come just after a msgid or msgctxt block
+      if (($context != "MSGID") && ($context != "MSGCTXT")) { // Should come just after a msgid or msgctxt block
         _locale_import_message('%filename contains an error: "msgstr" is unexpected on line %line.', $file, $lineno);
         return FALSE;
       }

@@ -34,7 +34,7 @@ function l10n_packager_settings_form() {
     '#type' => 'textfield',
     '#required' => TRUE,
     '#default_value' => variable_get('l10n_packager_filepath', L10N_PACKAGER_FILEPATH),
-    '#description' =>  t("Available tokens are: %project, %release, %core, %version, %extra, %language."),
+    '#description' => t("Available tokens are: %project, %release, %core, %version, %extra, %language."),
   );
   $form['l10n_packager_release_limit'] = array(
     '#title' => t('Number of releases to check at once'),
@@ -155,8 +155,14 @@ function l10n_packager_admin_projects_form(&$form_state, $projects) {
     '#description' => t('Select none for all languages. Otherwise pick the languages you want repackaged.'),
   );
 
-  $form['projects']['buttons']['repackage'] = array('#type' => 'submit', '#value' => t('Repackage now'));
-  $form['projects']['buttons']['mark'] = array('#type' => 'submit', '#value' => t('Mark for repackaging'));
+  $form['projects']['buttons']['repackage'] = array(
+    '#type' => 'submit',
+    '#value' => t('Repackage now'),
+  );
+  $form['projects']['buttons']['mark'] = array(
+    '#type' => 'submit',
+    '#value' => t('Mark for repackaging'),
+  );
   return $form;
 }
 
@@ -210,7 +216,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
     $args[] = $release;
   }
   // Build the query that will be used in different ways depending on the operation
-  $query = 'SELECT rid FROM {l10n_server_release} WHERE '. implode(' AND ', $where);
+  $query = 'SELECT rid FROM {l10n_server_release} WHERE ' . implode(' AND ', $where);
 
   // Now check results and run operations
   if ($op == t('Repackage now')) {
@@ -252,7 +258,7 @@ function l10n_packager_admin_installer_form(&$form_state, $project) {
 
   $form['installer']['project'] = array(
     '#type' => 'value',
-    '#value' => $project
+    '#value' => $project,
   );
 
   $releases = l10n_server_get_releases($project->uri);
@@ -285,7 +291,7 @@ function l10n_packager_admin_installer_form_submit($form, $form_state) {
   module_load_include('inc', 'l10n_community', 'export');
 
   // Generate tgz file with all files added.
-  $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $form_state['values']['project']->uri . '-installer');
+  $tempfile = tempnam(file_directory_temp(), 'l10n_community-' . $form_state['values']['project']->uri . '-installer');
   $tar = new Archive_Tar($tempfile, 'gz');
 
   $languages = l10n_community_get_languages();
@@ -293,14 +299,14 @@ function l10n_packager_admin_installer_form_submit($form, $form_state) {
     $output = l10n_community_export($form_state['values']['project']->uri, $form_state['values']['release'], $language, FALSE, TRUE, TRUE);
     // Add file to the tgz. We need to purely use the language code because
     // Drupal 6 uses that to identify the language.
-    $tar->addString($language->language .'.po', file_get_contents($output[1]));
+    $tar->addString($language->language . '.po', file_get_contents($output[1]));
   }
 
   $releases = l10n_server_get_releases($form_state['values']['project']->uri);
   $release = $releases[$form_state['values']['release']];
 
   // Return compressed archive to user.
-  header('Content-Disposition: attachment; filename=drupal-installer-'. $release->title .'.tgz');
+  header('Content-Disposition: attachment; filename=drupal-installer-' . $release->title . '.tgz');
   header('Content-Type: application/x-compressed');
   echo file_get_contents($tempfile);
   unlink($tempfile);

@@ -18,26 +18,26 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   // browse forms, they can do that without loosing their filters.
   $filters = l10n_community_build_filter_values($_GET);
   l10n_community_add_url_modifiers($langcode, $filters);
-  drupal_add_js(drupal_get_path('module', 'l10n_community') .'/l10n_community.js');
+  drupal_add_js(drupal_get_path('module', 'l10n_community') . '/l10n_community.js');
 
   // Set a matching title with the translation page.
   if (isset($langcode)) {
     $language = l10n_community_get_language($langcode);
     drupal_set_title(t('Export @language translations', array('@language' => t($language->name))));
     $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
-    $breadcrumb[] = l(t($language->name), 'translate/languages/'. $langcode);
+    $breadcrumb[] = l(t($language->name), 'translate/languages/' . $langcode);
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $uri));
     drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
     $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
-    $breadcrumb[] = l($project->title, 'translate/projects/'. $project->uri);
+    $breadcrumb[] = l($project->title, 'translate/projects/' . $project->uri);
   }
   // Add missing breadcrumb.
   drupal_set_breadcrumb($breadcrumb);
 
   if (isset($project)) {
-    include_once drupal_get_path('module', 'l10n_community') .'/pages.inc';
+    include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
     if (!$num_source = l10n_community_get_string_count('project', $project->pid)) {
       drupal_set_message(t('No strings found to export in this project yet.'), 'warning');
       return '';
@@ -215,8 +215,8 @@ function l10n_community_export_form_submit($form, &$form_state) {
   if (isset($export_result) && is_array($export_result)) {
     // If we got an array back from the export build, tear that into pieces.
     list($mime_type, $file_name, $serve_name, $sid_count) = $export_result;
-    header('Content-Disposition: attachment; filename='. $serve_name);
-    header('Content-Type: '. $mime_type);
+    header('Content-Disposition: attachment; filename=' . $serve_name);
+    header('Content-Type: ' . $mime_type);
     echo file_get_contents($file_name);
     unlink($file_name);
     die();
@@ -240,9 +240,9 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
     // occurances in the respective source files.
     $comment = array();
     foreach ($export_string['comment'] as $path => $lines) {
-      $comment[] = preg_replace('!(^[^/]+/)!', '', $path) .':'. join(',', array_keys($lines));
+      $comment[] = preg_replace('!(^[^/]+/)!', '', $path) . ':' . join(',', array_keys($lines));
     }
-    $comment = '#: '. join('; ', $comment) ."\n";
+    $comment = '#: ' . join('; ', $comment) . "\n";
     if (!$compact) {
       $output = $comment;
     }
@@ -271,7 +271,7 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
         }
         // Add all other suggestions as comment lines. Multiline suggestions will
         // appear on multiple lines, people need to figure these out manually.
-        $output .= '# '. str_replace("\n", "\n# ", join("\n", $all_suggestions)) ."\n";
+        $output .= '# ' . str_replace("\n", "\n# ", join("\n", $all_suggestions)) . "\n";
       }
     }
     if ($fuzzy) {
@@ -282,13 +282,13 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
       // This is a string with plural variants.
       list($singular, $plural) = explode("\0", $export_string['value']);
       if (!empty($export_string['context'])) {
-        $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
+        $output .= 'msgctxt ' . _l10n_community_export_string($export_string['context']);
       }
-      $output .= 'msgid '. _l10n_community_export_string($singular) .'msgid_plural '. _l10n_community_export_string($plural);
+      $output .= 'msgid ' . _l10n_community_export_string($singular) . 'msgid_plural ' . _l10n_community_export_string($plural);
       if (!$template && !empty($export_string['translation'])) {
         // Export translations we have.
         foreach (explode("\0", $export_string['translation']) as $id => $value) {
-          $output .= 'msgstr['. $id .'] '. _l10n_community_export_string($value);
+          $output .= 'msgstr[' . $id . '] ' . _l10n_community_export_string($value);
         }
       }
       elseif (isset($language)) {
@@ -296,31 +296,35 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
         // a plural without translation or a template generated for a
         // specific language.
         for ($pi = 0; $pi < $language->plurals; $pi++) {
-          $output .= 'msgstr['. $pi .'] ""'."\n";
+          $output .= 'msgstr[' . $pi . '] ""' . "\n";
         }
       }
       else {
         // Translation template without language, assume two msgstrs.
-        $output .= 'msgstr[0] ""'."\n";
-        $output .= 'msgstr[1] ""'."\n";
+        $output .= 'msgstr[0] ""' . "\n";
+        $output .= 'msgstr[1] ""' . "\n";
       }
     }
     else {
       // Simple string (and possibly translation pair).
       if (!empty($export_string['context'])) {
-        $output .= 'msgctxt '. _l10n_community_export_string($export_string['context']);
+        $output .= 'msgctxt ' . _l10n_community_export_string($export_string['context']);
       }
-      $output .= 'msgid '. _l10n_community_export_string($export_string['value']);
+      $output .= 'msgid ' . _l10n_community_export_string($export_string['value']);
       if (!empty($export_string['translation'])) {
-        $output .= 'msgstr '. _l10n_community_export_string($export_string['translation']);
+        $output .= 'msgstr ' . _l10n_community_export_string($export_string['translation']);
       }
       else {
-        $output .= 'msgstr ""'."\n";
+        $output .= 'msgstr ""' . "\n";
       }
     }
 
     if (empty($po_data)) {
-      $po_data = array('file' => '', 'changed' => 0, 'revisions' => array());
+      $po_data = array(
+        'file' => '',
+        'changed' => 0,
+        'revisions' => array(),
+      );
     }
 
     // Add to existing file storage.
@@ -389,7 +393,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   // Source strings will be repeated as many times as they appear, so to generate
   // the export file properly, order by the source id.
-  $sql .= ' ORDER BY s.sid ASC'. ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
+  $sql .= ' ORDER BY s.sid ASC' . ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
 
   $result = db_query($sql, $sql_args);
   $previous_sid = $sid_count = 0;
@@ -452,57 +456,57 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   }
 
   // Generate a 'unique' temporary filename for this package.
-  $tempfile = tempnam(file_directory_temp(), 'l10n_community-'. $uri);
+  $tempfile = tempnam(file_directory_temp(), 'l10n_community-' . $uri);
 
   if (!$compact) {
     if (count($po_data['revisions']) == 1) {
-      $file_list = '# Generated from file: '. $po_data['revisions'][0] ."\n";
+      $file_list = '# Generated from file: ' . $po_data['revisions'][0] . "\n";
     }
     else {
-      $file_list = '# Generated from files:'."\n#  ". join("\n#  ", $po_data['revisions']) ."\n";
+      $file_list = '# Generated from files:' . "\n#  " . join("\n#  ", $po_data['revisions']) . "\n";
     }
   }
   else {
     $file_list = '';
   }
 
-  $release_title = $project->title .' ('. (isset($release) ? $release->title : 'all releases') .')';
+  $release_title = $project->title . ' (' . (isset($release) ? $release->title : 'all releases') . ')';
   if (!$template) {
-    $header = '# '. $language->name .' translation of '. $release_title ."\n";
-    $header .= "# Copyright (c) ". date('Y') .' by the '. $language->name ." translation team\n";
+    $header = '# ' . $language->name . ' translation of ' . $release_title . "\n";
+    $header .= "# Copyright (c) " . date('Y') . ' by the ' . $language->name . " translation team\n";
     $header .= $file_list;
     $header .= "#\n";
     $header .= "msgid \"\"\n";
     $header .= "msgstr \"\"\n";
-    $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
-    $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
+    $header .= "\"Project-Id-Version: " . $release_title . "\\n\"\n";
+    $header .= "\"POT-Creation-Date: " . date("Y-m-d H:iO") . "\\n\"\n";
     // Use date placeholder, if we have no date information (no translation here yet).
-    $header .= "\"PO-Revision-Date: ". (!empty($po_data['changed']) ? date("Y-m-d H:iO", $po_data['changed']) : 'YYYY-mm-DD HH:MM+ZZZZ') ."\\n\"\n";
-    $header .= "\"Language-Team: ". $language->name ."\\n\"\n";
+    $header .= "\"PO-Revision-Date: " . (!empty($po_data['changed']) ? date("Y-m-d H:iO", $po_data['changed']) : 'YYYY-mm-DD HH:MM+ZZZZ') . "\\n\"\n";
+    $header .= "\"Language-Team: " . $language->name . "\\n\"\n";
     $header .= "\"MIME-Version: 1.0\\n\"\n";
     $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
     $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
     if ($language->formula && $language->plurals) {
-      $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
+      $header .= "\"Plural-Forms: nplurals=" . $language->plurals . "; plural=" . strtr($language->formula, array('$' => '')) . ";\\n\"\n";
     }
   }
   else {
     $language_title = (isset($language) ? $language->name : 'LANGUAGE');
-    $header = "# ". $language_title ." translation of ". $release_title ."\n";
-    $header .= "# Copyright (c) ". date('Y') ."\n";
+    $header = "# " . $language_title . " translation of " . $release_title . "\n";
+    $header .= "# Copyright (c) " . date('Y') . "\n";
     $header .= $file_list;
     $header .= "#\n";
     $header .= "msgid \"\"\n";
     $header .= "msgstr \"\"\n";
-    $header .= "\"Project-Id-Version: ". $release_title ."\\n\"\n";
-    $header .= "\"POT-Creation-Date: ". date("Y-m-d H:iO") ."\\n\"\n";
+    $header .= "\"Project-Id-Version: " . $release_title . "\\n\"\n";
+    $header .= "\"POT-Creation-Date: " . date("Y-m-d H:iO") . "\\n\"\n";
     $header .= "\"PO-Revision-Date: YYYY-mm-DD HH:MM+ZZZZ\\n\"\n";
-    $header .= "\"Language-Team: ". $language_title ."\\n\"\n";
+    $header .= "\"Language-Team: " . $language_title . "\\n\"\n";
     $header .= "\"MIME-Version: 1.0\\n\"\n";
     $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
     $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
     if (isset($language) && $language->formula && $language->plurals) {
-      $header .= "\"Plural-Forms: nplurals=". $language->plurals ."; plural=". strtr($language->formula, array('$' => '')) .";\\n\"\n";
+      $header .= "\"Plural-Forms: nplurals=" . $language->plurals . "; plural=" . strtr($language->formula, array('$' => '')) . ";\\n\"\n";
     }
     else {
       $header .= "\"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\\n\"\n";
@@ -510,11 +514,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   }
   // Write to file directly. We should only do this once.
   $fh = fopen($tempfile, 'w');
-  fwrite($fh, $header ."\n". $po_data['file']);
+  fwrite($fh, $header . "\n" . $po_data['file']);
   fclose($fh);
 
   // Output a single PO(T) file.
-  return array('text/plain', $tempfile, $uri .'-'. (isset($release) ? $release->title : 'all') . (isset($language) ? '.'. $language->language : '') . ($template ? '.pot' : '.po'), $sid_count);
+  return array('text/plain', $tempfile, $uri . '-' . (isset($release) ? $release->title : 'all') . (isset($language) ? '.' . $language->language : '') . ($template ? '.pot' : '.po'), $sid_count);
 }
 
 /**
@@ -541,7 +545,7 @@ function _l10n_community_export_string($str) {
 
   // Multiline string
   if (count($parts) > 1) {
-    return "\"\"\n\"". implode("\"\n\"", $parts) ."\"\n";
+    return "\"\"\n\"" . implode("\"\n\"", $parts) . "\"\n";
   }
   // Single line string
   elseif (count($parts) == 1) {
@@ -569,7 +573,7 @@ function _l10n_community_export_wrap($str, $len) {
       $nstr = 0;
     }
     elseif (strlen("$cur $word") > $len) {
-      $ret[] = $cur ." ";
+      $ret[] = $cur . " ";
       $cur = $word;
     }
     else {
