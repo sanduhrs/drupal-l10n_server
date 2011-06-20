@@ -53,15 +53,15 @@ define('L10N_SERVER_MEDIUM_REMOTE', 3);
 // = Core hooks ================================================================
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function l10n_server_help($path, $args) {
   if ($path == 'admin/l10n_server/connectors') {
     // Add help to connector configuration.
-    return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/build/modules')));
+    return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/modules')));
   }
 
-  if (in_array($path, array('admin/settings/language', 'admin/settings/language/edit/%')) && !module_exists('l10n_pconfig')) {
+  if (in_array($path, array('admin/config/language', 'admin/config/language/edit/%')) && !module_exists('l10n_pconfig')) {
     // Add tip to language management.
     return t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
   }
@@ -93,7 +93,7 @@ function l10n_server_help($path, $args) {
 }
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  */
 function l10n_server_menu() {
   $items = array();
@@ -361,29 +361,32 @@ function l10n_server_project_admin_load($uri) {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_permission().
  */
-function l10n_server_perm() {
+function l10n_server_permission() {
   return array(
-    'administer localization server',
+    'administer localization server' => array(
+      'title' => t('administer localization server'),
+      'description' => t('TODO Add a description for \'administer localization server\''),
+    ),
   );
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function l10n_server_theme($existing, $type, $theme, $path) {
   return array(
     // l10n_server.admin.inc
     'l10n_server_admin_projects_form' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'form',
     ),
     'l10n_server_admin_releases_form' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'form',
     ),
     // l10n_server.admin.inc
     'l10n_server_admin_connectors_form' => array(
-      'arguments' => array('form' => NULL),
+      'render element' => 'form',
     ),
   );
 }
@@ -397,14 +400,14 @@ function l10n_server_theme($existing, $type, $theme, $path) {
  * loaded to run that function.
  */
 function l10n_server_settings_overview() {
-  include_once drupal_get_path('module', 'system') . '/system.admin.inc';
+  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'system') . '/system.admin.inc';
   return system_admin_menu_block_page();
 }
 
 // = Sources implemented =======================================================
 
 /**
- * Implementation of hook_l10n_server_source_info().
+ * Implements hook_l10n_server_source_info().
  */
 function l10n_server_l10n_server_source_info() {
   return array(
@@ -422,7 +425,7 @@ function l10n_server_l10n_server_source_info() {
 }
 
 /**
- * Implementation of hook_form_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
 function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$form, &$form_state) {
   list($connector, $source) = l10n_server_split_connector($form['project']['#value']->connector_module);
@@ -459,7 +462,7 @@ function l10n_server_release_file_upload_submit($form, &$form_state) {
   if (isset($connectors[$connector])) {
     // Include the connector implementation file if specified.
     if (!empty($connectors[$connector]['file'])) {
-      include_once $connectors[$connector]['file'];
+      include_once DRUPAL_ROOT . '/' . $connectors[$connector]['file'];
     }
 
     // Invoke the upload handler defined by the connector.
@@ -521,7 +524,7 @@ function l10n_server_get_projects($options = array()) {
         return $projects[$options['uri']];
       }
       // Not found in cache, so query and cache before returning.
-      $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $options['uri']);
+      $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $options['uri']));
       if ($project = db_fetch_object($result)) {
         $projects[$options['uri']] = $project;
         return $project;
@@ -529,6 +532,7 @@ function l10n_server_get_projects($options = array()) {
     }
     else {
       // A list of *all* projects was asked for.
+      // TODO Please convert this statement to the D7 database API syntax.
       $results = db_query('SELECT * FROM {l10n_server_project} ' . $where . 'ORDER BY uri');
       while ($project = db_fetch_object($results)) {
         $projects[$project->uri] = $project;
@@ -543,7 +547,7 @@ function l10n_server_get_projects($options = array()) {
  */
 function l10n_server_get_project_initials() {
   // Grab the unique initials of all active projects
-  $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = 1 ORDER BY initial ASC');
+  $result = db_query('SELECT DISTINCT(SUBSTR(title, 1, 1)) AS initial FROM {l10n_server_project} WHERE status = :status ORDER BY initial ASC', array(':status' => 1));
 
   // Create an array of elements, all non-letters are grouped in '#'.
   $initials = array();
@@ -658,7 +662,7 @@ function l10n_server_split_connector($connector_module) {
  *   Array of arguments to pass on to the callback after the string found.
  */
 function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
-  include_once 'includes/locale.inc';
+  include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
 
   $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
   if (!$fd) {
@@ -667,9 +671,9 @@ function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
   }
 
   $context = "COMMENT"; // Parser context: COMMENT, MSGID, MSGID_PLURAL, MSGSTR and MSGSTR_ARR
-  $current = array();   // Current entry being read
-  $plural  = 0;         // Current plural form
-  $lineno  = 0;         // Current line
+  $current = array(); // Current entry being read
+  $plural  = 0; // Current plural form
+  $lineno  = 0; // Current line
 
   while (!feof($fd)) {
     $line = fgets($fd, 10 * 1024); // A line should not be this long

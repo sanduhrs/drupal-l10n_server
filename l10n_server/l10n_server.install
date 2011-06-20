@@ -6,25 +6,27 @@
  */
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function l10n_server_install() {
   if (!db_table_exists('l10n_community_project')) {
     // Only run the schema installation if l10n_community was
     // not installed previously. Used to help the transition process.
-    drupal_install_schema('l10n_server');
+    // TODO The drupal_(un)install_schema functions are called automatically in D7.
+    // drupal_install_schema('l10n_server')
   }
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function l10n_server_uninstall() {
-  drupal_uninstall_schema('l10n_server');
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  // drupal_uninstall_schema('l10n_server')
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  */
 function l10n_server_schema() {
   $schema = array();

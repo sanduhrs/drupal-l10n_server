@@ -2,5 +2,11 @@ name = Localization server
 description = Base backend module for localization server
 package = "Localization server"
 dependencies[] = locale
-core = 6.x
+core = 7.x
 php = 5
+
+files[] = l10n_server.connectors.inc
+files[] = l10n_server.devel.inc
+files[] = l10n_server.install
+files[] = l10n_server.module
+files[] = l10n_server.projects.inc

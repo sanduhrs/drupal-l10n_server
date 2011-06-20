@@ -6,7 +6,7 @@
  */
 
 /**
- * Implementation of hook_requirements().
+ * Implements hook_requirements().
  */
 function l10n_drupal_requirements($phase) {
   $requirements = array();
@@ -47,7 +47,7 @@ function l10n_drupal_require_potx_with_context() {
   // Ensure translations don't break at install time.
   $t = get_t();
 
-  include_once drupal_get_path('module', 'potx') . '/potx.inc';
+  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';
   $requirement = array(
     'title' => $t('Translation template extractor'),
     'value' => $t('Localization Server compatible version'),

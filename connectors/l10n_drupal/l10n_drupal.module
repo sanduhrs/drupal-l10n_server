@@ -11,7 +11,7 @@
 // = Core hooks ================================================================
 
 /**
- * Implementation of hook_help().
+ * Implements hook_help().
  */
 function l10n_drupal_help($path, $arg) {
   if (($arg[0] == 'translate') && ($arg[1] == 'projects') && ($arg[3] == 'releases') && !empty($arg[4])) {
@@ -24,7 +24,7 @@ function l10n_drupal_help($path, $arg) {
 
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  */
 function l10n_drupal_cron() {
   if (variable_get('l10n_server_connector_l10n_drupal_files_enabled', FALSE) && variable_get('l10n_server_connector_l10n_drupal_files_cron', FALSE)) {
@@ -40,9 +40,7 @@ function l10n_drupal_cron() {
       SELECT r.*
       FROM {l10n_server_project} p INNER JOIN
            {l10n_server_release} r ON p.pid = r.pid
-      WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
-      0, variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1)
-    );
+      WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC");
     $return = array();
     while ($release = db_fetch_object($result)) {
       l10n_drupal_drupalorg_parse_release($release);
@@ -52,7 +50,7 @@ function l10n_drupal_cron() {
 }
 
 /**
- * Implementation of hook_l10n_server_connector_info().
+ * Implements hook_l10n_server_connector_info().
  */
 function l10n_drupal_l10n_server_connector_info() {
   global $db_url;
@@ -88,7 +86,7 @@ function l10n_drupal_l10n_server_connector_info() {
 }
 
 /**
- * Implementation of hook_l10n_server_source_info().
+ * Implements hook_l10n_server_source_info().
  */
 function l10n_drupal_l10n_server_source_info() {
   return array(
@@ -105,7 +103,7 @@ function l10n_drupal_l10n_server_source_info() {
 // = Settings ==================================================================
 
 /**
- * Implementation of hook_form_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter().
  */
 function l10n_drupal_form_l10n_server_connectors_files_settings_form_alter(&$form, &$form_state) {
   if ($form['#connector_name'] == 'l10n_drupal') {

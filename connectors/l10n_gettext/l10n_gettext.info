@@ -2,4 +2,6 @@ name = "Localization server for Gettext files"
 description = Manages translatable strings with Gettext standard input/output.
 dependencies[] = l10n_server
 package = "Localization server connectors"
-core = 6.x
+core = 7.x
+
+files[] = l10n_gettext.module

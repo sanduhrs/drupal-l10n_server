@@ -10,7 +10,7 @@
  */
 
 /**
- * Implementation of hook_menu().
+ * Implements hook_menu().
  *
  * The function handles messages and access handling.
  */
@@ -30,10 +30,15 @@ function l10n_remote_menu() {
 }
 
 /**
- * Implementation of hook_perm().
+ * Implements hook_permission().
  */
-function l10n_remote_perm() {
-  return array('submit suggestions remotely');
+function l10n_remote_permission() {
+  return array(
+    'submit suggestions remotely' => array(
+      'title' => t('submit suggestions remotely'),
+      'description' => t('TODO Add a description for \'submit suggestions remotely\''),
+    ),
+  );
 }
 
 /**
@@ -70,7 +75,7 @@ function l10n_remote_user_api_key($uid, $client_token) {
 }
 
 /**
- * Implementation of hook_xmlrpc().
+ * Implements hook_xmlrpc().
  */
 function l10n_remote_xmlrpc() {
   return array(
@@ -130,6 +135,9 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
   }
 
   // Check user access.
+  // TODO Convert "user_load" to "user_load_multiple" if "$uid" is other than a uid.
+  // To return a single user object, wrap "user_load_multiple" with "array_shift" or equivalent.
+  // Example: array_shift(user_load_multiple(array(), $uid))
   if (!(($account = user_load($uid)) && $account->status && user_access('access localization community', $account) && user_access('submit suggestions remotely', $account))) {
     //watchdog('l10n_community', 'Unauthorized or blocked user attempted submission.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Blocked user account or no permission to submit translations.');
@@ -159,7 +167,7 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
   // Check whether we have this source string managed.
   // @todo: add context support as soon as l10n_client starts to support it!
   // @todo: append $context to $source in MD5 counting when available.
-  if (!($sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $source)))) {
+  if (!($sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey", array(':hashkey' => MD5('%s'), '' => $source))->fetchField())) {
     //watchdog('l10n_community', 'Source string does not exist on server.', NULL, WATCHDOG_WARNING);
     return array('status' => FALSE, 'reason' => 'Source string not found on server, translation not saved.');
   }

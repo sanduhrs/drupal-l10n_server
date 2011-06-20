@@ -8,7 +8,7 @@
 /**
  * Settings form callback.
  */
-function l10n_packager_settings_form() {
+function l10n_packager_settings_form($form, &$form_state) {
   $form['l10n_packager_cron'] = array(
     '#title' => t('Generate packages on every Drupal cron run'),
     '#type' => 'checkbox',
@@ -72,7 +72,7 @@ function l10n_packager_settings_form() {
  * Check/create directory if not there already.
  */
 function l10n_packager_admin_check_directory($form_element) {
-  file_check_directory($form_element['#value'], FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+  file_prepare_directory($form_element['#value'], FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
   return $form_element;
 }
 
@@ -96,7 +96,7 @@ function l10n_packager_admin_repackage_page() {
 /**
  * Form callback. Repackage translations manually.
  */
-function l10n_packager_admin_languages_form() {
+function l10n_packager_admin_languages_form($form) {
   $form['languages'] = array(
     '#type' => 'fieldset',
     '#title' => t('List of languages'),
@@ -113,7 +113,7 @@ function l10n_packager_admin_languages_form() {
 /**
  * Form callback. Repackage translations manually.
  */
-function l10n_packager_admin_projects_form(&$form_state, $projects) {
+function l10n_packager_admin_projects_form($form, &$form_state, $projects) {
   $form['projects'] = array(
     '#type' => 'fieldset',
     '#title' => t('Project translations'),
@@ -185,7 +185,7 @@ function l10n_packager_admin_projects_form_validate($form, &$form_state) {
       $query .= " AND pid = %d";
       $args[] = $project->pid;
     }
-    if (!db_result(db_query($query, $args))) {
+    if (!db_query($query, $args)->fetchField()) {
       form_set_error('release', t('Invalid release name.'));
     }
   }
@@ -220,6 +220,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
 
   // Now check results and run operations
   if ($op == t('Repackage now')) {
+    // TODO Please convert this statement to the D7 database API syntax.
     $result = db_query($query, $args);
     while ($release = db_fetch_object($result)) {
       $rids[] = $release->rid;
@@ -234,6 +235,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
   }
   elseif ($op == t('Mark for repackaging')) {
     $args = array_merge(array(L10N_PACKAGER_ACTIVE), $args);
+    // TODO Please convert this statement to the D7 database API syntax.
     db_query("UPDATE {l10n_packager_release} SET updated = 0, checked = 0, status = %d WHERE rid IN ($query)", $args);
     drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => db_affected_rows())));
   }
@@ -249,7 +251,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
  *   Make it possible to reuse this for non-Drupal.org use, eg. by letting the
  *   user pick a project and a release.
  */
-function l10n_packager_admin_installer_form(&$form_state, $project) {
+function l10n_packager_admin_installer_form($form, &$form_state, $project) {
   $form['installer'] = array(
     '#type' => 'fieldset',
     '#title' => t('Install profile packaging'),
@@ -286,7 +288,7 @@ function l10n_packager_admin_installer_form(&$form_state, $project) {
 function l10n_packager_admin_installer_form_submit($form, $form_state) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once 'Archive/Tar.php';
+  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
 
   module_load_include('inc', 'l10n_community', 'export');
 

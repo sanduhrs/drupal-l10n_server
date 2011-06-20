@@ -10,8 +10,8 @@
 /**
  * User interface to generate a number of languages.
  */
-function l10n_server_generate_languages_form() {
-  include_once 'includes/locale.inc';
+function l10n_server_generate_languages_form($form, &$form_state) {
+  include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
   $predefined = _locale_get_predefined_list();
   $form['num'] = array(
     '#type' => 'textfield',
@@ -30,9 +30,16 @@ function l10n_server_generate_languages_form() {
  * Submission function to generate a number of languages.
  */
 function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
-  include_once 'includes/locale.inc';
-  db_query("DELETE FROM {languages} WHERE language <> 'en'");
-  db_query('DELETE FROM {locales_target}');
+  include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("DELETE FROM {languages} WHERE language <> 'en'") */
+  db_delete('languages')
+  ->condition('language', 'en', '<>')
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {locales_target}') */
+  db_delete('locales_target')
+  ->execute();
   drupal_set_message(t('Languages deleted.'));
   $num = $form_state['values']['num'];
   if ($num > 0) {
@@ -55,22 +62,26 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
       $plural_formula = (isset($formulas['langcode']) ? $formulas['langcode'] : $default_formula);
       // We know we get a valid formula here so no need for error handling.
       list($plurals, $formula) = l10n_server_parse_plural_formula($plural_formula);
-      db_query(
-        "INSERT INTO {languages}
-         (language, name, native, direction, enabled, plurals, formula, domain, prefix, weight, javascript) VALUES
-         ('%s', '%s', '%s', %d, %d, %d, '%s', '%s', '%s', %d, '%s')",
-        $langcode,
-        $language[0],
-        isset($language[1]) ? $language[1] : $language[0],
-        isset($language[2]) ? $language[2] : LANGUAGE_LTR,
-        1,
-        $plurals,
-        $formula,
-        '',
-        $langcode,
-        0,
-        ''
-      );
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query(
+       "INSERT INTO {languages}
+       (language, name, native, direction, enabled, plurals, formula, domain, prefix, weight, javascript) VALUES
+       ('%s', '%s', '%s', %d, %d, %d, '%s', '%s', '%s', %d, '%s')", $langcode, $language[0], isset($language[1]) ? $language[1] : $language[0], isset($language[2]) ? $language[2] : LANGUAGE_LTR, 1, $plurals, $formula, '', $langcode, 0, '') */
+      $id = db_insert('languages')
+  ->fields(array(
+    'language' => $langcode,
+    'name' => $language[0],
+    'native' => isset($language[1]) ? $language[1] : $language[0],
+    'direction' => isset($language[2]) ? $language[2] : LANGUAGE_LTR,
+    'enabled' => 1,
+    'plurals' => $plurals,
+    'formula' => $formula,
+    'domain' => '',
+    'prefix' => $langcode,
+    'weight' => 0,
+    'javascript' => '',
+  ))
+  ->execute();
     }
     drupal_set_message(format_plural($num, '1 language created.', '@count languages created.'));
   }
@@ -81,8 +92,8 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
 /**
  * User interface to generate translations and languages.
  */
-function l10n_server_generate_translations_form() {
-  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
+function l10n_server_generate_translations_form($form, &$form_state) {
+  $count = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
   if (empty($count)) {
     drupal_set_message(t('No source strings found, cannot generate translations and suggestions.'));
     return;
@@ -102,17 +113,22 @@ function l10n_server_generate_translations_form() {
  * @todo Add suggestion generation.
  */
 function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
-  db_query('DELETE FROM {l10n_server_translation}');
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_translation}') */
+  db_delete('l10n_server_translation')
+  ->execute();
   drupal_set_message(t('Previous translations and suggestions deleted.'));
 
-  $count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string}'));
+  $count = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
   $languages = language_list();
   $limit = (int) $count * 0.75;
   foreach ($languages as $language) {
     if ($language->language != 'en') {
-      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-      db_query("INSERT INTO {l10n_server_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_server_string} LIMIT 0, %d", $language->language, $uid1, $uid2, time(), time(), $limit);
+      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()');
+      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()');
+      // TODO Please convert this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {l10n_server_translation} SELECT NULL, sid, '%s', value, %d, %d, %d, %d, 0, 0, 1 FROM {l10n_server_string} LIMIT 0, %d", $language->language, $uid1, $uid2, REQUEST_TIME, REQUEST_TIME, $limit) */
+      NULL;
     }
   }
   drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));

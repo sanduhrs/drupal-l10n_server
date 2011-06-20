@@ -5,10 +5,11 @@
  */
 
 /**
- * Implementation of hook_install().
+ * Implements hook_install().
  */
 function l10n_groups_install() {
-  drupal_install_schema('l10n_groups');
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  // drupal_install_schema('l10n_groups')
   // Designate our node type as an OG group node type.
   variable_set('og_content_type_usage_l10n_group', 'group');
 
@@ -18,21 +19,44 @@ function l10n_groups_install() {
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
     // Update all instances of this block even if we just added it.
-    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
-      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
+    if (!db_affected_rows(db_update('block')
+  ->fields(array(
+    'cache' =>  -1,
+    'status' =>  1,
+    'weight' => $weight,
+  ))
+  ->condition('module', $module)
+  ->condition('delta', $delta)
+  ->execute())) {
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
+      $id = db_insert('block')
+  ->fields(array(
+    'module' => $module,
+    'delta' => $delta,
+    'theme' => $theme_key,
+    'status' => 1,
+    'weight' => $weight,
+    'region' => 'right',
+    'cache' => -1,
+  ))
+  ->execute();
     }
   }
 }
 
 /**
- * Implementation of hook_uninstall().
+ * Implements hook_uninstall().
  */
 function l10n_groups_uninstall() {
-  drupal_uninstall_schema('l10n_groups');
+  // TODO The drupal_(un)install_schema functions are called automatically in D7.
+  // drupal_uninstall_schema('l10n_groups')
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements hook_schema().
  *
  * With this module, the translations are maintained by communities,
  * who share a common space based on organic groups. We need to store
@@ -94,39 +118,104 @@ function l10n_groups_update_6000() {
   while ($role = db_fetch_object($result)) {
     $existing_perms = explode(', ', $role->perm);
     $new_perms = array_diff($existing_perms, array('export gettext templates and translations', 'import gettext files', 'submit suggestions', 'moderate suggestions from others', 'moderate own suggestions'));
-    db_query("UPDATE {permission} SET perm = '%s' WHERE rid = %d", implode(', ', $new_perms), $role->rid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("UPDATE {permission} SET perm = '%s' WHERE rid = %d", implode(', ', $new_perms), $role->rid) */
+    db_update('permission')
+  ->fields(array(
+    'perm' => implode(', ', $new_perms),
+  ))
+  ->condition('rid', $role->rid)
+  ->execute();
   }
 
   // Create four new roles to be used with og_user_roles.
-  db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation team member');
-  $role_team = db_result(db_query_range("SELECT rid FROM {role} WHERE name ='translation team member'", 0, 1));
-  db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation self-moderator');
-  $role_self = db_result(db_query_range("SELECT rid FROM {role} WHERE name ='translation self-moderator'", 0, 1));
-  db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community moderator');
-  $role_community = db_result(db_query_range("SELECT rid FROM {role} WHERE name ='translation community moderator'", 0, 1));
-  db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community manager');
-  $role_manager = db_result(db_query_range("SELECT rid FROM {role} WHERE name ='translation community manager'", 0, 1));
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation team member') */
+  $id = db_insert('role')
+  ->fields(array(
+    'name' => 'translation team member',
+  ))
+  ->execute();
+  $role_team = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation team member'))->fetchField();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation self-moderator') */
+  $id = db_insert('role')
+  ->fields(array(
+    'name' => 'translation self-moderator',
+  ))
+  ->execute();
+  $role_self = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation self-moderator'))->fetchField();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community moderator') */
+  $id = db_insert('role')
+  ->fields(array(
+    'name' => 'translation community moderator',
+  ))
+  ->execute();
+  $role_community = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation community moderator'))->fetchField();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community manager') */
+  $id = db_insert('role')
+  ->fields(array(
+    'name' => 'translation community manager',
+  ))
+  ->execute();
+  $role_manager = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation community manager'))->fetchField();
 
   // Grant basic team permissions.
   $perms = array('export gettext templates and translations', 'import gettext files', 'submit suggestions');
-  db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_team, implode(', ', $perms));
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_team, implode(', ', $perms)) */
+  $id = db_insert('permission')
+  ->fields(array(
+    'rid' => $role_team,
+    'perm' => implode(', ', $perms),
+  ))
+  ->execute();
 
   // Grant self-moderation permission.
   $perms = array('moderate own suggestions');
-  db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_self, implode(', ', $perms));
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_self, implode(', ', $perms)) */
+  $id = db_insert('permission')
+  ->fields(array(
+    'rid' => $role_self,
+    'perm' => implode(', ', $perms),
+  ))
+  ->execute();
 
   // Grant community moderation permission.
   $perms = array('moderate suggestions from others');
-  db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_community, implode(', ', $perms));
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_community, implode(', ', $perms)) */
+  $id = db_insert('permission')
+  ->fields(array(
+    'rid' => $role_community,
+    'perm' => implode(', ', $perms),
+  ))
+  ->execute();
 
   // Grant community manager permission.
   $perms = array('configure member roles');
-  db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_manager, implode(', ', $perms));
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_manager, implode(', ', $perms)) */
+  $id = db_insert('permission')
+  ->fields(array(
+    'rid' => $role_manager,
+    'perm' => implode(', ', $perms),
+  ))
+  ->execute();
 
   // Grant base team permissions to team members, moderation permissions to admins.
-  db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid}', $role_team);
-  db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_community);
-  db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_manager);
+  // TODO Please convert this statement to the D7 database API syntax.
+  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid}', $role_team) */
+  NULL;
+  // TODO Please convert this statement to the D7 database API syntax.
+  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_community) */
+  NULL;
+  // TODO Please convert this statement to the D7 database API syntax.
+  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_manager) */
+  NULL;
 
   // Make these roles available for setting as og user roles.
   variable_set('og_user_roles_roles_l10n_group', array($role_team => $role_team, $role_self => $role_self, $role_community => $role_community, $role_manager => $role_manager));
@@ -134,12 +223,23 @@ function l10n_groups_update_6000() {
   variable_set('og_user_roles_default_role', $role_team);
 
   // Update weight of this module to be before og_user_roles.
-  db_query("UPDATE {system} SET weight = -2 WHERE type = 'module' AND name = 'l10n_groups'");
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("UPDATE {system} SET weight = -2 WHERE type = 'module' AND name = 'l10n_groups'") */
+  db_update('system')
+  ->fields(array(
+    'weight' =>  -2,
+  ))
+  ->condition('type', 'module')
+  ->condition('name', 'l10n_groups')
+  ->execute();
 
   // Finally, drop the model column, which we do not need anymore.
-  db_drop_field($ret, 'l10n_groups_group', 'model');
+  db_drop_field('l10n_groups_group', 'model');
 
-  return $ret;
+  // hook_update_N() no longer returns a $ret array. Instead, return
+  // nothing or a translated string indicating the update ran successfully.
+  // See http://drupal.org/node/224333#update_sql.
+  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
 }
 
 /**
@@ -152,9 +252,34 @@ function l10n_groups_update_6001() {
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
     // Update all instances of this block even if we just added it.
-    if (!db_affected_rows(db_query("UPDATE {blocks} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta))) {
-      db_query("INSERT INTO {blocks} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
+    if (!db_affected_rows(db_update('block')
+  ->fields(array(
+    'cache' =>  -1,
+    'status' =>  1,
+    'weight' => $weight,
+  ))
+  ->condition('module', $module)
+  ->condition('delta', $delta)
+  ->execute())) {
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
+      $id = db_insert('block')
+  ->fields(array(
+    'module' => $module,
+    'delta' => $delta,
+    'theme' => $theme_key,
+    'status' => 1,
+    'weight' => $weight,
+    'region' => 'right',
+    'cache' => -1,
+  ))
+  ->execute();
     }
   }
-  return array();
+  // hook_update_N() no longer returns a $ret array. Instead, return
+  // nothing or a translated string indicating the update ran successfully.
+  // See http://drupal.org/node/224333#update_sql.
+  return t('TODO Add a descriptive string here to show in the UI.') /* array() */;
 }

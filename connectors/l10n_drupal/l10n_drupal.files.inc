@@ -19,7 +19,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   }
   else {
     // Packages are always .tar.gz files.
-    $files = file_scan_directory($workdir, '.tar.gz$');
+    $files = file_scan_directory($workdir, '/.tar.gz$/');
     if (count($files)) {
       foreach ($files as $path => $file) {
 
@@ -56,7 +56,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   }
 
   $user_feedback = FALSE;
-  $results = db_query_range("SELECT * FROM {l10n_server_release} WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = 'l10n_drupal_files' AND status = 1) ORDER BY last_parsed ASC", 0, variable_get('l10n_server_connector_l10n_drupal_files_limit', 1));
+  $results = db_query_range("SELECT * FROM {l10n_server_release} WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = :connector_module AND status = :status ORDER BY last_parsed ASC", array(':connector_module' => 'l10n_drupal_files', ':status' => 1));
   while ($release = db_fetch_object($results)) {
 
     // Only parse file if something changed since we last parsed it.
@@ -85,7 +85,14 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
     }
     // Hackish update of last parsed time so other tarballs will get into the queue too.
     // @todo: work on something better for this.
-    db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", time(), $release->rid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", REQUEST_TIME, $release->rid) */
+    db_update('l10n_server_release')
+  ->fields(array(
+      'last_parsed' => REQUEST_TIME,
+    ))
+  ->condition('rid', $release->rid)
+  ->execute();
   }
   if (!$automated && !$user_feedback) {
     drupal_set_message(t('No (new) local Drupal files found to scan in %workdir.', array('%workdir' => $workdir)));
@@ -112,14 +119,22 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
  */
 function l10n_drupal_save_data($project_uri, $project_title, $release_version, $filepath, $filedate) {
   // Save project information first.
-  if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s'", $project_uri))) {
+  if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $project_uri)))) {
     if ($existing_project->connector_module == 'l10n_drupal_files') {
       if ($existing_project->status == 0) {
         // Skip this project if it is disabled.
         return;
       }
       // No need to update home_link here, as uri is not changed, and we base home_link on the uri.
-      db_query("UPDATE {l10n_server_project} SET title = '%s' WHERE uri = '%s' AND connector_module = 'l10n_drupal_files'", $project_title, $project_uri);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("UPDATE {l10n_server_project} SET title = '%s' WHERE uri = '%s' AND connector_module = 'l10n_drupal_files'", $project_title, $project_uri) */
+      db_update('l10n_server_project')
+  ->fields(array(
+        'title' => $project_title,
+      ))
+  ->condition('uri', $project_uri)
+  ->condition('connector_module', 'l10n_drupal_files')
+  ->execute();
     }
     else {
       // Log error on existing project with another connector and skip the rest of this function.
@@ -134,24 +149,52 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
     }
   }
   else {
-    db_query(
-      "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)",
-      $project_uri, $project_title, 0, (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? ('http://drupal.org/project/' . $project_uri) : ''), 'l10n_drupal_files', 1
-    );
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query(
+     "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)", $project_uri, $project_title, 0, (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? ('http://drupal.org/project/' . $project_uri) : ''), 'l10n_drupal_files', 1) */
+    $id = db_insert('l10n_server_project')
+  ->fields(array(
+      'uri' => $project_uri,
+      'title' => $project_title,
+      'last_parsed' => 0,
+      'home_link' => (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? ('http://drupal.org/project/' . $project_uri) : ''),
+      'connector_module' => 'l10n_drupal_files',
+      'status' => 1,
+    ))
+  ->execute();
   }
 
   // Grab updated project data and save release information.
-  $project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = '%s' AND connector_module = 'l10n_drupal_files'", $project_uri));
-  if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE pid = %d AND title = '%s'", $project->pid, $release_version))) {
+  $project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri AND connector_module = :connector_module", array(':uri' => $project_uri, ':connector_module' => 'l10n_drupal_files')));
+  if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE pid = :pid AND title = :title", array(':pid' => $project->pid, ':title' => $release_version)))) {
     if ($filedate != $existing_release->file_date) {
       // New file with possibly new date for the same release (dev snapshot
       // probably), so update data, set parsed date to past.
-      db_query("UPDATE {l10n_server_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $filepath, $filedate, $existing_release->rid);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("UPDATE {l10n_server_release} SET download_link = '%s', file_date = %d, last_parsed = 0 WHERE rid = %d", $filepath, $filedate, $existing_release->rid) */
+      db_update('l10n_server_release')
+  ->fields(array(
+        'download_link' => $filepath,
+        'file_date' => $filedate,
+        'last_parsed' => 0,
+      ))
+  ->condition('rid', $existing_release->rid)
+  ->execute();
     }
   }
   else {
     // No such release recorded yet.
-    db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release_version, $filepath, $filedate);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, last_parsed) VALUES (%d, '%s', '%s', %d, 0)", $project->pid, $release_version, $filepath, $filedate) */
+    $id = db_insert('l10n_server_release')
+  ->fields(array(
+      'pid' => $project->pid,
+      'title' => $release_version,
+      'download_link' => $filepath,
+      'file_date' => $filedate,
+      'last_parsed' => 0,
+    ))
+  ->execute();
   }
 }
 
@@ -174,10 +217,10 @@ function l10n_drupal_parse_package($package_file, $release) {
 
   // l10n_drupal_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once 'Archive/Tar.php';
+  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
 
   // Potx module is already a dependency.
-  include_once drupal_get_path('module', 'potx') . '/potx.inc';
+  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -223,17 +266,36 @@ function l10n_drupal_parse_package($package_file, $release) {
       $message = t('@filename (@files files, @sids strings) scanned.', array('@filename' => basename($package_file), '@files' => count($files), '@sids' => $sid_count));
 
       // Parsed this releases files.
-      db_query("UPDATE {l10n_server_release} SET sid_count = %d, last_parsed = %d WHERE rid = %d", $sid_count, time(), $release->rid);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("UPDATE {l10n_server_release} SET sid_count = %d, last_parsed = %d WHERE rid = %d", $sid_count, REQUEST_TIME, $release->rid) */
+      db_update('l10n_server_release')
+  ->fields(array(
+        'sid_count' => $sid_count,
+        'last_parsed' => REQUEST_TIME,
+      ))
+  ->condition('rid', $release->rid)
+  ->execute();
 
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
       // the error messages as text. We assume no other messages are added while
       // importing, so we can safely use drupal_get_message() to grab our errors.
-      db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid) */
+      db_delete('l10n_server_error')
+  ->condition('rid', $release->rid)
+  ->execute();
       $messages = drupal_get_messages('error');
       if (isset($messages['error']) && is_array($messages['error'])) {
         foreach ($messages['error'] as $error_message) {
-          db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message);
+          // TODO Please review the conversion of this statement to the D7 database API syntax.
+          /* db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message) */
+          $id = db_insert('l10n_server_error')
+  ->fields(array(
+            'rid' => $release->rid,
+            'value' => $error_message,
+          ))
+  ->execute();
         }
       }
     }
@@ -288,16 +350,25 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
     return array($pid, $rid, $files[$file]);
   }
   else {
-    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_server_file} WHERE rid = %d AND location = '%s'", $rid, $file))) {
+    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_server_file} WHERE rid = :rid AND location = :location", array(':rid' => $rid, ':location' => $file)))) {
       if ($existing_file->revision != $revision) {
         // Changed revision on a file.
-        db_query("UPDATE {l10n_server_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+        // TODO Please review the conversion of this statement to the D7 database API syntax.
+        /* db_query("UPDATE {l10n_server_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid) */
+        db_update('l10n_server_file')
+  ->fields(array(
+          'revision' => $revision,
+        ))
+  ->condition('fid', $existing_file->fid)
+  ->execute();
       }
       $fid = $existing_file->fid;
     }
     else {
       // New file in this release.
-      db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision);
+      // TODO Please convert this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $pid, $rid, $file, $revision) */
+      NULL;
       $fid = db_last_insert_id('l10n_server_file', 'fid');
     }
     $files[$file] = $fid;
@@ -354,14 +425,33 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    if (!$sid = db_result(db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = MD5('%s')", $value . $context))) {
+    if (!$sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey", array(':hashkey' => MD5('%s'), '' => $value . $context))->fetchField()) {
       // String does not exist.
-      db_query("INSERT INTO {l10n_server_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {l10n_server_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $value, $context, $value . $context) */
+      $id = db_insert('l10n_server_string')
+  ->fields(array(
+        'value' => $value,
+        'context' => $context,
+        'hashkey' => $value . $context,
+      ))
+  ->execute();
       $sid = db_last_insert_id('l10n_server_string', 'sid');
     }
-    if (!db_result(db_query("SELECT fid FROM {l10n_server_line} WHERE fid = %d AND sid = %d AND lineno = %d AND type = %d", $fid, $sid, $line, $string_type))) {
+    if (!db_query("SELECT fid FROM {l10n_server_line} WHERE fid = :fid AND sid = :sid AND lineno = :lineno AND type = :type", array(':fid' => $fid, ':sid' => $sid, ':lineno' => $line, ':type' => $string_type))->fetchField()) {
       // Location does not exist with this string.
-      db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type);
+      // TODO Please review the conversion of this statement to the D7 database API syntax.
+      /* db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, $line, $string_type) */
+      $id = db_insert('l10n_server_line')
+  ->fields(array(
+        'pid' => $pid,
+        'rid' => $rid,
+        'fid' => $fid,
+        'sid' => $sid,
+        'lineno' => $line,
+        'type' => $string_type,
+      ))
+  ->execute();
     }
     l10n_drupal_added_string_counter($sid);
   }

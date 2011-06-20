@@ -26,10 +26,10 @@ function l10n_server_admin_projects() {
 /**
  * Form builder for projects administration listing.
  */
-function l10n_server_admin_projects_form(&$form_state, $projects) {
+function l10n_server_admin_projects_form($form, &$form_state, $projects) {
   $form = array();
   $form['pager'] = array(
-    '#value' => theme('pager', NULL, L10N_SERVER_ADMIN_PROJECTS_PER_PAGE, 0),
+    '#value' => theme('pager', array('tags' => NULL, 'element' => 0)),
   );
   $form['orphans'] = array(
     '#type' => 'value',
@@ -75,7 +75,8 @@ function l10n_server_admin_projects_form(&$form_state, $projects) {
 /**
  * Form theme for projects administration listing.
  */
-function theme_l10n_server_admin_projects_form($form) {
+function theme_l10n_server_admin_projects_form($variables) {
+  $form = $variables['form'];
   $output = ($pager = drupal_render($form['pager']));
   $table = array();
   foreach ($form['projects'] as $pid => &$project_element) {
@@ -93,12 +94,12 @@ function theme_l10n_server_admin_projects_form($form) {
     );
   }
   $headers = array(t('Enabled'), t('Project'), array(
-    'data' => t('Operations'),
-    'colspan' => 4,
-  ));
-  $output .= theme('table', $headers, $table);
+      'data' => t('Operations'),
+      'colspan' => 4,
+    ));
+  $output .= theme('table', array('header' => $headers, 'rows' => $table));
   $output .= $pager;
-  $output .= drupal_render($form);
+  $output .= drupal_render_children($form);
 
   if ($form['orphans']['#value']) {
     drupal_set_message(format_plural($form['orphans']['#value'], 'There is @count source string orphaned.', 'There are @count source strings orphaned.') . ' ' . t('Deleting projects will not be available until you <a href="@cleanup">clean up the database</a> or rescan projects (within connectors you use) if you have started over with some of them.', array('@cleanup' => url('admin/l10n_server/projects/cleanup'))));
@@ -112,7 +113,14 @@ function theme_l10n_server_admin_projects_form($form) {
 function l10n_server_admin_projects_form_submit($form, &$form_state) {
   $disabled = array();
   foreach ($form_state['values']['projects'] as $pid => $project) {
-    db_query('UPDATE {l10n_server_project} SET status = %d WHERE pid = %d', $project['status'], $pid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query('UPDATE {l10n_server_project} SET status = %d WHERE pid = %d', $project['status'], $pid) */
+    db_update('l10n_server_project')
+  ->fields(array(
+    'status' => $project['status'],
+  ))
+  ->condition('pid', $pid)
+  ->execute();
   }
   drupal_set_message(t('Localization server project changes saved.'));
 }
@@ -122,7 +130,7 @@ function l10n_server_admin_projects_form_submit($form, &$form_state) {
 /**
  * Form callback to display a confirm form for deleting projects.
  */
-function l10n_server_admin_projects_delete(&$form_state, $project_uri) {
+function l10n_server_admin_projects_delete($form, &$form_state, $project_uri) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   $form = array(
     'project' => array(
@@ -147,7 +155,7 @@ function l10n_server_admin_projects_delete_submit($form, &$form_state) {
 /**
  * Form callback to display a confirm form for resetting projects.
  */
-function l10n_server_admin_projects_reset(&$form_state, $project_uri) {
+function l10n_server_admin_projects_reset($form, &$form_state, $project_uri) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   $form = array(
     'project' => array(
@@ -174,7 +182,7 @@ function l10n_server_admin_projects_reset_submit($form, &$form_state) {
  */
 function l10n_server_admin_releases($project_uri) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
-  drupal_set_title(t('Releases of project @project', array('@project' => $project->title)));
+  drupal_set_title(t('Releases of project @project', array('@project' => $project->title)), PASS_THROUGH);
   if (!$project_releases = l10n_server_get_releases($project_uri, FALSE)) {
     drupal_set_message(t('No releases found for this project.'), 'error');
     return '';
@@ -188,7 +196,7 @@ function l10n_server_admin_releases($project_uri) {
  * @todo
  *   Just a list at the moment. Make it a form with useful tools.
  */
-function l10n_server_admin_releases_form(&$form_state, $project, $releases) {
+function l10n_server_admin_releases_form($form, &$form_state, $project, $releases) {
   $form = array(
     'releases' => array(
       '#tree' => TRUE,
@@ -208,7 +216,7 @@ function l10n_server_admin_releases_form(&$form_state, $project, $releases) {
         '#value' => (!empty($release->file_date) ? format_date($release->file_date) : t('n/a')),
       ),
       'is_parsed' => array(
-        '#value' => (!empty($release->last_parsed) ? theme('image', 'misc/watchdog-ok.png', t('parsed'), t('parsed')) : ''),
+        '#value' => (!empty($release->last_parsed) ? theme('image', array('path' => 'misc/watchdog-ok.png', 'width' => t('parsed'), 'height' => t('parsed'))) : ''),
       ),
       'last_parsed' => array(
         '#value' => (!empty($release->last_parsed) ? format_date($release->last_parsed) : t('n/a')),
@@ -233,7 +241,8 @@ function l10n_server_admin_releases_form(&$form_state, $project, $releases) {
 /**
  * Form theme for release administration listing.
  */
-function theme_l10n_server_admin_releases_form($form) {
+function theme_l10n_server_admin_releases_form($variables) {
+  $form = $variables['form'];
   $table = array();
   $output = '';
   $max_operations = 1;
@@ -258,14 +267,24 @@ function theme_l10n_server_admin_releases_form($form) {
     // Mark as rendered, already included its output above.
     drupal_render($release_element['operations']);
   }
-  $headers = array(array('data' => t('Release'), 'colspan' => 2), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array('data' => t('Operations'), 'colspan' => $max_operations));
-  $output .= theme('table', $headers, $table);
-  $output .= drupal_render($form);
+  $headers = array(array(
+      'data' => t('Release'),
+      'colspan' => 2,
+    ), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array(
+      'data' => t('Operations'),
+      'colspan' => $max_operations,
+    ));
+  $output .= theme('table', array('header' => $headers, 'rows' => $table));
+  $output .= drupal_render_children($form);
   return $output;
 }
 
 // = Source strings cleanup ====================================================
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function l10n_server_admin_projects_cleanup() {
   if ($orphans = l10n_server_orphan_strings()) {
     return drupal_get_form('l10n_server_admin_projects_cleanup_form', $orphans);
@@ -277,7 +296,7 @@ function l10n_server_admin_projects_cleanup() {
 /**
  * Form callback to display a confirm form for cleaning up strings.
  */
-function l10n_server_admin_projects_cleanup_form(&$form_state, $orphans) {
+function l10n_server_admin_projects_cleanup_form($form, &$form_state, $orphans) {
   return confirm_form(array(), format_plural($orphans, 'Are you sure you would like to clean up @count orphan?', 'Are you sure you would like to clean up @count orphans?'), 'admin/l10n_server/projects', t('There is at least one orphan source string in your database. Orphan source strings are not tied to any release of a project managed on your Localization server. It might be safe to remove these if you are not in the middle of rescanning some projects. Always make database backups. This action cannot be undone.'));
 }
 
@@ -295,7 +314,7 @@ function l10n_server_admin_projects_cleanup_form_submit($form, &$form_state) {
 /**
  * Project editing and submission form.
  */
-function l10n_server_admin_projects_edit_form(&$form_state, $project_uri = NULL) {
+function l10n_server_admin_projects_edit_form($form, &$form_state, $project_uri = NULL) {
   if (!isset($project_uri)) {
     $connector_list = l10n_server_get_add_enabled_project_connectors();
     // Provide sensible default for project if adding new one.
@@ -401,7 +420,7 @@ function l10n_server_admin_projects_edit_form_submit($form, &$form_state) {
 /**
  * Release editing/submission form.
  */
-function l10n_server_admin_projects_release_edit_form(&$form_state, $project_uri, $release_rid = NULL) {
+function l10n_server_admin_projects_release_edit_form($form, &$form_state, $project_uri, $release_rid = NULL) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   if (empty($release_rid)) {
     $release = (object) array(
@@ -480,7 +499,7 @@ function l10n_server_admin_projects_release_edit_form_submit($form, &$form_state
 /**
  * Form callback to display a confirm form for deleting releases.
  */
-function l10n_server_admin_projects_release_delete(&$form_state, $project_uri, $release_rid) {
+function l10n_server_admin_projects_release_delete($form, &$form_state, $project_uri, $release_rid) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   $releases = l10n_server_get_releases($project_uri, FALSE);
   $release = $releases[$release_rid];
@@ -511,7 +530,7 @@ function l10n_server_admin_projects_release_delete_submit($form, &$form_state) {
 /**
  * Form callback to display a confirm form for resetting releases.
  */
-function l10n_server_admin_projects_release_reset(&$form_state, $project_uri, $release_rid) {
+function l10n_server_admin_projects_release_reset($form, &$form_state, $project_uri, $release_rid) {
   $project = l10n_server_get_projects(array('uri' => $project_uri));
   $releases = l10n_server_get_releases($project_uri, FALSE);
   $release = $releases[$release_rid];
@@ -556,19 +575,46 @@ function l10n_server_admin_projects_release_reset_submit($form, &$form_state) {
 function l10n_server_delete_project($pid, $keep_strings_and_project = FALSE) {
 
   // Drop errors stored for releases of this project.
-  db_query('DELETE FROM {l10n_server_error} WHERE rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = %d)', $pid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_error} WHERE rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = %d)', $pid) */
+  db_delete('l10n_server_error')
+    ->where('rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = %d)',  )
+  ->execute();
 
   // Almost all other related data has the pid associated directly.
-  db_query('DELETE FROM {l10n_server_line} WHERE pid = %d', $pid);
-  db_query('DELETE FROM {l10n_server_file} WHERE pid = %d', $pid);
-  db_query('DELETE FROM {l10n_server_release} WHERE pid = %d', $pid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_line} WHERE pid = %d', $pid) */
+  db_delete('l10n_server_line')
+  ->condition('pid', $pid)
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_file} WHERE pid = %d', $pid) */
+  db_delete('l10n_server_file')
+  ->condition('pid', $pid)
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_release} WHERE pid = %d', $pid) */
+  db_delete('l10n_server_release')
+  ->condition('pid', $pid)
+  ->execute();
 
   if (!$keep_strings_and_project) {
-    db_query('DELETE FROM {l10n_server_project} WHERE pid = %d', $pid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query('DELETE FROM {l10n_server_project} WHERE pid = %d', $pid) */
+    db_delete('l10n_server_project')
+  ->condition('pid', $pid)
+  ->execute();
     l10n_server_delete_orphans();
   }
   else {
-    db_query('UPDATE {l10n_server_project} SET last_parsed = 0 WHERE pid = %d', $pid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query('UPDATE {l10n_server_project} SET last_parsed = 0 WHERE pid = %d', $pid) */
+    db_update('l10n_server_project')
+  ->fields(array(
+    'last_parsed' =>  0,
+  ))
+  ->condition('pid', $pid)
+  ->execute();
   }
 }
 
@@ -577,16 +623,29 @@ function l10n_server_delete_project($pid, $keep_strings_and_project = FALSE) {
  */
 function l10n_server_delete_orphans() {
   // Drop all stale source strings, translations and status flags.
-  db_query('DELETE FROM {l10n_server_string} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})');
-  db_query('DELETE FROM {l10n_server_translation} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})');
-  db_query('DELETE FROM {l10n_server_status_flag} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})');
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_string} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
+  db_delete('l10n_server_string')
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_translation} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
+  db_delete('l10n_server_translation')
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_status_flag} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
+  db_delete('l10n_server_status_flag')
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
+  ->execute();
 }
 
 /**
  * Detect the count of orphan strings in the database, if any.
  */
 function l10n_server_orphan_strings() {
-  return db_result(db_query('SELECT COUNT(*) FROM {l10n_server_string} s LEFT JOIN {l10n_server_line} l ON s.sid = l.sid WHERE l.sid IS NULL'));
+  // TODO Please convert this statement to the D7 database API syntax.
+  return db_query('SELECT COUNT(*) FROM {l10n_server_string} s LEFT JOIN {l10n_server_line} l ON s.sid = l.sid WHERE l.sid IS NULL')->fetchField();
 }
 
 /**
@@ -606,17 +665,40 @@ function l10n_server_orphan_strings() {
 function l10n_server_delete_release($rid, $keep_strings_and_release = FALSE) {
 
   // Drop errors stored for releases of this project.
-  db_query('DELETE FROM {l10n_server_error} WHERE rid = %d', $rid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_error} WHERE rid = %d', $rid) */
+  db_delete('l10n_server_error')
+  ->condition('rid', $rid)
+  ->execute();
 
   // Almost all other related data has the rid associated directly.
-  db_query('DELETE FROM {l10n_server_line} WHERE rid = %d', $rid);
-  db_query('DELETE FROM {l10n_server_file} WHERE rid = %d', $rid);
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_line} WHERE rid = %d', $rid) */
+  db_delete('l10n_server_line')
+  ->condition('rid', $rid)
+  ->execute();
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query('DELETE FROM {l10n_server_file} WHERE rid = %d', $rid) */
+  db_delete('l10n_server_file')
+  ->condition('rid', $rid)
+  ->execute();
 
   if (!$keep_strings_and_release) {
-    db_query('DELETE FROM {l10n_server_release} WHERE rid = %d', $rid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query('DELETE FROM {l10n_server_release} WHERE rid = %d', $rid) */
+    db_delete('l10n_server_release')
+  ->condition('rid', $rid)
+  ->execute();
     l10n_server_delete_orphans();
   }
   else {
-    db_query('UPDATE {l10n_server_release} SET last_parsed = 0 WHERE rid = %d', $rid);
+    // TODO Please review the conversion of this statement to the D7 database API syntax.
+    /* db_query('UPDATE {l10n_server_release} SET last_parsed = 0 WHERE rid = %d', $rid) */
+    db_update('l10n_server_release')
+  ->fields(array(
+    'last_parsed' =>  0,
+  ))
+  ->condition('rid', $rid)
+  ->execute();
   }
 }

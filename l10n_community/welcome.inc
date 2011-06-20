@@ -17,7 +17,7 @@ function l10n_community_welcome_page() {
 
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
-    include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
+    include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
     drupal_set_title(t('Translations'));
 
     $languages = l10n_community_get_languages();
@@ -34,7 +34,7 @@ function l10n_community_welcome_page() {
             'class' => 'rowhead',
           ),
           array(
-            'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/build/translate/import'), '@language-config' => url('admin/settings/language'))),
+            'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
             'class' => 'error',
           ),
           array('data' => ''),
@@ -42,6 +42,7 @@ function l10n_community_welcome_page() {
       }
       else {
         $stats = l10n_community_get_stats($langcode);
+        // TODO Please change this theme call to use an associative array for the $variables parameter.
         $progress = array_shift(theme(
           'l10n_community_progress_columns',
           $num_source,
@@ -70,13 +71,20 @@ function l10n_community_welcome_page() {
       usort($table, 'l10n_server_sort_by_column_language');
     }
 
+    // TODO Please change this theme call to use an associative array for the $variables parameter.
     $output = theme(
       'table',
       array(
-        array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-        array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
-        array('data' => t('Contributors'), 'field' => 'contributors'),
+      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+      array(
+        'data' => t('@project progress', array('@project' => $project->title)),
+        'field' => 'progress',
       ),
+      array(
+        'data' => t('Contributors'),
+        'field' => 'contributors',
+      ),
+    ),
       $table,
       array('class' => 'l10n-community-overview l10n-community-highlighted')
     );
@@ -94,6 +102,10 @@ function l10n_community_welcome_page() {
   return $output;
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function l10n_community_pick_go(&$form_state) {
   $form = array();
   $languages = l10n_community_get_languages();
@@ -125,7 +137,7 @@ function l10n_community_pick_go(&$form_state) {
     }
     $form['dummy'] = array(
       '#type' => 'markup',
-      '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/settings/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
+      '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/config/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
     );
     return $form;
   }
@@ -198,6 +210,10 @@ function l10n_community_pick_go(&$form_state) {
   return $form;
 }
 
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
 function l10n_community_pick_go_validate($form, &$form_state) {
   if (empty($form_state['values']['project']) && empty($form_state['values']['langcode'])) {
     // We require at least one to be selected to be effective.
@@ -217,7 +233,7 @@ function l10n_community_pick_go_submit($form, &$form_state) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
       if (user_access('browse translations')) {
-        drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', 'project=' . $uri);
+        drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', array('query' => array('project' => '\' . $uri')));
       }
       else {
         // Both language and project set, no access to browse > go to project.

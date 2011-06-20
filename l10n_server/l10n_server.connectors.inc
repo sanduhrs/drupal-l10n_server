@@ -23,7 +23,7 @@ function l10n_server_connectors_overview() {
 /**
  * Connector overview setup form.
  */
-function l10n_server_admin_connectors_form(&$form_state, $connectors, $sources) {
+function l10n_server_admin_connectors_form($form, &$form_state, $connectors, $sources) {
   // Save for theming.
   $form['#connector_info'] = $connectors;
   $form['#source_info'] = $sources;
@@ -73,7 +73,8 @@ function l10n_server_admin_connectors_form(&$form_state, $connectors, $sources) 
 /**
  * Theme function for l10n_server_admin_connectors_form().
  */
-function theme_l10n_server_admin_connectors_form($form) {
+function theme_l10n_server_admin_connectors_form($variables) {
+  $form = $variables['form'];
   $rows = array();
   $max_operations = 1;
   foreach ($form['connectors'] as $id => &$elements) {
@@ -98,11 +99,11 @@ function theme_l10n_server_admin_connectors_form($form) {
 
   // Put our overview into a table and add remaining form items.
   $headers = array(t('Enabled'), t('Connector'), array(
-    'colspan' => $max_operations,
-    'data' => t('Operations'),
-  ));
-  $output = theme('table', $headers, $rows);
-  $output .= drupal_render($form);
+      'colspan' => $max_operations,
+      'data' => t('Operations'),
+    ));
+  $output = theme('table', array('header' => $headers, 'rows' => $rows));
+  $output .= drupal_render_children($form);
   return $output;
 }
 
@@ -122,11 +123,12 @@ function l10n_server_connector_configure($connector = NULL, $source = NULL) {
 
   // Include file to handle form if needed.
   if (!empty($sources[$source]['file'])) {
-    include_once $sources[$source]['file'];
+    include_once DRUPAL_ROOT . '/' . $sources[$source]['file'];
   }
 
-  drupal_set_title(t('@title from @source connector configuration', array('@title' => $connectors[$connector]['title'], '@source' => $sources[$source]['title'])));
+  drupal_set_title(t('@title from @source connector configuration', array('@title' => $connectors[$connector]['title'], '@source' => $sources[$source]['title'])), PASS_THROUGH);
 
+  // TODO $connector needs to have $form as its first parameter.
   return drupal_get_form($sources[$source]['form'], $connector, $source);
 }
 
@@ -167,7 +169,7 @@ function l10n_server_connectors_files_settings_form(&$form_state, $connector_nam
  * Check/create directory if not there already.
  */
 function l10n_server_connectors_files_check_directory($form_element) {
-  file_check_directory($form_element['#value'], FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+  file_prepare_directory($form_element['#value'], FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
   return $form_element;
 }
 
@@ -187,7 +189,7 @@ function l10n_server_connector_scan($connector = NULL, $source = NULL) {
 
   // Include file to handle form if needed.
   if (!empty($connectors[$connector]['file'])) {
-    include_once $connectors[$connector]['file'];
+    include_once DRUPAL_ROOT . '/' . $connectors[$connector]['file'];
   }
 
   return call_user_func($connectors[$connector]['scan'], $source);

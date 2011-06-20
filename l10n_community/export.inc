@@ -23,13 +23,13 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   // Set a matching title with the translation page.
   if (isset($langcode)) {
     $language = l10n_community_get_language($langcode);
-    drupal_set_title(t('Export @language translations', array('@language' => t($language->name))));
+    drupal_set_title(t('Export @language translations', array('@language' => t($language->name))), PASS_THROUGH);
     $breadcrumb[] = l(t('Explore languages'), 'translate/languages');
     $breadcrumb[] = l(t($language->name), 'translate/languages/' . $langcode);
   }
   else {
     $project = l10n_server_get_projects(array('uri' => $uri));
-    drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)));
+    drupal_set_title(t('Export @project translation templates', array('@project' => $project->title)), PASS_THROUGH);
     $breadcrumb[] = l(t('Explore projects'), 'translate/projects');
     $breadcrumb[] = l($project->title, 'translate/projects/' . $project->uri);
   }
@@ -37,7 +37,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   drupal_set_breadcrumb($breadcrumb);
 
   if (isset($project)) {
-    include_once drupal_get_path('module', 'l10n_community') . '/pages.inc';
+    include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
     if (!$num_source = l10n_community_get_string_count('project', $project->pid)) {
       drupal_set_message(t('No strings found to export in this project yet.'), 'warning');
       return '';
@@ -50,7 +50,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
 /**
  * Translation export form. This is multi-step with the project selection.
  */
-function l10n_community_export_form(&$form_state, $uri = NULL, $langcode = NULL) {
+function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode = NULL) {
 
   // When project was preset from path, disable the selector.
   $hide_projects = isset($uri);
@@ -362,7 +362,7 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
 function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once 'Archive/Tar.php';
+  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
 
   $project = l10n_server_get_projects(array('uri' => $uri));
   if ($template) {
@@ -395,6 +395,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   // the export file properly, order by the source id.
   $sql .= ' ORDER BY s.sid ASC' . ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
 
+  // TODO Please convert this statement to the D7 database API syntax.
   $result = db_query($sql, $sql_args);
   $previous_sid = $sid_count = 0;
   $export_string = $po_data = array();
@@ -407,14 +408,14 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
       // Now fill in the new string values.
       $previous_sid = $string->sid;
       $export_string = array(
-        'comment'        => array(),
-        'value'          => $string->value,
-        'context'        => $string->context,
-        'translation'    => (!empty($string->translation) && !$string->is_suggestion) ? $string->translation : '',
-        'suggestions'    => array(),
-        'revisions'      => array(),
-        'changed'        => isset($string->time_approved) ? $string->time_approved : 0,
-        'type'           => $string->type,
+        'comment' => array(),
+        'value' => $string->value,
+        'context' => $string->context,
+        'translation' => (!empty($string->translation) && !$string->is_suggestion) ? $string->translation : '',
+        'suggestions' => array(),
+        'revisions' => array(),
+        'changed' => isset($string->time_approved) ? $string->time_approved : 0,
+        'type' => $string->type,
         'has_suggestion' => @$string->has_suggestion,
       );
       $sid_count++;

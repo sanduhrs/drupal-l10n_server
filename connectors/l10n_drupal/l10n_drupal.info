@@ -3,4 +3,9 @@ description = Extracts translatable strings from Drupal packages.
 dependencies[] = l10n_server
 dependencies[] = potx
 package = "Localization server connectors"
-core = 6.x
+core = 7.x
+
+files[] = l10n_drupal.drupalorg.inc
+files[] = l10n_drupal.files.inc
+files[] = l10n_drupal.install
+files[] = l10n_drupal.module
