@@ -96,15 +96,14 @@ function l10n_drupal_drupalorg_scan() {
   // can have nodes with multiple terms, so just adding
   // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
   // would still match on other terms.
-  $result = db_query("SELECT DISTINCT pp.nid
-     FROM project_projects pp INNER JOIN
-          term_node tn ON tn.nid = pp.nid
-     WHERE tn.tid = :tn.tid", array(':tn.tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
-  $exclude_projects = array();
-  while ($project = db_fetch_object($result)) {
-    // Cast to int to make sure we are secure.
-    $exclude_projects[] = (int) $project->nid;
-  }
+  $result = db_select('project_projects', 'pp')
+    ->innerJoin('term_node', 'tn', 'tn.nid = pp.nid')
+    ->fields('pp', array('nid'))
+    ->distinct()
+    ->condition('tn.tid', L10N_DRUPAL_DRUPALORG_TRANSLATION_TID)
+    ->execute();
+  $exclude_projects = $result->fetchCol();
+}
 
   // Get all projects - published, unpublished equally, so we can update project
   // status on our copy for projects which were previously published. Only get
@@ -114,22 +113,18 @@ function l10n_drupal_drupalorg_scan() {
   // maintain issues queues, which are also only identifiable by looking at
   // the list of releases. Don't use {} wrapping in query, since it is a
   // different DB and it does not use prefixes anyway.
-  // TODO Please convert this statement to the D7 database API syntax.
-  $result = db_query(
-    "SELECT DISTINCT pp.nid, pp.uri, n.title, n.status
-     FROM project_projects pp INNER JOIN
-          project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
-          node n ON pp.nid = n.nid
-     WHERE pp.nid NOT IN (" . join(', ', $exclude_projects) . ") AND
-           prn.rebuild = 0
-     ORDER BY pp.nid"
-  );
-
+  $result = db_select('project_projects', 'pp')
+    ->innerJoin('project_release_nodes', 'prn', 'pp.nid = prn.pid')
+    ->leftJoin('node', 'n', 'pp.nid = n.nid')
+    ->fields('pp', array('nid', 'uri'))
+    ->fields('n', array('title', 'status'))
+    ->distinct()
+    ->condition('pp.nid', $exclude_projects, 'NOT IN')
+    ->condition('prn.rebuild', 0)
+    ->execute();
   // Fill in an array, so we can go back to our database and add in these
   // details.
-  $projects = array();
-  while ($project = db_fetch_object($result)) {
-    $projects[$project->uri] = $project;
+  $projects = $result->fetchAllAssoc('uri');
   }
 
   // Switch back to our local database.
@@ -145,17 +140,15 @@ function l10n_drupal_drupalorg_scan() {
             ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
           // other data is internal to our database).
-          // TODO Please review the conversion of this statement to the D7 database API syntax.
-          /* db_query("UPDATE {l10n_server_project} SET title = '%s', status = %d, last_parsed = %d WHERE uri = '%s' AND connector_module = 'l10n_project_drupalorg'", $project->title, $project->status, REQUEST_TIME, $project->uri) */
           db_update('l10n_server_project')
-  ->fields(array(
-            'title' => $project->title,
-            'status' => $project->status,
-            'last_parsed' => REQUEST_TIME,
-          ))
-  ->condition('uri', $project->uri)
-  ->condition('connector_module', 'l10n_project_drupalorg')
-  ->execute();
+	    ->fields(array(
+			   'title' => $project->title,
+			   'status' => $project->status,
+			   'last_parsed' => REQUEST_TIME,
+			   ))
+	    ->condition('uri', $project->uri)
+	    ->condition('connector_module', 'l10n_project_drupalorg')
+	    ->execute();
         }
       }
       else {
@@ -173,19 +166,16 @@ function l10n_drupal_drupalorg_scan() {
     }
     else {
       // New project, not recorded before.
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query(
-       "INSERT INTO {l10n_server_project} (uri, title, last_parsed, home_link, connector_module, status) VALUES ('%s', '%s', %d, '%s', '%s', %d)", $project->uri, $project->title, REQUEST_TIME, 'http://drupal.org/project/' . $project->uri, 'l10n_project_drupalorg', $project->status) */
       $id = db_insert('l10n_server_project')
-  ->fields(array(
-        'uri' => $project->uri,
-        'title' => $project->title,
-        'last_parsed' => REQUEST_TIME,
-        'home_link' => 'http://drupal.org/project/' . $project->uri,
-        'connector_module' => 'l10n_project_drupalorg',
-        'status' => $project->status,
-      ))
-  ->execute();
+	->fields(array(
+		       'uri' => $project->uri,
+		       'title' => $project->title,
+		       'last_parsed' => REQUEST_TIME,
+		       'home_link' => 'http://drupal.org/project/' . $project->uri,
+		       'connector_module' => 'l10n_project_drupalorg',
+		       'status' => $project->status,
+		       ))
+	->execute();
       // Save last insert ID for release update code.
       $project->pid = db_last_insert_id('l10n_server_project', 'pid');
       $projects[$project->uri] = $project;
@@ -197,8 +187,10 @@ function l10n_drupal_drupalorg_scan() {
     // available with non-dev releases on drupal.org, so we should turn off
     // their listing in our database.
     $disabled_projects = array_keys($local_projects);
-    // TODO Please convert this statement to the D7 database API syntax.
-    db_query('UPDATE {l10n_server_project} SET status = 0 WHERE uri IN (' . db_placeholders($disabled_projects, 'varchar') . ')', $disabled_projects);
+    db_update('l10n_server_project')
+      ->fields(array('status' => 0))
+      ->condition('uri', $disabled_projects, 'IN')
+      ->execute();
   }
 
   $last_sync = variable_get('l10n_server_connector_l10n_project_drupalorg_last_sync', 0);
@@ -265,19 +257,16 @@ function l10n_drupal_drupalorg_scan() {
     }
     elseif (!empty($release->status)) {
       // New published release, not recorded before.
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query(
-       "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)", $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0) */
-      $id = db_insert('l10n_server_release')
-  ->fields(array(
-        'pid' => $projects[$release->uri]->pid,
-        'title' => $release->version,
-        'download_link' => $download_link,
-        'file_date' => $release->timestamp,
-        'file_hash' => $release->filehash,
-        'last_parsed' => 0,
-      ))
-  ->execute();
+      db_insert('l10n_server_release')
+	->fields(array(
+		       'pid' => $projects[$release->uri]->pid,
+		       'title' => $release->version,
+		       'download_link' => $download_link,
+		       'file_date' => $release->timestamp,
+		       'file_hash' => $release->filehash,
+		       'last_parsed' => 0,
+		       ))
+	->execute();
     }
   }
 
@@ -294,26 +283,18 @@ function l10n_drupal_drupalorg_scan() {
 
     // Add up and save all project usage as negative weight.
     $all_project_usage = array_sum($project_data);
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_project} SET weight = %d WHERE uri = '%s'", - $all_project_usage, $uri) */
     db_update('l10n_server_project')
-  ->fields(array(
-      'weight' => - $all_project_usage,
-    ))
-  ->condition('uri', $uri)
-  ->execute();
+      ->fields(array('weight' => - $all_project_usage))
+      ->condition('uri', $uri)
+      ->execute();
 
     // Save individual release count data as negative weight.
     foreach ($project_data as $title => $count) {
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("UPDATE {l10n_server_release} SET weight = %d WHERE pid = %d AND title = '%s'", - $count, $projects[$uri]->pid, $title) */
       db_update('l10n_server_release')
-  ->fields(array(
-        'weight' => - $count,
-      ))
-  ->condition('pid', $projects[$uri]->pid)
-  ->condition('title', $title)
-  ->execute();
+	->fields(array('weight' => - $count))
+	->condition('pid', $projects[$uri]->pid)
+	->condition('title', $title)
+	->execute();
     }
   }
 
@@ -440,36 +421,28 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         $message = '@filename (@files files, @sids strings) scanned.';
 
         // Parsed this releases files.
-        // TODO Please review the conversion of this statement to the D7 database API syntax.
-        /* db_query("UPDATE {l10n_server_release} SET sid_count = %d, last_parsed = %d WHERE rid = %d", $sid_count, REQUEST_TIME, $release->rid) */
         db_update('l10n_server_release')
-  ->fields(array(
-          'sid_count' => $sid_count,
-          'last_parsed' => REQUEST_TIME,
-        ))
-  ->condition('rid', $release->rid)
-  ->execute();
+	  ->fields(array(
+			 'sid_count' => $sid_count,
+			 'last_parsed' => REQUEST_TIME,
+			 ))
+	  ->condition('rid', $release->rid)
+	  ->execute();
 
         // Update error list for this release. Although the errors are related to
         // files, we are not interested in the fine details, the file names are in
         // the error messages as text. We assume no other messages are added while
         // importing, so we can safely use drupal_get_message() to grab our errors.
-        // TODO Please review the conversion of this statement to the D7 database API syntax.
-        /* db_query("DELETE FROM {l10n_server_error} WHERE rid = %d", $release->rid) */
-        db_delete('l10n_server_error')
-  ->condition('rid', $release->rid)
-  ->execute();
+        db_delete('l10n_server_error') ->condition('rid', $release->rid) ->execute();
         $messages = drupal_get_messages('error');
         if (isset($messages['error']) && is_array($messages['error'])) {
           foreach ($messages['error'] as $error_message) {
-            // TODO Please review the conversion of this statement to the D7 database API syntax.
-            /* db_query("INSERT INTO {l10n_server_error} (rid, value) VALUES (%d, '%s')", $release->rid, $error_message) */
-            $id = db_insert('l10n_server_error')
-  ->fields(array(
-              'rid' => $release->rid,
-              'value' => $error_message,
-            ))
-  ->execute();
+            db_insert('l10n_server_error')
+	      ->fields(array(
+			     'rid' => $release->rid,
+			     'value' => $error_message,
+			     ))
+	      ->execute();
           }
         }
       }

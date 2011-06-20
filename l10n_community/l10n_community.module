@@ -1031,20 +1031,25 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
 
   // Look for an existing active translation, if any.
   // Use BINARY matching to avoid marking case-corrections as duplicate.
-  $existing = db_fetch_object(db_query("SELECT tid, is_active, is_suggestion FROM {l10n_server_translation} WHERE sid = :sid AND language = :language AND translation = :translation '%s'", array(':sid' => $sid, ':language' => $langcode, ':translation' => BINARY, '' => $translation)));
+  $existing = db_select('l10n_server_translation', 't')
+    ->fields('t', array('tid', 'is_active', 'is_suggestion'))
+    ->condition('sid', $sid)
+    ->condition('language', $langcode)
+    ->condition('translation', $translation)
+    ->execute()
+    ->fetchObject();
+    
   if (!empty($existing)) {
     if ($existing->is_active == 0) {
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, is_active = 1, time_changed = %d WHERE tid = %d", $time, $existing->tid) */
       db_update('l10n_server_translation')
-  ->fields(array(
-        'is_suggestion' => 1,
-        'is_active' => 1,
-        'time_changed' => $time,
-      ))
-  ->condition('tid', $existing->tid)
-  ->execute();
+	->fields(array(
+		       'is_suggestion' => 1,
+		       'is_active' => 1,
+		       'time_changed' => $time,
+		       ))
+	->condition('tid', $existing->tid)
+	->execute();
       $tid = $existing->tid;
       $type = L10N_SERVER_ACTION_READD;
     }
@@ -1054,34 +1059,30 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
   }
   else {
     // Insert the new suggestion.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("INSERT INTO {l10n_server_translation} (sid, translation, language, uid_entered, time_entered, time_changed, is_suggestion, is_active) VALUES (%d, '%s', '%s', %d, %d, %d, 1, 1)", $sid, $translation, $langcode, $uid_attribution, $time, $time) */
     $id = db_insert('l10n_server_translation')
-  ->fields(array(
-      'sid' => $sid,
-      'translation' => $translation,
-      'language' => $langcode,
-      'uid_entered' => $uid_attribution,
-      'time_entered' => $time,
-      'time_changed' => $time,
-      'is_suggestion' => 1,
-      'is_active' => 1,
-    ))
-  ->execute();
+      ->fields(array(
+		     'sid' => $sid,
+		     'translation' => $translation,
+		     'language' => $langcode,
+		     'uid_entered' => $uid_attribution,
+		     'time_entered' => $time,
+		     'time_changed' => $time,
+		     'is_suggestion' => 1,
+		     'is_active' => 1,
+		     ))
+      ->execute();
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
     $type = L10N_SERVER_ACTION_ADD;
   }
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $uid_user, $type, $time, $medium) */
   $id = db_insert('l10n_server_translation_history')
-  ->fields(array(
-    'tid' => $tid,
-    'uid_action' => $uid_user,
-    'type_action' => $type,
-    'time_action' => $time,
-    'medium_action' => $medium,
-  ))
-  ->execute();
+    ->fields(array(
+		   'tid' => $tid,
+		   'uid_action' => $uid_user,
+		   'type_action' => $type,
+		   'time_action' => $time,
+		   'medium_action' => $medium,
+		   ))
+    ->execute();
 
   // Mark the existing or mock translation as having suggestions.
   l10n_community_update_string_status($langcode, $sid);
@@ -1103,27 +1104,23 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
  */
 function l10n_community_decline_string($langcode, $sid, $tid, $uid) {
   $time = REQUEST_TIME;
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("UPDATE {l10n_server_translation} SET is_active = 0, time_changed = %d WHERE tid = %d", $time, $tid) */
   db_update('l10n_server_translation')
-  ->fields(array(
-    'is_active' => 0,
-    'time_changed' => $time,
-  ))
-  ->condition('tid', $tid)
-  ->execute();
+    ->fields(array(
+		   'is_active' => 0,
+		   'time_changed' => $time,
+		   ))
+    ->condition('tid', $tid)
+    ->execute();
   // ATM we only support this through the web, so always save the web medium.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $uid, L10N_SERVER_ACTION_DECLINE, $time, L10N_SERVER_MEDIUM_WEB) */
   $id = db_insert('l10n_server_translation_history')
-  ->fields(array(
-    'tid' => $tid,
-    'uid_action' => $uid,
-    'type_action' => L10N_SERVER_ACTION_DECLINE,
-    'time_action' => $time,
-    'medium_action' => L10N_SERVER_MEDIUM_WEB,
-  ))
-  ->execute();
+    ->fields(array(
+		   'tid' => $tid,
+		   'uid_action' => $uid,
+		   'type_action' => L10N_SERVER_ACTION_DECLINE,
+		   'time_action' => $time,
+		   'medium_action' => L10N_SERVER_MEDIUM_WEB,
+		   ))
+    ->execute();
   l10n_community_update_string_status($langcode, $sid);
 }
 
@@ -1140,18 +1137,20 @@ function l10n_community_update_string_status($langcode, $sid) {
   $has_suggestion = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':sid' => $sid, ':is_suggestion' => 1, ':is_active' => 1, ':language' => $langcode))->fetchField();
   $has_translation = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':sid' => $sid, ':is_suggestion' => 0, ':is_active' => 1, ':language' => $langcode))->fetchField();
 
+  db_delete('l10n_server_status_flag')
+    ->condition('sid', $sid)
+    ->condition('language', $langcode)
+    ->execute();
+
   if ($has_suggestion || $has_translation) {
-    // Update the status according to the number of suggestions.
-    db_query("REPLACE INTO {l10n_server_status_flag} (has_suggestion, has_translation, sid, language) VALUES (%d, %d, %d, '%s')", (int) $has_suggestion, (int) $has_translation, $sid, $langcode);
-  }
-  else {
-    // Drop database entry, not required anymore.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("DELETE FROM {l10n_server_status_flag} WHERE sid = %d AND language = '%s'", $sid, $langcode) */
-    db_delete('l10n_server_status_flag')
-  ->condition('sid', $sid)
-  ->condition('language', $langcode)
-  ->execute();
+    db_insert('l10n_server_status_flag')
+      ->fields(array(
+		     'sid' => $sid,
+		     'language' => $langcode,
+		     'has_sugestion' => (int) $has_suggestion,
+		     'has_translation' => (int) $has_translation,
+		     ))
+      ->execute();
   }
 }
 
@@ -1173,52 +1172,44 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
   // Make the existing approved string a suggestion (if applicable).
   // There should only ever be one string like this.
   if ($existing_tid = db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = :sid AND language = :language AND is_suggestion = :is_suggestion AND is_active = :is_active", array(':sid' => $sid, ':language' => $langcode, ':is_suggestion' => 0, ':is_active' => 1))->fetchField()) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET is_suggestion = 1, time_changed = %d WHERE tid = %d", $time, $existing_tid) */
     db_update('l10n_server_translation')
-  ->fields(array(
-      'is_suggestion' => 1,
-      'time_changed' => $time,
-    ))
-  ->condition('tid', $existing_tid)
-  ->execute();
+      ->fields(array(
+		     'is_suggestion' => 1,
+		     'time_changed' => $time,
+		     ))
+      ->condition('tid', $existing_tid)
+      ->execute();
     // ATM we only support this through the web, so always save the web medium.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $existing_tid, $user->uid, L10N_SERVER_ACTION_DEMOTE, $time, L10N_SERVER_MEDIUM_WEB) */
     $id = db_insert('l10n_server_translation_history')
-  ->fields(array(
-      'tid' => $existing_tid,
-      'uid_action' => $user->uid,
-      'type_action' => L10N_SERVER_ACTION_DEMOTE,
-      'time_action' => $time,
-      'medium_action' => L10N_SERVER_MEDIUM_WEB,
-    ))
-  ->execute();
+      ->fields(array(
+		     'tid' => $existing_tid,
+		     'uid_action' => $user->uid,
+		     'type_action' => L10N_SERVER_ACTION_DEMOTE,
+		     'time_action' => $time,
+		     'medium_action' => L10N_SERVER_MEDIUM_WEB,
+		     ))
+      ->execute();
   }
 
   // Mark this exact suggestion as active translation, and set approval time.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("UPDATE {l10n_server_translation} SET time_changed = %d, is_suggestion = 0, is_active = 1 WHERE tid = %d;", $time, $tid) */
   db_update('l10n_server_translation')
-  ->fields(array(
-    'time_changed' => $time,
-    'is_suggestion' => 0,
-    'is_active' => 1,
-  ))
-  ->condition('tid', $tid)
-  ->execute();
+    ->fields(array(
+		   'time_changed' => $time,
+		   'is_suggestion' => 0,
+		   'is_active' => 1,
+		   ))
+    ->condition('tid', $tid)
+    ->execute();
   // ATM we only support this through the web, so always save the web medium.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {l10n_server_translation_history} (tid, uid_action, type_action, time_action, medium_action) VALUES (%d, %d, %d, %d, %d)", $tid, $user->uid, L10N_SERVER_ACTION_APPROVE, $time, L10N_SERVER_MEDIUM_WEB) */
   $id = db_insert('l10n_server_translation_history')
-  ->fields(array(
-    'tid' => $tid,
-    'uid_action' => $user->uid,
-    'type_action' => L10N_SERVER_ACTION_APPROVE,
-    'time_action' => $time,
-    'medium_action' => L10N_SERVER_MEDIUM_WEB,
-  ))
-  ->execute();
+    ->fields(array(
+		   'tid' => $tid,
+		   'uid_action' => $user->uid,
+		   'type_action' => L10N_SERVER_ACTION_APPROVE,
+		   'time_action' => $time,
+		   'medium_action' => L10N_SERVER_MEDIUM_WEB,
+		   ))
+    ->execute();
 
   l10n_community_update_string_status($langcode, $sid);
 }

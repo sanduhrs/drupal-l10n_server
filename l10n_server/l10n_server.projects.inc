@@ -113,14 +113,12 @@ function theme_l10n_server_admin_projects_form($variables) {
 function l10n_server_admin_projects_form_submit($form, &$form_state) {
   $disabled = array();
   foreach ($form_state['values']['projects'] as $pid => $project) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query('UPDATE {l10n_server_project} SET status = %d WHERE pid = %d', $project['status'], $pid) */
     db_update('l10n_server_project')
-  ->fields(array(
-    'status' => $project['status'],
-  ))
-  ->condition('pid', $pid)
-  ->execute();
+      ->fields(array(
+		     'status' => $project['status'],
+		     ))
+      ->condition('pid', $pid)
+      ->execute();
   }
   drupal_set_message(t('Localization server project changes saved.'));
 }
@@ -575,46 +573,24 @@ function l10n_server_admin_projects_release_reset_submit($form, &$form_state) {
 function l10n_server_delete_project($pid, $keep_strings_and_project = FALSE) {
 
   // Drop errors stored for releases of this project.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_error} WHERE rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = %d)', $pid) */
   db_delete('l10n_server_error')
-    ->where('rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = %d)',  )
-  ->execute();
+    ->where('rid IN (SELECT rid FROM {l10n_server_release} WHERE pid = :pid)', array(':pid' => $pid))
+    ->execute();
 
   // Almost all other related data has the pid associated directly.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_line} WHERE pid = %d', $pid) */
-  db_delete('l10n_server_line')
-  ->condition('pid', $pid)
-  ->execute();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_file} WHERE pid = %d', $pid) */
-  db_delete('l10n_server_file')
-  ->condition('pid', $pid)
-  ->execute();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_release} WHERE pid = %d', $pid) */
-  db_delete('l10n_server_release')
-  ->condition('pid', $pid)
-  ->execute();
+  db_delete('l10n_server_line') ->condition('pid', $pid) ->execute();
+  db_delete('l10n_server_file') ->condition('pid', $pid) ->execute();
+  db_delete('l10n_server_release') ->condition('pid', $pid) ->execute();
 
   if (!$keep_strings_and_project) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query('DELETE FROM {l10n_server_project} WHERE pid = %d', $pid) */
-    db_delete('l10n_server_project')
-  ->condition('pid', $pid)
-  ->execute();
+    db_delete('l10n_server_project') ->condition('pid', $pid) ->execute();
     l10n_server_delete_orphans();
   }
   else {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query('UPDATE {l10n_server_project} SET last_parsed = 0 WHERE pid = %d', $pid) */
     db_update('l10n_server_project')
-  ->fields(array(
-    'last_parsed' =>  0,
-  ))
-  ->condition('pid', $pid)
-  ->execute();
+      ->fields(array('last_parsed' =>  0))
+      ->condition('pid', $pid)
+      ->execute();
   }
 }
 
@@ -623,29 +599,27 @@ function l10n_server_delete_project($pid, $keep_strings_and_project = FALSE) {
  */
 function l10n_server_delete_orphans() {
   // Drop all stale source strings, translations and status flags.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_string} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
   db_delete('l10n_server_string')
-    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
-  ->execute();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_translation} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})')
+    ->execute();
   db_delete('l10n_server_translation')
-    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
-  ->execute();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_status_flag} WHERE sid NOT IN (SELECT sid FROM {l10n_server_line})') */
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})')
+    ->execute();
   db_delete('l10n_server_status_flag')
-    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})',  )
-  ->execute();
+    ->where('sid NOT IN (SELECT sid FROM {l10n_server_line})')
+    ->execute();
 }
 
 /**
  * Detect the count of orphan strings in the database, if any.
  */
 function l10n_server_orphan_strings() {
-  // TODO Please convert this statement to the D7 database API syntax.
-  return db_query('SELECT COUNT(*) FROM {l10n_server_string} s LEFT JOIN {l10n_server_line} l ON s.sid = l.sid WHERE l.sid IS NULL')->fetchField();
+  $select = db_select('l10n_server_string', 's')
+    ->fields('s')
+    ->leftJoin('l10n_server_line', 'l', 's.sid = l.sid')
+    ->isNull('l.sid');
+  $nr = $select->countQuery()->execute()->fetchField();
+  return $nr;
 }
 
 /**
@@ -665,40 +639,20 @@ function l10n_server_orphan_strings() {
 function l10n_server_delete_release($rid, $keep_strings_and_release = FALSE) {
 
   // Drop errors stored for releases of this project.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_error} WHERE rid = %d', $rid) */
-  db_delete('l10n_server_error')
-  ->condition('rid', $rid)
-  ->execute();
+  db_delete('l10n_server_error') ->condition('rid', $rid) ->execute();
 
   // Almost all other related data has the rid associated directly.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_line} WHERE rid = %d', $rid) */
-  db_delete('l10n_server_line')
-  ->condition('rid', $rid)
-  ->execute();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_server_file} WHERE rid = %d', $rid) */
-  db_delete('l10n_server_file')
-  ->condition('rid', $rid)
-  ->execute();
+  db_delete('l10n_server_line') ->condition('rid', $rid) ->execute();
+  db_delete('l10n_server_file') ->condition('rid', $rid) ->execute();
 
   if (!$keep_strings_and_release) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query('DELETE FROM {l10n_server_release} WHERE rid = %d', $rid) */
-    db_delete('l10n_server_release')
-  ->condition('rid', $rid)
-  ->execute();
+    db_delete('l10n_server_release') ->condition('rid', $rid) ->execute();
     l10n_server_delete_orphans();
   }
   else {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query('UPDATE {l10n_server_release} SET last_parsed = 0 WHERE rid = %d', $rid) */
     db_update('l10n_server_release')
-  ->fields(array(
-    'last_parsed' =>  0,
-  ))
-  ->condition('rid', $rid)
-  ->execute();
+      ->fields(array('last_parsed' =>  0))
+      ->condition('rid', $rid)
+      ->execute();
   }
 }

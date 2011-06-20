@@ -365,42 +365,57 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
 
   $project = l10n_server_get_projects(array('uri' => $uri));
-  if ($template) {
-    // We are exporting a template explicitly.
-    $sql = 'SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE f.pid = %d';
-    $sql_args = array($project->pid);
-  }
-  else {
+
+  $query = db_select('l10n_server_file', 'f')
+    ->innerJoin('l10n_server_line', 'l', 'f.fid = l.fid')
+    ->innerJoin('l10n_server_string', 's', 'l.sid = s.sid')
+    ->condition('f.pid', $project->pid)
+    ->fields('s', array('sid', 'value', 'context'))
+    ->fields('f', array('location', 'revision'))
+    ->fields('l', array('lineno', 'type'))
+    ->orderBy('s.sid', 'ASC');
+
+  if (!$template) {
     // Join differently based on compact method, so we can skip strings without
     // translation for compact method export.
-    $translation_join = ($compact) ? 'INNER JOIN' : 'LEFT JOIN';
+    $translation_join = ($compact) ? 'innerJoin' : 'leftJoin';
+
+    // Improve the query for templates
+    $query
+      ->leftJoin('l10n_server_status_flag', 'st',
+		 'st.sid = s.sid AND st.language = :st.language',
+		 array(':st.language' => $language->language))
+      ->$translation_join('l10n_server_translation', 't',
+			  's.sid = t.sid AND t.language = :t.language AND t.is_active = 1',
+			  array(':t.language' => $language->language))
+      ->fields('t', array('translation', 'is_suggestion'))
+      ->fields('st', array('has_suggestion'))
+      ->orderBy('t.is_suggestion', 'ASC')
+      ->orderBy('t.time_entered', 'DESC');
+
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.
-    $type_limit = ($installer ? 'AND type IN (0, 1) ' : '');
+    if ($installer) {
+      $query->condition('type', array(0,1), 'IN');
+    }
+
     // Only include suggestions if requested, otherwise filter out.
-    $is_suggestion = ($suggestions ? '' : 'AND t.is_suggestion = 0');
-    // We only export active translations, not suggestions.
-    $sql = "SELECT s.sid, s.value, s.context, f.location, f.revision, l.lineno, l.type, t.translation, t.is_suggestion, st.has_suggestion FROM {l10n_server_file} f INNER JOIN {l10n_server_line} l ON f.fid = l.fid INNER JOIN {l10n_server_string} s ON l.sid = s.sid LEFT JOIN {l10n_server_status_flag} st ON st.sid = s.sid AND st.language = '%s' $translation_join {l10n_server_translation} t ON s.sid = t.sid AND t.language = '%s' AND t.is_active = 1 $is_suggestion WHERE f.pid = %d $type_limit";
-    $sql_args = array($language->language, $language->language, $project->pid);
+    if (!$suggestions) {
+      $query->condition('t.is_suggestion', '0');
+    }
   }
 
   if (isset($release)) {
     // Release restriction.
-    $sql_args[] = $release;
-    $sql .= ' AND f.rid = %d';
+    $query->condition('f.rid', $release);
     $releases = l10n_server_get_releases($uri);
     $release = $releases[$release];
   }
 
-  // Source strings will be repeated as many times as they appear, so to generate
-  // the export file properly, order by the source id.
-  $sql .= ' ORDER BY s.sid ASC' . ($template ? '' : ', t.is_suggestion ASC, t.time_entered DESC');
-
-  // TODO Please convert this statement to the D7 database API syntax.
-  $result = db_query($sql, $sql_args);
   $previous_sid = $sid_count = 0;
   $export_string = $po_data = array();
 
-  while ($string = db_fetch_object($result)) {
+  $result = $query->execute();
+  while ($string = $result->fetchObject()) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
       _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);

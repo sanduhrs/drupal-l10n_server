@@ -34,34 +34,36 @@ function l10n_gettext_upload_handler($form, $form_state) {
     $release = $form_state['values']['new_release'];
 
     // Save file info and mark the file parsed.
-    // TODO Please convert this statement to the D7 database API syntax.
-    /* db_query("INSERT INTO {l10n_server_file} (pid, rid, location, revision) VALUES(%d, %d, '%s', '%s')", $project->pid, $release->rid, $file->filename, '') */
-    NULL;
-    $fid = db_query("SELECT fid FROM {l10n_server_file} WHERE rid = :rid and location = :location", array(':rid' => $release->rid, ':location' => $file->filename))->fetchField();
+    db_insert('l10n_server_file')
+      ->fields(array(
+		     'pid' => $project->pid,
+		     'rid' => $release->rid,
+		     'location' => $file->filename,
+		     'revision' => '',
+		     ))
+      ->execute();
+
+    $select = db_select('l10n_server_file')
+      ->fields('fid')
+      ->condition('rid', $release->rid)
+      ->condition('location', $file->filename);
+    $fid = $select->execute()->fetchField();
 
     // Do the actual parsing on the local file.
     if (l10n_server_parse_po($file, 'l10n_gettext_store_string', array($project->pid, $release->rid, $fid))) {
       $sid_count = l10n_gettext_store_string();
       drupal_set_message(format_plural($sid_count, 'The source file was successfully imported. One source string was added.', 'The source file was successfully imported. @count source strings were added.'));
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("UPDATE {l10n_server_release} SET sid_count = %d WHERE rid = %d", $sid_count, $release->rid) */
       db_update('l10n_server_release')
-  ->fields(array(
-        'sid_count' => $sid_count,
-      ))
-  ->condition('rid', $release->rid)
-  ->execute();
+	->fields(array('sid_count' => $sid_count))
+	->condition('rid', $release->rid)
+	->execute();
     }
 
     // Update this only once the parsing process succeeds.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_release} SET last_parsed = %d WHERE rid = %d", REQUEST_TIME, $release->rid) */
     db_update('l10n_server_release')
-  ->fields(array(
-      'last_parsed' => REQUEST_TIME,
-    ))
-  ->condition('rid', $release->rid)
-  ->execute();
+      ->fields(array('last_parsed' => REQUEST_TIME))
+      ->condition('rid', $release->rid)
+      ->execute();
   }
   else {
     drupal_set_message(t('File to import not found. Did you choose a file to upload which was under %maxsize?', array('%maxsize' => format_size(file_upload_max_size()))), 'error');
@@ -83,33 +85,38 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
     // to handle later, and we don't need the individual string parts.
     $msgid = is_array($value['msgid']) ? join("\0", $value['msgid']) : $value['msgid'];
 
-    if (!$sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey", array(':hashkey' => MD5('%s'), '' => $msgid . $context))->fetchField()) {
+    $select = db_select('l10n_server_string')->fields('sid')
+      ->condition('hashkey', md5($msgid . $context));
+    $sid = $select->execute()->fetchField();
+    if (!$sid) {
       // String does not exist.
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {l10n_server_string} (value, context, hashkey) VALUES ('%s', '%s', MD5('%s'))", $msgid, $context, $msgid . $context) */
-      $id = db_insert('l10n_server_string')
-  ->fields(array(
-        'value' => $msgid,
-        'context' => $context,
-        'hashkey' => $msgid . $context,
-      ))
-  ->execute();
-      $sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey", array(':hashkey' => MD5('%s'), '' => $msgid . $context))->fetchField();
+      db_insert('l10n_server_string')
+	->fields(array(
+		       'value' => $msgid,
+		       'context' => $context,
+		       'hashkey' => md5($msgid . $context),
+		       ))
+      $sid = $select->execute()->fetchField();
     }
-    if (!db_query("SELECT fid FROM {l10n_server_line} WHERE fid = :fid AND sid = :sid AND lineno = :lineno AND type = :type", array(':fid' => $fid, ':sid' => $sid, ':lineno' => 0, ':type' => 2))->fetchField()) {
+
+    $select = db_select('l10n_server_line')->fields('fid')
+      ->condition('fid', $fid)
+      ->condition('sid', $sid)
+      ->condition('lineno', 0)
+      ->condition('type', 2);
+    $fid = $select->execute()->fetchField();
+    if (!$fid) {
       // Location does not exist with this string.
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {l10n_server_line} (pid, rid, fid, sid, lineno, type) VALUES (%d, %d, %d, %d, %d, %d)", $pid, $rid, $fid, $sid, 0, 2) */
-      $id = db_insert('l10n_server_line')
-  ->fields(array(
-        'pid' => $pid,
-        'rid' => $rid,
-        'fid' => $fid,
-        'sid' => $sid,
-        'lineno' => 0,
-        'type' => 2,
-      ))
-  ->execute();
+      db_insert('l10n_server_line')
+	->fields(array(
+		       'pid' => $pid,
+		       'rid' => $rid,
+		       'fid' => $fid,
+		       'sid' => $sid,
+		       'lineno' => 0,
+		       'type' => 2,
+		       ))
+	->execute();
     }
     $sids[$sid] = 1;
   }

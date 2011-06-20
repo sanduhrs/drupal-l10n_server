@@ -844,110 +844,121 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  *   An array of string records from database.
  */
 function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
-  $join = $join_args = $where = $where_args = array();
-  $sql = $sql_count = '';
-
-  $select = "SELECT DISTINCT s.sid, s.value, s.context, t.tid, t.language, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username, ts.has_suggestion, ts.has_translation FROM {l10n_server_string} s";
-  $select_count = "SELECT COUNT(DISTINCT(s.sid)) FROM {l10n_server_string} s";
-  $join[] = "LEFT JOIN {l10n_server_status_flag} ts ON s.sid = ts.sid AND ts.language = '%s'";
-  $join_args[] = $langcode;
-  $join[] = "LEFT JOIN {l10n_server_translation} t ON ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1";
-  $join[] = "LEFT JOIN {users} u ON u.uid = t.uid_entered";
+  $query = db_select('l10n_server_string', 's')
+    ->distinct()
+    ->leftJoin('l10n_server_status_flag', 'ts', 
+	       's.sid = ts.sid AND ts.language = :language', array(':lanuage' => $langcode))
+    ->leftJoin('l10n_server_translation', 't',
+	       'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1')
+    ->leftJoin('users', 'u', 'u.uid = t.uid_entered')
+    ->fields('s', array('sid', 'value', 'context'))
+    ->fields('t', array('tid', 'language', 'translation', 'uid_entered',
+			'time_entered', 'time_changed', 'is_suggestion', 'is_active'))
+    ->fields('ts', array('has_suggestion', 'has_translation'));
+  $query->addField('u', 'name', 'username');
 
   // Add sid filtering.
   if (!empty($filters['sid'])) {
-    $where[] = "s.sid = %d";
-    $where_args[] = $filters['sid'];
+    $query->condition('s.sid', $filters['sid']);
   }
 
   // Add submitted by condition
   if (!empty($filters['author'])) {
-    $where[] = "t.uid_entered = %d";
-    $where_args[] = $filters['author']->uid;
+    $query->condition('t.uid_entered', $filters['author']->uid);
   }
 
   // Release restriction.
   $release = empty($filters['release']) || $filters['release'] === 'all' ? NULL : $filters['release'];
   $project = $filters['project'];
   if ($release || $project) {
-    $join[] = "INNER JOIN {l10n_server_line} l ON s.sid = l.sid";
+    $query->innerJoin('l10n_server_line', 'l', 's.sid = l.sid');
     // If we have a release we ignore the project
     if ($release) {
       // Release restriction.
-      $where_args[] = $release;
-      $where[] = 'l.rid = %d';
+      $query->condition('l.rid', $release);
     }
     elseif ($project) {
-      $where[] = "l.pid = %d";
-      $where_args[] = $project->pid;
+      $query->condition('l.pid', $project->pid);
     }
   }
 
   // Context based filtering.
   if (isset($filters['context']) && $filters['context'] != 'all') {
     // We use 'none' for no context, so '' can be the defaut (for all contexts).
-    $where_args[] = $filters['context'] == 'none' ? '' : $filters['context'];
-    $where[] = "s.context = '%s'";
+    $context = $filters['context'] == 'none' ? '' : $filters['context'];
+    $query->condition('s.context', $context);
   }
 
   if (!empty($filters['search'])) {
     // Search in the source or target strings.
-    $where_args[] = $filters['search'];
-    $where_args[] = $filters['search'];
-    $where[] = "(s.value LIKE '%%%s%%' OR t.translation LIKE '%%%s%%')";
+    $search = $filters['search'];
+    $query->condition(db_or()
+		      ->condition('s.value', "%${search}%", 'LIKE')
+		      ->condition('t.translation', "%${search}%", 'LIKE'));
   }
 
   // Restriction based on string status by translation / suggestions.
   if (isset($filters['status'])) {
     if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
-      $where[] = "(ts.has_translation = 0 OR ts.has_translation IS NULL)";
+      $query->condition(db_or()
+			->condition('ts.has_translation', 0)
+			->isNull('ts.has_translation'));
     }
     elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
-      $where[] = "ts.has_translation = 1";
+      $query->condition('ts.has_translation', '1');
     }
     elseif ($filters['status'] & L10N_STATUS_IS_TRANSLATION) {
-      $where[] = "t.is_suggestion = 0";
+      $query->condition('t.is_suggestion', '0');
     }
 
     if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
-      $where[] = "ts.has_suggestion = 1";
+      $query->condition('ts.has_suggestion', '1');
     }
     elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
-      $where[] = "(ts.has_suggestion = 0 OR ts.has_suggestion IS NULL)";
+      $query->condition(db_or()
+			->condition('ts.has_suggestion', 0)
+			->isNull('ts.has_suggestion'));
     }
     elseif ($filters['status'] & L10N_STATUS_IS_SUGGESTION) {
-      $where[] = "t.is_suggestion = 1";
+      $query->condition('t.is_suggestion', '1');
     }
   }
-
-  // Build the queries
-  $sql_args = array_merge($join_args, $where_args);
-  $sql_where = implode(' ', $join) . (count($where) ? (' WHERE ' . implode(' AND ', $where)) : '');
-  $sql = $select . ' ' . $sql_where;
-  $sql_count = $select_count . ' ' . $sql_where;
 
   // We either need a pager or a full result.
   if (isset($pager)) {
-    $strings = pager_query($sql, $pager, 0, $sql_count, $sql_args);
+    $strings = $query->extend('PagerDefault')->limit($pager)->execute();
   }
   else {
-    // TODO Please convert this statement to the D7 database API syntax.
-    $strings = db_query($sql, $sql_args);
+    $strings = $query->execute();
   }
   $result = array();
-  while ($string = db_fetch_object($strings)) {
+  while ($string = $strings->fetchObject()) {
     if ($string->is_suggestion) {
       // This string is not a translation, but we need that as a "parent" to display.
-      if ($string->has_translation && ($translation = db_fetch_array(db_query("SELECT t.tid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_suggestion, t.is_active, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = :t.language AND t.sid = :t.sid AND t.is_active = :t.is_active AND t.is_suggestion = :t.is_suggestion", array(':t.language' => $string->language, ':t.sid' => $string->sid, ':t.is_active' => 1, ':t.is_suggestion' => 0))))) {
-        // It does have a translation however, so let's load it, and override.
-        foreach ($translation as $key => $value) {
-          $string->$key = $value;
-        }
-      }
-      else {
+      if (!$string->has_translation) {
         // No parent translation. Pretend this does not exist.
         // The display code will call for the suggestions.
         $string->translation = '';
+      }
+      else {
+	$q = db_select('l10n_server_translation', 't')
+	  ->leftJoin('users', 'u', 'u.uid = t.uid_entered')
+	  ->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered',
+			      'time_changed', 'is_suggestion', 'is_active'))
+	  ->addField('u', 'name', 'username');
+	$q->condition('t.language',  $string->language)
+	  ->condition('t.sid', $string->sid)
+	  ->condition('t.is_active', 1)
+	  ->condition('t.is_suggestion', 0);
+	$translation = $q->execute()->fetchAssoc();
+
+	if (!empty($translation))
+	  {
+	    // It does have a translation however, so let's load it, and override.
+	    foreach ($translation as $key => $value) {
+	      $string->$key = $value;
+	    }
+	  }
       }
     }
     $result[] = $string;

@@ -98,31 +98,21 @@ function l10n_packager_install() {
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
-    // Update all instances of this block even if we just added it.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
-    if (!db_affected_rows(db_update('block')
-  ->fields(array(
-    'cache' =>  -1,
-    'status' =>  1,
-    'weight' => $weight,
-  ))
-  ->condition('module', $module)
-  ->condition('delta', $delta)
-  ->execute())) {
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
-      $id = db_insert('block')
-  ->fields(array(
-    'module' => $module,
-    'delta' => $delta,
-    'theme' => $theme_key,
-    'status' => 1,
-    'weight' => $weight,
-    'region' => 'right',
-    'cache' => -1,
-  ))
-  ->execute();
+    // Insert or update all instances of this block even if we just added it.
+    db_merge('block')
+      ->key(array(
+		  'module' => $module,
+		  'delta'  => $delta,
+		  ))
+      ->fields(array(
+		     'cache'  => -1,
+		     'status' => 1,
+		     'weight' => $weight,
+		     'region' => 'right',
+		     'theme'  => $theme_key,
+		     ))
+      ->updateExcept('region', 'theme')
+      ->execute();
     }
   }
 }
@@ -157,31 +147,21 @@ function l10n_packager_update_6002() {
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
-    // Update all instances of this block even if we just added it.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
-    if (!db_affected_rows(db_update('block')
-  ->fields(array(
-    'cache' =>  -1,
-    'status' =>  1,
-    'weight' => $weight,
-  ))
-  ->condition('module', $module)
-  ->condition('delta', $delta)
-  ->execute())) {
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
-      $id = db_insert('block')
-  ->fields(array(
-    'module' => $module,
-    'delta' => $delta,
-    'theme' => $theme_key,
-    'status' => 1,
-    'weight' => $weight,
-    'region' => 'right',
-    'cache' => -1,
-  ))
-  ->execute();
+    // Insert or update all instances of this block even if we just added it.
+    db_merge('block')
+      ->key(array(
+		  'module' => $module,
+		  'delta'  => $delta,
+		  ))
+      ->fields(array(
+		     'cache'  => -1,
+		     'status' => 1,
+		     'weight' => $weight,
+		     'region' => 'right',
+		     'theme'  => $theme_key,
+		     ))
+      ->updateExcept('region', 'theme')
+      ->execute();
     }
   }
   // hook_update_N() no longer returns a $ret array. Instead, return

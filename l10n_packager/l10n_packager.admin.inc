@@ -205,26 +205,18 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
   $pid = !empty($form_state['values']['pid']) ? $form_state['values']['pid'] : NULL;
   $release = !empty($form_state['values']['release']) ? $form_state['values']['release'] : NULL;
 
-  // Prepare search parameters
-  $where = $args = array();
+  // Build the query that will be used in different ways depending on the operation
+  $query = db_select('l10n_server_release')->fields('rid');
   if ($pid) {
-    $where[] = "pid = %d";
-    $args[] = $pid;
+    $query = $query->condition('pid', $pid);
   }
   if ($release) {
-    $where[] = "title = '%s'";
-    $args[] = $release;
+    $query = $query->condition('title', $release);
   }
-  // Build the query that will be used in different ways depending on the operation
-  $query = 'SELECT rid FROM {l10n_server_release} WHERE ' . implode(' AND ', $where);
 
   // Now check results and run operations
   if ($op == t('Repackage now')) {
-    // TODO Please convert this statement to the D7 database API syntax.
-    $result = db_query($query, $args);
-    while ($release = db_fetch_object($result)) {
-      $rids[] = $release->rid;
-    }
+    $rids = $query->execute()->fetchCol();
     if (!empty($rids)) {
       $batch = l10n_packager_release_batch($rids, $languages);
       batch_set($batch);
@@ -234,9 +226,14 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
     }
   }
   elseif ($op == t('Mark for repackaging')) {
-    $args = array_merge(array(L10N_PACKAGER_ACTIVE), $args);
-    // TODO Please convert this statement to the D7 database API syntax.
-    db_query("UPDATE {l10n_packager_release} SET updated = 0, checked = 0, status = %d WHERE rid IN ($query)", $args);
+    db_update('l10n_packager_release')
+      ->fields(array(
+		     'updated' => 0,
+		     'checked' => 0,
+		     'status'  => L10N_PACKAGER_ACTIVE,
+		     ))
+      ->condition('rid', $query, 'IN')
+      ->execute();
     drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => db_affected_rows())));
   }
 }

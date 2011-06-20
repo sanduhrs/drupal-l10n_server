@@ -19,30 +19,20 @@ function l10n_groups_install() {
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
     // Update all instances of this block even if we just added it.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
-    if (!db_affected_rows(db_update('block')
-  ->fields(array(
-    'cache' =>  -1,
-    'status' =>  1,
-    'weight' => $weight,
-  ))
-  ->condition('module', $module)
-  ->condition('delta', $delta)
-  ->execute())) {
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
-      $id = db_insert('block')
-  ->fields(array(
-    'module' => $module,
-    'delta' => $delta,
-    'theme' => $theme_key,
-    'status' => 1,
-    'weight' => $weight,
-    'region' => 'right',
-    'cache' => -1,
-  ))
-  ->execute();
+    db_merge('block')
+      ->key(array(
+		  'module' => $module,
+		  'delta'  => $delta,
+		  ))
+      ->fields(array(
+		     'cache'  => -1,
+		     'status' => 1,
+		     'weight' => $weight,
+		     'region' => 'right',
+		     'theme'  => $theme_key,
+		     ))
+      ->updateExcept('region', 'theme')
+      ->execute();
     }
   }
 }
@@ -118,104 +108,55 @@ function l10n_groups_update_6000() {
   while ($role = db_fetch_object($result)) {
     $existing_perms = explode(', ', $role->perm);
     $new_perms = array_diff($existing_perms, array('export gettext templates and translations', 'import gettext files', 'submit suggestions', 'moderate suggestions from others', 'moderate own suggestions'));
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {permission} SET perm = '%s' WHERE rid = %d", implode(', ', $new_perms), $role->rid) */
     db_update('permission')
-  ->fields(array(
-    'perm' => implode(', ', $new_perms),
-  ))
-  ->condition('rid', $role->rid)
-  ->execute();
+      ->fields(array(
+		     'perm' => implode(', ', $new_perms),
+		     ))
+      ->condition('rid', $role->rid)
+      ->execute();
   }
 
   // Create four new roles to be used with og_user_roles.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation team member') */
-  $id = db_insert('role')
-  ->fields(array(
-    'name' => 'translation team member',
-  ))
-  ->execute();
-  $role_team = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation team member'))->fetchField();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation self-moderator') */
-  $id = db_insert('role')
-  ->fields(array(
-    'name' => 'translation self-moderator',
-  ))
-  ->execute();
-  $role_self = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation self-moderator'))->fetchField();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community moderator') */
-  $id = db_insert('role')
-  ->fields(array(
-    'name' => 'translation community moderator',
-  ))
-  ->execute();
-  $role_community = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation community moderator'))->fetchField();
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {role} (name) VALUES ('%s')", 'translation community manager') */
-  $id = db_insert('role')
-  ->fields(array(
-    'name' => 'translation community manager',
-  ))
-  ->execute();
-  $role_manager = db_query_range("SELECT rid FROM {role} WHERE name = :name", array(':name' => 'translation community manager'))->fetchField();
+  db_insert('role')->fields(array('name' => 'translation team member'))->execute();
+  $q_get_rid = "SELECT rid FROM {role} WHERE name = ?";
+  $role_team = db_query($q_get_rid, array('translation team member'))->fetchField();
 
-  // Grant basic team permissions.
-  $perms = array('export gettext templates and translations', 'import gettext files', 'submit suggestions');
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_team, implode(', ', $perms)) */
-  $id = db_insert('permission')
-  ->fields(array(
-    'rid' => $role_team,
-    'perm' => implode(', ', $perms),
-  ))
-  ->execute();
+  db_insert('role')->fields(array('name' => 'translation self-moderator'))->execute();
+  $role_self = db_query($q_get_rid, array('translation self-moderator'))->fetchField();
 
-  // Grant self-moderation permission.
-  $perms = array('moderate own suggestions');
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_self, implode(', ', $perms)) */
-  $id = db_insert('permission')
-  ->fields(array(
-    'rid' => $role_self,
-    'perm' => implode(', ', $perms),
-  ))
-  ->execute();
+  db_insert('role')->fields(array('name' => 'translation community moderator'))->execute();
+  $role_community = db_query($q_get_rid, array('translation community moderator'))->fetchField();
 
-  // Grant community moderation permission.
-  $perms = array('moderate suggestions from others');
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_community, implode(', ', $perms)) */
-  $id = db_insert('permission')
-  ->fields(array(
-    'rid' => $role_community,
-    'perm' => implode(', ', $perms),
-  ))
-  ->execute();
+  db_insert('role')->fields(array('name' => 'translation community manager'))->execute();
+  $role_manager = db_query($q_get_rid, array('translation community manager'))->fetchField();
 
-  // Grant community manager permission.
-  $perms = array('configure member roles');
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {permission} (rid, perm) VALUES (%d, '%s')", $role_manager, implode(', ', $perms)) */
-  $id = db_insert('permission')
-  ->fields(array(
-    'rid' => $role_manager,
-    'perm' => implode(', ', $perms),
-  ))
-  ->execute();
+  // Grant permissions.
+  db_insert('permission')
+    ->fields(array(
+		   'rid' => $role_team,
+		   'perm' => 'export gettext templates and translations, import gettext files, submit suggestions',
+		   ))
+    ->fields(array(
+		   'rid' => $role_self,
+		   'perm' => 'moderate own suggestions',
+		   ))
+    ->fields(array(
+		   'rid' => $role_community,
+		   'perm' => 'moderate suggestions from others',
+		   ))
+    ->fields(array(
+		   'rid' => $role_manager,
+		   'perm' => 'configure member roles',
+		   ))
+    ->execute();
+
 
   // Grant base team permissions to team members, moderation permissions to admins.
-  // TODO Please convert this statement to the D7 database API syntax.
-  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid}', $role_team) */
-  NULL;
-  // TODO Please convert this statement to the D7 database API syntax.
-  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_community) */
-  NULL;
-  // TODO Please convert this statement to the D7 database API syntax.
-  /* db_query('INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, %d FROM {og_uid} WHERE is_admin = 1', $role_manager) */
-  NULL;
+  $q_insert = 'INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, :rid FROM {og_uid}';
+  $q_insert_admin = $q_insert . ' WHERE is_admin = 1';
+  db_query($q_insert, array(':rid' => $role_team));
+  db_query($q_insert_admin, array(':rid' => $role_community));
+  db_query($q_insert_admin, array(':rid' => $role_manager));
 
   // Make these roles available for setting as og user roles.
   variable_set('og_user_roles_roles_l10n_group', array($role_team => $role_team, $role_self => $role_self, $role_community => $role_community, $role_manager => $role_manager));
@@ -223,15 +164,11 @@ function l10n_groups_update_6000() {
   variable_set('og_user_roles_default_role', $role_team);
 
   // Update weight of this module to be before og_user_roles.
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("UPDATE {system} SET weight = -2 WHERE type = 'module' AND name = 'l10n_groups'") */
   db_update('system')
-  ->fields(array(
-    'weight' =>  -2,
-  ))
-  ->condition('type', 'module')
-  ->condition('name', 'l10n_groups')
-  ->execute();
+    ->fields(array('weight' => -2))
+    ->condition('type', 'module')
+    ->condition('name', 'l10n_groups')
+    ->execute();
 
   // Finally, drop the model column, which we do not need anymore.
   db_drop_field('l10n_groups_group', 'model');
@@ -251,31 +188,21 @@ function l10n_groups_update_6001() {
   $blocks = array(10 => 'info');
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
-    // Update all instances of this block even if we just added it.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {block} SET cache = -1, status = 1, weight = %d WHERE module = '%s' AND delta = '%s'", $weight, $module, $delta) */
-    if (!db_affected_rows(db_update('block')
-  ->fields(array(
-    'cache' =>  -1,
-    'status' =>  1,
-    'weight' => $weight,
-  ))
-  ->condition('module', $module)
-  ->condition('delta', $delta)
-  ->execute())) {
-      // TODO Please review the conversion of this statement to the D7 database API syntax.
-      /* db_query("INSERT INTO {block} (module, delta, theme, status, weight, region, cache) VALUES ('%s', '%s', '%s', 1, %d, 'right', -1)", $module, $delta, $theme_key, $weight) */
-      $id = db_insert('block')
-  ->fields(array(
-    'module' => $module,
-    'delta' => $delta,
-    'theme' => $theme_key,
-    'status' => 1,
-    'weight' => $weight,
-    'region' => 'right',
-    'cache' => -1,
-  ))
-  ->execute();
+    // Insert or update all instances of this block even if we just added it.
+    db_merge('block')
+      ->key(array(
+		  'module' => $module,
+		  'delta'  => $delta,
+		  ))
+      ->fields(array(
+		     'cache'  => -1,
+		     'status' => 1,
+		     'weight' => $weight,
+		     'region' => 'right',
+		     'theme'  => $theme_key,
+		     ))
+      ->updateExcept('region', 'theme')
+      ->execute();
     }
   }
   // hook_update_N() no longer returns a $ret array. Instead, return

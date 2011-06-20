@@ -177,15 +177,23 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // RELEASES ====
 
     // No JS release should not have JS strings.
-    // TODO Please convert this statement to the D7 database API syntax.
-    $rid = db_query("SELECT rid FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-" . $this->version_base . "'", $this->project_names[6])->fetchField();
+    $query = db_select('l10n_server_project', 'p')
+      ->fields('p', array('rid'))
+      ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+      ->condition('p.uri', $this->project_names[6])
+      ->condition('r.title', '7.x-' . $this->version_base);
+    $rid = $query->execute()->fetchField();
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&release=' . $rid));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS', FALSE);
     $this->assertCount('<td class="source"', 24);
 
     // JS release should have JS strings.
-    // TODO Please convert this statement to the D7 database API syntax.
-    $rid = db_query("SELECT rid FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid WHERE p.uri = '%s' AND r.title = '6.x-" . $this->version_js . "'", $this->project_names[6])->fetchField();
+    $query = db_select('l10n_server_project', 'p')
+      ->fields('p', array('rid'))
+      ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+      ->condition('p.uri', $this->project_names[6])
+      ->condition('r.title', '7.x-' . $this->version_js);
+    $rid = $query->execute()->fetchField();
     $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&release=' . $rid));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertCount('<td class="source"', 28);
@@ -433,33 +441,29 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // IMPORT AS TEAM
 
     // Modify existing suggestions, so we can test importing again.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1") */
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  'saved for testing',
-  ))
-  ->condition('translation', 'This is a test string. - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1") */
+      ->fields(array(
+		     'translation' =>  'saved for testing',
+		     ))
+      ->condition('translation', 'This is a test string. - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
+
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  '1 saved for testing\0@count saved for testing',
-  ))
-  ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1") */
+      ->fields(array(
+		     'translation' =>  '1 saved for testing\0@count saved for testing',
+		     ))
+      ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
+
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  'saved string in context',
-  ))
-  ->condition('translation', 'Test string in context - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
+      ->fields(array(
+		     'translation' =>  'saved string in context',
+		     ))
+      ->condition('translation', 'Test string in context - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
 
     // Importing the same file, but attribute to team (this can be done logged
     // in as anyone who can import, we don't need to log in as u_team).
@@ -488,33 +492,29 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // we only care about that on import and data submission. It is not a
     // problem for the data model, but an issue for workflow, so for testing,
     // it is fine as we have it here.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = 'saved for testing' WHERE translation = 'This is a test string. - imported translation' AND is_suggestion = 1") */
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  'saved for testing',
-  ))
-  ->condition('translation', 'This is a test string. - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = '1 saved for testing\0@count saved for testing' WHERE translation = '1 test string - imported translation\0@count test strings - imported translation' AND is_suggestion = 1") */
+      ->fields(array(
+		     'translation' =>  'saved for testing',
+		     ))
+      ->condition('translation', 'This is a test string. - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
+
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  '1 saved for testing\0@count saved for testing',
-  ))
-  ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_server_translation} SET translation = 'saved string in context' WHERE translation = 'Test string in context - imported translation' AND is_suggestion = 1") */
+      ->fields(array(
+		     'translation' =>  '1 saved for testing\0@count saved for testing',
+		     ))
+      ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
+
     db_update('l10n_server_translation')
-  ->fields(array(
-    'translation' =>  'saved string in context',
-  ))
-  ->condition('translation', 'Test string in context - imported translation')
-  ->condition('is_suggestion', 1)
-  ->execute();
+      ->fields(array(
+		     'translation' =>  'saved string in context',
+		     ))
+      ->condition('translation', 'Test string in context - imported translation')
+      ->condition('is_suggestion', 1)
+      ->execute();
 
     // Importing the same file, but ask to import as final translation.
     $this->importPO($filename, $this->u_moderator->uid, 0);
@@ -533,10 +533,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // IMPORT AS TRANSLATION
 
     // Drop all existing translations, so we can see importing a translation.
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("DELETE FROM {l10n_server_translation}") */
-    db_delete('l10n_server_translation')
-  ->execute();
+    db_delete('l10n_server_translation')->execute();
 
     $this->importPO($filename, $this->u_moderator->uid, 0);
     $this->assertRaw(t('@count translations added', array('@count' => 3)));

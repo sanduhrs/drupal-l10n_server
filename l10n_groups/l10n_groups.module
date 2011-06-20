@@ -172,14 +172,12 @@ function l10n_groups_node_info() {
  * Implements hook_insert().
  */
 function l10n_groups_insert($node) {
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query("INSERT INTO {l10n_groups_group} (nid, language) VALUES (%d, '%s')", $node->nid, $node->l10n_group_language) */
   $id = db_insert('l10n_groups_group')
-  ->fields(array(
-    'nid' => $node->nid,
-    'language' => $node->l10n_group_language,
-  ))
-  ->execute();
+    ->fields(array(
+		   'nid' => $node->nid,
+		   'language' => $node->l10n_group_language,
+		   ))
+    ->execute();
   l10n_community_cache_clear_all();
 }
 
@@ -187,11 +185,7 @@ function l10n_groups_insert($node) {
  * Implements hook_delete().
  */
 function l10n_groups_delete(&$node) {
-  // TODO Please review the conversion of this statement to the D7 database API syntax.
-  /* db_query('DELETE FROM {l10n_groups_group} WHERE nid = %d', $node->nid) */
-  db_delete('l10n_groups_group')
-  ->condition('nid', $node->nid)
-  ->execute();
+  db_delete('l10n_groups_group') ->condition('nid', $node->nid) ->execute();
   l10n_community_cache_clear_all();
 }
 
@@ -200,14 +194,10 @@ function l10n_groups_delete(&$node) {
  */
 function l10n_groups_update($node) {
   if ($nid = db_query('SELECT nid FROM {l10n_groups_group} WHERE nid = :nid', array(':nid' => $node->nid))->fetchField()) {
-    // TODO Please review the conversion of this statement to the D7 database API syntax.
-    /* db_query("UPDATE {l10n_groups_group} SET language = '%s' WHERE nid = %d", $node->l10n_group_language, $node->nid) */
     db_update('l10n_groups_group')
-  ->fields(array(
-    'language' => $node->l10n_group_language,
-  ))
-  ->condition('nid', $node->nid)
-  ->execute();
+      ->fields(array('language' => $node->l10n_group_language))
+      ->condition('nid', $node->nid)
+      ->execute();
   }
   else {
     l10n_groups_insert($node);
@@ -218,8 +208,9 @@ function l10n_groups_update($node) {
  * Implements hook_load().
  */
 function l10n_groups_load($nodes) {
+  $q = 'SELECT language AS l10n_group_language FROM {l10n_groups_group} WHERE nid = ?';
   foreach ($nodes as $nid => &$node) {
-    $node_additions = db_fetch_object(db_query('SELECT language AS l10n_group_language FROM {l10n_groups_group} WHERE nid = :nid', array(':nid' => $node->nid)));
+    $node_additions = db_query($q, array($node->nid))->fetchObject();
     foreach ($node_additions as $property => &$value) {
       $node->$property = $value;
     }
