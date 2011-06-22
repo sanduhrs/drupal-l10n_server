@@ -639,15 +639,15 @@ function l10n_community_get_string_count($type, $id = NULL) {
         }
         else {
           // More complex joins if we also need to factor the project in.
-          $count1_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = %d AND ts.has_translation = 1 GROUP BY ts.language";
-          $count2_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = %d AND ts.has_suggestion = 1 GROUP BY ts.language";
-          $count_args = array($id);
+          $count1_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = :pid AND ts.has_translation = 1 GROUP BY ts.language";
+          $count2_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = :pid AND ts.has_suggestion = 1 GROUP BY ts.language";
+          $count_args = array(':pid' => $id);
         }
-        $result = db_query("SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = :l.pid AND ts.has_translation = :ts.has_translation GROUP BY ts.language", array(':l.pid' => $count_args, ':ts.has_translation' => 1));
+	$result = db_query($count1_sql, $count_args);
         while ($row = db_fetch_object($result)) {
           $sums[$row->language]['translations'] = $row->translation_count;
         }
-        $result = db_query("SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = :l.pid AND ts.has_suggestion = :ts.has_suggestion GROUP BY ts.language", array(':l.pid' => $count_args, ':ts.has_suggestion' => 1));
+	$result = db_query($count2_sql, $count_args);
         while ($row = db_fetch_object($result)) {
           $sums[$row->language]['suggestions'] = $row->translation_count;
         }
@@ -674,8 +674,8 @@ function l10n_community_get_string_count($type, $id = NULL) {
         $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, l.pid FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.has_translation = 1 ";
         if (isset($id)) {
           // Limit to language if desired.
-          $count_sql .= "AND ts.language = '%s' ";
-          $count_args[] = $id;
+          $count_sql .= "AND ts.language = :lng ";
+          $count_args[':lng'] = $id;
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
@@ -686,8 +686,8 @@ function l10n_community_get_string_count($type, $id = NULL) {
         $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, l.pid FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.has_suggestion = 1 ";
         if (isset($id)) {
           // Limit to language if desired.
-          $count_sql .= "AND ts.language = '%s' ";
-          $count_args[] = $id;
+          $count_sql .= "AND ts.language = :lng ";
+          $count_args[':lng'] = $id;
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
@@ -703,11 +703,9 @@ function l10n_community_get_string_count($type, $id = NULL) {
       // Get summaries of people having most active translations per language.
       // Skip anonymous since that is used for placeholders when there was
       // no prior translations for a suggestion.
-      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = :t.is_active AND t.is_suggestion = :t.is_suggestion AND t.language = :t.language AND u.uid != :u.uid GROUP BY t.uid_entered ORDER BY sum DESC", array(':t.is_active' => 1, ':t.is_suggestion' => 0, ':t.language' => $id, ':u.uid' => 0));
-      $accounts = array();
-      while ($account = db_fetch_object($result)) {
-        $accounts[] = $account;
-      }
+      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = :lng AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", 0, 10, array(':lng', $id));
+      $accounts = $result->fetchAll();
+
       return $accounts;
   }
 }

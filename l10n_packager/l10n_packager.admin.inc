@@ -179,13 +179,13 @@ function l10n_packager_admin_projects_form_validate($form, &$form_state) {
     }
   }
   if (!empty($form_state['values']['release'])) {
-    $query = "SELECT COUNT(rid) FROM {l10n_server_release} WHERE title LIKE '%s'";
-    $args = array($form_state['values']['release']);
+    $query = db_select('l10n_server_release');
+    $query->addExpression('COUNT(rid)');
+    $query->condition('title', $form_state['values']['release'], 'LIKE');
     if ($project) {
-      $query .= " AND pid = %d";
-      $args[] = $project->pid;
+      $query->condition('pid', $project->pid);
     }
-    if (!db_query($query, $args)->fetchField()) {
+    if (!$query->execute()->fetchField()) {
       form_set_error('release', t('Invalid release name.'));
     }
   }

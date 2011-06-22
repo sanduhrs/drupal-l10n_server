@@ -56,7 +56,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   }
 
   $user_feedback = FALSE;
-  $results = db_query_range("SELECT * FROM {l10n_server_release} WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = :connector_module AND status = :status ORDER BY last_parsed ASC", array(':connector_module' => 'l10n_drupal_files', ':status' => 1));
+  $results = db_query_range("SELECT * FROM {l10n_server_release} WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = 'l10n_drupal_files' AND status = 1) ORDER BY last_parsed ASC", 0, variable_get('l10n_server_connector_l10n_drupal_files_limit', 1));
   while ($release = db_fetch_object($results)) {
 
     // Only parse file if something changed since we last parsed it.
@@ -156,8 +156,8 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
   }
 
   // Grab updated project data and save release information.
-  $sql = "SELECT * FROM {l10n_server_project} WHERE uri = :uri AND connector_module = :connector_module";
-  $arg = array(':uri' => $project_uri, ':connector_module' => 'l10n_drupal_files');
+  $sql = "SELECT * FROM {l10n_server_project} WHERE uri = :uri AND connector_module = 'l10n_drupal_files'";
+  $arg = array(':uri' => $project_uri);
   $project = db_fetch_object(db_query($sql, $arg));
 
   $sql = "SELECT * FROM {l10n_server_release} WHERE pid = :pid AND title = :title";

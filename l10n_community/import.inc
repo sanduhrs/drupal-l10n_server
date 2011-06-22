@@ -175,7 +175,9 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
     // If context was not set, set to empty.
     $value['msgctxt'] = !empty($value['msgctxt']) ? $value['msgctxt'] : '';
 
-    if ($sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey", array(':hashkey' => MD5('%s'), '' => $value['msgid'] . $value['msgctxt']))->fetchField()) {
+    if ($sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey",
+			array(':hashkey' => md5($value['msgid'] . $value['msgctxt'])))
+	->fetchField()) {
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 

@@ -249,22 +249,16 @@ function l10n_packager_release_name($rid) {
  * Get timestamp of the last updated string for a release, for each language.
  */
 function l10n_packager_translation_last_updated($rid) {
-  $updated = array();
-  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = :t.is_active AND t.is_suggestion = :t.is_suggestion AND l.rid = :l.rid GROUP BY t.language", array(':t.is_active' => 1, ':t.is_suggestion' => 0, ':l.rid' => $rid));
-  while ($latest = db_fetch_object($result)) {
-    $updated[$latest->language] = $latest->latest_time;
-  }
-  return $updated;
+  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :l.rid GROUP BY t.language", 
+		     array(':l.rid' => $rid));
+  return $result->fetchAllKeyed();
 }
 
 /**
  * Get files for a release, indexed by language.
  */
 function l10n_packager_release_get_files($rid) {
-  $files = array();
-  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :r.rid', array(':r.rid' => $rid));
-  while ($file = db_fetch_object($result)) {
-    $files[$file->language] = $file;
-  }
-  return $files;
+  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :r.rid', 
+		     array(':r.rid' => $rid));
+  return $result->fetchAllAssoc('language');
 }

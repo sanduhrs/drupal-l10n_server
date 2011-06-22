@@ -238,7 +238,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // LOOKUP ====
 
-    $sid = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value", array(':value' => 'This is a test string.'))->fetchField();
+    $sid = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'This is a test string.'")->fetchField();
     $this->drupalGet('translate/source-details/' . $sid);
     $this->assertPattern('!<em>' . preg_quote($this->project_names[5]) . ':</em> ' . preg_quote('5.x-' . $this->version_js) . ' <span title="[^>]+">\(1\)</span>!');
     $this->assertPattern('!<em>' . preg_quote($this->project_names[6]) . ':</em> ' . preg_quote('6.x-' . $this->version_js) . ' <span title="[^>]+">\(1\)</span>, ' . preg_quote('6.x-' . $this->version_base) . ' <span title="[^>]+">\(1\)</span>!');
@@ -278,11 +278,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Add suggestions for four strings.
     $edit = array();
-    $sid1 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value", array(':value' => 'This is a test string.'))->fetchField();
+    $sid1 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'This is a test string.'")->fetchField();
     $edit['strings[' . $sid1 . '][new][value][0]'] = 'This is a test string. suggestion';
-    $sid2 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value AND context = :context", array(':value' => 'Test string in context', ':context' => ''))->fetchField();
+    $sid2 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'Test string in context' AND context = ''")->fetchField();
     $edit['strings[' . $sid2 . '][new][value][0]'] = 'Test string in context. suggestion-1';
-    $sid3 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value AND context = :context", array(':value' => 'Test string in context', ':context' => 'Test context'))->fetchField();
+    $sid3 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'Test string in context' AND context = 'Test context'")->fetchField();
     $edit['strings[' . $sid3 . '][new][value][0]'] = 'Test string in context. suggestion-2';
     $sid4 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value", array(':value' => "1 test string\0@count test strings"))->fetchField();
     $edit['strings[' . $sid4 . '][new][value][0]'] = '1 test string suggestion';
@@ -337,9 +337,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL DECLINE ====
 
-    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = :language", array(':translation' => 'Test string in context. suggestion-1', ':language' => 'hu'))->fetchField();
-    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = :language", array(':translation' => 'Test string in context. suggestion-2', ':language' => 'hu'))->fetchField();
-    $tid3 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = :language", array(':translation' => 'Test string in context. suggestion-3', ':language' => 'hu'))->fetchField();
+    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-1' AND language = 'hu'")->fetchField();
+    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-2' AND language = 'hu'")->fetchField();
+    $tid3 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-3' AND language = 'hu'")->fetchField();
     $edit = array();
     $edit['strings[' . $sid2 . '][' . $tid1 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid2 . '][declined]'] = 1;
@@ -353,8 +353,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL APPROVE ====
 
-    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = :language", array(':translation' => 'This is a test string. suggestion', ':language' => 'hu'))->fetchField();
-    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = :language", array(':translation' => "1 test string suggestion\0@count test strings suggestion", ':language' => 'hu'))->fetchField();
+    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'This is a test string. suggestion' AND language = 'hu'")->fetchField();
+    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = 'hu'", array(':translation' => "1 test string suggestion\0@count test strings suggestion"))->fetchField();
     $edit = array();
     $edit['strings[' . $sid1 . '][active]'] = $tid1;
     $edit['strings[' . $sid4 . '][active]'] = $tid2;

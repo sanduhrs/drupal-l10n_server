@@ -109,8 +109,8 @@ function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
   $limit = (int) $count * 0.75;
   foreach ($languages as $language) {
     if ($language->language != 'en') {
-      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()');
-      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()');
+      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
+      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
 
       $select = db_select('l10n_server_string', 's');
       $select->addExpression('NULL');

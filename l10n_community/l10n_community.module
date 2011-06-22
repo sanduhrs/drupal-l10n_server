@@ -485,7 +485,7 @@ function l10n_community_block_stats_front() {
 function l10n_community_user_view($account, $view_mode) {
   if (TRUE && user_access('access localization community')) {
     $languages = l10n_community_get_languages('name');
-    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = :t.uid_entered AND t.is_suggestion = :t.is_suggestion AND t.is_active = :t.is_active GROUP by t.language", array(':t.uid_entered' => $account->uid, ':t.is_suggestion' => 0, ':t.is_active' => 1));
+    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = :t.uid_entered AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", array(':t.uid_entered' => $account->uid));
     $items = array();
     while ($row = db_fetch_object($result)) {
       $items[] = array(
@@ -524,7 +524,7 @@ function l10n_community_get_languages($key = NULL) {
   static $languages = NULL;
 
   if (!isset($languages)) {
-    $result = db_query("SELECT * FROM {languages} WHERE language <> :language ORDER BY name ASC", array(':language' => 'en'));
+    $result = db_query("SELECT * FROM {languages} WHERE language <> 'en' ORDER BY name");
     $languages = array();
     while ($language = db_fetch_object($result)) {
       $languages[$language->language] = $language;
@@ -573,8 +573,7 @@ function l10n_community_review_access() {
  */
 function l10n_community_get_contexts() {
   $contexts = array();
-  $query = "SELECT DISTINCT context FROM {l10n_server_string} ORDER BY context";
-  $result = db_query($query);
+  $result = db_query("SELECT DISTINCT context FROM {l10n_server_string} ORDER BY context");
   while ($context = db_fetch_object($result)) {
     $contexts[empty($context->context) ? 'none' : $context->context] = empty($context->context) ? t('No context') : $context->context;
   }
@@ -673,7 +672,7 @@ function l10n_community_update_message() {
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
-    $result = db_query_range("SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER('%s%%') AND status = :status ORDER BY title", array(':status' => 1, '' => $string));
+    $result = db_query_range("SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER(:str) AND status = 1 ORDER BY title", array(':str' => $string));
     while ($project = db_fetch_object($result)) {
       $matches[$project->title] = check_plain($project->title);
     }
@@ -773,9 +772,9 @@ function l10n_community_get_stats($langcode = NULL) {
     else {
       $stats = array();
       $stats['strings'] = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
-      $stats['translations'] = db_query("SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = :has_translation AND language = :language", array(':has_translation' => 1, ':language' => $langcode))->fetchField();
-      $stats['suggestions'] = db_query("SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':is_suggestion' => 1, ':is_active' => 1, ':language' => $langcode))->fetchField();
-      $stats['users'] = db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_server_translation} WHERE is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':is_suggestion' => 0, ':is_active' => 1, ':language' => $langcode))->fetchField();
+      $stats['translations'] = db_query("SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = 1 AND language = :language", array(':language' => $langcode))->fetchField();
+      $stats['suggestions'] = db_query("SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = 1 AND is_active = 1 AND language = :language", array(':language' => $langcode))->fetchField();
+      $stats['users'] = db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_server_translation} WHERE is_suggestion = 0 AND is_active = 1 AND language = :language", array(':language' => $langcode))->fetchField();
 
       // Cache results for next time. Not setting a timestamp as cache validity
       // time, we would like to retain control of recalculating these values.
@@ -791,13 +790,13 @@ function l10n_community_get_stats($langcode = NULL) {
     else {
       $stats = array();
       $stats['users'] = (int) db_query("SELECT COUNT(DISTINCT uid_entered) FROM {l10n_server_translation}")->fetchField();
-      $stats['projects'] = db_query('SELECT COUNT(*) FROM {l10n_server_project} WHERE status = :status', array(':status' => 1))->fetchField();
-      $stats['releases_parsed'] = db_query('SELECT COUNT(*) FROM {l10n_server_release} WHERE last_parsed != :last_parsed', array(':last_parsed' => 0))->fetchField();
-      $stats['releases_queue'] = db_query('SELECT COUNT(*) FROM {l10n_server_release} r INNER JOIN {l10n_server_project} p ON r.pid = p.pid WHERE p.status = :p.status AND r.last_parsed = :r.last_parsed', array(':p.status' => 1, ':r.last_parsed' => 0))->fetchField();
+      $stats['projects'] = db_query('SELECT COUNT(*) FROM {l10n_server_project} WHERE status = 1')->fetchField();
+      $stats['releases_parsed'] = db_query('SELECT COUNT(*) FROM {l10n_server_release} WHERE last_parsed != 0')->fetchField();
+      $stats['releases_queue'] = db_query('SELECT COUNT(*) FROM {l10n_server_release} r INNER JOIN {l10n_server_project} p ON r.pid = p.pid WHERE p.status = 1 AND r.last_parsed = 0')->fetchField();
       $stats['files'] = db_query('SELECT COUNT(*) FROM {l10n_server_file}')->fetchField();
       $stats['strings'] = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
-      $stats['translations'] = db_query('SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = :has_translation', array(':has_translation' => 1))->fetchField();
-      $stats['suggestions'] = db_query('SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = :is_suggestion AND is_active = :is_active', array(':is_suggestion' => 1, ':is_active' => 1))->fetchField();
+      $stats['translations'] = db_query('SELECT COUNT(*) FROM {l10n_server_status_flag} WHERE has_translation = 1')->fetchField();
+      $stats['suggestions'] = db_query('SELECT COUNT(*) FROM {l10n_server_translation} WHERE is_suggestion = 1 AND is_active = 1')->fetchField();
 
       if (module_exists('l10n_groups')) {
         $stats['groups'] = db_query('SELECT COUNT(*) FROM {l10n_groups_group}')->fetchField();
@@ -1134,8 +1133,8 @@ function l10n_community_decline_string($langcode, $sid, $tid, $uid) {
  */
 function l10n_community_update_string_status($langcode, $sid) {
   // Let's see if we have any suggestions remaining in this language.
-  $has_suggestion = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':sid' => $sid, ':is_suggestion' => 1, ':is_active' => 1, ':language' => $langcode))->fetchField();
-  $has_translation = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = :is_suggestion AND is_active = :is_active AND language = :language", array(':sid' => $sid, ':is_suggestion' => 0, ':is_active' => 1, ':language' => $langcode))->fetchField();
+  $has_suggestion = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = 1 AND is_active = 1 AND language = :language", array(':sid' => $sid, ':language' => $langcode))->fetchField();
+  $has_translation = db_query("SELECT 1 FROM {l10n_server_translation} WHERE sid = :sid AND is_suggestion = 0 AND is_active = 1 AND language = :language", array(':sid' => $sid, ':language' => $langcode))->fetchField();
 
   db_delete('l10n_server_status_flag')
     ->condition('sid', $sid)
@@ -1171,7 +1170,7 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
 
   // Make the existing approved string a suggestion (if applicable).
   // There should only ever be one string like this.
-  if ($existing_tid = db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = :sid AND language = :language AND is_suggestion = :is_suggestion AND is_active = :is_active", array(':sid' => $sid, ':language' => $langcode, ':is_suggestion' => 0, ':is_active' => 1))->fetchField()) {
+  if ($existing_tid = db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = :sid AND language = :language AND is_suggestion = 0 AND is_active = 1", array(':sid' => $sid, ':language' => $langcode))->fetchField()) {
     db_update('l10n_server_translation')
       ->fields(array(
 		     'is_suggestion' => 1,

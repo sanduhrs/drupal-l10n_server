@@ -236,8 +236,8 @@ function l10n_community_update_6006() {
 
   db_add_field('l10n_community_file', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
 
-  $q = db_query("SELECT rid, pid FROM {l10n_community_release}");
-  while ($release = db_fetch_object($q)) {
+  $result = db_query("SELECT rid, pid FROM {l10n_community_release}");
+  while ($release = db_fetch_object($result)) {
     db_update('l10n_community_file')
       ->fields(array('pid' => $release->pid))
       ->condition('rid', $release->rid)
@@ -260,8 +260,8 @@ function l10n_community_update_6007() {
   db_add_index('l10n_community_line', 'pid', array('pid'));
   db_add_index('l10n_community_line', 'rid', array('rid'));
 
-  $q = db_query("SELECT fid, rid, pid FROM {l10n_community_file}");
-  while ($row = db_fetch_object($q)) {
+  $result = db_query("SELECT fid, rid, pid FROM {l10n_community_file}");
+  while ($row = db_fetch_object($result)) {
     db_update('l10n_community_line')
       ->fields(array(
 		     'pid' => $row->pid,
@@ -514,7 +514,7 @@ function l10n_community_update_6016() {
       ->condition('connector_module', 'l10n_localpacks')
       ->execute();
   }
-  if (db_query("SELECT 1 FROM {l10n_server_project} WHERE connector_module = :connector_module", array(':connector_module' => 'l10n_project'))->fetchField()) {
+  if (db_query("SELECT 1 FROM {l10n_server_project} WHERE connector_module = 'l10n_project'")->fetchField()) {
     variable_set('l10n_server_connector_l10n_project_drupalorg_limit', variable_get('l10n_project_limit', 1));
     variable_set('l10n_server_connector_l10n_project_drupalorg_cron', variable_get('l10n_project_cron', 0));
     variable_set('l10n_server_connector_l10n_project_drupalorg_last_sync', variable_get('l10n_project_last_sync', 0));

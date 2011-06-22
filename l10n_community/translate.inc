@@ -381,7 +381,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
 
   // When there are suggestions, load them from the database.
   if ($source->has_suggestion) {
-    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = :t.language AND t.sid = :t.sid AND t.is_active = :t.is_active AND t.is_suggestion = :t.is_suggestion ORDER BY t.time_entered", array(':t.language' => $language->language, ':t.sid' => $source->sid, ':t.is_active' => 1, ':t.is_suggestion' => 1));
+    $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = :t.language AND t.sid = :t.sid AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", array(':t.language' => $language->language, ':t.sid' => $source->sid));
     while ($suggestion = db_fetch_object($result)) {
       $suggestion->translation = l10n_community_unpack_string($suggestion->translation);
       // Add the suggestion to the list.
@@ -1030,7 +1030,7 @@ function l10n_community_string_details($sid = 0, $ahah = 0) {
   }
 
   // List of project releases, where this string is used.
-  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_server_line} l INNER JOIN {l10n_server_project} p ON l.pid = p.pid INNER JOIN {l10n_server_release} r ON l.rid = r.rid WHERE l.sid = :l.sid AND p.status = :p.status GROUP BY l.rid ORDER BY l.pid, l.rid', array(':l.sid' => $sid, ':p.status' => 1));
+  $result = db_query('SELECT l.pid, p.title project_title, l.rid, r.title release_title, COUNT(l.lineno) as occurrence_count FROM {l10n_server_line} l INNER JOIN {l10n_server_project} p ON l.pid = p.pid INNER JOIN {l10n_server_release} r ON l.rid = r.rid WHERE l.sid = :l.sid AND p.status = 1 GROUP BY l.rid ORDER BY l.pid, l.rid', array(':l.sid' => $sid));
 
   $version_list = array();
   $project_list = array();

@@ -56,7 +56,8 @@ function l10n_drupal_drupalorg_batch_parse_form_submit() {
     SELECT r.*
     FROM {l10n_server_project} p INNER JOIN
          {l10n_server_release} r ON p.pid = r.pid
-    WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC");
+    WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC", 
+    0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT);
   while ($release = db_fetch_object($result)) {
     $operations[] = array('l10n_drupal_drupalorg_batch_operation', array($release));
   }
@@ -212,7 +213,8 @@ function l10n_drupal_drupalorg_scan() {
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
          files f ON prf.fid = f.fid INNER JOIN
          node nn ON prn.nid = nn.nid
-    WHERE prn.rebuild = 0 AND f.timestamp > %d", $last_sync - 60 * 60 * 24);
+    WHERE prn.rebuild = 0 AND f.timestamp > :timestamp", 
+		     array('timestamp' => $last_sync - 60 * 60 * 24));
 
   // Fill in an array, so we can go back to our database and add in these
   // details.
@@ -235,7 +237,8 @@ function l10n_drupal_drupalorg_scan() {
       FROM project_projects pp INNER JOIN
            project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
            project_usage_week_release puwr ON puwr.nid = prn.nid
-      WHERE prn.rebuild = 0 AND puwr.timestamp = %d", $last_usage_timestamp);
+      WHERE prn.rebuild = 0 AND puwr.timestamp = :timestamp", 
+		       array('timestamp' => $last_usage_timestamp));
     while ($release = db_fetch_object($result)) {
       $project_usage[$release->uri][$release->version] = $release->count;
     }
