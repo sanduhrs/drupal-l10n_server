@@ -366,14 +366,15 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   $project = l10n_server_get_projects(array('uri' => $uri));
 
-  $query = db_select('l10n_server_file', 'f')
-    ->innerJoin('l10n_server_line', 'l', 'f.fid = l.fid')
-    ->innerJoin('l10n_server_string', 's', 'l.sid = s.sid')
-    ->condition('f.pid', $project->pid)
+  $query = db_select('l10n_server_file', 'f');
+  $query->innerJoin('l10n_server_line', 'l', 'f.fid = l.fid');
+  $query->innerJoin('l10n_server_string', 's', 'l.sid = s.sid');
+  $query
     ->fields('s', array('sid', 'value', 'context'))
     ->fields('f', array('location', 'revision'))
     ->fields('l', array('lineno', 'type'))
-    ->orderBy('s.sid', 'ASC');
+    ->condition('f.pid', $project->pid)
+    ->orderBy('s.sid');
 
   if (!$template) {
     // Join differently based on compact method, so we can skip strings without
@@ -381,16 +382,16 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $translation_join = ($compact) ? 'innerJoin' : 'leftJoin';
 
     // Improve the query for templates
+    $query->leftJoin('l10n_server_status_flag', 'st',
+		     'st.sid = s.sid AND st.language = :st.language',
+		     array(':st.language' => $language->language));
+    $query->$translation_join('l10n_server_translation', 't',
+			      's.sid = t.sid AND t.language = :t.language AND t.is_active = 1',
+			      array(':t.language' => $language->language));
     $query
-      ->leftJoin('l10n_server_status_flag', 'st',
-		 'st.sid = s.sid AND st.language = :st.language',
-		 array(':st.language' => $language->language))
-      ->$translation_join('l10n_server_translation', 't',
-			  's.sid = t.sid AND t.language = :t.language AND t.is_active = 1',
-			  array(':t.language' => $language->language))
       ->fields('t', array('translation', 'is_suggestion'))
       ->fields('st', array('has_suggestion'))
-      ->orderBy('t.is_suggestion', 'ASC')
+      ->orderBy('t.is_suggestion')
       ->orderBy('t.time_entered', 'DESC');
 
     // Installer strings are POTX_STRING_INSTALLER or POTX_STRING_BOTH.

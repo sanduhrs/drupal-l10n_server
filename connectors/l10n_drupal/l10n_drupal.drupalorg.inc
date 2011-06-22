@@ -97,12 +97,9 @@ function l10n_drupal_drupalorg_scan() {
   // can have nodes with multiple terms, so just adding
   // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
   // would still match on other terms.
-  $result = db_select('project_projects', 'pp')
-    ->innerJoin('term_node', 'tn', 'tn.nid = pp.nid')
-    ->fields('pp', array('nid'))
-    ->distinct()
-    ->condition('tn.tid', L10N_DRUPAL_DRUPALORG_TRANSLATION_TID)
-    ->execute();
+  $result = db_query("SELECT DISTINCT pp.nid
+     FROM project_projects pp INNER JOIN term_node tn ON tn.nid = pp.nid
+     WHERE tn.tid = :tn.tid", array(':tn.tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
   $exclude_projects = $result->fetchCol();
 }
 

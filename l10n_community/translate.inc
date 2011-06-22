@@ -844,18 +844,18 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  *   An array of string records from database.
  */
 function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
-  $query = db_select('l10n_server_string', 's')
-    ->distinct()
-    ->leftJoin('l10n_server_status_flag', 'ts', 
-	       's.sid = ts.sid AND ts.language = :language', array(':lanuage' => $langcode))
-    ->leftJoin('l10n_server_translation', 't',
-	       'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1')
-    ->leftJoin('users', 'u', 'u.uid = t.uid_entered')
+  $query = db_select('l10n_server_string', 's')->distinct();
+  $query->leftJoin('l10n_server_status_flag', 'ts', 
+		   's.sid = ts.sid AND ts.language = :language', array(':lanuage' => $langcode));
+  $query->leftJoin('l10n_server_translation', 't',
+		   'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
+  $query->leftJoin('users', 'u', 'u.uid = t.uid_entered');
+  $query
     ->fields('s', array('sid', 'value', 'context'))
     ->fields('t', array('tid', 'language', 'translation', 'uid_entered',
 			'time_entered', 'time_changed', 'is_suggestion', 'is_active'))
-    ->fields('ts', array('has_suggestion', 'has_translation'));
-  $query->addField('u', 'name', 'username');
+    ->fields('ts', array('has_suggestion', 'has_translation'))
+    ->addField('u', 'name', 'username');
 
   // Add sid filtering.
   if (!empty($filters['sid'])) {
@@ -941,9 +941,9 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
         $string->translation = '';
       }
       else {
-	$q = db_select('l10n_server_translation', 't')
-	  ->leftJoin('users', 'u', 'u.uid = t.uid_entered')
-	  ->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered',
+	$q = db_select('l10n_server_translation', 't');
+	$q->leftJoin('users', 'u', 'u.uid = t.uid_entered');
+	$q->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered',
 			      'time_changed', 'is_suggestion', 'is_active'))
 	  ->addField('u', 'name', 'username');
 	$q->condition('t.language',  $string->language)

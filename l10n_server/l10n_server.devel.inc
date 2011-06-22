@@ -112,20 +112,17 @@ function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
       $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
       $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
 
-      $select = db_select('l10n_server_string', 's');
-      $select->addExpression('NULL');
-      $select->addField('s', 'sid');
-      $select->addExpression($language->language);
-      $select->addField('s', 'value');
-      $select->addExpression($uid1);
-      $select->addExpression($uid2);
-      $select->addExpression(REQUEST_TIME);
-      $select->addExpression(REQUEST_TIME);
-      $select->addExpression(0);
-      $select->addExpression(0);
-      $select->addExpression(1);
-      $select->range(0, $limit);
-      db_insert('l10n_server_translation') ->from($select) ->execute();
+      db_query("
+INSERT INTO {l10n_server_translation} 
+SELECT NULL, sid, :lng, value, :uid1, :uid2, :rt1, :rt2, 0, 0, 1 
+FROM {l10n_server_string} LIMIT 0, :limit", 
+	       array(':lng' => $language->language, 
+		     ':uid1' => $uid1, 
+		     ':uid2' => $uid2, 
+		     ':rt1' => REQUEST_TIME, 
+		     ':rt2' => REQUEST_TIME, 
+		     ':limit' => $limit)
+	       );
     }
   }
   drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));

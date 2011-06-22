@@ -99,7 +99,7 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
       $sid = $select->execute()->fetchField();
     }
 
-    $select = db_select('l10n_server_line')->fields('fid')
+    $select = db_select('l10n_server_line', 'l')->fields('l', array('fid'))
       ->condition('fid', $fid)
       ->condition('sid', $sid)
       ->condition('lineno', 0)

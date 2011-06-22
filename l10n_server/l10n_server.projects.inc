@@ -614,12 +614,7 @@ function l10n_server_delete_orphans() {
  * Detect the count of orphan strings in the database, if any.
  */
 function l10n_server_orphan_strings() {
-  $select = db_select('l10n_server_string', 's')
-    ->fields('s')
-    ->leftJoin('l10n_server_line', 'l', 's.sid = l.sid')
-    ->isNull('l.sid');
-  $nr = $select->countQuery()->execute()->fetchField();
-  return $nr;
+  return db_query('SELECT COUNT(*) FROM {l10n_server_string} s LEFT JOIN {l10n_server_line} l ON s.sid = l.sid WHERE l.sid IS NULL')->fetchField();
 }
 
 /**

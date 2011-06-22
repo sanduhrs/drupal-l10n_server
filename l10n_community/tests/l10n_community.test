@@ -178,8 +178,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // No JS release should not have JS strings.
     $query = db_select('l10n_server_project', 'p')
-      ->fields('p', array('rid'))
       ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+      ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_base);
     $rid = $query->execute()->fetchField();
@@ -189,8 +189,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // JS release should have JS strings.
     $query = db_select('l10n_server_project', 'p')
-      ->fields('p', array('rid'))
       ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+      ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_js);
     $rid = $query->execute()->fetchField();
