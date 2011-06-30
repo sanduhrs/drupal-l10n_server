@@ -149,11 +149,6 @@ function l10n_packager_block_view($delta) {
   }
 }
 
-/**
- * Implements hook_block().
- */
-function l10n_packager_block_OLD($op = 'list', $delta = 0, $edit = array()) { }
-
 // == Language list export =====================================================
 
 /**

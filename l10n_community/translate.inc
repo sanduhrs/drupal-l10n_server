@@ -893,8 +893,8 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     // Search in the source or target strings.
     $search = $filters['search'];
     $query->condition(db_or()
-		      ->condition('s.value', "%${search}%", 'LIKE')
-		      ->condition('t.translation', "%${search}%", 'LIKE'));
+		      ->condition('s.value', '%' . db_like($search) . '%', 'LIKE')
+		      ->condition('t.translation', '%' . db_like($search) . '%', 'LIKE'));
   }
 
   // Restriction based on string status by translation / suggestions.

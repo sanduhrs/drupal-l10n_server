@@ -90,9 +90,6 @@ function l10n_packager_schema() {
  * Implements hook_install().
  */
 function l10n_packager_install() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
-  // drupal_install_schema('l10n_packager')
-
   // Set up blocks for this module.
   $theme_key = variable_get('theme_default', 'garland');
   $blocks = array(-8 => 'download');
@@ -118,25 +115,13 @@ function l10n_packager_install() {
 }
 
 /**
- * Implements hook_uninstall().
- */
-function l10n_packager_uninstall() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
-  // drupal_uninstall_schema('l10n_packager')
-}
-
-/**
  * Add cache_l10n_packager table to cache downloads information.
  */
 function l10n_packager_update_6001() {
-  $ret = array();
   $table = drupal_get_schema_unprocessed('system', 'cache');
   $table['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
   db_create_table('cache_l10n_packager', $table);
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6001()');
 }
 
 /**
@@ -164,20 +149,14 @@ function l10n_packager_update_6002() {
       ->execute();
     }
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* array() */;
+
+  return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6002()');
 }
 
 /**
  * Add sid_count to release exports.
  */
 function l10n_packager_update_6003() {
-  $ret = array();
   db_add_field('l10n_packager_file', 'sid_count', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6003()');
 }

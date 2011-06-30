@@ -46,13 +46,8 @@ function l10n_community_install() {
  * link to http://drupal.org/project/$uri.
  */
 function l10n_community_update_5000() {
-  $ret = array();
-  // TODO update_sql has been removed. Use the database API for any schema or data changes.
-  $ret[] = array() /* update_sql('ALTER TABLE {l10n_community_project} ADD home_link TEXT NOT NULL AFTER title') */;
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  db_add_field('l10n_community_project', 'home_link', array('type' => 'text', 'not null' = > true));
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_5000()');
 }
 
 /**
@@ -62,13 +57,9 @@ function l10n_community_update_5001() {
   $default_to_zero = array('uid_entered', 'uid_approved', 'time_entered', 'time_approved', 'has_suggestion', 'is_suggestion', 'is_active');
   $ret = array();
   foreach ($default_to_zero as $column) {
-    // TODO update_sql has been removed. Use the database API for any schema or data changes.
-    $ret[] = array() /* update_sql('ALTER TABLE {l10n_community_translation} CHANGE ' . $column . ' ' . $column . ' INTEGER NOT NULL DEFAULT 0') */;
+    db_change_field('l10n_community_translation', $column, $column, array('type' => 'int', 'not null' => true, 'default => 0'));
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_5001()');
 }
 
 /**
@@ -76,32 +67,26 @@ function l10n_community_update_5001() {
  * string usage separately.
  */
 function l10n_community_update_5002() {
-  $ret = array();
-  // TODO update_sql has been removed. Use the database API for any schema or data changes.
-  $ret[] = array() /* update_sql('ALTER TABLE {l10n_community_line} ADD type INTEGER AFTER lineno') */;
+  db_add_field('l10n_community_line', 'type', array('type' => 'int'));
   drupal_set_message('An update was executed to support installer string identification in scanned projects. You need to rescan all your prjects to make this work as expected. Delete data from the project, release, file, error and line tables, and rescan all projects. Make sure to leave the source string and translation tables intact. It is always a good idea to make backups!');
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_5002()');
 }
 
 /**
  * Clean up starting and trailing spaces and new lines in translations.
  */
 function l10n_community_update_5003() {
-  $ret = array();
   // We just search for strings that begin or end with these characters.
   foreach (array('\n', ' ') as $char) {
-    $result = db_select('l10n_community_string', 's')
-      ->innerJoin('l10n_community_translation', 't', 's.sid = t.sid')
-      ->fields('s', array('sid', 'value'))
-      ->fields('t', array('tid', 'translation'))
-      ->condition(db_or()
-		  ->condition('s.value', $char.'%', 'LIKE')
-		  ->condition('s.value', '%'.$char, 'LIKE')
-		  ->condition('t.translation', $char.'%', 'LIKE')
-		  ->condition('t.translation', '%'.$char, 'LIKE'))
+    $query = db_select('l10n_community_string', 's');
+    $query->innerJoin('l10n_community_translation', 't', 's.sid = t.sid');
+    $query->fields('s', array('sid', 'value'))
+      ->fields('t', array('tid', 'translation'));
+    $result = $query->condition(db_or()
+				->condition('s.value', $char.'%', 'LIKE')
+				->condition('s.value', '%'.$char, 'LIKE')
+				->condition('t.translation', $char.'%', 'LIKE')
+				->condition('t.translation', '%'.$char, 'LIKE'))
       ->execute();
     while ($string = $result->fetchObject()) {
       if ($string->translation) {
@@ -118,10 +103,7 @@ function l10n_community_update_5003() {
       }
     }
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_5003()');
 }
 
 // -- Drupal 6 updates ---------------------------------------------------------
@@ -131,8 +113,6 @@ function l10n_community_update_5003() {
  * Add connector_module column and update existing projects to use the right one.
  */
 function l10n_community_update_6000() {
-  $ret = array();
-
   // Add connector_module column for use as a clue for modules to tap onto their projects.
   db_add_field('l10n_community_project', 'connector_module', array('type' => 'varchar', 'length' => '50', 'not null' => TRUE));
 
@@ -157,10 +137,7 @@ function l10n_community_update_6000() {
   // The same URI should not appear with multiple connector modules.
   db_add_unique_key('l10n_community_project', 'l10n_community_project_uri_connector_module', array('uri', 'connector_module'));
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6000()');
 }
 
 /**
@@ -169,70 +146,48 @@ function l10n_community_update_6000() {
  * Disabled projects will not participate in the scanning process.
  */
 function l10n_community_update_6001() {
-  $ret = array();
   db_add_field('l10n_community_project', 'status', array('type' => 'int', 'not null' => TRUE));
   // Make all existing projects enabled.
   db_update('l10n_community_project')  -> fields(array('status' => 1))  -> execute();
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6001()');
 }
 
 /**
  * Add an index to the translations table to improve performance.
  */
 function l10n_community_update_6002() {
-  $ret = array();
   db_add_index('l10n_community_translation', 'suggestion_active', array('is_suggestion', 'is_active'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6002()');
 }
 
 /**
  * Add an index to the translations table to improve performance.
  */
 function l10n_community_update_6003() {
-  $ret = array();
   db_add_index('l10n_community_translation', 'uid_entered', array('uid_entered'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6003()');
 }
 
 /**
  * Add an index to the translations table to improve performance.
  */
 function l10n_community_update_6004() {
-  $ret = array();
   db_add_index('l10n_community_translation', 'sid_language_suggestion', array('sid', 'language', 'is_suggestion'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6004()');
 }
 
 /**
  * Add the context column to the source string table for Drupal 7 support.
  */
 function l10n_community_update_6005() {
-  $ret = array();
   db_add_field('l10n_community_string', 'context', array('type' => 'varchar', 'length' => 255, 'not null' => TRUE, 'default' => ''));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6005()');
 }
 
 /**
  * Denormalize data in order to improve performance: Push project ID to file table.
  */
 function l10n_community_update_6006() {
-  $ret = array();
-
   db_add_field('l10n_community_file', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
 
   $result = db_query("SELECT rid, pid FROM {l10n_community_release}");
@@ -242,18 +197,13 @@ function l10n_community_update_6006() {
       ->condition('rid', $release->rid)
       ->execute();
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6006()');
 }
 
 /**
  * Denormalize data in order to improve performance: Push project and release ID to line table.
  */
 function l10n_community_update_6007() {
-  $ret = array();
-
   db_add_field('l10n_community_line', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
   db_add_field('l10n_community_line', 'rid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
   db_add_index('l10n_community_line', 'pid', array('pid'));
@@ -269,10 +219,7 @@ function l10n_community_update_6007() {
       ->condition('fid', $row->fid)
       ->execute();
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6007()');
 }
 
 /**
@@ -286,10 +233,7 @@ function l10n_community_update_6008() {
     ->condition('uid_approved', 0)
     ->execute();
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6008()');
 }
 
 /**
@@ -298,7 +242,6 @@ function l10n_community_update_6008() {
  * Became "moderate suggestions from others" and "moderate own suggestions".
  */
 function l10n_community_update_6009() {
-  $ret = array();
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
   while ($role = db_fetch_object($result)) {
     $renamed_permission = preg_replace('/submit translations and approve suggestions/', 'moderate suggestions from others, moderate own suggestions', $role->perm);
@@ -309,10 +252,7 @@ function l10n_community_update_6009() {
 	->execute();
     }
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6009()');
 }
 
 /**
@@ -327,18 +267,13 @@ function l10n_community_update_6010() {
 
   db_add_unique_key('l10n_community_string', 'hashkey', array('hashkey'));
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6010()');
 }
 
 /**
  * Separate status flags from translations, so we can do more versatile searches quickly.
  */
 function l10n_community_update_6011() {
-  $ret = array();
-
   db_create_table('l10n_community_status_flag', array(
     'fields' => array(
       'sid' => array(
@@ -401,34 +336,25 @@ GROUP BY sid, language;
   // Drop the has_suggestion field from the translation table.
   db_drop_field('l10n_community_translation', 'has_suggestion');
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6011()');
 }
 
 /**
  * Drop 0/0 status flags for people who run the unmodified 6011 update.
  */
 function l10n_community_update_6012() {
-  $ret = array();
-
   db_delete('l10n_community_status_flag')
     ->condition('has_suggestion', 0)
     ->condition('has_translation', 0)
     ->execute();
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6012()');
 }
 
 /**
  * Consolidate indexes.
  */
 function l10n_community_update_6013() {
-  $ret = array();
   // Drop all but the primary index of the table.
   db_drop_index('l10n_community_translation', 'is_active');
   db_drop_index('l10n_community_translation', 'is_suggestion');
@@ -439,17 +365,13 @@ function l10n_community_update_6013() {
   // Add two specific indexes.
   db_add_index('l10n_community_translation', 'is_suggestion_is_active_language', array('is_suggestion', 'is_active', 'language'));
   db_add_index('l10n_community_translation', 'sid_language_is_suggestion_is_active', array('sid', 'language', 'is_suggestion', 'is_active'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6013()');
 }
 
 /**
  * Permission "administer localization community" renamed.
  */
 function l10n_community_update_6014() {
-  $ret = array();
   module_enable(array('l10n_server'));
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
   while ($role = db_fetch_object($result)) {
@@ -463,17 +385,13 @@ function l10n_community_update_6014() {
 	->execute();
     }
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6014()');
 }
 
 /**
  * Rename tables now owned by l10n_server.
  */
 function l10n_community_update_6015() {
-  $ret = array();
   db_rename_table('l10n_community_project',      'l10n_server_project');
   db_rename_table('l10n_community_release',      'l10n_server_release');
   db_rename_table('l10n_community_error',        'l10n_server_error');
@@ -482,18 +400,13 @@ function l10n_community_update_6015() {
   db_rename_table('l10n_community_string',       'l10n_server_string');
   db_rename_table('l10n_community_translation', 'l10n_server_translation');
   db_rename_table('l10n_community_status_flag', 'l10n_server_status_flag');
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6015()');
 }
 
 /**
  * Migrate l10n_localpack settings to l10n_drupal settings.
  */
 function l10n_community_update_6016() {
-  $ret = array();
-
   $enable = FALSE;
   if (variable_get('l10n_localpacks_directory', '')) {
     variable_set('l10n_server_connector_l10n_drupal_files_directory', variable_get('l10n_localpacks_directory', ''));
@@ -535,10 +448,7 @@ function l10n_community_update_6016() {
     module_enable(array('l10n_drupal'));
   }
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6016()');
 }
 
 /**
@@ -570,32 +480,23 @@ function l10n_community_update_6017() {
       ->updateExcept('region', 'theme')
       ->execute();
   }
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* array() */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6017()');
 }
 
 /**
  * Fix previously faulty l10n_community_update_6010() column addition.
  */
 function l10n_community_update_6018() {
-  $ret = array();
   db_drop_unique_key('l10n_server_string', 'hashkey');
   db_change_field('l10n_server_string', 'hashkey', 'hashkey', array('type' => 'char', 'not null' => TRUE, 'length' => 32));
   db_add_unique_key('l10n_server_string', 'hashkey', array('hashkey'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6018()');
 }
 
 /**
  * Add weight support to projects and releases.
  */
 function l10n_community_update_6019() {
-  $ret = array();
-
   // Add weight field to projects.
   db_add_field('l10n_server_project', 'weight', array('type' => 'int', 'not null' => FALSE));
   db_add_index('l10n_server_project', 'weight', array('weight'));
@@ -604,18 +505,13 @@ function l10n_community_update_6019() {
   db_add_field('l10n_server_release', 'weight', array('type' => 'int', 'not null' => FALSE));
   db_add_index('l10n_server_release', 'weight', array('weight'));
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6019()');
 }
 
 /**
  * Update weight fields to be 0 by default instead of NULL.
  */
 function l10n_community_update_6020() {
-  $ret = array();
-
   // Modify weight field on projects.
   db_update('l10n_server_project')
     ->fields(array('weight', 0))
@@ -636,10 +532,7 @@ function l10n_community_update_6020() {
   db_change_field('l10n_server_release', 'weight', 'weight', array('type' => 'int', 'not null' => TRUE));
   db_add_index('l10n_server_release', 'weight', array('weight'));
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6020()');
 }
 
 /**
@@ -651,18 +544,13 @@ function l10n_community_update_6021() {
     ->condition('delta', 'contribute')
     ->condition('module', 'l10n_community')
     ->execute();
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* array() */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6021()');
 }
 
 /**
  * Refactor translation history tracking to a separate table.
  */
 function l10n_community_update_6022() {
-  $ret = array();
-
   db_create_table('l10n_server_translation_history', array(
     'fields' => array(
       'tid' => array(
@@ -777,18 +665,13 @@ function l10n_community_update_6022() {
   db_drop_field('l10n_server_translation', 'uid_approved');
   db_drop_field('l10n_server_translation', 'time_approved');
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6022()');
 }
 
 /**
  * Add sid_count to releases.
  */
 function l10n_community_update_6023() {
-  $ret = array();
-
   db_add_field('l10n_server_release', 'sid_count', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
 
   // Fill in with sid_count based on line data.
@@ -800,20 +683,13 @@ function l10n_community_update_6023() {
       ->execute();
   }
 
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6023()');
 }
 
 /**
  * Add an index to the l10n_server_file table to improve performance.
  */
 function l10n_community_update_6024() {
-  $ret = array();
   db_add_index('l10n_server_file', 'pid', array('pid'));
-  // hook_update_N() no longer returns a $ret array. Instead, return
-  // nothing or a translated string indicating the update ran successfully.
-  // See http://drupal.org/node/224333#update_sql.
-  return t('TODO Add a descriptive string here to show in the UI.') /* $ret */;
+  return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_6024()');
 }

@@ -181,7 +181,7 @@ function l10n_packager_admin_projects_form_validate($form, &$form_state) {
   if (!empty($form_state['values']['release'])) {
     $query = db_select('l10n_server_release');
     $query->addExpression('COUNT(rid)');
-    $query->condition('title', $form_state['values']['release'], 'LIKE');
+    $query->condition('title', db_like($form_state['values']['release']), 'LIKE');
     if ($project) {
       $query->condition('pid', $project->pid);
     }

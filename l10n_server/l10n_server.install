@@ -12,17 +12,7 @@ function l10n_server_install() {
   if (!db_table_exists('l10n_community_project')) {
     // Only run the schema installation if l10n_community was
     // not installed previously. Used to help the transition process.
-    // TODO The drupal_(un)install_schema functions are called automatically in D7.
-    // drupal_install_schema('l10n_server')
   }
-}
-
-/**
- * Implements hook_uninstall().
- */
-function l10n_server_uninstall() {
-  // TODO The drupal_(un)install_schema functions are called automatically in D7.
-  // drupal_uninstall_schema('l10n_server')
 }
 
 /**

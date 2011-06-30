@@ -145,11 +145,6 @@ function l10n_groups_block_view($delta) {
   }
 }
 
-/**
- * Implements hook_block().
- */
-function l10n_groups_block_OLD($op = 'list', $delta = 0, $edit = array()) { }
-
 // = Organic groups node type ==================================================
 
 /**

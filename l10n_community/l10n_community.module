@@ -448,11 +448,6 @@ function l10n_community_block_view($delta) {
 }
 
 /**
- * Implements hook_block().
- */
-function l10n_community_block_OLD($op = 'list', $delta = 0, $edit = array()) { }
-
-/**
  * Stats block, also reused on welcome.inc.
  */
 function l10n_community_block_stats_front() {
