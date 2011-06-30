@@ -95,7 +95,7 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
 		       'value' => $msgid,
 		       'context' => $context,
 		       'hashkey' => md5($msgid . $context),
-		       ))
+		       ));
       $sid = $select->execute()->fetchField();
     }
 

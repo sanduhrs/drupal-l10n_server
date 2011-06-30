@@ -33,7 +33,6 @@ function l10n_community_install() {
 		     ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
   cache_clear_all();
 }
@@ -570,7 +569,6 @@ function l10n_community_update_6017() {
 		     ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
   // hook_update_N() no longer returns a $ret array. Instead, return
   // nothing or a translated string indicating the update ran successfully.

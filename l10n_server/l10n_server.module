@@ -492,7 +492,7 @@ function l10n_server_get_projects($options = array()) {
   $select= db_select('l10n_server_project', 'p')->fields('p');
 
   // Consider returning all projects or just published ones.
-  if (empty($options['all']) $select->condition('status', 1);
+  if (empty($options['all'])) $select->condition('status', 1);
 
   if (isset($options['pager'])) {
     if (isset($options['initial'])) {
