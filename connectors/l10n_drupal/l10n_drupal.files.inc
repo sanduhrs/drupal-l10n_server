@@ -141,17 +141,17 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
     }
   }
   else {
-    $home_link = (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ? 
-		  ('http://drupal.org/project/' . $project_uri) : '');
+    $home_link = (variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0) ?
+                 ('http://drupal.org/project/' . $project_uri) : '');
     db_insert('l10n_server_project')
       ->fields(array(
-		     'uri' => $project_uri,
-		     'title' => $project_title,
-		     'last_parsed' => 0,
-		     'home_link' => $home_link,
-		     'connector_module' => 'l10n_drupal_files',
-		     'status' => 1,
-		     ))
+          'uri' => $project_uri,
+          'title' => $project_title,
+          'last_parsed' => 0,
+          'home_link' => $home_link,
+          'connector_module' => 'l10n_drupal_files',
+          'status' => 1,
+        ))
       ->execute();
   }
 
@@ -168,10 +168,10 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
       // probably), so update data, set parsed date to past.
       db_update('l10n_server_release')
 	->fields(array(
-		       'download_link' => $filepath,
-		       'file_date' => $filedate,
-		       'last_parsed' => 0,
-		       ))
+            'download_link' => $filepath,
+            'file_date' => $filedate,
+            'last_parsed' => 0,
+          ))
 	->condition('rid', $existing_release->rid)
 	->execute();
     }
@@ -180,12 +180,12 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
     // No such release recorded yet.
     db_insert('l10n_server_release')
       ->fields(array(
-		     'pid' => $project->pid,
-		     'title' => $release_version,
-		     'download_link' => $filepath,
-		     'file_date' => $filedate,
-		     'last_parsed' => 0,
-		     ))
+          'pid' => $project->pid,
+          'title' => $release_version,
+          'download_link' => $filepath,
+          'file_date' => $filedate,
+          'last_parsed' => 0,
+        ))
       ->execute();
   }
 }
@@ -260,9 +260,9 @@ function l10n_drupal_parse_package($package_file, $release) {
       // Parsed this releases files.
       db_update('l10n_server_release')
 	->fields(array(
-		       'sid_count' => $sid_count,
-		       'last_parsed' => REQUEST_TIME,
-		       ))
+            'sid_count' => $sid_count,
+            'last_parsed' => REQUEST_TIME,
+          ))
 	->condition('rid', $release->rid)
 	->execute();
 
@@ -276,9 +276,9 @@ function l10n_drupal_parse_package($package_file, $release) {
         foreach ($messages['error'] as $error_message) {
           db_insert('l10n_server_error')
 	    ->fields(array(
-			   'rid' => $release->rid,
-			   'value' => $error_message,
-			   ))
+                'rid' => $release->rid,
+                'value' => $error_message,
+              ))
 	    ->execute();
         }
       }
@@ -348,11 +348,11 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
       // New file in this release.
       db_insert('l10n_server_file')
 	->fields(array(
-		       'pid' => $pid,
-		       'rid' => $rid,
-		       'location' => $file,
-		       'revision' => $revision,
-		       ))
+            'pid' => $pid,
+            'rid' => $rid,
+            'location' => $file,
+            'revision' => $revision,
+          ))
 	->execute();
       $fid = db_last_insert_id('l10n_server_file', 'fid');
     }
@@ -415,10 +415,10 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
       // String does not exist.
       $id = db_insert('l10n_server_string')
 	->fields(array(
-		       'value' => $value,
-		       'context' => $context,
-		       'hashkey' => md5($value . $context),
-		       ))
+            'value' => $value,
+            'context' => $context,
+            'hashkey' => md5($value . $context),
+          ))
 	->execute();
       $sid = db_last_insert_id('l10n_server_string', 'sid');
     }
@@ -432,13 +432,13 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
       // Location does not exist with this string.
       db_insert('l10n_server_line')
 	->fields(array(
-		       'pid' => $pid,
-		       'rid' => $rid,
-		       'fid' => $fid,
-		       'sid' => $sid,
-		       'lineno' => $line,
-		       'type' => $string_type,
-		       ))
+            'pid' => $pid,
+            'rid' => $rid,
+            'fid' => $fid,
+            'sid' => $sid,
+            'lineno' => $line,
+            'type' => $string_type,
+          ))
 	->execute();
     }
     l10n_drupal_added_string_counter($sid);

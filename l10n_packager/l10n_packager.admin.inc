@@ -228,10 +228,10 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
   elseif ($op == t('Mark for repackaging')) {
     db_update('l10n_packager_release')
       ->fields(array(
-		     'updated' => 0,
-		     'checked' => 0,
-		     'status'  => L10N_PACKAGER_ACTIVE,
-		     ))
+          'updated' => 0,
+          'checked' => 0,
+          'status'  => L10N_PACKAGER_ACTIVE,
+        ))
       ->condition('rid', $query, 'IN')
       ->execute();
     drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => db_affected_rows())));

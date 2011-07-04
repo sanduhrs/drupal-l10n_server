@@ -14,11 +14,11 @@ function l10n_community_import_page($langcode) {
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore languages'), 'translate/languages'),
-    l(t($language->name), 'translate/languages/' . $langcode),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+      l(t($language->name), 'translate/languages/' . $langcode),
+    )
   );
   return drupal_get_form('l10n_community_import_form', $langcode);
 }
@@ -176,8 +176,8 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
     $value['msgctxt'] = !empty($value['msgctxt']) ? $value['msgctxt'] : '';
 
     if ($sid = db_query("SELECT sid FROM {l10n_server_string} WHERE hashkey = :hashkey",
-			array(':hashkey' => md5($value['msgid'] . $value['msgctxt'])))
-	->fetchField()) {
+               array(':hashkey' => md5($value['msgid'] . $value['msgctxt'])))
+      ->fetchField()) {
       // Merge plural versions into one for saving values.
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 

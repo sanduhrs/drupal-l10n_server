@@ -21,16 +21,16 @@ function l10n_community_install() {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
   }
@@ -83,10 +83,10 @@ function l10n_community_update_5003() {
     $query->fields('s', array('sid', 'value'))
       ->fields('t', array('tid', 'translation'));
     $result = $query->condition(db_or()
-				->condition('s.value', $char.'%', 'LIKE')
-				->condition('s.value', '%'.$char, 'LIKE')
-				->condition('t.translation', $char.'%', 'LIKE')
-				->condition('t.translation', '%'.$char, 'LIKE'))
+              ->condition('s.value', $char.'%', 'LIKE')
+              ->condition('s.value', '%'.$char, 'LIKE')
+              ->condition('t.translation', $char.'%', 'LIKE')
+              ->condition('t.translation', '%'.$char, 'LIKE'))
       ->execute();
     while ($string = $result->fetchObject()) {
       if ($string->translation) {
@@ -94,8 +94,8 @@ function l10n_community_update_5003() {
         if ($trimmed != $string->translation) {
           db_update('l10n_community_translation')
 	    ->fields(array(
-			   'translation' => $trimmed,
-			   ))
+                'translation' => $trimmed,
+              ))
 	    ->condition('tid', $string->tid)
 	    ->execute();
           drupal_set_message("Fixed string $string->sid: " . check_plain(substr($string->translation, 0, 50)));
@@ -213,9 +213,9 @@ function l10n_community_update_6007() {
   while ($row = db_fetch_object($result)) {
     db_update('l10n_community_line')
       ->fields(array(
-		     'pid' => $row->pid,
-		     'rid' => $row->rid,
-		     ))
+          'pid' => $row->pid,
+          'rid' => $row->rid,
+        ))
       ->condition('fid', $row->fid)
       ->execute();
   }
@@ -275,40 +275,40 @@ function l10n_community_update_6010() {
  */
 function l10n_community_update_6011() {
   db_create_table('l10n_community_status_flag', array(
-    'fields' => array(
-      'sid' => array(
-        'description' => 'Reference to the {l10n_community_string}.sid which is being translated.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'disp-width' => '11',
+      'fields' => array(
+        'sid' => array(
+          'description' => 'Reference to the {l10n_community_string}.sid which is being translated.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'disp-width' => '11',
+        ),
+        'language' => array(
+          'description' => 'Reference to the {languages}.language to which the string is being translated.',
+          'type' => 'varchar',
+          'length' => '12',
+          'not null' => TRUE,
+        ),
+        'has_suggestion' => array(
+          'description' => 'Cached status flag of whether there is at least one row in {l10n_community_translation} where is_suggestion = 1, is_active = 1 and sid and language is the same as this one.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
+        'has_translation' => array(
+          'description' => 'Cached status flag of whether there is at least one row in {l10n_community_translation} where is_suggestion = 0, is_active = 1, translation is not empty and sid and language is the same as this one.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
       ),
-      'language' => array(
-        'description' => 'Reference to the {languages}.language to which the string is being translated.',
-        'type' => 'varchar',
-        'length' => '12',
-        'not null' => TRUE,
+      'primary key' => array('sid', 'language'),
+      'indexes' => array(
+        'sid_language_has_suggestion' => array('sid', 'language', 'has_suggestion'),
+        'sid_language_has_translation' => array('sid', 'language', 'has_translation'),
       ),
-      'has_suggestion' => array(
-        'description' => 'Cached status flag of whether there is at least one row in {l10n_community_translation} where is_suggestion = 1, is_active = 1 and sid and language is the same as this one.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
-      ),
-      'has_translation' => array(
-        'description' => 'Cached status flag of whether there is at least one row in {l10n_community_translation} where is_suggestion = 0, is_active = 1, translation is not empty and sid and language is the same as this one.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
-      ),
-    ),
-    'primary key' => array('sid', 'language'),
-    'indexes' => array(
-      'sid_language_has_suggestion' => array('sid', 'language', 'has_suggestion'),
-      'sid_language_has_translation' => array('sid', 'language', 'has_translation'),
-    ),
-  ));
+    ));
 
   // Drop all placeholder records, which were only used to hold the has_suggestion flag.
   db_delete('l10n_community_translation')
@@ -321,17 +321,17 @@ function l10n_community_update_6011() {
 
   // TODO update_sql has been removed. Use the database API for any schema or data changes.
   $ret[] = array() /* update_sql("
-REPLACE INTO {l10n_community_status_flag}
-SELECT sid, language, MAX(has_suggestion) AS has_suggestion, MAX(has_translation) AS has_translation 
-FROM (
-      SELECT sid, language,
-             (is_suggestion = 1 and is_active = 1) as has_suggestion,
-	     (is_suggestion = 0 and is_active = 1) as has_translation 
-      FROM {l10n_community_translation} 
-      HAVING has_translation = 1 or has_suggestion = 1
-     ) t 
-GROUP BY sid, language;
-") */;
+                      REPLACE INTO {l10n_community_status_flag}
+                      SELECT sid, language, MAX(has_suggestion) AS has_suggestion, MAX(has_translation) AS has_translation
+                      FROM (
+                      SELECT sid, language,
+                      (is_suggestion = 1 and is_active = 1) as has_suggestion,
+                      (is_suggestion = 0 and is_active = 1) as has_translation
+                      FROM {l10n_community_translation}
+                      HAVING has_translation = 1 or has_suggestion = 1
+                      ) t
+                      GROUP BY sid, language;
+                      ") */;
 
   // Drop the has_suggestion field from the translation table.
   db_drop_field('l10n_community_translation', 'has_suggestion');
@@ -379,8 +379,8 @@ function l10n_community_update_6014() {
     if ($renamed_permission != $role->perm) {
       db_update('permission')
 	->fields(array(
-		       'perm' => $renamed_permission
-		       ))
+            'perm' => $renamed_permission
+          ))
 	->condition('rid', $role->rid)
 	->execute();
     }
@@ -421,8 +421,8 @@ function l10n_community_update_6016() {
     $enable = TRUE;
     db_update('l10n_server_project')
       ->fields(array(
-		     'connector_module' => 'l10n_drupal_files',
-		     ))
+          'connector_module' => 'l10n_drupal_files',
+        ))
       ->condition('connector_module', 'l10n_localpacks')
       ->execute();
   }
@@ -438,8 +438,8 @@ function l10n_community_update_6016() {
 
     db_update('l10n_server_project')
       ->fields(array(
-		     'connector_module' => 'l10n_project_drupalorg',
-		     ))
+          'connector_module' => 'l10n_project_drupalorg',
+        ))
       ->condition('connector_module', 'l10n_project')
       ->execute();
   }
@@ -467,16 +467,16 @@ function l10n_community_update_6017() {
     // Update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
   }
@@ -552,47 +552,47 @@ function l10n_community_update_6021() {
  */
 function l10n_community_update_6022() {
   db_create_table('l10n_server_translation_history', array(
-    'fields' => array(
-      'tid' => array(
-        'description' => 'References {l10n_server_translation}.tid',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
+      'fields' => array(
+        'tid' => array(
+          'description' => 'References {l10n_server_translation}.tid',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
+        'uid_action' => array(
+          'description' => 'Reference to the {users}.uid who performed the action.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
+        'time_action' => array(
+          'description' => 'Unix timestamp of time when the action happened.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
+        'type_action' => array(
+          'description' => 'Numeric identifier of the action that happened.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
+        'medium_action' => array(
+          'description' => 'Numeric identifier of the medium the action happened through.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+          'disp-width' => '11',
+        ),
       ),
-      'uid_action' => array(
-        'description' => 'Reference to the {users}.uid who performed the action.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
+      'indexes' => array(
+        'tid' => array('tid'),
       ),
-      'time_action' => array(
-        'description' => 'Unix timestamp of time when the action happened.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
-      ),
-      'type_action' => array(
-        'description' => 'Numeric identifier of the action that happened.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
-      ),
-      'medium_action' => array(
-        'description' => 'Numeric identifier of the medium the action happened through.',
-        'type' => 'int',
-        'not null' => TRUE,
-        'default' => 0,
-        'disp-width' => '11',
-      ),
-    ),
-    'indexes' => array(
-      'tid' => array('tid'),
-    ),
-  ));
+    ));
 
   // Save submission history data with L10N_SERVER_ACTION_ADD (1), and
   // L10N_SERVER_MEDIUM_UNKNOWN (0) since we don't know how was the string

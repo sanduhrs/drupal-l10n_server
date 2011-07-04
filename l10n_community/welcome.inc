@@ -44,11 +44,11 @@ function l10n_community_welcome_page() {
         $stats = l10n_community_get_stats($langcode);
         // TODO Please change this theme call to use an associative array for the $variables parameter.
         $progress = array_shift(theme(
-          'l10n_community_progress_columns',
-          $num_source,
-          @$string_counts[$langcode]['translations'],
-          @$string_counts[$langcode]['suggestions']
-        ));
+                      'l10n_community_progress_columns',
+                      $num_source,
+                      @$string_counts[$langcode]['translations'],
+                      @$string_counts[$langcode]['suggestions']
+                    ));
         $table[] = array(
           array(
             'data' => l(t($language->name), 'translate/languages/' . $langcode),
@@ -75,16 +75,16 @@ function l10n_community_welcome_page() {
     $output = theme(
       'table',
       array(
-      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-      array(
-        'data' => t('@project progress', array('@project' => $project->title)),
-        'field' => 'progress',
+        array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+        array(
+          'data' => t('@project progress', array('@project' => $project->title)),
+          'field' => 'progress',
+        ),
+        array(
+          'data' => t('Contributors'),
+          'field' => 'contributors',
+        ),
       ),
-      array(
-        'data' => t('Contributors'),
-        'field' => 'contributors',
-      ),
-    ),
       $table,
       array('class' => 'l10n-community-overview l10n-community-highlighted')
     );

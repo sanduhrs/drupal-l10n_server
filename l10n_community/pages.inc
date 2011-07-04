@@ -45,11 +45,11 @@ function l10n_community_explore_languages() {
       $stats = l10n_community_get_stats($langcode);
       // TODO Please change this theme call to use an associative array for the $variables parameter.
       $progress = array_shift(theme(
-        'l10n_community_progress_columns',
-        $num_source,
-        @$string_counts[$langcode]['translations'],
-        @$string_counts[$langcode]['suggestions']
-      ));
+                    'l10n_community_progress_columns',
+                    $num_source,
+                    @$string_counts[$langcode]['translations'],
+                    @$string_counts[$langcode]['suggestions']
+                  ));
       $table[] = array(
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),
@@ -76,16 +76,16 @@ function l10n_community_explore_languages() {
   return theme(
     'table',
     array(
-    array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-    array(
-      'data' => t('Overall progress'),
-      'field' => 'progress',
+      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+      array(
+        'data' => t('Overall progress'),
+        'field' => 'progress',
+      ),
+      array(
+        'data' => t('Contributors'),
+        'field' => 'contributors',
+      ),
     ),
-    array(
-      'data' => t('Contributors'),
-      'field' => 'contributors',
-    ),
-  ),
     $table,
     array('class' => 'l10n-community-overview l10n-community-highlighted')
   );
@@ -142,8 +142,8 @@ function l10n_community_explore_projects() {
   foreach ($projects as $project) {
     $table[] = array_merge(
       array(
-      array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => 'rowhead'),
-    ),
+        array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => 'rowhead'),
+      ),
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
       theme('l10n_community_progress_columns', array('sum' => (@$string_counts[$project->pid]['count'] * $language_count), 'translated' => @$string_counts[$project->pid]['translations'], 'has_suggestion' => @$string_counts[$project->pid]['suggestions']))
@@ -226,10 +226,10 @@ function l10n_community_overview_language($langcode = NULL) {
   drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]->name))), PASS_THROUGH);
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore languages'), 'translate/languages'),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+    )
   );
 
   return $content_output;
@@ -246,10 +246,10 @@ function l10n_community_overview_project($uri = NULL) {
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore projects'), 'translate/projects'),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore projects'), 'translate/projects'),
+    )
   );
 
   if (!isset($uri)) {
@@ -322,11 +322,11 @@ function l10n_community_block_stats_language($language) {
   return array(
     'subject' => t('Translation statistics'),
     'content' => theme('item_list', array('items' => array(
-  format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-  format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-  format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-  format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-))),
+                   format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+                   format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+                   format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+                   format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+                 ))),
   );
 }
 
@@ -383,8 +383,8 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
       // TODO Please change this theme call to use an associative array for the $variables parameter.
       $table[] = array_merge(
         array(
-        array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
-      ),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
+        ),
         theme(
           'l10n_community_progress_columns',
           $num_source,

@@ -94,9 +94,9 @@ function theme_l10n_server_admin_projects_form($variables) {
     );
   }
   $headers = array(t('Enabled'), t('Project'), array(
-      'data' => t('Operations'),
-      'colspan' => 4,
-    ));
+               'data' => t('Operations'),
+               'colspan' => 4,
+             ));
   $output .= theme('table', array('header' => $headers, 'rows' => $table));
   $output .= $pager;
   $output .= drupal_render_children($form);
@@ -115,8 +115,8 @@ function l10n_server_admin_projects_form_submit($form, &$form_state) {
   foreach ($form_state['values']['projects'] as $pid => $project) {
     db_update('l10n_server_project')
       ->fields(array(
-		     'status' => $project['status'],
-		     ))
+          'status' => $project['status'],
+        ))
       ->condition('pid', $pid)
       ->execute();
   }
@@ -266,12 +266,12 @@ function theme_l10n_server_admin_releases_form($variables) {
     drupal_render($release_element['operations']);
   }
   $headers = array(array(
-      'data' => t('Release'),
-      'colspan' => 2,
-    ), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array(
-      'data' => t('Operations'),
-      'colspan' => $max_operations,
-    ));
+               'data' => t('Release'),
+               'colspan' => 2,
+             ), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array(
+               'data' => t('Operations'),
+               'colspan' => $max_operations,
+             ));
   $output .= theme('table', array('header' => $headers, 'rows' => $table));
   $output .= drupal_render_children($form);
   return $output;

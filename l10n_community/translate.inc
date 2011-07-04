@@ -261,11 +261,11 @@ function l10n_community_translate_page($langcode) {
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore languages'), 'translate/languages'),
-    l(t($language->name), 'translate/languages/' . $langcode),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+      l(t($language->name), 'translate/languages/' . $langcode),
+    )
   );
 
   // Add the filter form.
@@ -498,11 +498,11 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
       // Fill in with as many textareas as required to enter translation
       // for this string.
       $form['value'] = array_fill(0, count($string->translation), array(
-        '#type' => 'textarea',
-        '#cols' => 60,
-        '#rows' => 3,
-        '#default_value' => t('<New translation>'),
-      ));
+                         '#type' => 'textarea',
+                         '#cols' => 60,
+                         '#rows' => 3,
+                         '#default_value' => t('<New translation>'),
+                       ));
     }
     else {
       if (user_access('submit suggestions')) {
@@ -845,15 +845,15 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  */
 function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
   $query = db_select('l10n_server_string', 's')->distinct();
-  $query->leftJoin('l10n_server_status_flag', 'ts', 
-		   's.sid = ts.sid AND ts.language = :language', array(':lanuage' => $langcode));
+  $query->leftJoin('l10n_server_status_flag', 'ts',
+    's.sid = ts.sid AND ts.language = :language', array(':lanuage' => $langcode));
   $query->leftJoin('l10n_server_translation', 't',
-		   'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
+    'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
   $query->leftJoin('users', 'u', 'u.uid = t.uid_entered');
   $query
     ->fields('s', array('sid', 'value', 'context'))
     ->fields('t', array('tid', 'language', 'translation', 'uid_entered',
-			'time_entered', 'time_changed', 'is_suggestion', 'is_active'))
+        'time_entered', 'time_changed', 'is_suggestion', 'is_active'))
     ->fields('ts', array('has_suggestion', 'has_translation'))
     ->addField('u', 'name', 'username');
 
@@ -893,16 +893,16 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     // Search in the source or target strings.
     $search = $filters['search'];
     $query->condition(db_or()
-		      ->condition('s.value', '%' . db_like($search) . '%', 'LIKE')
-		      ->condition('t.translation', '%' . db_like($search) . '%', 'LIKE'));
+      ->condition('s.value', '%' . db_like($search) . '%', 'LIKE')
+      ->condition('t.translation', '%' . db_like($search) . '%', 'LIKE'));
   }
 
   // Restriction based on string status by translation / suggestions.
   if (isset($filters['status'])) {
     if ($filters['status'] & L10N_STATUS_UNTRANSLATED) {
       $query->condition(db_or()
-			->condition('ts.has_translation', 0)
-			->isNull('ts.has_translation'));
+        ->condition('ts.has_translation', 0)
+        ->isNull('ts.has_translation'));
     }
     elseif ($filters['status'] & L10N_STATUS_TRANSLATED) {
       $query->condition('ts.has_translation', '1');
@@ -916,8 +916,8 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     }
     elseif ($filters['status'] & L10N_STATUS_NO_SUGGESTION) {
       $query->condition(db_or()
-			->condition('ts.has_suggestion', 0)
-			->isNull('ts.has_suggestion'));
+        ->condition('ts.has_suggestion', 0)
+        ->isNull('ts.has_suggestion'));
     }
     elseif ($filters['status'] & L10N_STATUS_IS_SUGGESTION) {
       $query->condition('t.is_suggestion', '1');
@@ -944,7 +944,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
 	$q = db_select('l10n_server_translation', 't');
 	$q->leftJoin('users', 'u', 'u.uid = t.uid_entered');
 	$q->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered',
-			      'time_changed', 'is_suggestion', 'is_active'))
+            'time_changed', 'is_suggestion', 'is_active'))
 	  ->addField('u', 'name', 'username');
 	$q->condition('t.language',  $string->language)
 	  ->condition('t.sid', $string->sid)

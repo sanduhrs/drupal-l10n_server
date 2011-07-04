@@ -56,8 +56,8 @@ function l10n_drupal_drupalorg_batch_parse_form_submit() {
     SELECT r.*
     FROM {l10n_server_project} p INNER JOIN
          {l10n_server_release} r ON p.pid = r.pid
-    WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC", 
-    0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT);
+    WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
+            0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT);
   while ($release = db_fetch_object($result)) {
     $operations[] = array('l10n_drupal_drupalorg_batch_operation', array($release));
   }
@@ -101,7 +101,6 @@ function l10n_drupal_drupalorg_scan() {
      FROM project_projects pp INNER JOIN term_node tn ON tn.nid = pp.nid
      WHERE tn.tid = :tn.tid", array(':tn.tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
   $exclude_projects = $result->fetchCol();
-}
 
   // Get all projects - published, unpublished equally, so we can update project
   // status on our copy for projects which were previously published. Only get
@@ -123,7 +122,6 @@ function l10n_drupal_drupalorg_scan() {
   // Fill in an array, so we can go back to our database and add in these
   // details.
   $projects = $result->fetchAllAssoc('uri');
-  }
 
   // Switch back to our local database.
   db_set_active();
@@ -135,18 +133,18 @@ function l10n_drupal_drupalorg_scan() {
       if ($existing_project->connector_module == 'l10n_project_drupalorg') {
         $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) ||
-            ($project->status != $existing_project->status)) {
+          ($project->status != $existing_project->status)) {
           // Update if title or status is different (uri should not change,
           // other data is internal to our database).
           db_update('l10n_server_project')
-	    ->fields(array(
-			   'title' => $project->title,
-			   'status' => $project->status,
-			   'last_parsed' => REQUEST_TIME,
-			   ))
-	    ->condition('uri', $project->uri)
-	    ->condition('connector_module', 'l10n_project_drupalorg')
-	    ->execute();
+            ->fields(array(
+                'title' => $project->title,
+                'status' => $project->status,
+                'last_parsed' => REQUEST_TIME,
+              ))
+            ->condition('uri', $project->uri)
+            ->condition('connector_module', 'l10n_project_drupalorg')
+            ->execute();
         }
       }
       else {
@@ -165,15 +163,15 @@ function l10n_drupal_drupalorg_scan() {
     else {
       // New project, not recorded before.
       $id = db_insert('l10n_server_project')
-	->fields(array(
-		       'uri' => $project->uri,
-		       'title' => $project->title,
-		       'last_parsed' => REQUEST_TIME,
-		       'home_link' => 'http://drupal.org/project/' . $project->uri,
-		       'connector_module' => 'l10n_project_drupalorg',
-		       'status' => $project->status,
-		       ))
-	->execute();
+        ->fields(array(
+            'uri' => $project->uri,
+            'title' => $project->title,
+            'last_parsed' => REQUEST_TIME,
+            'home_link' => 'http://drupal.org/project/' . $project->uri,
+            'connector_module' => 'l10n_project_drupalorg',
+            'status' => $project->status,
+          ))
+        ->execute();
       // Save last insert ID for release update code.
       $project->pid = db_last_insert_id('l10n_server_project', 'pid');
       $projects[$project->uri] = $project;
@@ -210,8 +208,8 @@ function l10n_drupal_drupalorg_scan() {
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
          files f ON prf.fid = f.fid INNER JOIN
          node nn ON prn.nid = nn.nid
-    WHERE prn.rebuild = 0 AND f.timestamp > :timestamp", 
-		     array('timestamp' => $last_sync - 60 * 60 * 24));
+    WHERE prn.rebuild = 0 AND f.timestamp > :timestamp",
+            array('timestamp' => $last_sync - 60 * 60 * 24));
 
   // Fill in an array, so we can go back to our database and add in these
   // details.
@@ -234,8 +232,8 @@ function l10n_drupal_drupalorg_scan() {
       FROM project_projects pp INNER JOIN
            project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
            project_usage_week_release puwr ON puwr.nid = prn.nid
-      WHERE prn.rebuild = 0 AND puwr.timestamp = :timestamp", 
-		       array('timestamp' => $last_usage_timestamp));
+      WHERE prn.rebuild = 0 AND puwr.timestamp = :timestamp",
+              array('timestamp' => $last_usage_timestamp));
     while ($release = db_fetch_object($result)) {
       $project_usage[$release->uri][$release->version] = $release->count;
     }
@@ -258,15 +256,15 @@ function l10n_drupal_drupalorg_scan() {
     elseif (!empty($release->status)) {
       // New published release, not recorded before.
       db_insert('l10n_server_release')
-	->fields(array(
-		       'pid' => $projects[$release->uri]->pid,
-		       'title' => $release->version,
-		       'download_link' => $download_link,
-		       'file_date' => $release->timestamp,
-		       'file_hash' => $release->filehash,
-		       'last_parsed' => 0,
-		       ))
-	->execute();
+        ->fields(array(
+            'pid' => $projects[$release->uri]->pid,
+            'title' => $release->version,
+            'download_link' => $download_link,
+            'file_date' => $release->timestamp,
+            'file_hash' => $release->filehash,
+            'last_parsed' => 0,
+          ))
+        ->execute();
     }
   }
 
@@ -291,10 +289,10 @@ function l10n_drupal_drupalorg_scan() {
     // Save individual release count data as negative weight.
     foreach ($project_data as $title => $count) {
       db_update('l10n_server_release')
-	->fields(array('weight' => - $count))
-	->condition('pid', $projects[$uri]->pid)
-	->condition('title', $title)
-	->execute();
+        ->fields(array('weight' => - $count))
+        ->condition('pid', $projects[$uri]->pid)
+        ->condition('title', $title)
+        ->execute();
     }
   }
 
@@ -423,9 +421,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         // Parsed this releases files.
         db_update('l10n_server_release')
 	  ->fields(array(
-			 'sid_count' => $sid_count,
-			 'last_parsed' => REQUEST_TIME,
-			 ))
+              'sid_count' => $sid_count,
+              'last_parsed' => REQUEST_TIME,
+            ))
 	  ->condition('rid', $release->rid)
 	  ->execute();
 
@@ -439,9 +437,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
           foreach ($messages['error'] as $error_message) {
             db_insert('l10n_server_error')
 	      ->fields(array(
-			     'rid' => $release->rid,
-			     'value' => $error_message,
-			     ))
+                  'rid' => $release->rid,
+                  'value' => $error_message,
+                ))
 	      ->execute();
           }
         }
@@ -494,122 +492,122 @@ function l10n_drupal_drupalorg_exec($cmd) {
 }
 
 /*
- ARCHIVED CODE for initial project release syncup.
+  ARCHIVED CODE for initial project release syncup.
 
- db_query('TRUNCATE l10n_community_error');
- db_query('TRUNCATE l10n_community_file');
- db_query('TRUNCATE l10n_community_line');
- db_query('TRUNCATE l10n_community_string');
- db_query('TRUNCATE l10n_community_translation');
- db_query("UPDATE {l10n_server_release} SET last_parsed = 0");
+  db_query('TRUNCATE l10n_community_error');
+  db_query('TRUNCATE l10n_community_file');
+  db_query('TRUNCATE l10n_community_line');
+  db_query('TRUNCATE l10n_community_string');
+  db_query('TRUNCATE l10n_community_translation');
+  db_query("UPDATE {l10n_server_release} SET last_parsed = 0");
 
- include_once 'includes/locale.inc';
- list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
- db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
- return;
+  include_once 'includes/locale.inc';
+  list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
+  db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
+  return;
 
- db_query('TRUNCATE l10n_community_project');
- db_query('TRUNCATE l10n_community_release');
+  db_query('TRUNCATE l10n_community_project');
+  db_query('TRUNCATE l10n_community_release');
 
- // Go back to projects database for releases.
- db_set_active('projects');
- $releases = array();
+  // Go back to projects database for releases.
+  db_set_active('projects');
+  $releases = array();
 
- // List of contrib branches in the database which have releases.
- $release_branches = array(
- 'DRUPAL-5--0-%',
- 'DRUPAL-5--1-%',
- 'DRUPAL-5--2-%',
- 'DRUPAL-5--3-%',
- 'DRUPAL-5--4-%',
- 'DRUPAL-5--5-%',
- 'DRUPAL-5--6-%',
- 'DRUPAL-5--7-%',
- 'DRUPAL-5--8-%',
- 'DRUPAL-5--9-%',
- 'DRUPAL-5--10-%',
- 'DRUPAL-5--11-%',
+  // List of contrib branches in the database which have releases.
+  $release_branches = array(
+  'DRUPAL-5--0-%',
+  'DRUPAL-5--1-%',
+  'DRUPAL-5--2-%',
+  'DRUPAL-5--3-%',
+  'DRUPAL-5--4-%',
+  'DRUPAL-5--5-%',
+  'DRUPAL-5--6-%',
+  'DRUPAL-5--7-%',
+  'DRUPAL-5--8-%',
+  'DRUPAL-5--9-%',
+  'DRUPAL-5--10-%',
+  'DRUPAL-5--11-%',
 
- 'DRUPAL-6--0-%',
- 'DRUPAL-6--1-%',
- 'DRUPAL-6--2-%',
- 'DRUPAL-6--3-%',
- 'DRUPAL-6--4-%',
- 'DRUPAL-6--5-%',
- 'DRUPAL-6--6-%',
- 'DRUPAL-6--7-%',
- 'DRUPAL-6--8-%',
- 'DRUPAL-6--9-%',
- 'DRUPAL-6--10-%',
+  'DRUPAL-6--0-%',
+  'DRUPAL-6--1-%',
+  'DRUPAL-6--2-%',
+  'DRUPAL-6--3-%',
+  'DRUPAL-6--4-%',
+  'DRUPAL-6--5-%',
+  'DRUPAL-6--6-%',
+  'DRUPAL-6--7-%',
+  'DRUPAL-6--8-%',
+  'DRUPAL-6--9-%',
+  'DRUPAL-6--10-%',
 
- 'DRUPAL-7--0-%',
- 'DRUPAL-7--1-%',
- 'DRUPAL-7--2-%',
- 'DRUPAL-7--3-%',
- 'DRUPAL-7--4-%',
- );
- foreach ($release_branches as $branch) {
- $result = db_query("
- SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
- FROM project_projects pp INNER JOIN
- project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
- node n ON pp.nid = n.nid INNER JOIN
- project_release_file prf ON prn.nid = prf.nid INNER JOIN
- files f ON prf.fid = f.fid INNER JOIN
- node nn ON prn.nid = nn.nid
- WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s'
- ORDER BY prn.nid ASC",
- $branch
- );
+  'DRUPAL-7--0-%',
+  'DRUPAL-7--1-%',
+  'DRUPAL-7--2-%',
+  'DRUPAL-7--3-%',
+  'DRUPAL-7--4-%',
+  );
+  foreach ($release_branches as $branch) {
+  $result = db_query("
+  SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
+  FROM project_projects pp INNER JOIN
+  project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
+  node n ON pp.nid = n.nid INNER JOIN
+  project_release_file prf ON prn.nid = prf.nid INNER JOIN
+  files f ON prf.fid = f.fid INNER JOIN
+  node nn ON prn.nid = nn.nid
+  WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s'
+  ORDER BY prn.nid ASC",
+  $branch
+  );
 
- // Fill in an array, so we can go back to our database and add in these
- // details.
- while ($release = db_fetch_object($result)) {
- $releases[$release->uri][$branch] = $release;
- }
- }
+  // Fill in an array, so we can go back to our database and add in these
+  // details.
+  while ($release = db_fetch_object($result)) {
+  $releases[$release->uri][$branch] = $release;
+  }
+  }
 
- $release_branches = array(
- 'DRUPAL-5%',
- 'DRUPAL-6%',
- );
- foreach ($release_branches as $branch) {
- $result = db_query("
- SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
- FROM project_projects pp INNER JOIN
- project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
- node n ON pp.nid = n.nid INNER JOIN
- project_release_file prf ON prn.nid = prf.nid INNER JOIN
- files f ON prf.fid = f.fid INNER JOIN
- node nn ON prn.nid = nn.nid
- WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s' AND pp.nid = 3060
- ORDER BY prn.nid ASC",
- $branch
- );
+  $release_branches = array(
+  'DRUPAL-5%',
+  'DRUPAL-6%',
+  );
+  foreach ($release_branches as $branch) {
+  $result = db_query("
+  SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
+  FROM project_projects pp INNER JOIN
+  project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
+  node n ON pp.nid = n.nid INNER JOIN
+  project_release_file prf ON prn.nid = prf.nid INNER JOIN
+  files f ON prf.fid = f.fid INNER JOIN
+  node nn ON prn.nid = nn.nid
+  WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s' AND pp.nid = 3060
+  ORDER BY prn.nid ASC",
+  $branch
+  );
 
- // Fill in an array, so we can go back to our database and add in these
- // details.
- while ($release = db_fetch_object($result)) {
- $releases[$release->uri][$branch] = $release;
- }
- }
+  // Fill in an array, so we can go back to our database and add in these
+  // details.
+  while ($release = db_fetch_object($result)) {
+  $releases[$release->uri][$branch] = $release;
+  }
+  }
 
- // Switch back to our local database.
- db_set_active();
+  // Switch back to our local database.
+  db_set_active();
 
- // Record all releases in our local database.
- foreach ($releases as $uri => $project_releases) {
- foreach ($project_releases as $release) {
- $download_link = 'http://ftp.drupal.org/' . $release->filepath;
- /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link))) {
- // @todo: what happens to unpublished releases? drop data outright?
- }
- else if (!empty($release->status)) {
- // New published release, not recorded before.
- db_query(
- "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
- $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
- );
- }
- }
- }*/
+  // Record all releases in our local database.
+  foreach ($releases as $uri => $project_releases) {
+  foreach ($project_releases as $release) {
+  $download_link = 'http://ftp.drupal.org/' . $release->filepath;
+  /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link))) {
+  // @todo: what happens to unpublished releases? drop data outright?
+  }
+  else if (!empty($release->status)) {
+  // New published release, not recorded before.
+  db_query(
+  "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
+  $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
+  );
+  }
+  }
+  }*/

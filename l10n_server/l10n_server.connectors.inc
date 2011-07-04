@@ -99,9 +99,9 @@ function theme_l10n_server_admin_connectors_form($variables) {
 
   // Put our overview into a table and add remaining form items.
   $headers = array(t('Enabled'), t('Connector'), array(
-      'colspan' => $max_operations,
-      'data' => t('Operations'),
-    ));
+               'colspan' => $max_operations,
+               'data' => t('Operations'),
+             ));
   $output = theme('table', array('header' => $headers, 'rows' => $rows));
   $output .= drupal_render_children($form);
   return $output;

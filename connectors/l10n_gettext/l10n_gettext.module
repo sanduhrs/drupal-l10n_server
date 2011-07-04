@@ -36,11 +36,11 @@ function l10n_gettext_upload_handler($form, $form_state) {
     // Save file info and mark the file parsed.
     db_insert('l10n_server_file')
       ->fields(array(
-		     'pid' => $project->pid,
-		     'rid' => $release->rid,
-		     'location' => $file->filename,
-		     'revision' => '',
-		     ))
+          'pid' => $project->pid,
+          'rid' => $release->rid,
+          'location' => $file->filename,
+          'revision' => '',
+        ))
       ->execute();
 
     $select = db_select('l10n_server_file')
@@ -92,10 +92,10 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
       // String does not exist.
       db_insert('l10n_server_string')
 	->fields(array(
-		       'value' => $msgid,
-		       'context' => $context,
-		       'hashkey' => md5($msgid . $context),
-		       ));
+            'value' => $msgid,
+            'context' => $context,
+            'hashkey' => md5($msgid . $context),
+          ));
       $sid = $select->execute()->fetchField();
     }
 
@@ -109,13 +109,13 @@ function l10n_gettext_store_string($value = NULL, $pid = NULL, $rid = NULL, $fid
       // Location does not exist with this string.
       db_insert('l10n_server_line')
 	->fields(array(
-		       'pid' => $pid,
-		       'rid' => $rid,
-		       'fid' => $fid,
-		       'sid' => $sid,
-		       'lineno' => 0,
-		       'type' => 2,
-		       ))
+            'pid' => $pid,
+            'rid' => $rid,
+            'fid' => $fid,
+            'sid' => $sid,
+            'lineno' => 0,
+            'type' => 2,
+          ))
 	->execute();
     }
     $sids[$sid] = 1;

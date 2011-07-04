@@ -19,20 +19,20 @@ function l10n_groups_install() {
     // Update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
+}
 }
 
 /**
@@ -74,22 +74,22 @@ function l10n_groups_schema() {
  */
 function l10n_groups_update_6000() {
   /*
-   Permissions table.
+    Permissions table.
 
-   'access localization community',             -- expected to be given to authenticated users
-   'browse translations',                       -- see prev.
-   'administer localization community',         -- expected to be given to admins
+    'access localization community',             -- expected to be given to authenticated users
+    'browse translations',                       -- see prev.
+    'administer localization community',         -- expected to be given to admins
 
-   'export gettext templates and translations', -- given to "translation team mamber"
-   'import gettext files',                      -- given to "translation team member"
-   'submit suggestions',                        -- given to "translation team member"
+    'export gettext templates and translations', -- given to "translation team mamber"
+    'import gettext files',                      -- given to "translation team member"
+    'submit suggestions',                        -- given to "translation team member"
 
-   'moderate suggestions from others',          -- given to "translation community moderator"
+    'moderate suggestions from others',          -- given to "translation community moderator"
 
-   'moderate own suggestions',                  -- given to "translation self-moderator"
+    'moderate own suggestions',                  -- given to "translation self-moderator"
 
-   'configure member roles',                    -- given to "translation community manager"
-   */
+    'configure member roles',                    -- given to "translation community manager"
+  */
 
   // Remove permissions which are to be granted via og_user_roles from now on.
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
@@ -98,8 +98,8 @@ function l10n_groups_update_6000() {
     $new_perms = array_diff($existing_perms, array('export gettext templates and translations', 'import gettext files', 'submit suggestions', 'moderate suggestions from others', 'moderate own suggestions'));
     db_update('permission')
       ->fields(array(
-		     'perm' => implode(', ', $new_perms),
-		     ))
+          'perm' => implode(', ', $new_perms),
+        ))
       ->condition('rid', $role->rid)
       ->execute();
   }
@@ -121,21 +121,21 @@ function l10n_groups_update_6000() {
   // Grant permissions.
   db_insert('permission')
     ->fields(array(
-		   'rid' => $role_team,
-		   'perm' => 'export gettext templates and translations, import gettext files, submit suggestions',
-		   ))
+        'rid' => $role_team,
+        'perm' => 'export gettext templates and translations, import gettext files, submit suggestions',
+      ))
     ->fields(array(
-		   'rid' => $role_self,
-		   'perm' => 'moderate own suggestions',
-		   ))
+        'rid' => $role_self,
+        'perm' => 'moderate own suggestions',
+      ))
     ->fields(array(
-		   'rid' => $role_community,
-		   'perm' => 'moderate suggestions from others',
-		   ))
+        'rid' => $role_community,
+        'perm' => 'moderate suggestions from others',
+      ))
     ->fields(array(
-		   'rid' => $role_manager,
-		   'perm' => 'configure member roles',
-		   ))
+        'rid' => $role_manager,
+        'perm' => 'configure member roles',
+      ))
     ->execute();
 
 
@@ -176,19 +176,19 @@ function l10n_groups_update_6001() {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
-  return t('TODO Add a descriptive string here to show in the UI. l10n_groups_update_6001()');
+}
+return t('TODO Add a descriptive string here to show in the UI. l10n_groups_update_6001()');
 }

@@ -98,20 +98,20 @@ function l10n_packager_install() {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
+}
 }
 
 /**
@@ -135,22 +135,22 @@ function l10n_packager_update_6002() {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
+          'module' => $module,
+          'delta'  => $delta,
+        ))
       ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'right',
+          'theme'  => $theme_key,
+        ))
       ->updateExcept('region', 'theme')
       ->execute();
-    }
   }
+}
 
-  return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6002()');
+return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6002()');
 }
 
 /**

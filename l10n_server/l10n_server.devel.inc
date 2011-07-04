@@ -57,18 +57,18 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
       list($plurals, $formula) = l10n_server_parse_plural_formula($plural_formula);
       db_insert('languages')
 	->fields(array(
-		       'language' => $langcode,
-		       'name' => $language[0],
-		       'native' => isset($language[1]) ? $language[1] : $language[0],
-		       'direction' => isset($language[2]) ? $language[2] : LANGUAGE_LTR,
-		       'enabled' => 1,
-		       'plurals' => $plurals,
-		       'formula' => $formula,
-		       'domain' => '',
-		       'prefix' => $langcode,
-		       'weight' => 0,
-		       'javascript' => '',
-		       ))
+            'language' => $langcode,
+            'name' => $language[0],
+            'native' => isset($language[1]) ? $language[1] : $language[0],
+            'direction' => isset($language[2]) ? $language[2] : LANGUAGE_LTR,
+            'enabled' => 1,
+            'plurals' => $plurals,
+            'formula' => $formula,
+            'domain' => '',
+            'prefix' => $langcode,
+            'weight' => 0,
+            'javascript' => '',
+          ))
 	->execute();
     }
     drupal_set_message(format_plural($num, '1 language created.', '@count languages created.'));
@@ -113,16 +113,16 @@ function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
       $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
 
       db_query("
-INSERT INTO {l10n_server_translation} 
-SELECT NULL, sid, :lng, value, :uid1, :uid2, :rt1, :rt2, 0, 0, 1 
-FROM {l10n_server_string} LIMIT 0, :limit", 
-	       array(':lng' => $language->language, 
-		     ':uid1' => $uid1, 
-		     ':uid2' => $uid2, 
-		     ':rt1' => REQUEST_TIME, 
-		     ':rt2' => REQUEST_TIME, 
-		     ':limit' => $limit)
-	       );
+INSERT INTO {l10n_server_translation}
+SELECT NULL, sid, :lng, value, :uid1, :uid2, :rt1, :rt2, 0, 0, 1
+FROM {l10n_server_string} LIMIT 0, :limit",
+        array(':lng' => $language->language,
+          ':uid1' => $uid1,
+          ':uid2' => $uid2,
+          ':rt1' => REQUEST_TIME,
+          ':rt2' => REQUEST_TIME,
+          ':limit' => $limit)
+      );
     }
   }
   drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));

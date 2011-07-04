@@ -462,14 +462,14 @@ function l10n_community_block_stats_front() {
   $block = array(
     'subject' => t('Quick statistics'),
     'content' => theme('item_list', array('items' => array_merge($stats, array(
-        format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-        format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
-        format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') . ' (' . format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') . ')',
-        format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
-        format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-        format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-        format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-      )))),
+                                                     format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+                                                     format_plural($stats_numbers['projects'], '1 project managed', '@count projects managed'),
+                                                     format_plural($stats_numbers['releases_parsed'], '1 release parsed', '@count releases parsed') . ' (' . format_plural($stats_numbers['releases_queue'], '1 in queue', '@count in queue') . ')',
+                                                     format_plural($stats_numbers['files'], '1 file scanned', '@count files scanned'),
+                                                     format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+                                                     format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+                                                     format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+                                                   )))),
   );
   return $block;
 }
@@ -917,9 +917,9 @@ function l10n_community_build_filter_values($params) {
  */
 function l10n_community_flat_filters($filters) {
   foreach (array(
-    'project' => 'uri',
-    'author' => 'name',
-  ) as $name => $key) {
+      'project' => 'uri',
+      'author' => 'name',
+    ) as $name => $key) {
     if (!empty($filters[$name])) {
       $filters[$name] = $filters[$name]->$key;
     }
@@ -986,9 +986,9 @@ function l10n_community_ahah_releases() {
   // TODO Please change this theme call to use an associative array for the $variables parameter.
   drupal_json_output(
     array(
-    'status' => TRUE,
-    'data' => theme('status_messages') . drupal_render($form['release']),
-  )
+      'status' => TRUE,
+      'data' => theme('status_messages') . drupal_render($form['release']),
+    )
   );
 }
 
@@ -1032,16 +1032,16 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
     ->condition('translation', $translation)
     ->execute()
     ->fetchObject();
-    
+
   if (!empty($existing)) {
     if ($existing->is_active == 0) {
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
       db_update('l10n_server_translation')
 	->fields(array(
-		       'is_suggestion' => 1,
-		       'is_active' => 1,
-		       'time_changed' => $time,
-		       ))
+            'is_suggestion' => 1,
+            'is_active' => 1,
+            'time_changed' => $time,
+          ))
 	->condition('tid', $existing->tid)
 	->execute();
       $tid = $existing->tid;
@@ -1055,27 +1055,27 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
     // Insert the new suggestion.
     $id = db_insert('l10n_server_translation')
       ->fields(array(
-		     'sid' => $sid,
-		     'translation' => $translation,
-		     'language' => $langcode,
-		     'uid_entered' => $uid_attribution,
-		     'time_entered' => $time,
-		     'time_changed' => $time,
-		     'is_suggestion' => 1,
-		     'is_active' => 1,
-		     ))
+          'sid' => $sid,
+          'translation' => $translation,
+          'language' => $langcode,
+          'uid_entered' => $uid_attribution,
+          'time_entered' => $time,
+          'time_changed' => $time,
+          'is_suggestion' => 1,
+          'is_active' => 1,
+        ))
       ->execute();
     $tid = db_last_insert_id('l10n_community_translation', 'tid');
     $type = L10N_SERVER_ACTION_ADD;
   }
   $id = db_insert('l10n_server_translation_history')
     ->fields(array(
-		   'tid' => $tid,
-		   'uid_action' => $uid_user,
-		   'type_action' => $type,
-		   'time_action' => $time,
-		   'medium_action' => $medium,
-		   ))
+        'tid' => $tid,
+        'uid_action' => $uid_user,
+        'type_action' => $type,
+        'time_action' => $time,
+        'medium_action' => $medium,
+      ))
     ->execute();
 
   // Mark the existing or mock translation as having suggestions.
@@ -1100,20 +1100,20 @@ function l10n_community_decline_string($langcode, $sid, $tid, $uid) {
   $time = REQUEST_TIME;
   db_update('l10n_server_translation')
     ->fields(array(
-		   'is_active' => 0,
-		   'time_changed' => $time,
-		   ))
+        'is_active' => 0,
+        'time_changed' => $time,
+      ))
     ->condition('tid', $tid)
     ->execute();
   // ATM we only support this through the web, so always save the web medium.
   $id = db_insert('l10n_server_translation_history')
     ->fields(array(
-		   'tid' => $tid,
-		   'uid_action' => $uid,
-		   'type_action' => L10N_SERVER_ACTION_DECLINE,
-		   'time_action' => $time,
-		   'medium_action' => L10N_SERVER_MEDIUM_WEB,
-		   ))
+        'tid' => $tid,
+        'uid_action' => $uid,
+        'type_action' => L10N_SERVER_ACTION_DECLINE,
+        'time_action' => $time,
+        'medium_action' => L10N_SERVER_MEDIUM_WEB,
+      ))
     ->execute();
   l10n_community_update_string_status($langcode, $sid);
 }
@@ -1139,11 +1139,11 @@ function l10n_community_update_string_status($langcode, $sid) {
   if ($has_suggestion || $has_translation) {
     db_insert('l10n_server_status_flag')
       ->fields(array(
-		     'sid' => $sid,
-		     'language' => $langcode,
-		     'has_sugestion' => (int) $has_suggestion,
-		     'has_translation' => (int) $has_translation,
-		     ))
+          'sid' => $sid,
+          'language' => $langcode,
+          'has_sugestion' => (int) $has_suggestion,
+          'has_translation' => (int) $has_translation,
+        ))
       ->execute();
   }
 }
@@ -1168,41 +1168,41 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
   if ($existing_tid = db_query("SELECT tid FROM {l10n_server_translation} WHERE sid = :sid AND language = :language AND is_suggestion = 0 AND is_active = 1", array(':sid' => $sid, ':language' => $langcode))->fetchField()) {
     db_update('l10n_server_translation')
       ->fields(array(
-		     'is_suggestion' => 1,
-		     'time_changed' => $time,
-		     ))
+          'is_suggestion' => 1,
+          'time_changed' => $time,
+        ))
       ->condition('tid', $existing_tid)
       ->execute();
     // ATM we only support this through the web, so always save the web medium.
     $id = db_insert('l10n_server_translation_history')
       ->fields(array(
-		     'tid' => $existing_tid,
-		     'uid_action' => $user->uid,
-		     'type_action' => L10N_SERVER_ACTION_DEMOTE,
-		     'time_action' => $time,
-		     'medium_action' => L10N_SERVER_MEDIUM_WEB,
-		     ))
+          'tid' => $existing_tid,
+          'uid_action' => $user->uid,
+          'type_action' => L10N_SERVER_ACTION_DEMOTE,
+          'time_action' => $time,
+          'medium_action' => L10N_SERVER_MEDIUM_WEB,
+        ))
       ->execute();
   }
 
   // Mark this exact suggestion as active translation, and set approval time.
   db_update('l10n_server_translation')
     ->fields(array(
-		   'time_changed' => $time,
-		   'is_suggestion' => 0,
-		   'is_active' => 1,
-		   ))
+        'time_changed' => $time,
+        'is_suggestion' => 0,
+        'is_active' => 1,
+      ))
     ->condition('tid', $tid)
     ->execute();
   // ATM we only support this through the web, so always save the web medium.
   $id = db_insert('l10n_server_translation_history')
     ->fields(array(
-		   'tid' => $tid,
-		   'uid_action' => $user->uid,
-		   'type_action' => L10N_SERVER_ACTION_APPROVE,
-		   'time_action' => $time,
-		   'medium_action' => L10N_SERVER_MEDIUM_WEB,
-		   ))
+        'tid' => $tid,
+        'uid_action' => $user->uid,
+        'type_action' => L10N_SERVER_ACTION_APPROVE,
+        'time_action' => $time,
+        'medium_action' => L10N_SERVER_MEDIUM_WEB,
+      ))
     ->execute();
 
   l10n_community_update_string_status($langcode, $sid);

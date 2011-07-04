@@ -169,9 +169,9 @@ function l10n_groups_node_info() {
 function l10n_groups_insert($node) {
   $id = db_insert('l10n_groups_group')
     ->fields(array(
-		   'nid' => $node->nid,
-		   'language' => $node->l10n_group_language,
-		   ))
+        'nid' => $node->nid,
+        'language' => $node->l10n_group_language,
+      ))
     ->execute();
   l10n_community_cache_clear_all();
 }
