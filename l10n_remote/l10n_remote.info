@@ -3,5 +3,3 @@ description = Provides an XML-RPC server interface to handle remote translation 
 dependencies[] = l10n_community
 package = "Localization server"
 core = 7.x
-
-files[] = l10n_remote.module

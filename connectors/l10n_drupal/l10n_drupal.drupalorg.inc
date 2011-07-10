@@ -93,12 +93,14 @@ function l10n_drupal_drupalorg_scan() {
   db_set_active('projects');
 
   // Got the limited list of translation projects first to exclude from the
-  // upcoming query. We cannot join on the term_node table there, since we
+  // upcoming query. We cannot join on the taxonomy_index table there, since we
   // can have nodes with multiple terms, so just adding
   // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
   // would still match on other terms.
+  // TODO Check that this query is OK
+  // (after applying http://drupal.org/node/224333#taxonomy_tables)
   $result = db_query("SELECT DISTINCT pp.nid
-     FROM project_projects pp INNER JOIN term_node tn ON tn.nid = pp.nid
+     FROM project_projects pp INNER JOIN taxonomy_index tn ON tn.nid = pp.nid
      WHERE tn.tid = :tn.tid", array(':tn.tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
   $exclude_projects = $result->fetchCol();
 

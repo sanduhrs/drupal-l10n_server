@@ -46,7 +46,7 @@ function l10n_community_install() {
  * link to http://drupal.org/project/$uri.
  */
 function l10n_community_update_5000() {
-  db_add_field('l10n_community_project', 'home_link', array('type' => 'text', 'not null' = > true));
+  db_add_field('l10n_community_project', 'home_link', array('type' => 'text', 'not null' => true));
   return t('TODO Add a descriptive string here to show in the UI. l10n_community_update_5000()');
 }
 

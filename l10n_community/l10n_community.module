@@ -499,11 +499,6 @@ function l10n_community_user_view($account, $view_mode) {
   }
 }
 
-/**
- * Implements hook_user().
- */
-function l10n_community_user_OLD($op, &$edit, &$account, $category = NULL) { }
-
 // = API functions =============================================================
 
 /**
@@ -983,7 +978,6 @@ function l10n_community_ahah_releases() {
     unset($form['release']['#title']);
   }
 
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
   drupal_json_output(
     array(
       'status' => TRUE,

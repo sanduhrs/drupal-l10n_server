@@ -415,7 +415,7 @@ function l10n_groups_broadcast($langcode) {
 function l10n_groups_l10n_community_build_language_page($language) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
-    $output = check_markup($group_node->body, $group_node->format, $langcode = '' /* TODO Set this variable. */, FALSE) . '</div>';
+    $output = check_markup($group_node->body, $group_node->format, $langcode = $language->language, FALSE);
   }
   else {
     $output = t('Group not found or not accessible. No information to display.');

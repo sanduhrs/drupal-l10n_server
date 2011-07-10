@@ -24,10 +24,10 @@ function l10n_community_welcome_page() {
     $num_source = l10n_community_get_string_count('project', $project->pid);
     $string_counts = l10n_community_get_string_count('languages', $project->pid);
 
-    $table = array();
+    $table_rows = array();
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
-        $table[] = array(
+        $table_rows[] = array(
           array(
             'data' => t($language->name),
             'sortdata' => t($language->name),
@@ -42,14 +42,15 @@ function l10n_community_welcome_page() {
       }
       else {
         $stats = l10n_community_get_stats($langcode);
-        // TODO Please change this theme call to use an associative array for the $variables parameter.
         $progress = array_shift(theme(
                       'l10n_community_progress_columns',
-                      $num_source,
-                      @$string_counts[$langcode]['translations'],
-                      @$string_counts[$langcode]['suggestions']
+                      array(
+                        'sum' => $num_source,
+                        'translated' => @$string_counts[$langcode]['translations'],
+                        'has_suggestion' => @$string_counts[$langcode]['suggestions']
+                      )
                     ));
-        $table[] = array(
+        $table_rows[] = array(
           array(
             'data' => l(t($language->name), 'translate/languages/' . $langcode),
             'sortdata' => t($language->name),
@@ -68,26 +69,21 @@ function l10n_community_welcome_page() {
     }
 
     if (!empty($_GET['sort']) && !empty($_GET['order'])) {
-      usort($table, 'l10n_server_sort_by_column_language');
+      usort($table_rows, 'l10n_server_sort_by_column_language');
     }
 
-    // TODO Please change this theme call to use an associative array for the $variables parameter.
+    $header = array(
+      array('data' => t('Language'), 'field' => 'language', 'class' => 'rowhead'),
+      array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
+      array('data' => t('Contributors'), 'field' => 'contributors'),
+    );
     $output = theme(
       'table',
       array(
-        array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-        array(
-          'data' => t('@project progress', array('@project' => $project->title)),
-          'field' => 'progress',
-        ),
-        array(
-          'data' => t('Contributors'),
-          'field' => 'contributors',
-        ),
-      ),
-      $table,
-      array('class' => 'l10n-community-overview l10n-community-highlighted')
-    );
+        'header' => $header,
+        'rows' => $table_rows,
+        'attributes' => array('class' => 'l10n-community-overview l10n-community-highlighted')
+      ));
 
     $projects = l10n_server_get_projects();
     $project_count = count($projects);

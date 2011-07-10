@@ -24,11 +24,11 @@ function l10n_community_explore_languages() {
 
   // Generate listing of all languages with summaries. The list of languages
   // is relatively "short", compared to projects, so we don't need a pager here.
-  $table = array();
+  $table_rows = array();
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
-      $table[] = array(
+      $table_rows[] = array(
         array(
           'data' => t($language->name),
           'sortdata' => t($language->name),
@@ -43,14 +43,15 @@ function l10n_community_explore_languages() {
     }
     else {
       $stats = l10n_community_get_stats($langcode);
-      // TODO Please change this theme call to use an associative array for the $variables parameter.
       $progress = array_shift(theme(
                     'l10n_community_progress_columns',
-                    $num_source,
-                    @$string_counts[$langcode]['translations'],
-                    @$string_counts[$langcode]['suggestions']
+                    array(
+                      'sum' => $num_source,
+                      'translated' => @$string_counts[$langcode]['translations'],
+                      'has_suggestion' => @$string_counts[$langcode]['suggestions']
+                    )
                   ));
-      $table[] = array(
+      $table_rows[] = array(
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),
           'sortdata' => t($language->name),
@@ -72,23 +73,18 @@ function l10n_community_explore_languages() {
     usort($table, 'l10n_server_sort_by_column_language');
   }
 
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
+  $header = array(
+    array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+    array('data' => t('Overall progress'), 'field' => 'progress'),
+    array('data' => t('Contributors'), 'field' => 'contributors'),
+  );
   return theme(
     'table',
     array(
-      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-      array(
-        'data' => t('Overall progress'),
-        'field' => 'progress',
-      ),
-      array(
-        'data' => t('Contributors'),
-        'field' => 'contributors',
-      ),
-    ),
-    $table,
-    array('class' => 'l10n-community-overview l10n-community-highlighted')
-  );
+      'header' => $header,
+      'rows' => $table_rows,
+      'attributes' => array('class' => 'l10n-community-overview l10n-community-highlighted'),
+    ));
 }
 
 /**
@@ -380,27 +376,28 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
       );
     }
     else {
-      // TODO Please change this theme call to use an associative array for the $variables parameter.
       $table[] = array_merge(
         array(
           array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
         ),
         theme(
           'l10n_community_progress_columns',
-          $num_source,
-          @$string_counts[$langcode]['translations'],
-          @$string_counts[$langcode]['suggestions']
-        )
+          array(
+            'sum' => $num_source,
+            'translated' => @$string_counts[$langcode]['translations'],
+            'has_suggestion' => @$string_counts[$langcode]['suggestions']
+          ))
       );
     }
   }
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
   $block['content'] = theme(
     'table',
-    theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
-    $table,
-    array('class' => 'l10n-community-overview')
-  ) . '<div class="clear-block"></div>';
+    array(
+      'headers' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
+      'rows' => $table,
+      'attributes' => array('class' => 'l10n-community-overview')
+    ));
+  $block['content'] .= '<div class="clear-block"></div>';
 
   return $block;
 }

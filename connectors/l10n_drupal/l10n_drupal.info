@@ -5,7 +5,3 @@ dependencies[] = potx
 package = "Localization server connectors"
 core = 7.x
 
-files[] = l10n_drupal.drupalorg.inc
-files[] = l10n_drupal.files.inc
-files[] = l10n_drupal.install
-files[] = l10n_drupal.module
