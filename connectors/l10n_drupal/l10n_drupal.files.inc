@@ -292,7 +292,7 @@ function l10n_drupal_parse_package($package_file, $release) {
   if ($error) {
     // WARNING: We should not do this reuse in the 6.x port, or otherwise
     // the extractor cannot pick the watchdog() strings up.
-    watchdog('l10n_drupal', $error, WATCHDOG_ERROR);
+    watchdog('l10n_drupal', $error, array(), WATCHDOG_ERROR);
     $return['error'] = $error;
   }
   if ($message) {
