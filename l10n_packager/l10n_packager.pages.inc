@@ -14,7 +14,7 @@ function l10n_packager_explore_downloads() {
   drupal_add_css(drupal_get_path('module', 'l10n_community') . '/l10n_community.css');
 
   $projects = l10n_server_get_projects();
-  $output = drupal_get_form('l10n_packager_download_project_form', $projects);
+  $form = drupal_get_form('l10n_packager_download_project_form', $projects);
 
   // @todo: remove hard-wired Drupal default from here.
   if (empty($_GET['project'])) {
@@ -27,12 +27,13 @@ function l10n_packager_explore_downloads() {
   }
   if (empty($project)) {
     drupal_set_message(t('Requested project not found.'), 'warning');
-    return $output;
+    return $form;
   }
 
   // Set proper title for given project.
   drupal_set_title(t('@project translation downloads', array('@project' => $project->title)), PASS_THROUGH);
 
+  $output = drupal_render($form);
   // Expire old entries and then try to look up our entry.
   cache_clear_all(NULL, 'cache_l10n_packager');
   $rendered = cache_get('download:' . $project->uri, 'cache_l10n_packager');

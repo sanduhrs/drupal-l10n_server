@@ -427,7 +427,7 @@ function l10n_community_block_view($delta) {
             include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/welcome.inc';
             return array(
               'subject' => t('Quick navigation'),
-              'content' => drupal_get_form('l10n_community_pick_go') . '<div class="clearing"></div>',
+              'content' => drupal_render(drupal_get_form('l10n_community_pick_go')) . '<div class="clearing"></div>',
             );
           }
         }

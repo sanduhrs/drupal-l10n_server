@@ -173,8 +173,8 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#type' => 'submit',
   );
   $form['reset'] = array(
-    '#value' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => 'filter-exclude'))) . '</div>',
     '#type' => 'markup',
+    '#markup' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => 'filter-exclude'))) . '</div>',
   );
   $form['#theme'] = 'l10n_community_filter_form';
   return $form;
@@ -269,16 +269,16 @@ function l10n_community_translate_page($langcode) {
   );
 
   // Add the filter form.
-  $output = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
+  $form = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
 
   // Output the actual strings.
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
   }
   else {
-    $output .= drupal_get_form('l10n_community_translate_form', $language, $filters, $strings);
+    $form = array_merge($form, drupal_get_form('l10n_community_translate_form', $language, $filters, $strings));
   }
-  return $output;
+  return $form;
 }
 
 /**
@@ -312,7 +312,7 @@ function l10n_community_translate_form($form, &$form_state, $language, $filters,
     ),
     'pager_top' => array(
       '#weight' => -10,
-      '#value' => $pager,
+      '#markup' => $pager,
     ),
     'strings' => array(
       '#tree' => TRUE,
@@ -325,7 +325,7 @@ function l10n_community_translate_form($form, &$form_state, $language, $filters,
     ),
     'pager_bottom' => array(
       '#weight' => 10,
-      '#value' => $pager,
+      '#markup' => $pager,
     ),
   );
 
@@ -363,13 +363,13 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
       '#value' => ($source_match = (!empty($filters['search']) && (stripos($source_unpacked, $filters['search']) !== FALSE))),
     ),
     'source' => array(
-      'string' => array('#value' => _l10n_community_translate_render_textarray($source->value)),
+      'string' => array('#markup' => _l10n_community_translate_render_textarray($source->value)),
     ),
   );
 
   if (user_access('submit suggestions')) {
     $form['source']['edit'] = array(
-      '#value' => t('Translate'),
+      '#markup' => t('Translate'),
       '#prefix' => '<label title="' . t('Translate') . '">',
       '#suffix' => '</label>',
     );
@@ -507,7 +507,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
     else {
       if (user_access('submit suggestions')) {
         $form['edit'] = array(
-          '#value' => t('Edit a copy'),
+          '#markup' => t('Edit a copy'),
           '#prefix' => '<label title="' . t('Edit a copy') . '">',
           '#suffix' => '</label>',
         );
@@ -516,7 +516,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
         $title = l10n_community_translate_byline($string->username, $string->uid_entered, $string->time_entered, -1, -1, FALSE);
 
         $form['author'] = array(
-          '#value' => $title,
+          '#markup' => $title,
           '#prefix' => '<div class="l10n-byline"><a href="' . url('translate/translation-details/' . $string->tid) . '" class="l10n-more-link" title="' . t('Show full history for translation.') . '">',
           '#suffix' => '</a><div class="l10n-more-info"></div></div>',
         );

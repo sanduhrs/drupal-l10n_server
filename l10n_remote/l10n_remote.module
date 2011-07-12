@@ -59,7 +59,7 @@ function l10n_remote_user_page($client_token) {
   $items[] = array(
     '#type' => 'item',
     '#title' => t('Your Localization Server API key'),
-    '#value' => l10n_remote_user_api_key($user->uid, $client_token),
+    '#markup' => l10n_remote_user_api_key($user->uid, $client_token),
     '#description' => t('Copy and paste this API key into your user account on the client host.'),
   );
   return drupal_render($items);

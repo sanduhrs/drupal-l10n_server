@@ -265,7 +265,7 @@ function l10n_groups_form($node, $form_state) {
       '#type' => 'item',
       '#title' => t('Language'),
       '#description' => t('The language managed by this group. This cannot be modified.'),
-      '#value' => $languages[$node->l10n_group_language],
+      '#markup' => $languages[$node->l10n_group_language],
       '#weight' => -5,
     );
     // Store the language value for hook_update.
@@ -380,7 +380,7 @@ function l10n_groups_pick_go() {
       return array(
         '#type' => 'item',
         '#title' => count($groups) > 1 ? t('Your groups') : t('Your group'),
-        '#value' => join(', ', $groups),
+        '#markup' => join(', ', $groups),
         '#l10n_groups' => array_keys($groups),
       );
     }

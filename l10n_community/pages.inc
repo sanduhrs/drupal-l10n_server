@@ -126,7 +126,7 @@ function l10n_community_explore_projects() {
   // If we have more projects compared to what we show at the moment, display
   // an autocomplete jumpbox to jump to a project.
   if (count($string_counts) > $pager_setting) {
-    $output .= drupal_get_form('l10n_community_explore_projects_jump_form');
+    $output .= drupal_render(drupal_get_form('l10n_community_explore_projects_jump_form'));
   }
 
   $pager = theme('pager', array('tags' => NULL, 'element' => 0));

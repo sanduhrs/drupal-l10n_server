@@ -434,7 +434,7 @@ function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$f
       $form['last_parsed'] = array(
         '#type' => 'item',
         '#title' => t('Source last parsed'),
-        '#value' => format_date($form['previous_release']['#value']->last_parsed),
+        '#markup' => format_date($form['previous_release']['#value']->last_parsed),
         '#description' => t('To start over this same release with a new source file, <a href="@startover">start over the release</a>, edit and upload a new source file.', array('@startover' => url('admin/l10n_server/projects/releases/' . $form['project']['#value']->uri . '/reset/' . $form['previous_release']['#value']->rid))),
         '#weight' => 100,
       );
