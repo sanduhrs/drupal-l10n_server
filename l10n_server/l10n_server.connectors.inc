@@ -137,7 +137,7 @@ function l10n_server_connector_configure($connector = NULL, $source = NULL) {
 /**
  * Settings form callback.
  */
-function l10n_server_connectors_files_settings_form(&$form_state, $connector_name, $source_name) {
+function l10n_server_connectors_files_settings_form($form, &$form_state, $connector_name, $source_name) {
   $form['#connector_name'] = $connector_name;
 
   $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory'] = array(

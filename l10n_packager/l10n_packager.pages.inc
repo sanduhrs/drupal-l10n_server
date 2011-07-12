@@ -135,7 +135,12 @@ function l10n_packager_show_downloads($project) {
   foreach ($languages as $langcode => $language) {
     $row = array();
     // Start off the row with the language name and code.
-    $row[] = l(t($language->name), 'translate/languages/' . $langcode);
+    $row[] = array(
+      'data' => array(
+        '#type' => 'link',
+        '#title' => t($language->name),
+        '#href' => 'translate/languages/' . $langcode,
+      ));
     foreach (array_keys($branches) as $branch) {
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {

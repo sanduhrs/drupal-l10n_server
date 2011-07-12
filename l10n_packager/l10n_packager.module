@@ -297,7 +297,11 @@ function l10n_packager_build_download_links($uri) {
     $list = array();
     foreach ($paths as $path => $dummy) {
       list($core, $name) = explode('/', $path);
-      $list[] = l(t('Translations for @core_version', array('@core_version' => $core)), $url . '/' . $path);
+      $list[] = array('data' => array(
+                  '#type' => 'link',
+                  '#title' => t('Translations for @core_version', array('@core_version' => $core)),
+                  '#href' =>  $url . '/' . $path;
+                ));
     }
 
     $rendered = count($list) ? theme('item_list', array('items' => $list)) : t('No downloads available for this project.');
@@ -422,9 +426,18 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
     $rows[] = array(
       'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,
       'data' => array(
-        l($project->title, 'translate/projects/' . $project->uri),
+        array('data' => array(
+            '#type' => 'link',
+            '#title' => $project->title,
+            '#href' => 'translate/projects/' . $project->uri,
+          )),
         $latest_item->title,
-        l(t('Download') . ' <span class="filesize">(' . format_size($latest_item->filesize) . ')</span>', $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename, array('html' => TRUE)),
+        array(
+          'data' => array(
+            '#type' => 'link',
+            '#title' => t('Download') . ' <span class="filesize">(' . format_size($latest_item->filesize) . ')</span>',
+            '#href' => $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename,
+          )),
         format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
         format_date($up_to_date, 'custom', 'Y-M-d', 0),
       ),
@@ -436,10 +449,19 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
     $summary_row = array(
       'class' => 'l10n-packager-summary',
       'id' => 'l10n-packager-summary-' . $uri_class,
-      'data' => array(l('&#9658; ' . check_plain($project->title), 'translate/projects/' . $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array(
-                'data' => join(', ', $summary_list),
-                'colspan' => 4,
-              )),
+      'data' => array(
+        array(
+          'data' => array(
+            '#type' => 'link',
+            '#title' => '&#9658; ' . check_plain($project->title),
+            '#href' => 'translate/projects/' . $project->uri,
+            '#options' => array('class' => 'expand'),
+          )),
+        array(
+          'data' => join(', ', $summary_list),
+          'colspan' => 4,
+        )
+      ),
     );
     $headers = array(
       'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,

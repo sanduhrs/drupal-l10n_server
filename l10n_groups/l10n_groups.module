@@ -246,7 +246,7 @@ function l10n_groups_node_access($node, $op, $account) {
 /**
  * Implements hook_form().
  */
-function l10n_groups_form($node, $form_state) {
+function l10n_groups_form($node, &$form_state) {
   $form = array();
 
   $form['title'] = array(
