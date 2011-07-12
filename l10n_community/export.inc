@@ -78,9 +78,9 @@ function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode 
       '#title' => t('Project'),
       '#required' => TRUE,
       '#default_value' => $form_state['values']['project'],
-      '#ahah' => array(
+      '#ajax' => array(
         // 'event' missing, Drupal will apply the per-#type defaults.
-        'path' => 'translate/releases-ahah',
+        'callback' => 'l10n_community_ajax_releases',
         'wrapper' => 'l10n-server-releases',
         'effect' => 'fade',
       ),
@@ -120,7 +120,7 @@ function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode 
     '#type' => 'select',
     '#options' => $release_options,
     '#default_value' => $form_state['values']['release'],
-    // Wrapper used to replace release options via AHAH.
+    // Wrapper used to replace release options via AJAX.
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
   );

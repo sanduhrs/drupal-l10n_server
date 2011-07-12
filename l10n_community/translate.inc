@@ -31,7 +31,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     L10N_STATUS_IS_SUGGESTION => t('Is suggestion'),
   );
 
-  // This form can be submitted multiple times to support AHAH flows.
+  // This form can be submitted multiple times to support AJAX flows.
   // So we set an initial default value set for the form values, if there
   // was none submitted already. Otherwise, the submitted values will take
   // on being the defaults.
@@ -52,9 +52,9 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
   $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => $form_state['values']['project'],
-    '#ahah' => array(
+    '#ajax' => array(
       // 'event' missing, Drupal will apply the per-#type defaults.
-      'path' => 'translate/releases-ahah',
+      'callback' => 'l10n_community_ajax_releases',
       'wrapper' => 'l10n-server-releases',
       'effect' => 'fade',
     ),
@@ -79,7 +79,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
   }
 
   // Always add releases option, so we can update it when
-  // needed as the project changes with AHAH.
+  // needed as the project changes with AJAX.
   $release_options = array('all' => t('All'));
   if (!empty($form_state['values']['project'])) {
     $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
@@ -96,7 +96,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#type' => 'select',
     '#options' => $release_options,
     '#default_value' => $form_state['values']['release'],
-    // Wrapper used to replace release options via AHAH.
+    // Wrapper used to replace release options via AJAX.
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
     '#attributes' => array('class' => $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default'),
@@ -1005,20 +1005,20 @@ function l10n_community_pack_string($strings) {
  * usability should also be kept in mind. It is possible to investigate hidden
  * information sources though, like tooltips on the release titles presented.
  *
- * This callback is invoked from JavaScript and is used as an AHAH provider.
+ * This callback is invoked from JavaScript and is used as an AJAX provider.
  *
  * @param $sid
  *   Source string id.
- * @param $ahah
- *   Whether the request came through AHAH, in which case no page
- *   theming should be applied. Non-AHAH support is a fallback if JS is
+ * @param $ajax
+ *   Whether the request came through AJAX, in which case no page
+ *   theming should be applied. Non-AJAX support is a fallback if JS is
  *   turned off.
  */
-function l10n_community_string_details($sid = 0, $ahah = 0) {
+function l10n_community_string_details($sid = 0, $ajax = 0) {
 
   $output = '';
-  if ($ahah) {
-    // Prevent devel module information if doing AHAH.
+  if ($ajax) {
+    // Prevent devel module information if doing AJAX.
     $GLOBALS['devel_shutdown'] = FALSE;
   }
   else {
@@ -1050,7 +1050,7 @@ function l10n_community_string_details($sid = 0, $ahah = 0) {
   }
   $project_list[] = join(', ', $version_list);
   $usage_list = theme('item_list', array('items' => $project_list));
-  if ($ahah) {
+  if ($ajax) {
     print $usage_list;
     exit;
   }
@@ -1065,19 +1065,19 @@ function l10n_community_string_details($sid = 0, $ahah = 0) {
  *
  * @param $tid
  *   Translation id.
- * @param $ahah
- *   Whether the request came through AHAH, in which case no page
- *   theming should be applied. Non-AHAH support is a fallback if JS is
+ * @param $ajax
+ *   Whether the request came through AJAX, in which case no page
+ *   theming should be applied. Non-AJAX support is a fallback if JS is
  *   turned off.
  */
-function l10n_community_translation_details($tid = 0, $ahah = 0) {
+function l10n_community_translation_details($tid = 0, $ajax = 0) {
 
   // Get data about this translation.
   $string = db_fetch_object(db_query('SELECT * FROM {l10n_server_translation} WHERE tid = :tid', array(':tid' => $tid)));
 
   $output = '';
-  if ($ahah) {
-    // Prevent devel module information if doing AHAH.
+  if ($ajax) {
+    // Prevent devel module information if doing AJAX.
     $GLOBALS['devel_shutdown'] = FALSE;
   }
   else {
@@ -1112,7 +1112,7 @@ function l10n_community_translation_details($tid = 0, $ahah = 0) {
   if (count($history_list)) {
     $output .= theme('item_list', array('items' => $history_list));
   }
-  if ($ahah) {
+  if ($ajax) {
     print $output;
     exit;
   }
