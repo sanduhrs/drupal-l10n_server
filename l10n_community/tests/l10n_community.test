@@ -636,7 +636,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
    * Add a project with the given API version.
    */
   private function addProject($api_version = 6, $include_js = TRUE) {
-    include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+    include_once 'Archive/Tar.php';
 
     $version = $api_version . '.x-' . ($include_js ?  $this->version_js : $this->version_base);
 

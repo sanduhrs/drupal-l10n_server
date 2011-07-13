@@ -209,7 +209,7 @@ function l10n_drupal_parse_package($package_file, $release) {
 
   // l10n_drupal_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+  include_once 'Archive/Tar.php';
 
   // Potx module is already a dependency.
   include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';

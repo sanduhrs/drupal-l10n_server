@@ -285,7 +285,7 @@ function l10n_packager_admin_installer_form($form, &$form_state, $project) {
 function l10n_packager_admin_installer_form_submit($form, $form_state) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+  include_once 'Archive/Tar.php';
 
   module_load_include('inc', 'l10n_community', 'export');
 

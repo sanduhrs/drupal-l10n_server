@@ -362,7 +362,7 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
 function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+  include_once 'Archive/Tar.php';
 
   $project = l10n_server_get_projects(array('uri' => $uri));
 
