@@ -131,7 +131,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
 
     // Now build the Drupal file object or update the old one.
     if (!empty($file->fid) && !empty($file->filepath)) {
-      file_delete($file->filepath);
+      file_unmanaged_delete($file->filepath);
     }
 
     // Check / upate / create all file data.
@@ -140,7 +140,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file->filename = basename($file_path);
     $file->filemime = $mime_type;
     $file->filepath = $file_path;
-    file_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
+    file_unmanaged_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
     $file->filesize = filesize($file->filepath);
     $file->sid_count = $sid_count;
 

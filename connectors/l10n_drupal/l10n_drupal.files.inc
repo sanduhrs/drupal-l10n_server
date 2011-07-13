@@ -19,7 +19,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   }
   else {
     // Packages are always .tar.gz files.
-    $files = file_scan_directory($workdir, '/.tar.gz$/');
+    $files = file_scan_directory($workdir, '/\.tar\.gz$/');
     if (count($files)) {
       foreach ($files as $path => $file) {
 

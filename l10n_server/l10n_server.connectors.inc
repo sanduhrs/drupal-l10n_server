@@ -145,7 +145,7 @@ function l10n_server_connectors_files_settings_form($form, &$form_state, $connec
     '#description' => t('The directory on the local file system to be scanned for source data. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Fishbowl/fishbowl-1.2.tar.gz is from project "Fishbowl" in version 1.2, while campwizard-3.4.tar.gz is project "campwizard" in version 3.4.'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory', file_directory_path() . '/' . $connector_name),
+    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory', conf_path() . '/files/' . $connector_name),
     // Create directory by default if possible.
     '#after_build' => array('l10n_server_connectors_files_check_directory'),
   );

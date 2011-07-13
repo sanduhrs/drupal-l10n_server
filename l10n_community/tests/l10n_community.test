@@ -37,14 +37,15 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Set up temporary directory for our work. Because this is inside the
     // simpletest controlled file path, it will be cleaned up later.
-    $this->temp_path = file_directory_path() . '/l10n_community_test';
+    $this->temp_path = drupal_realpath('temporary://l10n_community_test');
     if (!is_dir($this->temp_path)) {
       mkdir($this->temp_path);
     }
     else {
-      simpletest_clean_temporary_directory(file_directory_path() . '/l10n_community_test');
+      simpletest_clean_temporary_directory($this->temp_path);
     }
-    $this->full_temp_path = realpath($this->temp_path);
+    //$this->full_temp_path = drupal_realpath($this->temp_path);
+    $this->full_temp_path = $this->temp_path;
 
     // Set local package directory, so we can work with this.
     $this->drupalLogin($this->u_admin);
