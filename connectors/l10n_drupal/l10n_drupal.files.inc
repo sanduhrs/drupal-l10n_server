@@ -56,8 +56,13 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
   }
 
   $user_feedback = FALSE;
-  $results = db_query_range("SELECT * FROM {l10n_server_release} WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = 'l10n_drupal_files' AND status = 1) ORDER BY last_parsed ASC", 0, variable_get('l10n_server_connector_l10n_drupal_files_limit', 1));
-  while ($release = db_fetch_object($results)) {
+  $results = db_query_range("
+SELECT * FROM {l10n_server_release}
+WHERE pid IN (SELECT pid FROM {l10n_server_project} WHERE connector_module = 'l10n_drupal_files' AND status = 1)
+ORDER BY last_parsed ASC",
+             0, variable_get('l10n_server_connector_l10n_drupal_files_limit', 1)
+  );
+  foreach ($results as $release) {
 
     // Only parse file if something changed since we last parsed it.
     $file_name = $workdir . '/' . $release->download_link;
@@ -115,7 +120,10 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
  */
 function l10n_drupal_save_data($project_uri, $project_title, $release_version, $filepath, $filedate) {
   // Save project information first.
-  if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $project_uri)))) {
+  $result = db_query(
+    "SELECT * FROM {l10n_server_project} WHERE uri = :uri",
+    array(':uri' => $project_uri));
+  if ($existing_project = $result->fetchObject()) {
     if ($existing_project->connector_module == 'l10n_drupal_files') {
       if ($existing_project->status == 0) {
         // Skip this project if it is disabled.
@@ -158,11 +166,11 @@ function l10n_drupal_save_data($project_uri, $project_title, $release_version, $
   // Grab updated project data and save release information.
   $sql = "SELECT * FROM {l10n_server_project} WHERE uri = :uri AND connector_module = 'l10n_drupal_files'";
   $arg = array(':uri' => $project_uri);
-  $project = db_fetch_object(db_query($sql, $arg));
+  $project = db_query($sql, $arg)->fetchObject();
 
   $sql = "SELECT * FROM {l10n_server_release} WHERE pid = :pid AND title = :title";
   $arg = array(':pid' => $project->pid, ':title' => $release_version);
-  if ($existing_release = db_fetch_object(db_query($sql, $arg))) {
+  if ($existing_release = db_query($sql, $arg)->fetchObject()) {
     if ($filedate != $existing_release->file_date) {
       // New file with possibly new date for the same release (dev snapshot
       // probably), so update data, set parsed date to past.
@@ -334,7 +342,11 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
     return array($pid, $rid, $files[$file]);
   }
   else {
-    if ($existing_file = db_fetch_object(db_query("SELECT * FROM {l10n_server_file} WHERE rid = :rid AND location = :location", array(':rid' => $rid, ':location' => $file)))) {
+    $result = db_query(
+      "SELECT * FROM {l10n_server_file} WHERE rid = :rid AND location = :location",
+      array(':rid' => $rid, ':location' => $file)
+    );
+    if ($existing_file = $result->fetchObject()) {
       if ($existing_file->revision != $revision) {
         // Changed revision on a file.
         db_update('l10n_server_file')
@@ -346,7 +358,7 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
     }
     else {
       // New file in this release.
-      db_insert('l10n_server_file')
+      $fid = db_insert('l10n_server_file')
 	->fields(array(
             'pid' => $pid,
             'rid' => $rid,
@@ -354,7 +366,6 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
             'revision' => $revision,
           ))
 	->execute();
-      $fid = db_last_insert_id('l10n_server_file', 'fid');
     }
     $files[$file] = $fid;
   }
@@ -413,14 +424,13 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     $select = db_select('l10n_server_string')->condition('hashkey', md5($value . $context));
     if (!$select->execute()->fetchField()) {
       // String does not exist.
-      $id = db_insert('l10n_server_string')
+      $sid = db_insert('l10n_server_string')
 	->fields(array(
             'value' => $value,
             'context' => $context,
             'hashkey' => md5($value . $context),
           ))
 	->execute();
-      $sid = db_last_insert_id('l10n_server_string', 'sid');
     }
 
     $select = db_select('l10n_server_line')->fields(array('fid'))

@@ -202,7 +202,7 @@ function l10n_community_overview_language($langcode = NULL) {
       if ($term = taxonomy_get_term_by_name('l10n-server-' . $languages[$langcode]->language)) {
         // Found tag, look for posts.
         $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-        while ($node = db_fetch_object($result)) {
+        foreach ($result as $node) {
           $content_output .= node_view(node_load($node->nid), 1);
         }
       }
@@ -478,7 +478,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $output .= '<h3>' . t('Files parsed in this release') . '</h3>';
   $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = :rid', array(':rid' => $release->rid));
   $rows = array();
-  while ($file = db_fetch_object($result)) {
+  foreach ($result as $file) {
     // Shorten revision information, remove repetitive data.
     if (strpos($file->revision, ': n/a')) {
       $revision = t('n/a');
@@ -503,7 +503,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $output .= '<h3>' . t('Source code warnings identified') . '</h3>';
   $result = db_query("SELECT * FROM {l10n_server_error} WHERE rid = :rid", array(':rid' => $release->rid));
   $rows = array();
-  while ($warning = db_fetch_object($result)) {
+  foreach ($result as $warning) {
     $rows[] = array($warning->value);
   }
   $headers = array(t('Warning value'));
@@ -641,11 +641,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
           $count_args = array(':pid' => $id);
         }
 	$result = db_query($count1_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->language]['translations'] = $row->translation_count;
         }
 	$result = db_query($count2_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->language]['suggestions'] = $row->translation_count;
         }
         cache_set('l10n:count:languages:' . $id, $sums, 'cache', CACHE_PERMANENT);
@@ -664,7 +664,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         // First get the count of strings available for translation.
         $sums = $count_args = array();
         $result = db_query("SELECT COUNT(DISTINCT sid) AS string_count, pid FROM {l10n_server_line} GROUP BY pid");
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid] = array('count' => $row->string_count);
         }
         // Get the count of distinct strings translated per project.
@@ -676,7 +676,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid]['translations'] = $row->translation_count;
         }
         // Get the count of distinct strings having suggestions per project.
@@ -688,7 +688,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid]['suggestions'] = $row->translation_count;
         }
         cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);

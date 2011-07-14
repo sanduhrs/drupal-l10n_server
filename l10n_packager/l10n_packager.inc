@@ -229,7 +229,14 @@ function l10n_packager_get_release($rid) {
     return $rid;
   }
   else {
-    return db_fetch_object(db_query("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid WHERE r.rid = :r.rid", array(':r.rid' => $rid)));
+    $result = db_query("
+SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri
+FROM {l10n_server_project} p
+INNER JOIN {l10n_server_release} r ON p.pid = r.pid
+LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid
+WHERE r.rid = :r.rid",
+              array(':r.rid' => $rid));
+    return $result->fetchObject();
   }
 }
 

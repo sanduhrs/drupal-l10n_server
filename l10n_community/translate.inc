@@ -382,7 +382,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
   // When there are suggestions, load them from the database.
   if ($source->has_suggestion) {
     $result = db_query("SELECT t.tid, t.sid, t.translation, t.uid_entered, t.time_entered, t.time_changed, t.is_active, t.is_suggestion, u.name as username FROM {l10n_server_translation} t LEFT JOIN {users} u ON u.uid = t.uid_entered WHERE t.language = :t.language AND t.sid = :t.sid AND t.is_active = 1 AND t.is_suggestion = 1 ORDER BY t.time_entered", array(':t.language' => $language->language, ':t.sid' => $source->sid));
-    while ($suggestion = db_fetch_object($result)) {
+    foreach ($result as $suggestion) {
       $suggestion->translation = l10n_community_unpack_string($suggestion->translation);
       // Add the suggestion to the list.
       $form[$suggestion->tid] = _l10n_community_translate_translation($form_state, $suggestion, $source, $filters, $source_match);
@@ -932,7 +932,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     $strings = $query->execute();
   }
   $result = array();
-  while ($string = $strings->fetchObject()) {
+  foreach ($strings as $string) {
     if ($string->is_suggestion) {
       // This string is not a translation, but we need that as a "parent" to display.
       if (!$string->has_translation) {
@@ -1023,7 +1023,10 @@ function l10n_community_string_details($sid = 0, $ajax = 0) {
   }
   else {
     // Get data about this source string.
-    $string = db_fetch_object(db_query('SELECT value, context FROM {l10n_server_string} WHERE sid = :sid', array(':sid' => $sid)));
+    $string = db_query(
+      'SELECT value, context FROM {l10n_server_string} WHERE sid = :sid',
+      array(':sid' => $sid)
+    )->fetchObject();
     $unpacked = l10n_community_unpack_string($string->value);
     $output .= '<h3>' . t('Source string') . '</h3>' . theme('item_list', array('items' => $unpacked));
     $output .= '<h3>' . (empty($string->context) ? t('Used at the following places') : t('Used at the following places in context %context', array('%context' => $string->context))) . '</h3>';
@@ -1035,7 +1038,7 @@ function l10n_community_string_details($sid = 0, $ajax = 0) {
   $version_list = array();
   $project_list = array();
   $previous_project = '';
-  while ($instance = db_fetch_object($result)) {
+  foreach ($result as $instance) {
     $release_info = $instance->release_title . ' <span title="' . format_plural($instance->occurrence_count, 'Appears once in this release.', 'Appears @count times in this release.') . '">(' . $instance->occurrence_count . ')</span>';
     if ($instance->project_title != $previous_project) {
       if (!empty($version_list)) {
@@ -1073,7 +1076,10 @@ function l10n_community_string_details($sid = 0, $ajax = 0) {
 function l10n_community_translation_details($tid = 0, $ajax = 0) {
 
   // Get data about this translation.
-  $string = db_fetch_object(db_query('SELECT * FROM {l10n_server_translation} WHERE tid = :tid', array(':tid' => $tid)));
+  $string = db_query(
+    'SELECT * FROM {l10n_server_translation} WHERE tid = :tid',
+    array(':tid' => $tid)
+  )->fetchObject();
 
   $output = '';
   if ($ajax) {
@@ -1090,7 +1096,7 @@ function l10n_community_translation_details($tid = 0, $ajax = 0) {
 
   $uid_submitted = 0;
   $history_list = array();
-  while ($item = db_fetch_object($result)) {
+  foreach ($result as $item) {
     $history_list[] = l10n_community_translate_byline($item->name, $item->uid_action, $item->time_action, $item->medium_action, $item->type_action);
     if ($item->type_action == L10N_SERVER_ACTION_ADD) {
       // Remember the first uid who submitted this. This will get overwritten, and since we are going backwards in time,

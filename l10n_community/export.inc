@@ -416,7 +416,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $export_string = $po_data = array();
 
   $result = $query->execute();
-  while ($string = $result->fetchObject()) {
+  foreach ($result as $string) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
       _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);

@@ -58,7 +58,7 @@ function l10n_drupal_drupalorg_batch_parse_form_submit() {
          {l10n_server_release} r ON p.pid = r.pid
     WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
             0, L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT);
-  while ($release = db_fetch_object($result)) {
+  foreach ($result as $release) {
     $operations[] = array('l10n_drupal_drupalorg_batch_operation', array($release));
   }
 
@@ -131,7 +131,8 @@ function l10n_drupal_drupalorg_scan() {
   // Record all projects in our local database.
   $local_projects = l10n_server_get_projects(array('all' => TRUE));
   foreach ($projects as $project) {
-    if ($existing_project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $project->uri)))) {
+    $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $project->uri));
+    if ($existing_project = $result->fetchObject()) {
       if ($existing_project->connector_module == 'l10n_project_drupalorg') {
         $projects[$project->uri]->pid = $existing_project->pid;
         if (($project->title != $existing_project->title) ||
@@ -164,7 +165,7 @@ function l10n_drupal_drupalorg_scan() {
     }
     else {
       // New project, not recorded before.
-      $id = db_insert('l10n_server_project')
+      $last_pid = db_insert('l10n_server_project')
         ->fields(array(
             'uri' => $project->uri,
             'title' => $project->title,
@@ -175,7 +176,7 @@ function l10n_drupal_drupalorg_scan() {
           ))
         ->execute();
       // Save last insert ID for release update code.
-      $project->pid = db_last_insert_id('l10n_server_project', 'pid');
+      $project->pid = $last_pid
       $projects[$project->uri] = $project;
     }
     unset($local_projects[$project->uri]);
@@ -216,7 +217,7 @@ function l10n_drupal_drupalorg_scan() {
   // Fill in an array, so we can go back to our database and add in these
   // details.
   $releases = array();
-  while ($release = db_fetch_object($result)) {
+  foreach ($result as $release) {
     // Drupal.org builds both .zip and .tar.gz files but we should only
     // include tar.gz files here. Not done in the SQL query to avoid
     // affecting performance of that.
@@ -236,7 +237,7 @@ function l10n_drupal_drupalorg_scan() {
            project_usage_week_release puwr ON puwr.nid = prn.nid
       WHERE prn.rebuild = 0 AND puwr.timestamp = :timestamp",
               array('timestamp' => $last_usage_timestamp));
-    while ($release = db_fetch_object($result)) {
+    foreach ($result as $release) {
       $project_usage[$release->uri][$release->version] = $release->count;
     }
   }
@@ -252,7 +253,11 @@ function l10n_drupal_drupalorg_scan() {
     }
 
     $download_link = 'http://ftp.drupal.org/' . $release->filepath;
-    if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = :download_link", array(':download_link' => $download_link)))) {
+    $result = db_query(
+      "SELECT * FROM {l10n_server_release} WHERE download_link = :download_link",
+      array(':download_link' => $download_link)
+    );
+    if ($existing_release = $result->fetchObject()) {
       // @todo: what happens to unpublished releases? drop data outright?
     }
     elseif (!empty($release->status)) {
@@ -564,7 +569,7 @@ function l10n_drupal_drupalorg_exec($cmd) {
 
   // Fill in an array, so we can go back to our database and add in these
   // details.
-  while ($release = db_fetch_object($result)) {
+  foreach ($result as $release) {
   $releases[$release->uri][$branch] = $release;
   }
   }
@@ -589,7 +594,7 @@ function l10n_drupal_drupalorg_exec($cmd) {
 
   // Fill in an array, so we can go back to our database and add in these
   // details.
-  while ($release = db_fetch_object($result)) {
+  foreach ($result as $release) {
   $releases[$release->uri][$branch] = $release;
   }
   }
@@ -601,7 +606,7 @@ function l10n_drupal_drupalorg_exec($cmd) {
   foreach ($releases as $uri => $project_releases) {
   foreach ($project_releases as $release) {
   $download_link = 'http://ftp.drupal.org/' . $release->filepath;
-  /*if ($existing_release = db_fetch_object(db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link))) {
+  /*if ($existing_release = db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link)->fetchObject()) {
   // @todo: what happens to unpublished releases? drop data outright?
   }
   else if (!empty($release->status)) {

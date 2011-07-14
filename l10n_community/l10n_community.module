@@ -474,7 +474,7 @@ function l10n_community_user_view($account, $view_mode) {
     $languages = l10n_community_get_languages('name');
     $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = :t.uid_entered AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", array(':t.uid_entered' => $account->uid));
     $items = array();
-    while ($row = db_fetch_object($result)) {
+    foreach ($result as $row) {
       $items[] = array(
         '#type' => 'user_profile_item',
         '#title' => l(t($languages[$row->language]), 'translate/languages/' . $row->language),
@@ -508,7 +508,7 @@ function l10n_community_get_languages($key = NULL) {
   if (!isset($languages)) {
     $result = db_query("SELECT * FROM {languages} WHERE language <> 'en' ORDER BY name");
     $languages = array();
-    while ($language = db_fetch_object($result)) {
+    foreach ($result as $language) {
       $languages[$language->language] = $language;
     }
   }
@@ -556,7 +556,7 @@ function l10n_community_review_access() {
 function l10n_community_get_contexts() {
   $contexts = array();
   $result = db_query("SELECT DISTINCT context FROM {l10n_server_string} ORDER BY context");
-  while ($context = db_fetch_object($result)) {
+  foreach ($result as $context) {
     $contexts[empty($context->context) ? 'none' : $context->context] = empty($context->context) ? t('No context') : $context->context;
   }
   return $contexts;
@@ -655,7 +655,7 @@ function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
     $result = db_query_range("SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER(:str) AND status = 1 ORDER BY title", array(':str' => $string));
-    while ($project = db_fetch_object($result)) {
+    foreach ($result as $project) {
       $matches[$project->title] = check_plain($project->title);
     }
   }
@@ -832,7 +832,11 @@ function l10n_communiy_rebuild_stats() {
  */
 function l10n_community_get_highlighted_project() {
   if ($highlight_project = variable_get('l10n_community_highlighted_project', '')) {
-    if ($project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE title = :title", array(':title' => $highlight_project)))) {
+    $result = db_query(
+      "SELECT * FROM {l10n_server_project} WHERE title = :title",
+      array(':title' => $highlight_project)
+    );
+    if ($project = $result->fetchObject()) {
       return $project;
     }
   }
@@ -881,7 +885,10 @@ function l10n_community_build_filter_values($params) {
     // redirect to make the URL shorter.
     $project = l10n_server_get_projects(array('uri' => $params['project']));
     if (empty($project)) {
-      $project = db_fetch_object(db_query("SELECT * FROM {l10n_server_project} WHERE title = :title", array(':title' => $params['project'])));
+      $project = db_query(
+        "SELECT * FROM {l10n_server_project} WHERE title = :title",
+        array(':title' => $params['project'])
+      )->fetchObject();
     }
     if (!empty($project)) {
       $filter['project'] = $project;
@@ -1003,7 +1010,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
   }
   else {
     // Insert the new suggestion.
-    $id = db_insert('l10n_server_translation')
+    $tid = db_insert('l10n_server_translation')
       ->fields(array(
           'sid' => $sid,
           'translation' => $translation,
@@ -1015,7 +1022,6 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
           'is_active' => 1,
         ))
       ->execute();
-    $tid = db_last_insert_id('l10n_community_translation', 'tid');
     $type = L10N_SERVER_ACTION_ADD;
   }
   $id = db_insert('l10n_server_translation_history')

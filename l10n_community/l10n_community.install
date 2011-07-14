@@ -88,7 +88,7 @@ function l10n_community_update_5003() {
               ->condition('t.translation', $char.'%', 'LIKE')
               ->condition('t.translation', '%'.$char, 'LIKE'))
       ->execute();
-    while ($string = $result->fetchObject()) {
+    foreach ($result as $string) {
       if ($string->translation) {
         $trimmed = l10n_community_trim($string->translation, $string->value);
         if ($trimmed != $string->translation) {
@@ -191,7 +191,7 @@ function l10n_community_update_6006() {
   db_add_field('l10n_community_file', 'pid', array('type' => 'int', 'not null' => FALSE, 'disp-width' => 11));
 
   $result = db_query("SELECT rid, pid FROM {l10n_community_release}");
-  while ($release = db_fetch_object($result)) {
+  foreach ($result as $release) {
     db_update('l10n_community_file')
       ->fields(array('pid' => $release->pid))
       ->condition('rid', $release->rid)
@@ -210,7 +210,7 @@ function l10n_community_update_6007() {
   db_add_index('l10n_community_line', 'rid', array('rid'));
 
   $result = db_query("SELECT fid, rid, pid FROM {l10n_community_file}");
-  while ($row = db_fetch_object($result)) {
+  foreach ($result as $row) {
     db_update('l10n_community_line')
       ->fields(array(
           'pid' => $row->pid,
@@ -243,7 +243,7 @@ function l10n_community_update_6008() {
  */
 function l10n_community_update_6009() {
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
-  while ($role = db_fetch_object($result)) {
+  foreach ($result as $role) {
     $renamed_permission = preg_replace('/submit translations and approve suggestions/', 'moderate suggestions from others, moderate own suggestions', $role->perm);
     if ($renamed_permission != $role->perm) {
       db_update('permission')
@@ -374,7 +374,7 @@ function l10n_community_update_6013() {
 function l10n_community_update_6014() {
   module_enable(array('l10n_server'));
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
-  while ($role = db_fetch_object($result)) {
+  foreach ($result as $role) {
     $renamed_permission = preg_replace('/administer localization community/', 'administer localization server', $role->perm);
     if ($renamed_permission != $role->perm) {
       db_update('permission')
@@ -676,7 +676,7 @@ function l10n_community_update_6023() {
 
   // Fill in with sid_count based on line data.
   $sid_counts = db_query('SELECT rid, COUNT(DISTINCT sid) sid_count FROM {l10n_server_line} GROUP BY rid');
-  while ($row = db_fetch_object($sid_counts)) {
+  foreach ($sid_counts as $row) {
     db_update('l10n_server_release')
       ->fields(array('sid_count' => $row->sid_count))
       ->condition('rid', $row->rid)

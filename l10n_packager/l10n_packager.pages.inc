@@ -116,7 +116,7 @@ function l10n_packager_show_downloads($project) {
   $files = array();
   $branches = array();
   $result = db_query('SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = :r.pid', array(':r.pid' => $project->pid));
-  while ($item = db_fetch_object($result)) {
+  foreach ($result as $item) {
     // @todo: bad, bad harcoding of Drupal versioning schemes.
     $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) . 'x';
     $branches[$branch] = TRUE;

@@ -93,7 +93,7 @@ function l10n_groups_update_6000() {
 
   // Remove permissions which are to be granted via og_user_roles from now on.
   $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
-  while ($role = db_fetch_object($result)) {
+  foreach ($result as $role) {
     $existing_perms = explode(', ', $role->perm);
     $new_perms = array_diff($existing_perms, array('export gettext templates and translations', 'import gettext files', 'submit suggestions', 'moderate suggestions from others', 'moderate own suggestions'));
     db_update('permission')

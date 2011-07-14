@@ -277,7 +277,7 @@ function l10n_groups_form($node, &$form_state) {
   else {
     // Create a list of languages on the site having no translation group.
     $groups = db_query('SELECT language FROM {l10n_groups_group}');
-    while ($group = db_fetch_object($groups)) {
+    foreach ($groups as $group) {
       if ($languages[$group->language]) {
         unset($languages[$group->language]);
       }
@@ -354,7 +354,7 @@ function l10n_groups_get_groups() {
   if (!isset($groups)) {
     $groups = array();
     $result = db_query('SELECT nid, language FROM {l10n_groups_group}');
-    while ($group = db_fetch_object($result)) {
+    foreach ($result as $group) {
       $groups[$group->language] = $group->nid;
     }
   }

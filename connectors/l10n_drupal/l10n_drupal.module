@@ -44,7 +44,7 @@ function l10n_drupal_cron() {
               0, variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1)
     );
     $return = array();
-    while ($release = db_fetch_object($result)) {
+    foreach ($result as $release) {
       l10n_drupal_drupalorg_parse_release($release);
     }
   }
