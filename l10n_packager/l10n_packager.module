@@ -121,7 +121,7 @@ function l10n_packager_block_info() {
   $blocks = array(
     'download' => array(
       'info' => t('Localization packager downloads'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
   );
   return $blocks;

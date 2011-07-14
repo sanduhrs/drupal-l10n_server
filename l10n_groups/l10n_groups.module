@@ -123,7 +123,7 @@ function l10n_groups_block_info() {
   $blocks = array(
     'info' => array(
       'info' => t('Localization group information'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
   );
   return $blocks;

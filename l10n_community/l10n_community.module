@@ -370,15 +370,15 @@ function l10n_community_block_info() {
   $blocks = array(
     'stats' => array(
       'info' => t('Localization server statistics'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
     'jump' => array(
       'info' => t('Localization server jump form'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
     'contributors' => array(
       'info' => t('Localization server contributors'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
   );
   return $blocks;
