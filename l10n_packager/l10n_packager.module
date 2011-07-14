@@ -95,11 +95,15 @@ function l10n_packager_check_updates() {
     $count_files = $count_check = 0;
 
     // Go for it: check releases for repackaging. We need project_uri for later.
-    $result = db_query_range("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_server_release} r INNER JOIN {l10n_server_project} p ON r.pid = p.pid LEFT JOIN {l10n_packager_release} pr ON pr.rid = r.rid WHERE pr.status IS NULL OR (pr.status = :status AND (pr.checked < :checked OR pr.updated < :updated)) ORDER BY pr.checked",
-              0, variable_get('l10n_packager_release_limit', 10)
-              array(':status' => L10N_PACKAGER_ACTIVE,
-                ':checked' => $timestamp,
-                ':updated' => $timestamp));
+    $query = "SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri
+              FROM {l10n_server_release} r
+              INNER JOIN {l10n_server_project} p ON r.pid = p.pid
+              LEFT JOIN {l10n_packager_release} pr ON pr.rid = r.rid
+              WHERE pr.status IS NULL
+                 OR (pr.status = :status AND (pr.checked < :checked OR pr.updated < :updated))
+              ORDER BY pr.checked";
+    $result = db_query_range($query, 0, variable_get('l10n_packager_release_limit', 10),
+              array(':status' => L10N_PACKAGER_ACTIVE, ':checked' => $timestamp, ':updated' => $timestamp));
     while ((!$file_limit || $file_limit > $count_files) && ($release = $result->fetchObject())) {
       $updates = l10n_packager_release_check($release, FALSE, $file_limit - $count_files, NULL, TRUE);
       $count_files += count($updates);
@@ -222,7 +226,7 @@ function l10n_packager_export_metafile() {
  * Get directory for creating files
  */
 function l10n_packager_directory() {
-  return file_default_scheme() . '://l10n_packager'
+  return file_default_scheme() . '://l10n_packager';
 }
 
 /**
@@ -247,13 +251,13 @@ function l10n_packager_get_filepath($release, $language = NULL, $pattern = NULL)
   // Get version information from release title
   if ($release->uri == 'drupal') {
     // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
-    list(@$version, $extra) = explode('-', $release->title);
+    list($version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
     $core = $major . '.x';
   }
   else {
     // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1
-    list(@$core, $version, $extra) = explode('-', $release->title);
+    list($core, $version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
   }
   $replace = array(
@@ -300,7 +304,7 @@ function l10n_packager_build_download_links($uri) {
       $list[] = array('data' => array(
                   '#type' => 'link',
                   '#title' => t('Translations for @core_version', array('@core_version' => $core)),
-                  '#href' =>  $url . '/' . $path;
+                  '#href' =>  $url . '/' . $path,
                 ));
     }
 
