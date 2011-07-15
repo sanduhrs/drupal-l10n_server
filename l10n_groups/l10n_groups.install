@@ -39,7 +39,6 @@ function l10n_groups_install() {
       ->execute();
   }
 }
-}
 
 /**
  * Implements hook_schema().
@@ -201,6 +200,5 @@ function l10n_groups_update_6001() {
         ))
       ->execute();
   }
-}
-return t('TODO Add a descriptive string here to show in the UI. l10n_groups_update_6001()');
+  return t('TODO Add a descriptive string here to show in the UI. l10n_groups_update_6001()');
 }

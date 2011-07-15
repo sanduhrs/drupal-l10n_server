@@ -11,7 +11,7 @@
  * User interface to generate a number of languages.
  */
 function l10n_server_generate_languages_form($form, &$form_state) {
-  include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
+  include_once DRUPAL_ROOT . '/' . 'includes/iso.inc';
   $predefined = _locale_get_predefined_list();
   $form['num'] = array(
     '#type' => 'textfield',
@@ -30,7 +30,7 @@ function l10n_server_generate_languages_form($form, &$form_state) {
  * Submission function to generate a number of languages.
  */
 function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
-  include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
+  include_once DRUPAL_ROOT . '/' . 'includes/iso.inc';
   db_delete('languages') ->condition('language', 'en', '<>') ->execute();
   db_delete('locales_target') ->execute();
   drupal_set_message(t('Languages deleted.'));
