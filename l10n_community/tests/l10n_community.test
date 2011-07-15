@@ -239,7 +239,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // LOOKUP ====
 
-    $sid = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'This is a test string.'")->fetchField();
+    $sid = db_select('l10n_server_string', 's')
+      ->fields('s', array('sid'))
+      ->condition('value', 'This is a test string.')
+      ->execute()
+      ->fetchField();
     $this->drupalGet('translate/source-details/' . $sid);
     $this->assertPattern('!<em>' . preg_quote($this->project_names[5]) . ':</em> ' . preg_quote('5.x-' . $this->version_js) . ' <span title="[^>]+">\(1\)</span>!');
     $this->assertPattern('!<em>' . preg_quote($this->project_names[6]) . ':</em> ' . preg_quote('6.x-' . $this->version_js) . ' <span title="[^>]+">\(1\)</span>, ' . preg_quote('6.x-' . $this->version_base) . ' <span title="[^>]+">\(1\)</span>!');
@@ -279,15 +283,37 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Add suggestions for four strings.
     $edit = array();
-    $sid1 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'This is a test string.'")->fetchField();
+    $sid1 = db_select('l10n_server_string', 's')
+      ->fields('s', array('sid'))
+      ->condition('value', 'This is a test string.')
+      ->execute()
+      ->fetchField();
     $edit['strings[' . $sid1 . '][new][value][0]'] = 'This is a test string. suggestion';
-    $sid2 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'Test string in context' AND context = ''")->fetchField();
+
+    $sid2 = db_select('l10n_server_string', 's')
+      ->fields('s', array('sid'))
+      ->condition('value', 'Test string in context')
+      ->condition('context', '')
+      ->execute()
+      ->fetchField();
     $edit['strings[' . $sid2 . '][new][value][0]'] = 'Test string in context. suggestion-1';
-    $sid3 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = 'Test string in context' AND context = 'Test context'")->fetchField();
+
+    $sid3 = db_select('l10n_server_string', 's')
+      ->fields('s', array('sid'))
+      ->condition('value', 'Test string in context')
+      ->condition('context', 'Test context')
+      ->execute()
+      ->fetchField();
     $edit['strings[' . $sid3 . '][new][value][0]'] = 'Test string in context. suggestion-2';
-    $sid4 = db_query("SELECT sid FROM {l10n_server_string} WHERE value = :value", array(':value' => "1 test string\0@count test strings"))->fetchField();
+
+    $sid4 = db_select('l10n_server_string', 's')
+      ->fields('s', array('sid'))
+      ->condition('value', "1 test string\0@count test strings")
+      ->execute()
+      ->fetchField();
     $edit['strings[' . $sid4 . '][new][value][0]'] = '1 test string suggestion';
     $edit['strings[' . $sid4 . '][new][value][1]'] = '@count test strings suggestion';
+
     $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=50'));
     $this->assertRaw(t('@count suggestions added', array('@count' => 4)));
     $this->drupalGet('user/logout');
@@ -338,9 +364,24 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL DECLINE ====
 
-    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-1' AND language = 'hu'")->fetchField();
-    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-2' AND language = 'hu'")->fetchField();
-    $tid3 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'Test string in context. suggestion-3' AND language = 'hu'")->fetchField();
+    $tid1 = db_select('l10n_server_translation', 't')
+      ->fields('t', array('tid'))
+      ->condition('translation', 'Test string in context. suggestion-1')
+      ->condition('language', 'hu')
+      ->execute()
+      ->fetchField();
+    $tid2 = db_select('l10n_server_translation', 't')
+      ->fields('t', array('tid'))
+      ->condition('translation', 'Test string in context. suggestion-2')
+      ->condition('language', 'hu')
+      ->execute()
+      ->fetchField();
+    $tid3 = db_select('l10n_server_translation', 't')
+      ->fields('t', array('tid'))
+      ->condition('translation', 'Test string in context. suggestion-3')
+      ->condition('language', 'hu')
+      ->execute()
+      ->fetchField();
     $edit = array();
     $edit['strings[' . $sid2 . '][' . $tid1 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid2 . '][declined]'] = 1;
@@ -354,8 +395,18 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // INDIVIDUAL APPROVE ====
 
-    $tid1 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = 'This is a test string. suggestion' AND language = 'hu'")->fetchField();
-    $tid2 = db_query("SELECT tid FROM {l10n_server_translation} WHERE translation = :translation AND language = 'hu'", array(':translation' => "1 test string suggestion\0@count test strings suggestion"))->fetchField();
+    $tid1 = db_select('l10n_server_translation', 't')
+      ->fields('t', array('tid'))
+      ->condition('translation', 'This is a test string. suggestion')
+      ->condition('language', 'hu')
+      ->execute()
+      ->fetchField();
+    $tid2 = db_select('l10n_server_translation', 't')
+      ->fields('t', array('tid'))
+      ->condition('translation', "1 test string suggestion\0@count test strings suggestion")
+      ->condition('language', 'hu')
+      ->execute()
+      ->fetchField();
     $edit = array();
     $edit['strings[' . $sid1 . '][active]'] = $tid1;
     $edit['strings[' . $sid4 . '][active]'] = $tid2;
@@ -443,25 +494,17 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Modify existing suggestions, so we can test importing again.
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  'saved for testing',
-		     ))
+      ->fields(array('translation' =>  'saved for testing'))
       ->condition('translation', 'This is a test string. - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
-
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  '1 saved for testing\0@count saved for testing',
-		     ))
+      ->fields(array('translation' =>  '1 saved for testing\0@count saved for testing'))
       ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
-
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  'saved string in context',
-		     ))
+      ->fields(array('translation' =>  'saved string in context'))
       ->condition('translation', 'Test string in context - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
@@ -494,25 +537,17 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // problem for the data model, but an issue for workflow, so for testing,
     // it is fine as we have it here.
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  'saved for testing',
-		     ))
+      ->fields(array('translation' => 'saved for testing'))
       ->condition('translation', 'This is a test string. - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
-
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  '1 saved for testing\0@count saved for testing',
-		     ))
+      ->fields(array('translation' => '1 saved for testing\0@count saved for testing'))
       ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
-
     db_update('l10n_server_translation')
-      ->fields(array(
-		     'translation' =>  'saved string in context',
-		     ))
+      ->fields(array('translation' => 'saved string in context'))
       ->condition('translation', 'Test string in context - imported translation')
       ->condition('is_suggestion', 1)
       ->execute();
