@@ -136,7 +136,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // PROJECTS ====
 
     // Check that the base list of strings are there.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50'));
+    $this->drupalGet('translate/languages/hu/translate', array('query' => array('limit' => '50')));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('Test menu item in 5');
     $this->assertMsgID('test potx permission');
@@ -146,7 +146,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 33);
 
     // Check Drupal 5 specific pattern with strings.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[5]));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'project' => $this->project_names[5])));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('Test menu item in 5');
     $this->assertMsgID('test potx permission');
@@ -156,7 +157,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 19);
 
     // Check Drupal 6 specific pattern with strings.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6]));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'project' => $this->project_names[6])));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('Test menu item in 5', FALSE);
     $this->assertMsgID('test potx permission');
@@ -166,7 +168,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 28);
 
     // Check Drupal 7 specific pattern with strings.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[7]));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'project' => $this->project_names[7])));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('Test menu item in 5', FALSE);
     $this->assertMsgID('test potx permission', FALSE);
@@ -184,7 +187,12 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_base);
     $rid = $query->execute()->fetchField();
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&release=' . $rid));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'project' => $this->project_names[6],
+          'release' => $rid,
+        )));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS', FALSE);
     $this->assertCount('<td class="source"', 24);
 
@@ -195,32 +203,55 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_js);
     $rid = $query->execute()->fetchField();
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&release=' . $rid));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'project' => $this->project_names[6],
+          'release' => $rid,
+        )));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertCount('<td class="source"', 28);
 
     // CONTEXT ====
 
     // Filtering for context in general works.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&context=Test%20context'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' =>'50',
+          'context' => 'Test context',
+        )));
     $this->assertMsgIDContext('Test string in context', 'Test context');
     $this->assertMsgID('This is a test string.', FALSE);
     $this->assertCount('<td class="source"', 1);
 
     // Filtering for context with project works.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[7] . '&context=Test%20context'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'project' => $this->project_names[7],
+          'context' => 'Test context',
+        )));
     $this->assertMsgIDContext('Test string in context', 'Test context');
     $this->assertMsgID('This is a test string.', FALSE);
     $this->assertCount('<td class="source"', 1);
 
     // Filtering for context but with another project works (no result).
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&context=Test%20context'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'project' => $this->project_names[6],
+          'context' => 'Test context',
+        )));
     $this->assertRaw(t('No strings found with this filter. Try adjusting the filter options.'));
 
     // SEARCH ====
 
     // Filtering for text contained works.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&search=is%20a'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'search' => 'is a',
+        )));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('This is a test menu item in 5');
     $this->assertMsgID('This is a test menu item');
@@ -229,7 +260,12 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 3);
 
     // Filtering for text contained works with project filter.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&project=' . $this->project_names[6] . '&search=is%20a'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array(
+          'limit' => '50',
+          'project' => $this->project_names[6],
+          'search' => 'is a',
+        )));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgID('This is a test menu item in 5', FALSE);
     $this->assertMsgID('This is a test menu item');
@@ -276,7 +312,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // Verify that we can see the suggestion submission screen.
     $this->drupalLogin($this->u_member_1);
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50'));
+    $this->drupalGet('translate/languages/hu/translate', array('query' => array('limit' => '50')));
     $this->assertMsgID('This is a test string.');
 
     // SUBMIT SUGGESTIONS ====
@@ -314,7 +350,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit['strings[' . $sid4 . '][new][value][0]'] = '1 test string suggestion';
     $edit['strings[' . $sid4 . '][new][value][1]'] = '@count test strings suggestion';
 
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=50'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
+      array('query' => array('limit' => '50')));
     $this->assertRaw(t('@count suggestions added', array('@count' => 4)));
     $this->drupalGet('user/logout');
 
@@ -323,7 +360,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit = array();
     $edit['strings[' . $sid1 . '][new][value][0]'] = 'This is a test string. suggestion-2';
     $edit['strings[' . $sid3 . '][new][value][0]'] = 'Test string in context. suggestion-3';
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=50'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
+      array('query' => array('limit' => '50')));
     $this->assertRaw(t('@count suggestions added', array('@count' => 2)));
 
     // CHECK SUGGESTIONS ====
@@ -339,21 +377,26 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     // CHECK LISTINGS ====
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50')));
     $this->assertCount('<td class="source"', 33);
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=8&limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('status' =>'8', 'limit' =>'50')));
     $this->assertCount('<td class="source"', 4);
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=4&limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('status' => '4', 'limit' => '50')));
     $this->assertCount('<td class="source"', 29);
 
     // Look for translations per user.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&author=' . $this->u_member_1->name));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'author' => $this->u_member_1->name)));
     $this->assertMsgID('This is a test string. suggestion');
     $this->assertMsgIDPlural('1 test string', '@count test strings');
     $this->assertCount('<td class="source"', 4);
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&author=' . $this->u_member_2->name));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'author' => $this->u_member_2->name)));
     $this->assertMsgID('This is a test string. suggestion-2');
     $this->assertCount('<td class="source"', 2);
 
@@ -386,11 +429,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit['strings[' . $sid2 . '][' . $tid1 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid2 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid3 . '][declined]'] = 1;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=50'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
+      array('query' => array('limit' => '50')));
     $this->assertRaw(t('3 suggestions declined'));
 
     // Now we should be down to 3 suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=8&limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('status' => '8', 'limit' => '50')));
     $this->assertCount('<input type="checkbox"', 3);
 
     // INDIVIDUAL APPROVE ====
@@ -410,11 +455,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit = array();
     $edit['strings[' . $sid1 . '][active]'] = $tid1;
     $edit['strings[' . $sid4 . '][active]'] = $tid2;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => 'limit=50'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
+      array('query' => array('limit' => '50')));
     $this->assertRaw(t('2 translations approved'));
 
     // Now we should be down to 1 suggestion and 1 translation.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'status=8&limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('status' => '8', 'limit' => '50')));
     $this->assertCount('<td class="source"', 1);
     $this->assertCount('<input type="checkbox"', 2);
     $this->assertRaw('This is a test string. suggestion');
@@ -460,16 +507,19 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalLogin($this->u_moderator);
 
     // Check whether it is there.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=8'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '8')));
     $this->assertMsgID('This is a test string.');
     $this->assertMsgIDPlural('1 test string', '@count test strings');
     $this->assertMsgIDContext('Test string in context', 'Test context');
     $this->assertCount('<td class="source"', 3);
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=2'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '2')));
     $this->assertNoRaw('<td class="source"');
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50')));
     $this->assertMsgID('This is a test string. - imported translation');
     $this->assertMsgIDPlural('1 test string - imported translation', '@count test strings - imported translation');
     $this->assertMsgID('Test string in context - imported translation');
@@ -516,7 +566,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('1 duplicate translation not saved'));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50')));
     $this->assertMsgID('saved for testing');
     $this->assertMsgID('This is a test string. - imported translation');
     $this->assertMsgIDPlural('1 saved for testing', '@count saved for testing');
@@ -526,7 +577,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('by ' . $this->u_member_1->name . ' ', 3);
     $this->assertCount('by ' . $this->u_team->name . ' ', 3);
 
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=2'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '2')));
     $this->assertNoRaw('<td class="source"');
 
     // IMPORT AS TRANSLATION (KICKED TO SUGGESTION)
@@ -559,11 +611,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
     // Should still have 3 strings with outstanding suggestions.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=8'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '8')));
     $this->assertCount('<td class="source"', 3);
 
     // Should now have 3 strings with approved translations.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=2'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '2')));
     $this->assertCount('<td class="source"', 3);
 
     // IMPORT AS TRANSLATION
@@ -577,11 +631,13 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
     // No string should have suggestions submitted at this point.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=8'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '8')));
     $this->assertNoRaw('<td class="source"');
 
     // Three strings should now have translations submitted by us.
-    $this->drupalGet('translate/languages/hu/translate', array('query' => 'limit=50&status=2'));
+    $this->drupalGet('translate/languages/hu/translate',
+      array('query' => array('limit' => '50', 'status' => '2')));
     $this->assertCount('<td class="source"', 3);
   }
 

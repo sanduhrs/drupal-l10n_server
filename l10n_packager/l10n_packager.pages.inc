@@ -106,7 +106,7 @@ function l10n_packager_download_project_form_validate($form, &$form_state) {
  * Form submission.
  */
 function l10n_packager_download_project_form_submit($form, $form_state) {
-  drupal_goto('translate/downloads', array('query' => array('project' => '\' . $form_state[\'values\'][\'uri\']')));
+  drupal_goto('translate/downloads', array('query' => array('project' => '\\' . $form_state['values']['uri'])));
 }
 
 /**
