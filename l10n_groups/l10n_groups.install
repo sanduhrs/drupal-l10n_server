@@ -30,6 +30,7 @@ function l10n_groups_install() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,
@@ -192,6 +193,7 @@ function l10n_groups_update_6001() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,

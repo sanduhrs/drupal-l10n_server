@@ -109,6 +109,7 @@ function l10n_packager_install() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,
@@ -151,6 +152,7 @@ function l10n_packager_update_6002() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,

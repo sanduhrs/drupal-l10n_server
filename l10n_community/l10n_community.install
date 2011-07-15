@@ -32,6 +32,7 @@ function l10n_community_install() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,
@@ -484,6 +485,7 @@ function l10n_community_update_6017() {
           'weight' => $weight,
           'region' => 'right',
           'theme'  => $theme_key,
+          'pages'  => '',
         ))
       ->updateFields(array(
           'cache'  => -1,
