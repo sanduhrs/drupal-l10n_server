@@ -181,8 +181,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // RELEASES ====
 
     // No JS release should not have JS strings.
-    $query = db_select('l10n_server_project', 'p')
-      ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+    $query = db_select('l10n_server_project', 'p');
+    $query->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid');
+    $query
       ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_base);
@@ -197,8 +198,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount('<td class="source"', 24);
 
     // JS release should have JS strings.
-    $query = db_select('l10n_server_project', 'p')
-      ->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid')
+    $query = db_select('l10n_server_project', 'p');
+    $query->leftJoin('l10n_server_release', 'r', 'p.pid = r.pid');
+    $query
       ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
       ->condition('r.title', '7.x-' . $this->version_js);

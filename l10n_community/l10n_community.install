@@ -87,8 +87,7 @@ function l10n_community_update_5003() {
   foreach (array('\n', ' ') as $char) {
     $query = db_select('l10n_community_string', 's');
     $query->innerJoin('l10n_community_translation', 't', 's.sid = t.sid');
-    $query->fields('s', array('sid', 'value'))
-      ->fields('t', array('tid', 'translation'));
+    $query->fields('s', array('sid', 'value'))->fields('t', array('tid', 'translation'));
     $result = $query->condition(db_or()
               ->condition('s.value', $char.'%', 'LIKE')
               ->condition('s.value', '%'.$char, 'LIKE')

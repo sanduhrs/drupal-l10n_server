@@ -854,8 +854,8 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     ->fields('s', array('sid', 'value', 'context'))
     ->fields('t', array('tid', 'language', 'translation', 'uid_entered',
         'time_entered', 'time_changed', 'is_suggestion', 'is_active'))
-    ->fields('ts', array('has_suggestion', 'has_translation'))
-    ->addField('u', 'name', 'username');
+    ->fields('ts', array('has_suggestion', 'has_translation'));
+  $query->addField('u', 'name', 'username');
 
   // Add sid filtering.
   if (!empty($filters['sid'])) {
@@ -943,9 +943,8 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
       else {
 	$q = db_select('l10n_server_translation', 't');
 	$q->leftJoin('users', 'u', 'u.uid = t.uid_entered');
-	$q->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered',
-            'time_changed', 'is_suggestion', 'is_active'))
-	  ->addField('u', 'name', 'username');
+	$q->fields('t', array('tid', 'translation', 'uid_entered', 'time_entered', 'time_changed', 'is_suggestion', 'is_active'));
+	$q->addField('u', 'name', 'username');
 	$q->condition('t.language',  $string->language)
 	  ->condition('t.sid', $string->sid)
 	  ->condition('t.is_active', 1)

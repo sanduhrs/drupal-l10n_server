@@ -112,15 +112,16 @@ function l10n_drupal_drupalorg_scan() {
   // maintain issues queues, which are also only identifiable by looking at
   // the list of releases. Don't use {} wrapping in query, since it is a
   // different DB and it does not use prefixes anyway.
-  $result = db_select('project_projects', 'pp')
-    ->innerJoin('project_release_nodes', 'prn', 'pp.nid = prn.pid')
-    ->leftJoin('node', 'n', 'pp.nid = n.nid')
+  $query = db_select('project_projects', 'pp');
+  $query->innerJoin('project_release_nodes', 'prn', 'pp.nid = prn.pid');
+  $query->leftJoin('node', 'n', 'pp.nid = n.nid');
+  $query
     ->fields('pp', array('nid', 'uri'))
     ->fields('n', array('title', 'status'))
     ->distinct()
     ->condition('pp.nid', $exclude_projects, 'NOT IN')
-    ->condition('prn.rebuild', 0)
-    ->execute();
+    ->condition('prn.rebuild', 0);
+  $result = $query->execute();
   // Fill in an array, so we can go back to our database and add in these
   // details.
   $projects = $result->fetchAllAssoc('uri');
