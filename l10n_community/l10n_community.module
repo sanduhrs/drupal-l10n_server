@@ -472,7 +472,7 @@ function l10n_community_block_stats_front() {
 function l10n_community_user_view($account, $view_mode) {
   if (TRUE && user_access('access localization community')) {
     $languages = l10n_community_get_languages('name');
-    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = :t.uid_entered AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", array(':t.uid_entered' => $account->uid));
+    $result = db_query("SELECT COUNT(*) AS sum, language FROM {l10n_server_translation} t WHERE t.uid_entered = :uid_entered AND t.is_suggestion = 0 AND t.is_active = 1 GROUP by t.language", array(':uid_entered' => $account->uid));
     $items = array();
     foreach ($result as $row) {
       $items[] = array(

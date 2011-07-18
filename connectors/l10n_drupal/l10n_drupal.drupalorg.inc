@@ -101,7 +101,7 @@ function l10n_drupal_drupalorg_scan() {
   // (after applying http://drupal.org/node/224333#taxonomy_tables)
   $result = db_query("SELECT DISTINCT pp.nid
      FROM project_projects pp INNER JOIN taxonomy_index tn ON tn.nid = pp.nid
-     WHERE tn.tid = :tn.tid", array(':tn.tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
+     WHERE tn.tid = :tid", array(':tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
   $exclude_projects = $result->fetchCol();
 
   // Get all projects - published, unpublished equally, so we can update project

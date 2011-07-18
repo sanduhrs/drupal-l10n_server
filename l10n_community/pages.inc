@@ -284,7 +284,7 @@ function l10n_community_block_stats_project($project) {
   }
   $num_releases = count($releases);
 
-  $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :p.uri", array(':p.uri' => $project->uri))->fetchField();
+  $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :uri", array(':uri' => $project->uri))->fetchField();
 
   // Build list of links for summary.
   $list = array();
@@ -619,7 +619,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'project':
       // Return a count of all strings in this project, id required.
-      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :l.pid', array(':l.pid' => $id))->fetchField();
+      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :l.pid', array(':pid' => $id))->fetchField();
 
     case 'languages':
       if ($stats = cache_get('l10n:count:languages:' . $id, 'cache')) {

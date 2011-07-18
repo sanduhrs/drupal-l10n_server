@@ -383,11 +383,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
     // Improve the query for templates
     $query->leftJoin('l10n_server_status_flag', 'st',
-      'st.sid = s.sid AND st.language = :st.language',
-      array(':st.language' => $language->language));
+      'st.sid = s.sid AND st.language = :language',
+      array(':language' => $language->language));
     $query->$translation_join('l10n_server_translation', 't',
-      's.sid = t.sid AND t.language = :t.language AND t.is_active = 1',
-      array(':t.language' => $language->language));
+      's.sid = t.sid AND t.language = :language AND t.is_active = 1',
+      array(':language' => $language->language));
     $query
       ->fields('t', array('translation', 'is_suggestion'))
       ->fields('st', array('has_suggestion'))

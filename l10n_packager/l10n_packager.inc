@@ -234,8 +234,8 @@ SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri
 FROM {l10n_server_project} p
 INNER JOIN {l10n_server_release} r ON p.pid = r.pid
 LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid
-WHERE r.rid = :r.rid",
-              array(':r.rid' => $rid));
+WHERE r.rid = :rid",
+              array(':rid' => $rid));
     return $result->fetchObject();
   }
 }
@@ -256,8 +256,8 @@ function l10n_packager_release_name($rid) {
  * Get timestamp of the last updated string for a release, for each language.
  */
 function l10n_packager_translation_last_updated($rid) {
-  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :l.rid GROUP BY t.language",
-            array(':l.rid' => $rid));
+  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :rid GROUP BY t.language",
+            array(':rid' => $rid));
   return $result->fetchAllKeyed();
 }
 
@@ -265,7 +265,7 @@ function l10n_packager_translation_last_updated($rid) {
  * Get files for a release, indexed by language.
  */
 function l10n_packager_release_get_files($rid) {
-  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :r.rid',
-            array(':r.rid' => $rid));
+  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :rid',
+            array(':rid' => $rid));
   return $result->fetchAllAssoc('language');
 }
