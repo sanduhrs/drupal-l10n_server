@@ -31,11 +31,11 @@ function l10n_community_welcome_page() {
           array(
             'data' => t($language->name),
             'sortdata' => t($language->name),
-            'class' => 'rowhead',
+            'class' => array('rowhead'),
           ),
           array(
             'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
-            'class' => 'error',
+            'class' => array('error'),
           ),
           array('data' => ''),
         );
@@ -54,7 +54,7 @@ function l10n_community_welcome_page() {
           array(
             'data' => l(t($language->name), 'translate/languages/' . $langcode),
             'sortdata' => t($language->name),
-            'class' => 'rowhead',
+            'class' => array('rowhead'),
           ),
           array(
             'data' => $progress,
@@ -73,7 +73,7 @@ function l10n_community_welcome_page() {
     }
 
     $header = array(
-      array('data' => t('Language'), 'field' => 'language', 'class' => 'rowhead'),
+      array('data' => t('Language'), 'field' => 'language', 'class' => array('rowhead')),
       array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
       array('data' => t('Contributors'), 'field' => 'contributors'),
     );
@@ -82,7 +82,7 @@ function l10n_community_welcome_page() {
       array(
         'header' => $header,
         'rows' => $table_rows,
-        'attributes' => array('class' => 'l10n-community-overview l10n-community-highlighted')
+        'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted'))
       ));
 
     $projects = l10n_server_get_projects();

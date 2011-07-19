@@ -49,6 +49,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
   }
 
   $form = array();
+  $class_is_default_project = empty($form_state['values']['project']) ? 'is-default' : 'is-not-default';
   $form['project'] = array(
     '#title' => t('Project'),
     '#default_value' => $form_state['values']['project'],
@@ -58,7 +59,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
       'wrapper' => 'l10n-server-releases',
       'effect' => 'fade',
     ),
-    '#attributes' => array('class' => empty($form_state['values']['project']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($class_is_default_project)),
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
@@ -91,6 +92,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
   if (!isset($release_options[$form_state['values']['release']])) {
     $form_state['values']['release'] = 'all';
   }
+  $class_is_default_release = $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default';
   $form['release'] = array(
     '#title' => t('Release'),
     '#type' => 'select',
@@ -99,16 +101,17 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     // Wrapper used to replace release options via AJAX.
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
-    '#attributes' => array('class' => $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($class_is_default_release)),
   );
 
   if (count($contexts = l10n_community_get_contexts()) > 1) {
+    $class_is_default_context = $form_state['values']['context'] == 'all' ? 'is-default' : 'is-not-default';
     $form['context'] = array(
       '#title' => t('Context'),
       '#type' => 'select',
       '#options' => array('all' => t('All')) + $contexts,
       '#default_value' => $form_state['values']['context'],
-      '#attributes' => array('class' => $form_state['values']['context'] == 'all' ? 'is-default' : 'is-not-default'),
+      '#attributes' => array('class' => array($class_is_default_context)),
     );
   }
 
@@ -130,6 +133,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#default_value' => (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
   );
 
+  $class_is_default_author = empty($form_state['values']['author']) ? 'is-default' : 'is-not-default';
   $form['author'] = array(
     '#type' => 'textfield',
     '#title' => t('Submitted by'),
@@ -137,34 +141,37 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#autocomplete_path' => 'user/autocomplete',
     '#default_value' => $form_state['values']['author'],
     '#size' => 15,
-    '#attributes' => array('class' => empty($form_state['values']['author']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($is_default_author)),
     '#display_none' => empty($form_state['values']['author']),
   );
 
+  $class_is_default_search = empty($form_state['values']['search']) ? 'is-default' : 'is-not-default';
   $form['search'] = array(
     '#title' => t('Contains'),
     '#type' => 'textfield',
     '#default_value' => $form_state['values']['search'],
     '#size' => 20,
-    '#attributes' => array('class' => empty($form_state['values']['search']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($class_is_default_search)),
     '#display_none' => empty($form_state['values']['search']),
   );
 
+  $class_is_default_sid = empty($form_state['values']['sid']) ? 'is-default' : 'is-not-default';
   $form['sid'] = array(
     '#title' => t('String ID'),
     '#type' => 'textfield',
     '#default_value' => empty($form_state['values']['sid']) ? '' : $form_state['values']['sid'],
     '#size' => 10,
-    '#attributes' => array('class' => empty($form_state['values']['sid']) ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($class_is_default_sid)),
     '#display_none' => empty($form_state['values']['sid']),
   );
 
+  $class_is_default_limit = $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default';
   $form['limit'] = array(
     '#type' => 'select',
     '#title' => t('Limit'),
     '#options' => drupal_map_assoc(array(5, 10, 20, 30, 50)),
     '#default_value' => $form_state['values']['limit'],
-    '#attributes' => array('class' => $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default'),
+    '#attributes' => array('class' => array($class_is_default_limit)),
     '#display_none' => $form_state['values']['limit'] == 10,
   );
 
@@ -174,7 +181,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
   );
   $form['reset'] = array(
     '#type' => 'markup',
-    '#markup' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => 'filter-exclude'))) . '</div>',
+    '#markup' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => array('filter-exclude')))) . '</div>',
   );
   $form['#theme'] = 'l10n_community_filter_form';
   return $form;
@@ -483,7 +490,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
     // Let a moderator roll back to the current translation even if they
     // would otherwise not have permission to approve such a string.
     '#disabled' => !$may_moderate && !$is_active,
-    '#attributes' => array('class' => 'selector'),
+    '#attributes' => array('class' => array('selector')),
   );
 
   if ($string->tid) {
@@ -595,21 +602,21 @@ function theme_l10n_community_translate_table($variables) {
   foreach (element_children($element) as $key) {
     $rows[] = array(
       array(
-        'class' => 'sid',
+        'class' => array('sid'),
         'data' => l('#', $_GET['q'], array('query' => array('sid' => $element[$key]['#string']->sid), 'attributes' => array('title' => t('Direct and permanent link to this string.')))),
       ),
       array(
-        'class' => 'source',
+        'class' => array('source'),
         'data' => theme('l10n_community_translate_source', array('element' => $element[$key])),
       ),
       array(
-        'class' => 'translation',
+        'class' => array('translation'),
         'data' => theme('l10n_community_translate_translation_list', array('element' => $element[$key])),
       ),
     );
   }
 
-  return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => 'l10n-table')));
+  return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('l10n-table'))));
 }
 
 /**
@@ -664,36 +671,36 @@ function theme_l10n_community_in_context($variables) {
 function theme_l10n_community_translate_translation($variables) {
   $element = $variables['element'];
   if (!isset($element['#attributes']['class'])) {
-    $element['#attributes']['class'] = '';
+    $element['#attributes']['class'] = array();
   }
-  $element['#attributes']['class'] .= ' clearfix translation';
+  $element['#attributes']['class'][] = 'clearfix';
+  $element['#attributes']['class'][] = 'translation';
 
   // Add is-selectable and is-declinable helpers for JS.
   if (!$element['active']['#disabled']) {
-    $element['#attributes']['class'] .= ' is-selectable';
+    $element['#attributes']['class'][] = 'is-selectable';
   }
   if (isset($element['declined'])) {
-    $element['#attributes']['class'] .= ' is-declinable';
+    $element['#attributes']['class'][] = 'is-declinable';
   }
 
   // Add information on whether this matched the filter.
   if ((int) $element['active']['#return_value'] > 0) {
-    $element['#attributes']['class'] .= ($element['filters_match']['#value']) ? ' filter-match' : ' filter-no-match';
+    $element['#attributes']['class'][] = ($element['filters_match']['#value']) ? 'filter-match' : 'filter-no-match';
   }
 
   switch ($element['active']['#return_value']) {
     case 'new':
-      $element['#attributes']['class'] .= ' new-translation';
+      $element['#attributes']['class'][] = 'new-translation';
       break;
     case '0':
-      $element['#attributes']['class'] .= ' no-translation';
+      $element['#attributes']['class'][] = 'no-translation';
       // Fallthrough.
     default:
       if ($element['active']['#value'] !== '') {
-        $element['#attributes']['class'] .= ' is-active default';
+        $element['#attributes']['class'][] = 'is-active default';
       }
   }
-  $element['#attributes']['class'] = trim($element['#attributes']['class']);
 
   $output = '<li' . drupal_attributes($element['#attributes']) . '>';
   $output .= theme('l10n_community_translate_actions', array('element' => $element));

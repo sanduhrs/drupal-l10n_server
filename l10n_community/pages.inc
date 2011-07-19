@@ -32,11 +32,11 @@ function l10n_community_explore_languages() {
         array(
           'data' => t($language->name),
           'sortdata' => t($language->name),
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
-          'class' => 'error',
+          'class' => array('error'),
         ),
         array('data' => ''),
       );
@@ -55,7 +55,7 @@ function l10n_community_explore_languages() {
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),
           'sortdata' => t($language->name),
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => $progress,
@@ -74,7 +74,7 @@ function l10n_community_explore_languages() {
   }
 
   $header = array(
-    array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
+    array('data' => t('Language'), 'class' => array('rowhead'), 'field' => 'language'),
     array('data' => t('Overall progress'), 'field' => 'progress'),
     array('data' => t('Contributors'), 'field' => 'contributors'),
   );
@@ -83,7 +83,7 @@ function l10n_community_explore_languages() {
     array(
       'header' => $header,
       'rows' => $table_rows,
-      'attributes' => array('class' => 'l10n-community-overview l10n-community-highlighted'),
+      'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted')),
     ));
 }
 
@@ -138,14 +138,14 @@ function l10n_community_explore_projects() {
   foreach ($projects as $project) {
     $table[] = array_merge(
       array(
-        array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => 'rowhead'),
+        array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => array('rowhead')),
       ),
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
       theme('l10n_community_progress_columns', array('sum' => (@$string_counts[$project->pid]['count'] * $language_count), 'translated' => @$string_counts[$project->pid]['translations'], 'has_suggestion' => @$string_counts[$project->pid]['suggestions']))
     );
   }
-  $output .= theme('table', array('header' => theme('l10n_community_progress_headers', array('mainhead' => t('Project'))), 'rows' => $table, 'attributes' => array('class' => 'l10n-community-overview')));
+  $output .= theme('table', array('header' => theme('l10n_community_progress_headers', array('mainhead' => t('Project'))), 'rows' => $table, 'attributes' => array('class' => array('l10n-community-overview'))));
   $output .= $pager;
   return $output . '<div class="clear-block"></div>';
 }
@@ -366,19 +366,19 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
       $table[] = array(
         array(
           'data' => t($language->name) . ' (' . $langcode . ')',
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
           'colspan' => '3',
-          'class' => 'error',
+          'class' => array('error'),
         ),
       );
     }
     else {
       $table[] = array_merge(
         array(
-          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => array('rowhead')),
         ),
         theme(
           'l10n_community_progress_columns',
@@ -395,7 +395,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     array(
       'headers' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
       'rows' => $table,
-      'attributes' => array('class' => 'l10n-community-overview')
+      'attributes' => array('class' => array('l10n-community-overview'))
     ));
   $block['content'] .= '<div class="clear-block"></div>';
 
@@ -579,7 +579,7 @@ function theme_l10n_community_progress_columns($variables) {
 function theme_l10n_community_progress_headers($variables) {
   $mainhead = $variables['mainhead'];
   return array(
-    array('data' => $mainhead, 'class' => 'rowhead'),
+    array('data' => $mainhead, 'class' => array('rowhead')),
     t('Progress'),
     t('Untranslated'),
     t('Suggestions'),
@@ -717,20 +717,20 @@ function _l10n_community_alphabetic_pager() {
   $initials = l10n_server_get_project_initials();
   $items = array(
     array(
-      'class' => isset($_GET['initial']) ? 'pager-item' : 'pager-current',
+      'class' => array(isset($_GET['initial']) ? 'pager-item' : 'pager-current'),
       'data' => isset($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
     ),
   );
   foreach ($initials as $link => $data) {
     if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string) $link) {
       $items[] = array(
-        'class' => 'pager-current',
+        'class' => array('pager-current'),
         'data' => $data['title'],
       );
     }
     else {
       $items[] = array(
-        'class' => 'pager-item',
+        'class' => array('pager-item'),
         'data' => l($data['title'], 'translate/projects', array('query' => array('initial' => $link))),
       );
     }
@@ -740,7 +740,7 @@ function _l10n_community_alphabetic_pager() {
   // and then if we only have one item to filter additionally, we only have one
   // possible letter. Not much value for displaying this pager.
   if (count($items) > 2) {
-    $output .= theme('item_list', array('items' => $items, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class' => 'pager pager-alphabetic')));
+    $output .= theme('item_list', array('items' => $items, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class' => array('pager pager-alphabetic'))));
   }
 
   return $output;

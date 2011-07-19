@@ -335,7 +335,7 @@ function l10n_groups_og_links_alter(&$links, $node) {
       $txt = t('Join');
     }
     if (isset($txt)) {
-      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => 'link-button'), 'html' => TRUE, 'query' => drupal_get_destination()));
+      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => array('link-button')), 'html' => TRUE, 'query' => drupal_get_destination()));
     }
   }
 }

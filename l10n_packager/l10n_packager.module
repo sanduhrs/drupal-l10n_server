@@ -144,7 +144,7 @@ function l10n_packager_block_view($delta) {
           $arg3 = arg(3);
           if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
             return array(
-              'content' => l('<span>' . t('Download translations') . '</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
+              'content' => l('<span>' . t('Download translations') . '</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => array('link-button')))),
             );
           }
         }
@@ -428,7 +428,7 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
     $up_to_date = max($latest_item->checked, $latest_item->release_checked);
 
     $rows[] = array(
-      'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,
+      'class' => array('l10n-packager-detail l10n-packager-detail-' . $uri_class),
       'data' => array(
         array('data' => array(
             '#type' => 'link',
@@ -451,7 +451,7 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
 
   if (count($summary_list) && $summary) {
     $summary_row = array(
-      'class' => 'l10n-packager-summary',
+      'class' => array('l10n-packager-summary'),
       'id' => 'l10n-packager-summary-' . $uri_class,
       'data' => array(
         array(
@@ -459,7 +459,7 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
             '#type' => 'link',
             '#title' => '&#9658; ' . check_plain($project->title),
             '#href' => 'translate/projects/' . $project->uri,
-            '#options' => array('class' => 'expand'),
+            '#options' => array('class' => array('expand')),
           )),
         array(
           'data' => join(', ', $summary_list),
@@ -468,7 +468,7 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
       ),
     );
     $headers = array(
-      'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,
+      'class' => array('l10n-packager-detail l10n-packager-detail-' . $uri_class),
       'data' => $headers,
     );
     array_unshift($rows, $headers);

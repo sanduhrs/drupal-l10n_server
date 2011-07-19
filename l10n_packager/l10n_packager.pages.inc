@@ -162,5 +162,5 @@ function l10n_packager_show_downloads($project) {
   }
 
   $header = array_merge(array(t('Languages')), array_keys($branches));
-  return theme('table', array('header' => $header, 'rows' => $table, 'attributes' => array('class' => 'l10n-packager-table')));
+  return theme('table', array('header' => $header, 'rows' => $table, 'attributes' => array('class' => array('l10n-packager-table'))));
 }
