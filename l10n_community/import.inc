@@ -26,7 +26,7 @@ function l10n_community_import_page($langcode) {
 /**
  * Translation import form.
  */
-function l10n_community_import_form($form, $form_state, $langcode) {
+function l10n_community_import_form($form, &$form_state, $langcode) {
   global $user;
 
   $form['#attributes']['enctype'] = 'multipart/form-data';

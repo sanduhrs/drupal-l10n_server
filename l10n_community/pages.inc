@@ -153,7 +153,7 @@ function l10n_community_explore_projects() {
 /**
  * Provide a form to jump to a specific project from the project listing.
  */
-function l10n_community_explore_projects_jump_form($form) {
+function l10n_community_explore_projects_jump_form($form, &$form_state) {
   $form = array(
     '#prefix' => '<div class="container-inline">',
     '#suffix' => '</div>',
@@ -378,7 +378,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     else {
       $table[] = array_merge(
         array(
-          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => array('rowhead')),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => array('project', $project->uri))), 'class' => array('rowhead')),
         ),
         theme(
           'l10n_community_progress_columns',
@@ -437,7 +437,7 @@ function l10n_communinty_project_releases_table($releases, $project_uri, $projec
     $rows[] = array(
       $link_releases ? l($release_title, 'translate/projects/' . $project_uri . '/releases/' . $release->rid) : $release_title,
       empty($release->download_link) ? t('n/a') : l(basename($release->download_link), $release->download_link),
-      format_date($release->file_date),
+      empty($release->file_date) ? t('n/a') : format_date($release->file_date),
       empty($release->last_parsed) ? t('in queue') : format_date($release->last_parsed),
       $file_count,
       $release->sid_count,
@@ -619,7 +619,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'project':
       // Return a count of all strings in this project, id required.
-      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :l.pid', array(':pid' => $id))->fetchField();
+      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :pid', array(':pid' => $id))->fetchField();
 
     case 'languages':
       if ($stats = cache_get('l10n:count:languages:' . $id, 'cache')) {
@@ -700,7 +700,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       // Get summaries of people having most active translations per language.
       // Skip anonymous since that is used for placeholders when there was
       // no prior translations for a suggestion.
-      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = :lng AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", 0, 10, array(':lng', $id));
+      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = :lng AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", 0, 10, array(':lng' => $id));
       $accounts = $result->fetchAll();
 
       return $accounts;

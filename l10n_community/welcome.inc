@@ -102,7 +102,7 @@ function l10n_community_welcome_page() {
  * @todo Please document this function.
  * @see http://drupal.org/node/1354
  */
-function l10n_community_pick_go(&$form_state) {
+function l10n_community_pick_go($form, &$form_state) {
   $form = array();
   $languages = l10n_community_get_languages();
   $projects = l10n_server_get_projects();

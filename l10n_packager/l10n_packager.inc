@@ -265,7 +265,7 @@ function l10n_packager_translation_last_updated($rid) {
  * Get files for a release, indexed by language.
  */
 function l10n_packager_release_get_files($rid) {
-  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :rid',
+  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {file_managed} f ON r.fid = f.fid WHERE r.rid = :rid',
             array(':rid' => $rid));
   return $result->fetchAllAssoc('language');
 }

@@ -61,7 +61,7 @@ function l10n_packager_schema() {
         'not null' => TRUE,
       ),
       'fid' => array(
-        'description' => 'Reference to {files}.fid.',
+        'description' => 'Reference to {file_managed}.fid.',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,

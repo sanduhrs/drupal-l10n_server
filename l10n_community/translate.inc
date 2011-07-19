@@ -141,7 +141,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#autocomplete_path' => 'user/autocomplete',
     '#default_value' => $form_state['values']['author'],
     '#size' => 15,
-    '#attributes' => array('class' => array($is_default_author)),
+    '#attributes' => array('class' => array($class_is_default_author)),
     '#display_none' => empty($form_state['values']['author']),
   );
 
