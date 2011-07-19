@@ -120,7 +120,8 @@ function l10n_community_import_form_validate($form, &$form_state) {
  */
 function l10n_community_import_form_submit($form, &$form_state) {
   // Save file in the local file system.
-  if ($file = file_save_upload('file')) {
+  $validators = array('file_validate_extensions' => array());
+  if ($file = file_save_upload('file', $validators)) {
 
     // Increase time limit for PO parsing if possible.
     if (!ini_get('safe_mode')) {

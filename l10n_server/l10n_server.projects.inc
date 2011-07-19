@@ -260,7 +260,7 @@ function theme_l10n_server_admin_releases_form($variables) {
       drupal_render($release_element['weight']),
     );
     $max_operations = max($max_operations, count($release_element['operations']));
-    foreach ($release_element['operations']['#value'] as $operation) {
+    foreach ($release_element['operations']['#markup'] as $operation) {
       $row[] = $operation;
     }
     $table[] = $row;

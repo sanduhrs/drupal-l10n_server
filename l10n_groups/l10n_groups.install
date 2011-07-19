@@ -12,7 +12,7 @@ function l10n_groups_install() {
   variable_set('og_content_type_usage_l10n_group', 'group');
 
   // Set up blocks for this module.
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(10 => 'info');
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
@@ -28,7 +28,7 @@ function l10n_groups_install() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))
@@ -175,7 +175,7 @@ function l10n_groups_update_6000() {
  */
 function l10n_groups_update_6001() {
   // Set up blocks for this module.
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(10 => 'info');
   $module = 'l10n_groups';
   foreach ($blocks as $weight => $delta) {
@@ -191,7 +191,7 @@ function l10n_groups_update_6001() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))

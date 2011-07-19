@@ -9,7 +9,7 @@
  * Implements hook_install().
  */
 function l10n_community_install() {
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   // Set up these blocks.
   $blocks = array(
     -6 => 'stats',
@@ -30,7 +30,7 @@ function l10n_community_install() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))
@@ -461,7 +461,7 @@ function l10n_community_update_6016() {
  * Set up blocks that were newly introduced.
  */
 function l10n_community_update_6017() {
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   // Set up these blocks.
   $blocks = array(
     -6 => 'stats',
@@ -482,7 +482,7 @@ function l10n_community_update_6017() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))

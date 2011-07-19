@@ -91,7 +91,7 @@ function l10n_packager_schema() {
  */
 function l10n_packager_install() {
   // Set up blocks for this module.
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
@@ -107,7 +107,7 @@ function l10n_packager_install() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))
@@ -134,7 +134,7 @@ function l10n_packager_update_6001() {
  * Set up blocks that were newly introduced.
  */
 function l10n_packager_update_6002() {
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
@@ -150,7 +150,7 @@ function l10n_packager_update_6002() {
           'cache'  => -1,
           'status' => 1,
           'weight' => $weight,
-          'region' => 'right',
+          'region' => 'sidebar_second',
           'theme'  => $theme_key,
           'pages'  => '',
         ))

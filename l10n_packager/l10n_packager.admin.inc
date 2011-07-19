@@ -206,7 +206,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
   $release = !empty($form_state['values']['release']) ? $form_state['values']['release'] : NULL;
 
   // Build the query that will be used in different ways depending on the operation
-  $query = db_select('l10n_server_release')->fields('rid');
+  $query = db_select('l10n_server_release', 'r')->fields('r', array('rid'));
   if ($pid) {
     $query = $query->condition('pid', $pid);
   }

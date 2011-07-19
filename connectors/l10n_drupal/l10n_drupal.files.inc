@@ -421,7 +421,8 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    $select = db_select('l10n_server_string')->condition('hashkey', md5($value . $context));
+    $select = db_select('l10n_server_string', 's')->fields('s')
+      ->condition('hashkey', md5($value . $context));
     if (!$select->execute()->fetchField()) {
       // String does not exist.
       $sid = db_insert('l10n_server_string')
@@ -433,7 +434,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
 	->execute();
     }
 
-    $select = db_select('l10n_server_line')->fields(array('fid'))
+    $select = db_select('l10n_server_line', 'l')->fields('l', array('fid'))
       ->condition('fid', $fid)
       ->condition('sid', $sid)
       ->condition('lineno', $line)

@@ -660,7 +660,7 @@ function l10n_server_split_connector($connector_module) {
 function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
   include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
 
-  $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
+  $fd = fopen(drupal_realpath($file->uri), "rb"); // File will get closed by PHP on return
   if (!$fd) {
     _locale_import_message('The Gettext file import failed, because the file %filename could not be read.', $file);
     return FALSE;
