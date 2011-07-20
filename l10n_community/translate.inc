@@ -213,7 +213,7 @@ function theme_l10n_community_filter_form($variables) {
   }
 
   // Render the rest of the form as one filter-widget.
-  $output .= '<div class="filter-submit">' . drupal_render_children($form) . '</div>';
+  $output .= '<div class="filter-submit">' . drupal_render($form) . '</div>';
   $output .= '</div>';
 
   return $output;
@@ -625,7 +625,7 @@ function theme_l10n_community_translate_table($variables) {
 function theme_l10n_community_translate_source($variables) {
   $element = $variables['element'];
   $output = theme('l10n_community_translate_actions', array('element' => $element['source']));
-  $output .= '<label class="l10n-string' . ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') . '">' . drupal_render_children($element['source']['string']) . '</label>';
+  $output .= '<label class="l10n-string' . ($element['filters_match']['#value'] ? ' filter-match' : ' filter-no-match') . '">' . drupal_render($element['source']['string']) . '</label>';
   $output .= theme('l10n_community_in_context', array('source' => $element['#string']));
 
   $output .= '<div class="l10n-usage"><a href="' . url('translate/source-details/' . $element['#string']->sid) . '" class="l10n-more-link" title="' . t('Show list of projects and releases where this text is used.') . '">' . t('Show related projects') . '</a><div class="l10n-more-info"></div></div>';
@@ -640,7 +640,7 @@ function theme_l10n_community_translate_actions($variables) {
   $actions = '';
   foreach (array('declined', 'edit') as $type) {
     if (isset($element[$type])) {
-      $actions .= '<li class="' . $type . '">' . drupal_render_children($element[$type]) . '</li>';
+      $actions .= '<li class="' . $type . '">' . drupal_render($element[$type]) . '</li>';
     }
   }
   if (!empty($actions)) {
@@ -712,7 +712,7 @@ function theme_l10n_community_translate_translation($variables) {
   }
 
   if (isset($element['value'])) {
-    $output .= drupal_render_children($element['value']);
+    $output .= drupal_render($element['value']);
   }
   return $output  . '</li>';
 }
@@ -744,7 +744,7 @@ function theme_l10n_community_translate_translation_list($variables) {
   $output = '<ul>';
   foreach (element_children($element) as $child) {
     if (is_numeric($child) || $child == 'new') {
-      $output .= drupal_render_children($element[$child]);
+      $output .= drupal_render($element[$child]);
     }
   }
   $output .= '</ul>';
