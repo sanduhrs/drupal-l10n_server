@@ -1097,7 +1097,7 @@ function l10n_community_update_string_status($langcode, $sid) {
       ->fields(array(
           'sid' => $sid,
           'language' => $langcode,
-          'has_sugestion' => (int) $has_suggestion,
+          'has_suggestion' => (int) $has_suggestion,
           'has_translation' => (int) $has_translation,
         ))
       ->execute();

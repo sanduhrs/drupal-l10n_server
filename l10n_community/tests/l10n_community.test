@@ -24,7 +24,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     variable_set('theme_default', 'bartik');
 
     // Set up required modules for l10n_community.
-    parent::setUp('locale', 'potx', 'l10n_server', 'l10n_community', 'l10n_drupal');
+    parent::setUp('locale', 'l10n_pconfig', 'potx', 'l10n_server', 'l10n_community', 'l10n_drupal');
 
     // Prepare users on different permission levels.
     $this->u_anon = $this->drupalCreateUser();
@@ -320,7 +320,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // SUBMIT SUGGESTIONS ====
 
     // Add suggestions for four strings.
-    $edit = array();
+    $edit = array('limit' => 50);
     $sid1 = db_select('l10n_server_string', 's')
       ->fields('s', array('sid'))
       ->condition('value', 'This is a test string.')
@@ -352,18 +352,16 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit['strings[' . $sid4 . '][new][value][0]'] = '1 test string suggestion';
     $edit['strings[' . $sid4 . '][new][value][1]'] = '@count test strings suggestion';
 
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
-      array('query' => array('limit' => '50')));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
     $this->assertRaw(t('@count suggestions added', array('@count' => 4)));
     $this->drupalGet('user/logout');
 
     // Add second suggestions to test for that later.
     $this->drupalLogin($this->u_member_2);
-    $edit = array();
+    $edit = array('limit' => 50);
     $edit['strings[' . $sid1 . '][new][value][0]'] = 'This is a test string. suggestion-2';
     $edit['strings[' . $sid3 . '][new][value][0]'] = 'Test string in context. suggestion-3';
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
-      array('query' => array('limit' => '50')));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
     $this->assertRaw(t('@count suggestions added', array('@count' => 2)));
 
     // CHECK SUGGESTIONS ====
@@ -427,12 +425,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('language', 'hu')
       ->execute()
       ->fetchField();
-    $edit = array();
+    $edit = array('limit' => 50);
     $edit['strings[' . $sid2 . '][' . $tid1 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid2 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid3 . '][declined]'] = 1;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
-      array('query' => array('limit' => '50')));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
     $this->assertRaw(t('3 suggestions declined'));
 
     // Now we should be down to 3 suggestions.
@@ -454,11 +451,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('language', 'hu')
       ->execute()
       ->fetchField();
-    $edit = array();
+    $edit = array('limit' => 50);
     $edit['strings[' . $sid1 . '][active]'] = $tid1;
     $edit['strings[' . $sid4 . '][active]'] = $tid2;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'),
-      array('query' => array('limit' => '50')));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
     $this->assertRaw(t('2 translations approved'));
 
     // Now we should be down to 1 suggestion and 1 translation.
