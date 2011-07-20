@@ -719,7 +719,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // Add a language.
     $this->drupalLogin($this->u_admin);
     $edit = array('langcode' => 'hu');
-    $this->drupalPost('admin/config/language/add', $edit, t('Add language'));
+    $this->drupalPost('admin/config/regional/language/add', $edit, t('Add language'));
     $this->assertText('Hungarian', t('Hungarian language added to system.'));
     $this->assertText(t('Hungarian'), t('Hungarian language added to system.'));
     $this->drupalGet('user/logout');

@@ -45,7 +45,7 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
           // eg. drupal-4.6.7 or ubercart-5.x-1.0-alpha8.
           list($project_uri, $release_version) = explode('-', $package, 2);
 
-          l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path . '.tar.gz', filemtime($file->filename));
+          l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path . '.tar.gz', filemtime($file->uri));
         }
         else {
           // File name not formatted properly.
@@ -99,7 +99,7 @@ ORDER BY last_parsed ASC",
     drupal_set_message(t('No (new) local Drupal files found to scan in %workdir.', array('%workdir' => $workdir)));
   }
 
-  // Ensure that a Drupal page will be displayed with the messages.
+  // Ensure that a Drupal page will be displayed with the messages if any.
   return '';
 }
 
@@ -222,9 +222,6 @@ function l10n_drupal_parse_package($package_file, $release) {
   // Potx module is already a dependency.
   include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';
 
-  // Set up status messages if not in automated mode.
-  potx_status('set', POTX_STATUS_MESSAGE);
-
   // Generate temp folder to extract the tarball. tempnam() creates a regular
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
@@ -250,12 +247,12 @@ function l10n_drupal_parse_package($package_file, $release) {
     }
     else {
       // Get all source files and save strings with our callback for this release.
-      $files = _potx_explore_dir($temp_path);
-      l10n_drupal_save_file(array($release->pid, $release->rid));
+      $files = potx_parser_source_files($temp_path);
+      l10n_drupal_callback_save_version(array($release->pid, $release->rid));
       $version = l10n_drupal_detect_major_version($package_file);
       l10n_drupal_added_string_counter(NULL, TRUE);
       foreach ($files as $name) {
-        _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
+        potx_parser_parse_file($name, substr($name, strlen($temp_path) + 1), 'l10n_drupal_callback_save_string', 'l10n_drupal_callback_save_version', $version);
       }
       $sid_count = l10n_drupal_added_string_counter();
 
@@ -276,16 +273,15 @@ function l10n_drupal_parse_package($package_file, $release) {
 
       // Update error list for this release. Although the errors are related to
       // files, we are not interested in the fine details, the file names are in
-      // the error messages as text. We assume no other messages are added while
-      // importing, so we can safely use drupal_get_message() to grab our errors.
+      // the error messages as text.
       db_delete('l10n_server_error') ->condition('rid', $release->rid) ->execute();
-      $messages = drupal_get_messages('error');
-      if (isset($messages['error']) && is_array($messages['error'])) {
-        foreach ($messages['error'] as $error_message) {
+      $messages = potx_parser_util_get_messages();
+      if (count($messages)) {
+        foreach ($messages as $error_message) {
           db_insert('l10n_server_error')
 	    ->fields(array(
                 'rid' => $release->rid,
-                'value' => $error_message,
+                'value' => $error_message[5],
               ))
 	    ->execute();
         }
@@ -312,45 +308,44 @@ function l10n_drupal_parse_package($package_file, $release) {
 }
 
 /**
- * CVS revision saver callback for potx. We call it with a release id
- * if $file is not given. And we ask for a file ID (to save the string
- * with), if $revision is not given.
+ * Revision saver callback for potx. We call it with a release id
+ * if $display_name is not given. And we ask for a file ID (to save the string
+ * with), if $value is not given.
  *
  * This is called:
  *  - before any file parsing with (array($pid, $rid), NULL)
- *  - just as a new file is found by potx with ($revision, $file)
- *  - just as a new string is found by our own callback with (NULL, $file)
+ *  - just as a new file is found by potx with ($version, $display_name)
+ *  - just as a new string is found by our own callback with (NULL, $display_name)
  *
- * @param $revision
- *   CVS revision information about $file. If not given, the recorded
- *   fid of $file will be returned in an array with ($pid, $rid, $fid).
- * @param $file
- *   File location in package. If not given, $revision is taken as an array
- *   with project and release id to use to store the file list.
+ * @param $value
+ *   The version number value of $file. If NULL, the collected
+ *   values are returned.
+ * @param $display_name
+ *   Name of file where the version information was found.
  */
-function l10n_drupal_save_file($revision = NULL, $file = NULL) {
+function l10n_drupal_callback_save_version($value = NULL, $display_name = NULL) {
   static $pid = 0;
   static $rid = 0;
   static $files = array();
 
-  if (!isset($file)) {
+  if (!isset($display_name)) {
     // We get the release number for the files.
-    list($pid, $rid) = $revision;
+    list($pid, $rid) = $value;
   }
-  elseif (!isset($revision)) {
+  elseif (!isset($value)) {
     // We return data for a specific file.
-    return array($pid, $rid, $files[$file]);
+    return array($pid, $rid, $files[$display_name]);
   }
   else {
     $result = db_query(
       "SELECT * FROM {l10n_server_file} WHERE rid = :rid AND location = :location",
-      array(':rid' => $rid, ':location' => $file)
+      array(':rid' => $rid, ':location' => $display_name)
     );
     if ($existing_file = $result->fetchObject()) {
-      if ($existing_file->revision != $revision) {
+      if ($existing_file->revision != $value) {
         // Changed revision on a file.
         db_update('l10n_server_file')
-	  ->fields(array('revision' => $revision))
+	  ->fields(array('revision' => $value))
 	  ->condition('fid', $existing_file->fid)
 	  ->execute();
       }
@@ -362,46 +357,49 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
 	->fields(array(
             'pid' => $pid,
             'rid' => $rid,
-            'location' => $file,
-            'revision' => $revision,
+            'location' => $display_name,
+            'revision' => $value,
           ))
 	->execute();
     }
-    $files[$file] = $fid;
+    $files[$display_name] = $fid;
   }
 }
 
 /**
- * String saving callback for potx.
+ * Connector specific $string_save_callback used by the potx system.
  *
- * @todo
- *   More elegant plural handling.
+ * Saves values to global arrays to reduce memory consumption problems when
+ * passing around big chunks of values.
+ *
  * @todo
  *   Find a way to properly use POTX constants before potx.inc is
  *   loaded.
  *
  * @param $value
- *   String value to store.
+ *   The string value. If NULL, the array of collected values
+ *   are returned for the given $string_mode.
  * @param $context
  *   From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
  *   the default, if the code does not specify a context otherwise.
- * @param $file
- *   Name of file the string occured in.
+ * @param $display_name
+ *   Name of file where the string was found.
  * @param $line
- *   Number of line the string was found.
- * @param $string_type
- *   String type: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
+ *   Line number where the string was found.
+ * @param $string_mode
+ *   String mode: POTX_STRING_INSTALLER, POTX_STRING_RUNTIME
  *   or POTX_STRING_BOTH.
  */
-function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $line = 0, $string_type = 2 /*POTX_STRING_RUNTIME*/) {
+function l10n_drupal_callback_save_string($value = NULL, $context = NULL, $display_name = NULL, $line = 0, $string_mode = 2 /*POTX_STRING_RUNTIME*/) {
+
   static $files = array();
 
   // Strip all slashes from string.
   $value = stripcslashes($value);
 
-  if (!isset($files[$file])) {
+  if (!isset($files[$display_name])) {
     // Get file ID for saving, locally cache.
-    $files[$file] = l10n_drupal_save_file(NULL, $file);
+    $files[$display_name] = l10n_drupal_callback_save_version(NULL, $display_name);
   }
 
   // Value set but empty. Mark error on empty translatable string. Only trim
@@ -409,26 +407,26 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
   // whitespace as it appears in the string otherwise.
   $check_empty = trim($value);
   if (empty($check_empty)) {
-    potx_status('error', t('Empty string attempted to be localized. Please do not leave test code for localization in your source.'), $file, $line);
+    potx_parser_util_set_message(t('Empty string attempted to be localized. Please do not leave test code for localization in your source.'), $display_name, $line);
     return;
   }
 
   // If we have the file entry now, we can process adding the string.
-  if (isset($files[$file])) {
+  if (isset($files[$display_name])) {
     // Explode files array to pid, rid and fid.
-    list($pid, $rid, $fid) = $files[$file];
+    list($pid, $rid, $fid) = $files[$display_name];
 
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
     $select = db_select('l10n_server_string', 's')->fields('s')
       ->condition('hashkey', md5($value . $context));
-    if (!$select->execute()->fetchField()) {
+    if (!($sid = $select->execute()->fetchField())) {
       // String does not exist.
       $sid = db_insert('l10n_server_string')
 	->fields(array(
-            'value' => $value,
-            'context' => $context,
+            'value' => (string) $value,
+            'context' => (string) $context,
             'hashkey' => md5($value . $context),
           ))
 	->execute();
@@ -438,7 +436,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
       ->condition('fid', $fid)
       ->condition('sid', $sid)
       ->condition('lineno', $line)
-      ->condition('type', $string_type);
+      ->condition('type', $string_mode);
     if (!$select->execute()->fetchField()) {
       // Location does not exist with this string.
       db_insert('l10n_server_line')
@@ -448,7 +446,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
             'fid' => $fid,
             'sid' => $sid,
             'lineno' => $line,
-            'type' => $string_type,
+            'type' => $string_mode,
           ))
 	->execute();
     }
