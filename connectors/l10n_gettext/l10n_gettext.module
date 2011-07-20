@@ -35,7 +35,7 @@ function l10n_gettext_upload_handler($form, $form_state) {
     $release = $form_state['values']['new_release'];
 
     // Save file info and mark the file parsed.
-    db_insert('l10n_server_file')
+    $fid = db_insert('l10n_server_file')
       ->fields(array(
           'pid' => $project->pid,
           'rid' => $release->rid,
@@ -43,12 +43,6 @@ function l10n_gettext_upload_handler($form, $form_state) {
           'revision' => '',
         ))
       ->execute();
-
-    $select = db_select('l10n_server_file', 'f')
-      ->fields('f', array('fid'))
-      ->condition('rid', $release->rid)
-      ->condition('location', $file->filename);
-    $fid = $select->execute()->fetchField();
 
     // Do the actual parsing on the local file.
     if (l10n_server_parse_po($file, 'l10n_gettext_store_string', array($project->pid, $release->rid, $fid))) {
