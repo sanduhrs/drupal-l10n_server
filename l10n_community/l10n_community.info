@@ -1,6 +1,5 @@
 name = Localization community UI
 description = Community interface for string translation
-dependencies[] = jquery_update
 dependencies[] = l10n_server
 package = "Localization server"
 core = 7.x
