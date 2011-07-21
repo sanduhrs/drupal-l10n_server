@@ -213,7 +213,7 @@ function theme_l10n_community_filter_form($variables) {
   }
 
   // Render the rest of the form as one filter-widget.
-  $output .= '<div class="filter-submit">' . drupal_render($form) . '</div>';
+  $output .= '<div class="filter-submit">' . drupal_render_children($form) . '</div>';
   $output .= '</div>';
 
   return $output;
