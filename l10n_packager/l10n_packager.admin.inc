@@ -105,7 +105,7 @@ function l10n_packager_admin_languages_form() {
   $form['languages']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Rebuild language list'),
-    '#submit' => array('l10n_packager_export_language_list'),
+    '#submit' => array('l10n_packager_export_metafile'),
   );
   return $form;
 }
