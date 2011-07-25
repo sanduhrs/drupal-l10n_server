@@ -688,8 +688,8 @@ function l10n_community_theme($existing, $type, $theme, $path) {
       'variables' => array('mainhead' => NULL),
     ),
     // translate.inc
-    'l10n_community_filter_form' => array(
-      'render element' => 'form',
+    'l10n_community_filter_form_element' => array(
+      'render element' => 'element',
     ),
     'l10n_community_translate_translation' => array(
       'render element' => 'element',

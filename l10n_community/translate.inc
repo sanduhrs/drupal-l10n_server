@@ -48,7 +48,10 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     );
   }
 
-  $form = array();
+  $form = array(
+    '#prefix' => '<div class="l10n-server-filter clear-block">',
+    '#suffix' => '</div>',
+  );
   $class_is_default_project = empty($form_state['values']['project']) ? 'is-default' : 'is-not-default';
   $form['project'] = array(
     '#title' => t('Project'),
@@ -60,6 +63,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
       'effect' => 'fade',
     ),
     '#attributes' => array('class' => array($class_is_default_project)),
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
   if (($count = count($projects)) <= 30) {
     // Select widget for 1-30 projects.
@@ -102,6 +106,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
     '#attributes' => array('class' => array($class_is_default_release)),
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
   if (count($contexts = l10n_community_get_contexts()) > 1) {
@@ -112,6 +117,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
       '#options' => array('all' => t('All')) + $contexts,
       '#default_value' => $form_state['values']['context'],
       '#attributes' => array('class' => array($class_is_default_context)),
+      '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
     );
   }
 
@@ -121,6 +127,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#prefix' => '<div class="' . ($form_state['values']['status'] == L10N_STATUS_ALL ? 'is-default' : 'is-not-default') . '">',
     '#suffix' => '</div>',
     '#display_none' => $form_state['values']['status'] == L10N_STATUS_ALL,
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
   $form['status']['translation'] = array(
     '#type' => 'select',
@@ -143,6 +150,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#size' => 15,
     '#attributes' => array('class' => array($class_is_default_author)),
     '#display_none' => empty($form_state['values']['author']),
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
   $class_is_default_search = empty($form_state['values']['search']) ? 'is-default' : 'is-not-default';
@@ -153,6 +161,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#size' => 20,
     '#attributes' => array('class' => array($class_is_default_search)),
     '#display_none' => empty($form_state['values']['search']),
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
   $class_is_default_sid = empty($form_state['values']['sid']) ? 'is-default' : 'is-not-default';
@@ -163,6 +172,7 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#size' => 10,
     '#attributes' => array('class' => array($class_is_default_sid)),
     '#display_none' => empty($form_state['values']['sid']),
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
   $class_is_default_limit = $form_state['values']['limit'] == 10 ? 'is-default' : 'is-not-default';
@@ -173,50 +183,37 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#default_value' => $form_state['values']['limit'],
     '#attributes' => array('class' => array($class_is_default_limit)),
     '#display_none' => $form_state['values']['limit'] == 10,
+    '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
-  $form['submit'] = array(
+  $form['buttons'] = array(
+    '#prefix' => '<div class="filter-submit">',
+    '#suffix' => '</div>',
+  );
+  $form['buttons']['submit'] = array(
     '#value' => t('Filter'),
     '#type' => 'submit',
   );
-  $form['reset'] = array(
+  $form['buttons']['reset'] = array(
     '#type' => 'markup',
     '#markup' => '<div class="reset-link">' . l(t('Clear all filters'), 'translate/languages/' . $langcode . '/translate', array('attributes' => array('class' => array('filter-exclude')))) . '</div>',
   );
-  $form['#theme'] = 'l10n_community_filter_form';
   return $form;
 }
 
 /**
- * Theme function for l10n_community_filter_form.
+ * Theme function for l10n_community_filter_form elements.
  */
-function theme_l10n_community_filter_form($variables) {
-  $form = $variables['form'];
+function theme_l10n_community_filter_form_element($variables) {
+  $element = $variables['element'];
 
-  $output = '<div class="l10n-server-filter clear-block">';
-
-  // Only display these elements individually.
-  $elements = array('project', 'release', 'context', 'status', 'author', 'search', 'limit', 'sid');
-  foreach ($form as $id => &$element) {
-    if (in_array($id, $elements)) {
-      $title = $element['#title'];
-      unset($element['#title']);
-
-      // Bubble up a js-hide class to the container.
-      $class = '';
-      if (!empty($element['#display_none'])) {
-        $class = ' js-hide';
-      }
-
-      $output .= '<div class="filter-widget' . $class . '"><label>' . $title . '</label>' . drupal_render($element) . '</div>';
-    }
+  // Bubble up a js-hide class to the container.
+  $class = '';
+  if (!empty($element['#display_none'])) {
+    $class = ' js-hide';
   }
 
-  // Render the rest of the form as one filter-widget.
-  $output .= '<div class="filter-submit">' . drupal_render_children($form) . '</div>';
-  $output .= '</div>';
-
-  return $output;
+  return '<div class="filter-widget' . $class . '">' . $element['#children'] . '</div>';
 }
 
 /**
@@ -276,16 +273,18 @@ function l10n_community_translate_page($langcode) {
   );
 
   // Add the filter form.
-  $form = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
+  $output = array(
+    drupal_get_form('l10n_community_filter_form', $langcode, $filters)
+  );
 
   // Output the actual strings.
   if (!count($strings)) {
     drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
   }
   else {
-    $form = array_merge($form, drupal_get_form('l10n_community_translate_form', $language, $filters, $strings));
+    $output[] = drupal_get_form('l10n_community_translate_form', $language, $filters, $strings);
   }
-  return $form;
+  return $output;
 }
 
 /**
@@ -481,6 +480,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
   $form['active'] = array(
     '#type' => 'radio',
     '#theme' => 'l10n_community_translate_radio',
+    '#theme_wrappers' => array(),
     '#title' => _l10n_community_translate_render_textarray($string->translation, $is_new ? t('(empty)') : FALSE),
     '#return_value' => $string->tid,
     '#default_value' => $is_active ? $string->tid : NULL,

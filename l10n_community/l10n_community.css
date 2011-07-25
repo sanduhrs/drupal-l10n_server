@@ -50,6 +50,9 @@ table.l10n-community-overview {
 .l10n-server-filter .form-item#edit-status-translation-wrapper {
   margin-bottom: 0;
 }
+.l10n-server-filter .filter-submit {
+  clear: both;
+}
 .l10n-server-filter .filter-submit .form-submit {
   position: absolute;
   top: 0;
