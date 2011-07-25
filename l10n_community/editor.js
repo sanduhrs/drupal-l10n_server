@@ -70,7 +70,7 @@
 
     // If we did hide items, add a link to show all.
     if ($('#l10n-community-filter-form .filter-widget:hidden')) {
-      $('#l10n-community-filter-form .l10n-server-filter').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
+      $('#l10n-community-filter-form').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
       $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
     }
 
