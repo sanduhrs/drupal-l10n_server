@@ -229,7 +229,7 @@ function l10n_community_filter_form_submit($form, &$form_state) {
   if ($form_state['values']['op'] == t('Filter')) {
     $filters = l10n_community_build_filter_values($form_state['values']);
     // Redirect keeping the relevant filters intact in the URL.
-    $form_state['redirect'] = array($_GET['q'], l10n_community_flat_filters($filters));
+    $form_state['redirect'] = array($_GET['q'], array('query' => l10n_community_flat_filters($filters)));
   }
 }
 
