@@ -303,15 +303,14 @@ function l10n_community_translate_page($langcode) {
 function l10n_community_translate_form($form, &$form_state, $language, $filters, $strings) {
   $pager = theme('pager', array('tags' => NULL, 'element' => 0));
 
-  // Keep existing filters and other query arguments on form submission.
-  $redirect_args = $_GET;
-  unset($redirect_args['q']);
-  $form_state['redirect'] = array($_GET['q'], array('query' => $redirect_args));
-
   // The form will show but the submit buttons will only appear if the user has
   // permissions to submit suggestions. This allows the use of this form to review
   // strings in the database.
   $form = array(
+    'target' => array(
+      '#type' => 'value',
+      '#value' => $_GET,
+    ),
     'langcode' => array(
       '#type' => 'value',
       '#value' => $language->language,
@@ -819,6 +818,11 @@ function l10n_community_translate_form_submit($form, &$form_state) {
 
   // Tell the user what happened.
   l10n_community_update_message();
+
+  // Keep existing filters and other query arguments on form submission.
+  $redirect_args = $form_state['values']['target'];
+  unset($redirect_args['q']);
+  $form_state['redirect'] = array($form_state['values']['target']['q'], array('query' => $redirect_args));
 }
 
 // = API functions =============================================================
