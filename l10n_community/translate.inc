@@ -302,17 +302,16 @@ function l10n_community_translate_page($langcode) {
  */
 function l10n_community_translate_form($form, &$form_state, $language, $filters, $strings) {
   $pager = theme('pager', array('tags' => NULL, 'element' => 0));
-  $redirect_url = $_GET;
-  unset($redirect_url['q']);
+
+  // Keep existing filters and other query arguments on form submission.
+  $redirect_args = $_GET;
+  unset($redirect_args['q']);
+  $form_state['redirect'] = array($_GET['q'], array('query' => $redirect_args));
 
   // The form will show but the submit buttons will only appear if the user has
   // permissions to submit suggestions. This allows the use of this form to review
   // strings in the database.
   $form = array(
-    '#redirect' => array(
-      $_GET['q'],
-      $redirect_url,
-    ),
     'langcode' => array(
       '#type' => 'value',
       '#value' => $language->language,

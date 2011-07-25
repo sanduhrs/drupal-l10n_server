@@ -186,7 +186,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $query
       ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
-      ->condition('r.title', '7.x-' . $this->version_base);
+      ->condition('r.title', '6.x-' . $this->version_base);
     $rid = $query->execute()->fetchField();
     $this->drupalGet('translate/languages/hu/translate',
       array('query' => array(
@@ -203,7 +203,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $query
       ->fields('r', array('rid'))
       ->condition('p.uri', $this->project_names[6])
-      ->condition('r.title', '7.x-' . $this->version_js);
+      ->condition('r.title', '6.x-' . $this->version_js);
     $rid = $query->execute()->fetchField();
     $this->drupalGet('translate/languages/hu/translate',
       array('query' => array(
@@ -320,7 +320,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // SUBMIT SUGGESTIONS ====
 
     // Add suggestions for four strings.
-    $edit = array('limit' => 50);
+    $edit = array();
     $sid1 = db_select('l10n_server_string', 's')
       ->fields('s', array('sid'))
       ->condition('value', 'This is a test string.')
@@ -352,16 +352,16 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $edit['strings[' . $sid4 . '][new][value][0]'] = '1 test string suggestion';
     $edit['strings[' . $sid4 . '][new][value][1]'] = '@count test strings suggestion';
 
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => array('limit' => '50')));
     $this->assertRaw(t('@count suggestions added', array('@count' => 4)));
     $this->drupalGet('user/logout');
 
     // Add second suggestions to test for that later.
     $this->drupalLogin($this->u_member_2);
-    $edit = array('limit' => 50);
+    $edit = array();
     $edit['strings[' . $sid1 . '][new][value][0]'] = 'This is a test string. suggestion-2';
     $edit['strings[' . $sid3 . '][new][value][0]'] = 'Test string in context. suggestion-3';
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => array('limit' => '50')));
     $this->assertRaw(t('@count suggestions added', array('@count' => 2)));
 
     // CHECK SUGGESTIONS ====
@@ -425,11 +425,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('language', 'hu')
       ->execute()
       ->fetchField();
-    $edit = array('limit' => 50);
+    $edit = array();
     $edit['strings[' . $sid2 . '][' . $tid1 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid2 . '][declined]'] = 1;
     $edit['strings[' . $sid3 . '][' . $tid3 . '][declined]'] = 1;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => array('limit' => '50')));
     $this->assertRaw(t('3 suggestions declined'));
 
     // Now we should be down to 3 suggestions.
@@ -451,10 +451,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('language', 'hu')
       ->execute()
       ->fetchField();
-    $edit = array('limit' => 50);
+    $edit = array();
     $edit['strings[' . $sid1 . '][active]'] = $tid1;
     $edit['strings[' . $sid4 . '][active]'] = $tid2;
-    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'));
+    $this->drupalPost('translate/languages/hu/translate', $edit, t('Save changes'), array('query' => array('limit' => '50')));
     $this->assertRaw(t('2 translations approved'));
 
     // Now we should be down to 1 suggestion and 1 translation.
@@ -547,8 +547,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('is_suggestion', 1)
       ->execute();
     db_update('l10n_server_translation')
-      ->fields(array('translation' =>  '1 saved for testing\0@count saved for testing'))
-      ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
+      ->fields(array('translation' =>  "1 saved for testing\0@count saved for testing"))
+      ->condition('translation', "1 test string - imported translation\0@count test strings - imported translation")
       ->condition('is_suggestion', 1)
       ->execute();
     db_update('l10n_server_translation')
@@ -592,8 +592,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
       ->condition('is_suggestion', 1)
       ->execute();
     db_update('l10n_server_translation')
-      ->fields(array('translation' => '1 saved for testing\0@count saved for testing'))
-      ->condition('translation', '1 test string - imported translation\0@count test strings - imported translation')
+      ->fields(array('translation' => "1 saved for testing\0@count saved for testing"))
+      ->condition('translation', "1 test string - imported translation\0@count test strings - imported translation")
       ->condition('is_suggestion', 1)
       ->execute();
     db_update('l10n_server_translation')
