@@ -150,7 +150,7 @@ function l10n_server_menu() {
     'page arguments' => array('l10n_server_admin_projects_edit_form'),
     'file' => 'l10n_server.projects.inc',
     'access callback' => 'l10n_server_admin_projects_add_access',
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_ACTION,
     'weight' => 5,
   );
   $items['admin/l10n_server/projects/cleanup'] = array(
@@ -158,7 +158,7 @@ function l10n_server_menu() {
     'page callback' => 'l10n_server_admin_projects_cleanup',
     'file' => 'l10n_server.projects.inc',
     'access arguments' => array('administer localization server'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_ACTION,
     'weight' => 10,
   );
   $items['admin/l10n_server/projects/edit/%l10n_server_project_admin'] = array(
@@ -206,7 +206,7 @@ function l10n_server_menu() {
     'file' => 'l10n_server.projects.inc',
     'access callback' => 'l10n_server_admin_projects_add_release_access',
     'access arguments' => array(4),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_ACTION,
     'weight' => 10,
   );
   $items['admin/l10n_server/projects/releases/%l10n_server_project_admin/edit/%l10n_server_project_release'] = array(
@@ -434,7 +434,7 @@ function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$f
       $form['last_parsed'] = array(
         '#type' => 'item',
         '#title' => t('Source last parsed'),
-        '#value' => format_date($form['previous_release']['#value']->last_parsed),
+        '#markup' => format_date($form['previous_release']['#value']->last_parsed),
         '#description' => t('To start over this same release with a new source file, <a href="@startover">start over the release</a>, edit and upload a new source file.', array('@startover' => url('admin/l10n_server/projects/releases/' . $form['project']['#value']->uri . '/reset/' . $form['previous_release']['#value']->rid))),
         '#weight' => 100,
       );
@@ -498,8 +498,9 @@ function l10n_server_get_projects($options = array()) {
     if (isset($options['initial'])) {
       $initials = l10n_server_get_project_initials();
       if (isset($initials[$options['initial']])) {
-	$placeholders = db_placeholders($initials[$options['initial']]['values'], 'varchar');
-        $arguments = $initials[$options['initial']]['values'];
+        $args = $initials[$options['initial']]['values'];
+        for ($i=0; $i < sizeof($args); $i++) { $arguments[':p_' . $i] = $args[$i]; }
+        $placeholders = implode(',', array_keys($arguments));
 	$select->where("SUBSTRING(title, 1, 1) IN ($placeholders)", $arguments);
       }
     }
@@ -523,7 +524,7 @@ function l10n_server_get_projects($options = array()) {
       }
       // Not found in cache, so query and cache before returning.
       $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $options['uri']));
-      if ($project = db_fetch_object($result)) {
+      if ($project = $result->fetchObject()) {
         $projects[$options['uri']] = $project;
         return $project;
       }
@@ -531,7 +532,7 @@ function l10n_server_get_projects($options = array()) {
     else {
       // A list of *all* projects was asked for.
       $results = $select->orderBy('uri')->execute();
-      while ($project = $results->fetchObject()) {
+      foreach ($results as $project) {
         $projects[$project->uri] = $project;
       }
       return $projects;
@@ -548,7 +549,7 @@ function l10n_server_get_project_initials() {
 
   // Create an array of elements, all non-letters are grouped in '#'.
   $initials = array();
-  while ($row = db_fetch_object($result)) {
+  foreach ($result as $row) {
     $initial = $row->initial;
     if (preg_match('/[A-Za-z]/', $initial)) {
       $initials[strtolower($initial)] = array(
@@ -659,7 +660,7 @@ function l10n_server_split_connector($connector_module) {
 function l10n_server_parse_po($file, $string_callback, $callback_arguments) {
   include_once DRUPAL_ROOT . '/' . 'includes/locale.inc';
 
-  $fd = fopen($file->filepath, "rb"); // File will get closed by PHP on return
+  $fd = fopen(drupal_realpath($file->uri), "rb"); // File will get closed by PHP on return
   if (!$fd) {
     _locale_import_message('The Gettext file import failed, because the file %filename could not be read.', $file);
     return FALSE;

@@ -82,15 +82,15 @@ function l10n_packager_admin_check_directory($form_element) {
 function l10n_packager_admin_repackage_page() {
   $projects = l10n_server_get_projects();
 
-  $output = drupal_get_form('l10n_packager_admin_projects_form', $projects);
-  $output .= drupal_get_form('l10n_packager_admin_languages_form');
+  $form = drupal_get_form('l10n_packager_admin_projects_form', $projects);
+  $form = array_merge($form, drupal_get_form('l10n_packager_admin_languages_form'));
 
   // @todo: make this project agnostic for others running l10n_server.
   if (!empty($projects['drupal'])) {
-    $output .= drupal_get_form('l10n_packager_admin_installer_form', $projects['drupal']);
+    $form = array_merge($form, drupal_get_form('l10n_packager_admin_installer_form', $projects['drupal']));
   }
 
-  return $output;
+  return $form;
 }
 
 /**
@@ -105,7 +105,7 @@ function l10n_packager_admin_languages_form($form) {
   $form['languages']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Rebuild language list'),
-    '#submit' => array('l10n_packager_export_language_list'),
+    '#submit' => array('l10n_packager_export_metafile'),
   );
   return $form;
 }
@@ -206,7 +206,7 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
   $release = !empty($form_state['values']['release']) ? $form_state['values']['release'] : NULL;
 
   // Build the query that will be used in different ways depending on the operation
-  $query = db_select('l10n_server_release')->fields('rid');
+  $query = db_select('l10n_server_release', 'r')->fields('r', array('rid'));
   if ($pid) {
     $query = $query->condition('pid', $pid);
   }
@@ -226,15 +226,15 @@ function l10n_packager_admin_projects_form_submit($form, $form_state) {
     }
   }
   elseif ($op == t('Mark for repackaging')) {
-    db_update('l10n_packager_release')
+    $affected_rows = db_update('l10n_packager_release')
       ->fields(array(
-		     'updated' => 0,
-		     'checked' => 0,
-		     'status'  => L10N_PACKAGER_ACTIVE,
-		     ))
+          'updated' => 0,
+          'checked' => 0,
+          'status'  => L10N_PACKAGER_ACTIVE,
+        ))
       ->condition('rid', $query, 'IN')
       ->execute();
-    drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => db_affected_rows())));
+    drupal_set_message(t("Marked %count releases for repackaging.", array('%count' => $affected_rows)));
   }
 }
 
@@ -285,7 +285,7 @@ function l10n_packager_admin_installer_form($form, &$form_state, $project) {
 function l10n_packager_admin_installer_form_submit($form, $form_state) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+  include_once 'Archive/Tar.php';
 
   module_load_include('inc', 'l10n_community', 'export');
 

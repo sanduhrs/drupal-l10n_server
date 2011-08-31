@@ -131,7 +131,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
 
     // Now build the Drupal file object or update the old one.
     if (!empty($file->fid) && !empty($file->filepath)) {
-      file_delete($file->filepath);
+      file_unmanaged_delete($file->filepath);
     }
 
     // Check / upate / create all file data.
@@ -140,7 +140,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file->filename = basename($file_path);
     $file->filemime = $mime_type;
     $file->filepath = $file_path;
-    file_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
+    file_unmanaged_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
     $file->filesize = filesize($file->filepath);
     $file->sid_count = $sid_count;
 
@@ -229,7 +229,14 @@ function l10n_packager_get_release($rid) {
     return $rid;
   }
   else {
-    return db_fetch_object(db_query("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_server_project} p INNER JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid WHERE r.rid = :r.rid", array(':r.rid' => $rid)));
+    $result = db_query("
+SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri
+FROM {l10n_server_project} p
+INNER JOIN {l10n_server_release} r ON p.pid = r.pid
+LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid
+WHERE r.rid = :rid",
+              array(':rid' => $rid));
+    return $result->fetchObject();
   }
 }
 
@@ -249,8 +256,8 @@ function l10n_packager_release_name($rid) {
  * Get timestamp of the last updated string for a release, for each language.
  */
 function l10n_packager_translation_last_updated($rid) {
-  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :l.rid GROUP BY t.language", 
-		     array(':l.rid' => $rid));
+  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :rid GROUP BY t.language",
+            array(':rid' => $rid));
   return $result->fetchAllKeyed();
 }
 
@@ -258,7 +265,7 @@ function l10n_packager_translation_last_updated($rid) {
  * Get files for a release, indexed by language.
  */
 function l10n_packager_release_get_files($rid) {
-  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {files} f ON r.fid = f.fid WHERE r.rid = :r.rid', 
-		     array(':r.rid' => $rid));
+  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {file_managed} f ON r.fid = f.fid WHERE r.rid = :rid',
+            array(':rid' => $rid));
   return $result->fetchAllAssoc('language');
 }

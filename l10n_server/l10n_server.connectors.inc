@@ -99,9 +99,9 @@ function theme_l10n_server_admin_connectors_form($variables) {
 
   // Put our overview into a table and add remaining form items.
   $headers = array(t('Enabled'), t('Connector'), array(
-      'colspan' => $max_operations,
-      'data' => t('Operations'),
-    ));
+               'colspan' => $max_operations,
+               'data' => t('Operations'),
+             ));
   $output = theme('table', array('header' => $headers, 'rows' => $rows));
   $output .= drupal_render_children($form);
   return $output;
@@ -137,7 +137,7 @@ function l10n_server_connector_configure($connector = NULL, $source = NULL) {
 /**
  * Settings form callback.
  */
-function l10n_server_connectors_files_settings_form(&$form_state, $connector_name, $source_name) {
+function l10n_server_connectors_files_settings_form($form, &$form_state, $connector_name, $source_name) {
   $form['#connector_name'] = $connector_name;
 
   $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory'] = array(
@@ -145,7 +145,7 @@ function l10n_server_connectors_files_settings_form(&$form_state, $connector_nam
     '#description' => t('The directory on the local file system to be scanned for source data. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Fishbowl/fishbowl-1.2.tar.gz is from project "Fishbowl" in version 1.2, while campwizard-3.4.tar.gz is project "campwizard" in version 3.4.'),
     '#type' => 'textfield',
     '#required' => TRUE,
-    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory', file_directory_path() . '/' . $connector_name),
+    '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_directory', conf_path() . '/files/' . $connector_name),
     // Create directory by default if possible.
     '#after_build' => array('l10n_server_connectors_files_check_directory'),
   );

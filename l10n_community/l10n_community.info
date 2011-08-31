@@ -1,17 +1,8 @@
 name = Localization community UI
 description = Community interface for string translation
-dependencies[] = jquery_update
 dependencies[] = l10n_server
 package = "Localization server"
 core = 7.x
 php = 5
 
-files[] = export.inc
-files[] = import.inc
-files[] = l10n_community.admin.inc
-files[] = l10n_community.install
-files[] = l10n_community.module
-files[] = pages.inc
-files[] = translate.inc
-files[] = welcome.inc
 files[] = tests/l10n_community.test

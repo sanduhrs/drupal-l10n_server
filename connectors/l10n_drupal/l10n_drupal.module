@@ -41,10 +41,10 @@ function l10n_drupal_cron() {
       FROM {l10n_server_project} p INNER JOIN
            {l10n_server_release} r ON p.pid = r.pid
       WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
-     0, variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1)
+              0, variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1)
     );
     $return = array();
-    while ($release = db_fetch_object($result)) {
+    foreach ($result as $release) {
       l10n_drupal_drupalorg_parse_release($release);
     }
   }

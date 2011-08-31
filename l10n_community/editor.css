@@ -22,15 +22,19 @@ body {
   padding: 0.5em;
 }
 
-.l10n-table ul {
+.l10n-table td ul {
   margin: 0;
   padding: 0;
 }
-.l10n-table li {
+.l10n-table td li {
   list-style: none;
   background: none;
   padding: 0;
   margin: 0;
+}
+
+.l10n-table label {
+  font-weight: normal;
 }
 
 td.source {
@@ -74,14 +78,14 @@ td.source {
     padding: 0;
   }
 
-li.translation {
+td li.translation {
   padding: 4px 0 4px 20px; /* LTR */
   clear: left; /* LTR */
   position: relative;
   -webkit-transition: opacity 0.2s ease-out;
 }
 
-li.translation > .selector {
+td li.translation > .selector {
   position: absolute;
   left: 2px; /* LTR */
   top: 5px;
@@ -91,6 +95,7 @@ li.translation > .selector {
 
 .l10n-table ul.actions {
   float: right; /* LTR */
+  margin: 0;
 }
   li.translation.is-active > .actions li.declined { display: none; }
   .l10n-table ul.actions {
@@ -129,6 +134,9 @@ li.translation > .selector {
   }
   li.translation:hover > .actions li label {
     opacity: 1;
+  }
+  .actions li.declined .form-checkbox {
+    display: none;
   }
 
   .l10n-string > br {

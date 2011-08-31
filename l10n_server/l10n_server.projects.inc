@@ -29,7 +29,9 @@ function l10n_server_admin_projects() {
 function l10n_server_admin_projects_form($form, &$form_state, $projects) {
   $form = array();
   $form['pager'] = array(
-    '#value' => theme('pager', array('tags' => NULL, 'element' => 0)),
+    '#theme' => 'pager',
+    '#tags' => NULL,
+    '#element' => 0,
   );
   $form['orphans'] = array(
     '#type' => 'value',
@@ -43,23 +45,23 @@ function l10n_server_admin_projects_form($form, &$form_state, $projects) {
   foreach ($projects as $project) {
     $form['projects'][$project->pid] = array(
       'title' => array(
-        '#value' => $project->title . '<br /><small>' . (!empty($project->home_link) ? '<a href="' . $project->home_link . '">' . $project->home_link . '</a>' : t('No link available')) . '</small>',
+        '#markup' => $project->title . '<br /><small>' . (!empty($project->home_link) ? '<a href="' . $project->home_link . '">' . $project->home_link . '</a>' : t('No link available')) . '</small>',
       ),
       'status' => array(
         '#type' => 'checkbox',
         '#default_value' => $project->status,
       ),
       'reset' => array(
-        '#value' => l(t('Start over'), 'admin/l10n_server/projects/reset/' . $project->uri),
+        '#markup' => l(t('Start over'), 'admin/l10n_server/projects/reset/' . $project->uri),
       ),
       'delete' => array(
-        '#value' => $orphans ? '' : l(t('Delete'), 'admin/l10n_server/projects/delete/' . $project->uri),
+        '#markup' => $orphans ? '' : l(t('Delete'), 'admin/l10n_server/projects/delete/' . $project->uri),
       ),
       'releases' => array(
-        '#value' => l(t('Releases'), 'admin/l10n_server/projects/releases/' . $project->uri),
+        '#markup' => l(t('Releases'), 'admin/l10n_server/projects/releases/' . $project->uri),
       ),
       'edit' => array(
-        '#value' => l(t('Edit'), 'admin/l10n_server/projects/edit/' . $project->uri),
+        '#markup' => l(t('Edit'), 'admin/l10n_server/projects/edit/' . $project->uri),
       ),
     );
   }
@@ -94,9 +96,9 @@ function theme_l10n_server_admin_projects_form($variables) {
     );
   }
   $headers = array(t('Enabled'), t('Project'), array(
-      'data' => t('Operations'),
-      'colspan' => 4,
-    ));
+               'data' => t('Operations'),
+               'colspan' => 4,
+             ));
   $output .= theme('table', array('header' => $headers, 'rows' => $table));
   $output .= $pager;
   $output .= drupal_render_children($form);
@@ -115,8 +117,8 @@ function l10n_server_admin_projects_form_submit($form, &$form_state) {
   foreach ($form_state['values']['projects'] as $pid => $project) {
     db_update('l10n_server_project')
       ->fields(array(
-		     'status' => $project['status'],
-		     ))
+          'status' => $project['status'],
+        ))
       ->condition('pid', $pid)
       ->execute();
   }
@@ -205,25 +207,25 @@ function l10n_server_admin_releases_form($form, &$form_state, $project, $release
   foreach ($releases as $release) {
     $form['releases'][$release->rid] = array(
       'title' => array(
-        '#value' => $release->title,
+        '#markup' => $release->title,
       ),
       'download_link' => array(
-        '#value' => (!empty($release->download_link) ? l(basename($release->download_link), $release->download_link) : t('none')),
+        '#markup' => (!empty($release->download_link) ? l(basename($release->download_link), $release->download_link) : t('none')),
       ),
       'file_date' => array(
-        '#value' => (!empty($release->file_date) ? format_date($release->file_date) : t('n/a')),
+        '#markup' => (!empty($release->file_date) ? format_date($release->file_date) : t('n/a')),
       ),
       'is_parsed' => array(
-        '#value' => (!empty($release->last_parsed) ? theme('image', array('path' => 'misc/watchdog-ok.png', 'width' => t('parsed'), 'height' => t('parsed'))) : ''),
+        '#markup' => (!empty($release->last_parsed) ? theme('image', array('path' => 'misc/watchdog-ok.png', 'width' => t('parsed'), 'height' => t('parsed'))) : ''),
       ),
       'last_parsed' => array(
-        '#value' => (!empty($release->last_parsed) ? format_date($release->last_parsed) : t('n/a')),
+        '#markup' => (!empty($release->last_parsed) ? format_date($release->last_parsed) : t('n/a')),
       ),
       'weight' => array(
-        '#value' => (!empty($release->weight) ? $release->weight : t('n/a')),
+        '#markup' => (!empty($release->weight) ? $release->weight : t('n/a')),
       ),
       'operations' => array(
-        '#value' => array(
+        '#markup' => array(
           ($source == 'uploads' ? l(t('Edit'), 'admin/l10n_server/projects/releases/' . $project->uri . '/edit/' . $release->rid) : ''),
           l(t('Start over'), 'admin/l10n_server/projects/releases/' . $project->uri . '/reset/' . $release->rid),
           l(t('Delete'), 'admin/l10n_server/projects/releases/' . $project->uri . '/delete/' . $release->rid),
@@ -258,7 +260,7 @@ function theme_l10n_server_admin_releases_form($variables) {
       drupal_render($release_element['weight']),
     );
     $max_operations = max($max_operations, count($release_element['operations']));
-    foreach ($release_element['operations']['#value'] as $operation) {
+    foreach ($release_element['operations']['#markup'] as $operation) {
       $row[] = $operation;
     }
     $table[] = $row;
@@ -266,12 +268,12 @@ function theme_l10n_server_admin_releases_form($variables) {
     drupal_render($release_element['operations']);
   }
   $headers = array(array(
-      'data' => t('Release'),
-      'colspan' => 2,
-    ), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array(
-      'data' => t('Operations'),
-      'colspan' => $max_operations,
-    ));
+               'data' => t('Release'),
+               'colspan' => 2,
+             ), t('Download link'), t('File date'), t('Last parsed'), t('Weight'), array(
+               'data' => t('Operations'),
+               'colspan' => $max_operations,
+             ));
   $output .= theme('table', array('header' => $headers, 'rows' => $table));
   $output .= drupal_render_children($form);
   return $output;
@@ -288,7 +290,7 @@ function l10n_server_admin_projects_cleanup() {
     return drupal_get_form('l10n_server_admin_projects_cleanup_form', $orphans);
   }
   drupal_set_message(t('You have no orphan source strings in your database to clean up.'));
-  return '';
+  return array();
 }
 
 /**
@@ -379,10 +381,10 @@ function l10n_server_admin_projects_edit_form($form, &$form_state, $project_uri 
   if (!empty($project->pid)) {
     if ($source != 'uploads') {
       $form['uri']['#type'] = 'item';
-      $form['uri']['#value'] = check_plain($form['uri']['#default_value']);
+      $form['uri']['#markup'] = check_plain($form['uri']['#default_value']);
     }
     $form['connector_module']['#type'] = 'item';
-    $form['connector_module']['#value'] = check_plain($connector_list[$form['connector_module']['#default_value']]);
+    $form['connector_module']['#markup'] = check_plain($connector_list[$form['connector_module']['#default_value']]);
   }
   return $form;
 }

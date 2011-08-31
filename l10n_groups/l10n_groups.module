@@ -123,7 +123,7 @@ function l10n_groups_block_info() {
   $blocks = array(
     'info' => array(
       'info' => t('Localization group information'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
   );
   return $blocks;
@@ -169,9 +169,9 @@ function l10n_groups_node_info() {
 function l10n_groups_insert($node) {
   $id = db_insert('l10n_groups_group')
     ->fields(array(
-		   'nid' => $node->nid,
-		   'language' => $node->l10n_group_language,
-		   ))
+        'nid' => $node->nid,
+        'language' => $node->l10n_group_language,
+      ))
     ->execute();
   l10n_community_cache_clear_all();
 }
@@ -246,7 +246,7 @@ function l10n_groups_node_access($node, $op, $account) {
 /**
  * Implements hook_form().
  */
-function l10n_groups_form($node, $form_state) {
+function l10n_groups_form($node, &$form_state) {
   $form = array();
 
   $form['title'] = array(
@@ -265,7 +265,7 @@ function l10n_groups_form($node, $form_state) {
       '#type' => 'item',
       '#title' => t('Language'),
       '#description' => t('The language managed by this group. This cannot be modified.'),
-      '#value' => $languages[$node->l10n_group_language],
+      '#markup' => $languages[$node->l10n_group_language],
       '#weight' => -5,
     );
     // Store the language value for hook_update.
@@ -277,7 +277,7 @@ function l10n_groups_form($node, $form_state) {
   else {
     // Create a list of languages on the site having no translation group.
     $groups = db_query('SELECT language FROM {l10n_groups_group}');
-    while ($group = db_fetch_object($groups)) {
+    foreach ($groups as $group) {
       if ($languages[$group->language]) {
         unset($languages[$group->language]);
       }
@@ -335,7 +335,7 @@ function l10n_groups_og_links_alter(&$links, $node) {
       $txt = t('Join');
     }
     if (isset($txt)) {
-      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => 'link-button'), 'html' => TRUE, 'query' => drupal_get_destination()));
+      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => array('link-button')), 'html' => TRUE, 'query' => drupal_get_destination()));
     }
   }
 }
@@ -354,7 +354,7 @@ function l10n_groups_get_groups() {
   if (!isset($groups)) {
     $groups = array();
     $result = db_query('SELECT nid, language FROM {l10n_groups_group}');
-    while ($group = db_fetch_object($result)) {
+    foreach ($result as $group) {
       $groups[$group->language] = $group->nid;
     }
   }
@@ -380,7 +380,7 @@ function l10n_groups_pick_go() {
       return array(
         '#type' => 'item',
         '#title' => count($groups) > 1 ? t('Your groups') : t('Your group'),
-        '#value' => join(', ', $groups),
+        '#markup' => join(', ', $groups),
         '#l10n_groups' => array_keys($groups),
       );
     }
@@ -415,7 +415,7 @@ function l10n_groups_broadcast($langcode) {
 function l10n_groups_l10n_community_build_language_page($language) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
-    $output = check_markup($group_node->body, $group_node->format, $langcode = '' /* TODO Set this variable. */, FALSE) . '</div>';
+    $output = check_markup($group_node->body, $group_node->format, $langcode = $language->language, FALSE);
   }
   else {
     $output = t('Group not found or not accessible. No information to display.');

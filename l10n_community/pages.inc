@@ -24,37 +24,38 @@ function l10n_community_explore_languages() {
 
   // Generate listing of all languages with summaries. The list of languages
   // is relatively "short", compared to projects, so we don't need a pager here.
-  $table = array();
+  $table_rows = array();
   $string_counts = l10n_community_get_string_count('languages');
   foreach ($languages as $langcode => $language) {
     if (empty($language->plurals)) {
-      $table[] = array(
+      $table_rows[] = array(
         array(
           'data' => t($language->name),
           'sortdata' => t($language->name),
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
-          'class' => 'error',
+          'class' => array('error'),
         ),
         array('data' => ''),
       );
     }
     else {
       $stats = l10n_community_get_stats($langcode);
-      // TODO Please change this theme call to use an associative array for the $variables parameter.
       $progress = array_shift(theme(
-        'l10n_community_progress_columns',
-        $num_source,
-        @$string_counts[$langcode]['translations'],
-        @$string_counts[$langcode]['suggestions']
-      ));
-      $table[] = array(
+                    'l10n_community_progress_columns',
+                    array(
+                      'sum' => $num_source,
+                      'translated' => @$string_counts[$langcode]['translations'],
+                      'has_suggestion' => @$string_counts[$langcode]['suggestions']
+                    )
+                  ));
+      $table_rows[] = array(
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),
           'sortdata' => t($language->name),
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => $progress,
@@ -72,23 +73,18 @@ function l10n_community_explore_languages() {
     usort($table, 'l10n_server_sort_by_column_language');
   }
 
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
+  $header = array(
+    array('data' => t('Language'), 'class' => array('rowhead'), 'field' => 'language'),
+    array('data' => t('Overall progress'), 'field' => 'progress'),
+    array('data' => t('Contributors'), 'field' => 'contributors'),
+  );
   return theme(
     'table',
     array(
-    array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-    array(
-      'data' => t('Overall progress'),
-      'field' => 'progress',
-    ),
-    array(
-      'data' => t('Contributors'),
-      'field' => 'contributors',
-    ),
-  ),
-    $table,
-    array('class' => 'l10n-community-overview l10n-community-highlighted')
-  );
+      'header' => $header,
+      'rows' => $table_rows,
+      'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted')),
+    ));
 }
 
 /**
@@ -130,7 +126,7 @@ function l10n_community_explore_projects() {
   // If we have more projects compared to what we show at the moment, display
   // an autocomplete jumpbox to jump to a project.
   if (count($string_counts) > $pager_setting) {
-    $output .= drupal_get_form('l10n_community_explore_projects_jump_form');
+    $output .= drupal_render(drupal_get_form('l10n_community_explore_projects_jump_form'));
   }
 
   $pager = theme('pager', array('tags' => NULL, 'element' => 0));
@@ -142,14 +138,14 @@ function l10n_community_explore_projects() {
   foreach ($projects as $project) {
     $table[] = array_merge(
       array(
-      array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => 'rowhead'),
-    ),
+        array('data' => l($project->title, 'translate/projects/' . $project->uri), 'class' => array('rowhead')),
+      ),
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
       theme('l10n_community_progress_columns', array('sum' => (@$string_counts[$project->pid]['count'] * $language_count), 'translated' => @$string_counts[$project->pid]['translations'], 'has_suggestion' => @$string_counts[$project->pid]['suggestions']))
     );
   }
-  $output .= theme('table', array('header' => theme('l10n_community_progress_headers', array('mainhead' => t('Project'))), 'rows' => $table, 'attributes' => array('class' => 'l10n-community-overview')));
+  $output .= theme('table', array('header' => theme('l10n_community_progress_headers', array('mainhead' => t('Project'))), 'rows' => $table, 'attributes' => array('class' => array('l10n-community-overview'))));
   $output .= $pager;
   return $output . '<div class="clear-block"></div>';
 }
@@ -157,7 +153,7 @@ function l10n_community_explore_projects() {
 /**
  * Provide a form to jump to a specific project from the project listing.
  */
-function l10n_community_explore_projects_jump_form($form) {
+function l10n_community_explore_projects_jump_form($form, &$form_state) {
   $form = array(
     '#prefix' => '<div class="container-inline">',
     '#suffix' => '</div>',
@@ -206,7 +202,7 @@ function l10n_community_overview_language($langcode = NULL) {
       if ($term = taxonomy_get_term_by_name('l10n-server-' . $languages[$langcode]->language)) {
         // Found tag, look for posts.
         $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-        while ($node = db_fetch_object($result)) {
+        foreach ($result as $node) {
           $content_output .= node_view(node_load($node->nid), 1);
         }
       }
@@ -226,10 +222,10 @@ function l10n_community_overview_language($langcode = NULL) {
   drupal_set_title(t('@language overview', array('@language' => t($languages[$langcode]->name))), PASS_THROUGH);
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore languages'), 'translate/languages'),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore languages'), 'translate/languages'),
+    )
   );
 
   return $content_output;
@@ -246,10 +242,10 @@ function l10n_community_overview_project($uri = NULL) {
   // Add missing breadcrumb.
   drupal_set_breadcrumb(
     array(
-    l(t('Home'), NULL),
-    l(t('Translate'), 'translate'),
-    l(t('Explore projects'), 'translate/projects'),
-  )
+      l(t('Home'), NULL),
+      l(t('Translate'), 'translate'),
+      l(t('Explore projects'), 'translate/projects'),
+    )
   );
 
   if (!isset($uri)) {
@@ -288,7 +284,7 @@ function l10n_community_block_stats_project($project) {
   }
   $num_releases = count($releases);
 
-  $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :p.uri", array(':p.uri' => $project->uri))->fetchField();
+  $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :uri", array(':uri' => $project->uri))->fetchField();
 
   // Build list of links for summary.
   $list = array();
@@ -322,11 +318,11 @@ function l10n_community_block_stats_language($language) {
   return array(
     'subject' => t('Translation statistics'),
     'content' => theme('item_list', array('items' => array(
-  format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-  format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-  format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-  format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-))),
+                   format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+                   format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+                   format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+                   format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+                 ))),
   );
 }
 
@@ -370,37 +366,38 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
       $table[] = array(
         array(
           'data' => t($language->name) . ' (' . $langcode . ')',
-          'class' => 'rowhead',
+          'class' => array('rowhead'),
         ),
         array(
           'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
           'colspan' => '3',
-          'class' => 'error',
+          'class' => array('error'),
         ),
       );
     }
     else {
-      // TODO Please change this theme call to use an associative array for the $variables parameter.
       $table[] = array_merge(
         array(
-        array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => 'project=' . $project->uri)), 'class' => 'rowhead'),
-      ),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => array('project', $project->uri))), 'class' => array('rowhead')),
+        ),
         theme(
           'l10n_community_progress_columns',
-          $num_source,
-          @$string_counts[$langcode]['translations'],
-          @$string_counts[$langcode]['suggestions']
-        )
+          array(
+            'sum' => $num_source,
+            'translated' => @$string_counts[$langcode]['translations'],
+            'has_suggestion' => @$string_counts[$langcode]['suggestions']
+          ))
       );
     }
   }
-  // TODO Please change this theme call to use an associative array for the $variables parameter.
   $block['content'] = theme(
     'table',
-    theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
-    $table,
-    array('class' => 'l10n-community-overview')
-  ) . '<div class="clear-block"></div>';
+    array(
+      'headers' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
+      'rows' => $table,
+      'attributes' => array('class' => array('l10n-community-overview'))
+    ));
+  $block['content'] .= '<div class="clear-block"></div>';
 
   return $block;
 }
@@ -440,7 +437,7 @@ function l10n_communinty_project_releases_table($releases, $project_uri, $projec
     $rows[] = array(
       $link_releases ? l($release_title, 'translate/projects/' . $project_uri . '/releases/' . $release->rid) : $release_title,
       empty($release->download_link) ? t('n/a') : l(basename($release->download_link), $release->download_link),
-      format_date($release->file_date),
+      empty($release->file_date) ? t('n/a') : format_date($release->file_date),
       empty($release->last_parsed) ? t('in queue') : format_date($release->last_parsed),
       $file_count,
       $release->sid_count,
@@ -481,7 +478,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $output .= '<h3>' . t('Files parsed in this release') . '</h3>';
   $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = :rid', array(':rid' => $release->rid));
   $rows = array();
-  while ($file = db_fetch_object($result)) {
+  foreach ($result as $file) {
     // Shorten revision information, remove repetitive data.
     if (strpos($file->revision, ': n/a')) {
       $revision = t('n/a');
@@ -506,7 +503,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $output .= '<h3>' . t('Source code warnings identified') . '</h3>';
   $result = db_query("SELECT * FROM {l10n_server_error} WHERE rid = :rid", array(':rid' => $release->rid));
   $rows = array();
-  while ($warning = db_fetch_object($result)) {
+  foreach ($result as $warning) {
     $rows[] = array($warning->value);
   }
   $headers = array(t('Warning value'));
@@ -582,7 +579,7 @@ function theme_l10n_community_progress_columns($variables) {
 function theme_l10n_community_progress_headers($variables) {
   $mainhead = $variables['mainhead'];
   return array(
-    array('data' => $mainhead, 'class' => 'rowhead'),
+    array('data' => $mainhead, 'class' => array('rowhead')),
     t('Progress'),
     t('Untranslated'),
     t('Suggestions'),
@@ -622,7 +619,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'project':
       // Return a count of all strings in this project, id required.
-      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :l.pid', array(':l.pid' => $id))->fetchField();
+      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :pid', array(':pid' => $id))->fetchField();
 
     case 'languages':
       if ($stats = cache_get('l10n:count:languages:' . $id, 'cache')) {
@@ -644,11 +641,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
           $count_args = array(':pid' => $id);
         }
 	$result = db_query($count1_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->language]['translations'] = $row->translation_count;
         }
 	$result = db_query($count2_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->language]['suggestions'] = $row->translation_count;
         }
         cache_set('l10n:count:languages:' . $id, $sums, 'cache', CACHE_PERMANENT);
@@ -667,7 +664,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         // First get the count of strings available for translation.
         $sums = $count_args = array();
         $result = db_query("SELECT COUNT(DISTINCT sid) AS string_count, pid FROM {l10n_server_line} GROUP BY pid");
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid] = array('count' => $row->string_count);
         }
         // Get the count of distinct strings translated per project.
@@ -679,7 +676,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid]['translations'] = $row->translation_count;
         }
         // Get the count of distinct strings having suggestions per project.
@@ -691,7 +688,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
         }
         $count_sql .= 'GROUP BY l.pid';
         $result = db_query($count_sql, $count_args);
-        while ($row = db_fetch_object($result)) {
+        foreach ($result as $row) {
           $sums[$row->pid]['suggestions'] = $row->translation_count;
         }
         cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);
@@ -703,7 +700,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
       // Get summaries of people having most active translations per language.
       // Skip anonymous since that is used for placeholders when there was
       // no prior translations for a suggestion.
-      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = :lng AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", 0, 10, array(':lng', $id));
+      $result = db_query_range("SELECT COUNT(DISTINCT t.sid) AS sum, u.name, u.uid FROM {l10n_server_translation} t LEFT JOIN {users} u ON t.uid_entered = u.uid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND t.language = :lng AND u.uid != 0 GROUP BY t.uid_entered ORDER BY sum DESC", 0, 10, array(':lng' => $id));
       $accounts = $result->fetchAll();
 
       return $accounts;
@@ -720,20 +717,20 @@ function _l10n_community_alphabetic_pager() {
   $initials = l10n_server_get_project_initials();
   $items = array(
     array(
-      'class' => isset($_GET['initial']) ? 'pager-item' : 'pager-current',
+      'class' => array(isset($_GET['initial']) ? 'pager-item' : 'pager-current'),
       'data' => isset($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
     ),
   );
   foreach ($initials as $link => $data) {
     if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string) $link) {
       $items[] = array(
-        'class' => 'pager-current',
+        'class' => array('pager-current'),
         'data' => $data['title'],
       );
     }
     else {
       $items[] = array(
-        'class' => 'pager-item',
+        'class' => array('pager-item'),
         'data' => l($data['title'], 'translate/projects', array('query' => array('initial' => $link))),
       );
     }
@@ -743,7 +740,7 @@ function _l10n_community_alphabetic_pager() {
   // and then if we only have one item to filter additionally, we only have one
   // possible letter. Not much value for displaying this pager.
   if (count($items) > 2) {
-    $output .= theme('item_list', array('items' => $items, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class' => 'pager pager-alphabetic')));
+    $output .= theme('item_list', array('items' => $items, 'title' => NULL, 'type' => 'ul', 'attributes' => array('class' => array('pager pager-alphabetic'))));
   }
 
   return $output;

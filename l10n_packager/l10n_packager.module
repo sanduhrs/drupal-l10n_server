@@ -95,12 +95,16 @@ function l10n_packager_check_updates() {
     $count_files = $count_check = 0;
 
     // Go for it: check releases for repackaging. We need project_uri for later.
-    $result = db_query_range("SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri FROM {l10n_server_release} r INNER JOIN {l10n_server_project} p ON r.pid = p.pid LEFT JOIN {l10n_packager_release} pr ON pr.rid = r.rid WHERE pr.status IS NULL OR (pr.status = :status AND (pr.checked < :checked OR pr.updated < :updated)) ORDER BY pr.checked",
-			     0, variable_get('l10n_packager_release_limit', 10)
-			     array(':status' => L10N_PACKAGER_ACTIVE, 
-				   ':checked' => $timestamp, 
-				   ':updated' => $timestamp));
-    while ((!$file_limit || $file_limit > $count_files) && ($release = db_fetch_object($result))) {
+    $query = "SELECT r.rid, r.pid, r.title, pr.checked, pr.updated, pr.status, p.uri
+              FROM {l10n_server_release} r
+              INNER JOIN {l10n_server_project} p ON r.pid = p.pid
+              LEFT JOIN {l10n_packager_release} pr ON pr.rid = r.rid
+              WHERE pr.status IS NULL
+                 OR (pr.status = :status AND (pr.checked < :checked OR pr.updated < :updated))
+              ORDER BY pr.checked";
+    $result = db_query_range($query, 0, variable_get('l10n_packager_release_limit', 10),
+              array(':status' => L10N_PACKAGER_ACTIVE, ':checked' => $timestamp, ':updated' => $timestamp));
+    while ((!$file_limit || $file_limit > $count_files) && ($release = $result->fetchObject())) {
       $updates = l10n_packager_release_check($release, FALSE, $file_limit - $count_files, NULL, TRUE);
       $count_files += count($updates);
       $count_check++;
@@ -121,7 +125,7 @@ function l10n_packager_block_info() {
   $blocks = array(
     'download' => array(
       'info' => t('Localization packager downloads'),
-      'cache' => BLOCK_NO_CACHE,
+      'cache' => DRUPAL_NO_CACHE,
     ),
   );
   return $blocks;
@@ -140,7 +144,7 @@ function l10n_packager_block_view($delta) {
           $arg3 = arg(3);
           if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
             return array(
-              'content' => l('<span>' . t('Download translations') . '</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => 'link-button'))),
+              'content' => l('<span>' . t('Download translations') . '</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => array('link-button')))),
             );
           }
         }
@@ -222,7 +226,7 @@ function l10n_packager_export_metafile() {
  * Get directory for creating files
  */
 function l10n_packager_directory() {
-  return variable_get('l10n_packager_directory', file_directory_path() . '/l10n_packager');
+  return file_default_scheme() . '://l10n_packager';
 }
 
 /**
@@ -247,13 +251,13 @@ function l10n_packager_get_filepath($release, $language = NULL, $pattern = NULL)
   // Get version information from release title
   if ($release->uri == 'drupal') {
     // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
-    list(@$version, $extra) = explode('-', $release->title);
+    list($version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
     $core = $major . '.x';
   }
   else {
     // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1
-    list(@$core, $version, $extra) = explode('-', $release->title);
+    list($core, $version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
   }
   $replace = array(
@@ -297,7 +301,11 @@ function l10n_packager_build_download_links($uri) {
     $list = array();
     foreach ($paths as $path => $dummy) {
       list($core, $name) = explode('/', $path);
-      $list[] = l(t('Translations for @core_version', array('@core_version' => $core)), $url . '/' . $path);
+      $list[] = array('data' => array(
+                  '#type' => 'link',
+                  '#title' => t('Translations for @core_version', array('@core_version' => $core)),
+                  '#href' =>  $url . '/' . $path,
+                ));
     }
 
     $rendered = count($list) ? theme('item_list', array('items' => $list)) : t('No downloads available for this project.');
@@ -368,7 +376,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
 
   // Make a list of up and coming 20 projects as well.
   $downloads = array();
-  while ($project = db_fetch_object($result)) {
+  foreach ($result as $project) {
     $downloads = array_merge($downloads, l10n_packager_project_downloads($project, $language, TRUE, $download_headers));
   }
   if (!empty($downloads)) {
@@ -394,8 +402,8 @@ function l10n_packager_l10n_community_build_language_page($language) {
 function l10n_packager_project_downloads($project, $language, $summary = FALSE, $headers = array()) {
   $files = array();
   $branches = array();
-  $result = db_query("SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = :r.pid AND lf.language = :lf.language", array(':r.pid' => $project->pid, ':lf.language' => $language->language));
-  while ($item = db_fetch_object($result)) {
+  $result = db_query("SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {file_managed} f ON lf.fid = f.fid WHERE r.pid = :pid AND lf.language = :language", array(':pid' => $project->pid, ':language' => $language->language));
+  foreach ($result as $item) {
     // @todo: bad, bad harcoding of Drupal versioning schemes.
     $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) . 'x';
     $branches[$branch] = TRUE;
@@ -420,11 +428,20 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
     $up_to_date = max($latest_item->checked, $latest_item->release_checked);
 
     $rows[] = array(
-      'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,
+      'class' => array('l10n-packager-detail l10n-packager-detail-' . $uri_class),
       'data' => array(
-        l($project->title, 'translate/projects/' . $project->uri),
+        array('data' => array(
+            '#type' => 'link',
+            '#title' => $project->title,
+            '#href' => 'translate/projects/' . $project->uri,
+          )),
         $latest_item->title,
-        l(t('Download') . ' <span class="filesize">(' . format_size($latest_item->filesize) . ')</span>', $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename, array('html' => TRUE)),
+        array(
+          'data' => array(
+            '#type' => 'link',
+            '#title' => t('Download') . ' <span class="filesize">(' . format_size($latest_item->filesize) . ')</span>',
+            '#href' => $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename,
+          )),
         format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0),
         format_date($up_to_date, 'custom', 'Y-M-d', 0),
       ),
@@ -434,15 +451,24 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
 
   if (count($summary_list) && $summary) {
     $summary_row = array(
-      'class' => 'l10n-packager-summary',
+      'class' => array('l10n-packager-summary'),
       'id' => 'l10n-packager-summary-' . $uri_class,
-      'data' => array(l('&#9658; ' . check_plain($project->title), 'translate/projects/' . $project->uri, array('html' => TRUE, 'attributes' => array('class' => 'expand'))), array(
+      'data' => array(
+        array(
+          'data' => array(
+            '#type' => 'link',
+            '#title' => '&#9658; ' . check_plain($project->title),
+            '#href' => 'translate/projects/' . $project->uri,
+            '#options' => array('class' => array('expand')),
+          )),
+        array(
           'data' => join(', ', $summary_list),
           'colspan' => 4,
-        )),
+        )
+      ),
     );
     $headers = array(
-      'class' => 'l10n-packager-detail l10n-packager-detail-' . $uri_class,
+      'class' => array('l10n-packager-detail l10n-packager-detail-' . $uri_class),
       'data' => $headers,
     );
     array_unshift($rows, $headers);

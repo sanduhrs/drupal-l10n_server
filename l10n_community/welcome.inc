@@ -24,36 +24,37 @@ function l10n_community_welcome_page() {
     $num_source = l10n_community_get_string_count('project', $project->pid);
     $string_counts = l10n_community_get_string_count('languages', $project->pid);
 
-    $table = array();
+    $table_rows = array();
     foreach ($languages as $langcode => $language) {
       if (empty($language->plurals)) {
-        $table[] = array(
+        $table_rows[] = array(
           array(
             'data' => t($language->name),
             'sortdata' => t($language->name),
-            'class' => 'rowhead',
+            'class' => array('rowhead'),
           ),
           array(
             'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
-            'class' => 'error',
+            'class' => array('error'),
           ),
           array('data' => ''),
         );
       }
       else {
         $stats = l10n_community_get_stats($langcode);
-        // TODO Please change this theme call to use an associative array for the $variables parameter.
         $progress = array_shift(theme(
-          'l10n_community_progress_columns',
-          $num_source,
-          @$string_counts[$langcode]['translations'],
-          @$string_counts[$langcode]['suggestions']
-        ));
-        $table[] = array(
+                      'l10n_community_progress_columns',
+                      array(
+                        'sum' => $num_source,
+                        'translated' => @$string_counts[$langcode]['translations'],
+                        'has_suggestion' => @$string_counts[$langcode]['suggestions']
+                      )
+                    ));
+        $table_rows[] = array(
           array(
             'data' => l(t($language->name), 'translate/languages/' . $langcode),
             'sortdata' => t($language->name),
-            'class' => 'rowhead',
+            'class' => array('rowhead'),
           ),
           array(
             'data' => $progress,
@@ -68,26 +69,21 @@ function l10n_community_welcome_page() {
     }
 
     if (!empty($_GET['sort']) && !empty($_GET['order'])) {
-      usort($table, 'l10n_server_sort_by_column_language');
+      usort($table_rows, 'l10n_server_sort_by_column_language');
     }
 
-    // TODO Please change this theme call to use an associative array for the $variables parameter.
+    $header = array(
+      array('data' => t('Language'), 'field' => 'language', 'class' => array('rowhead')),
+      array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
+      array('data' => t('Contributors'), 'field' => 'contributors'),
+    );
     $output = theme(
       'table',
       array(
-      array('data' => t('Language'), 'class' => 'rowhead', 'field' => 'language'),
-      array(
-        'data' => t('@project progress', array('@project' => $project->title)),
-        'field' => 'progress',
-      ),
-      array(
-        'data' => t('Contributors'),
-        'field' => 'contributors',
-      ),
-    ),
-      $table,
-      array('class' => 'l10n-community-overview l10n-community-highlighted')
-    );
+        'header' => $header,
+        'rows' => $table_rows,
+        'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted'))
+      ));
 
     $projects = l10n_server_get_projects();
     $project_count = count($projects);
@@ -106,7 +102,7 @@ function l10n_community_welcome_page() {
  * @todo Please document this function.
  * @see http://drupal.org/node/1354
  */
-function l10n_community_pick_go(&$form_state) {
+function l10n_community_pick_go($form, &$form_state) {
   $form = array();
   $languages = l10n_community_get_languages();
   $projects = l10n_server_get_projects();
@@ -137,7 +133,7 @@ function l10n_community_pick_go(&$form_state) {
     }
     $form['dummy'] = array(
       '#type' => 'markup',
-      '#value' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/config/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
+      '#markup' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/config/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
     );
     return $form;
   }
@@ -233,7 +229,7 @@ function l10n_community_pick_go_submit($form, &$form_state) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
       if (user_access('browse translations')) {
-        drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', array('query' => array('project' => '\' . $uri')));
+        drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', array('query' => array('project' => '\\' . $uri)));
       }
       else {
         // Both language and project set, no access to browse > go to project.

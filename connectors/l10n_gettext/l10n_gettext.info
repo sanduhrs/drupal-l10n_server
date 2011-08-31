@@ -3,5 +3,3 @@ description = Manages translatable strings with Gettext standard input/output.
 dependencies[] = l10n_server
 package = "Localization server connectors"
 core = 7.x
-
-files[] = l10n_gettext.module

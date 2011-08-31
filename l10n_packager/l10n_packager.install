@@ -61,7 +61,7 @@ function l10n_packager_schema() {
         'not null' => TRUE,
       ),
       'fid' => array(
-        'description' => 'Reference to {files}.fid.',
+        'description' => 'Reference to {file_managed}.fid.',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,
@@ -91,26 +91,32 @@ function l10n_packager_schema() {
  */
 function l10n_packager_install() {
   // Set up blocks for this module.
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
-      ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
-      ->updateExcept('region', 'theme')
+          'module' => $module,
+          'delta'  => $delta,
+        ))
+      ->insertFields(array(
+          'module' => $module,
+          'delta'  => $delta,
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'sidebar_second',
+          'theme'  => $theme_key,
+          'pages'  => '',
+        ))
+      ->updateFields(array(
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+        ))
       ->execute();
-    }
   }
 }
 
@@ -128,28 +134,33 @@ function l10n_packager_update_6001() {
  * Set up blocks that were newly introduced.
  */
 function l10n_packager_update_6002() {
-  $theme_key = variable_get('theme_default', 'garland');
+  $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(-8 => 'download');
   $module = 'l10n_packager';
   foreach ($blocks as $weight => $delta) {
     // Insert or update all instances of this block even if we just added it.
     db_merge('block')
       ->key(array(
-		  'module' => $module,
-		  'delta'  => $delta,
-		  ))
-      ->fields(array(
-		     'cache'  => -1,
-		     'status' => 1,
-		     'weight' => $weight,
-		     'region' => 'right',
-		     'theme'  => $theme_key,
-		     ))
-      ->updateExcept('region', 'theme')
+          'module' => $module,
+          'delta'  => $delta,
+        ))
+      ->insertFields(array(
+          'module' => $module,
+          'delta'  => $delta,
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+          'region' => 'sidebar_second',
+          'theme'  => $theme_key,
+          'pages'  => '',
+        ))
+      ->updateFields(array(
+          'cache'  => -1,
+          'status' => 1,
+          'weight' => $weight,
+        ))
       ->execute();
-    }
   }
-
   return t('TODO Add a descriptive string here to show in the UI. l10n_packager_update_6002()');
 }
 

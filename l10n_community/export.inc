@@ -78,9 +78,9 @@ function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode 
       '#title' => t('Project'),
       '#required' => TRUE,
       '#default_value' => $form_state['values']['project'],
-      '#ahah' => array(
+      '#ajax' => array(
         // 'event' missing, Drupal will apply the per-#type defaults.
-        'path' => 'translate/releases-ahah',
+        'callback' => 'l10n_community_ajax_releases',
         'wrapper' => 'l10n-server-releases',
         'effect' => 'fade',
       ),
@@ -120,7 +120,7 @@ function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode 
     '#type' => 'select',
     '#options' => $release_options,
     '#default_value' => $form_state['values']['release'],
-    // Wrapper used to replace release options via AHAH.
+    // Wrapper used to replace release options via AJAX.
     '#prefix' => '<div id="l10n-server-releases">',
     '#suffix' => '</div>',
   );
@@ -362,7 +362,7 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
 function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   // l10n_community_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once DRUPAL_ROOT . '/' . 'Archive/Tar.php';
+  include_once 'Archive/Tar.php';
 
   $project = l10n_server_get_projects(array('uri' => $uri));
 
@@ -383,11 +383,11 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
     // Improve the query for templates
     $query->leftJoin('l10n_server_status_flag', 'st',
-		     'st.sid = s.sid AND st.language = :st.language',
-		     array(':st.language' => $language->language));
+      'st.sid = s.sid AND st.language = :language',
+      array(':language' => $language->language));
     $query->$translation_join('l10n_server_translation', 't',
-			      's.sid = t.sid AND t.language = :t.language AND t.is_active = 1',
-			      array(':t.language' => $language->language));
+      's.sid = t.sid AND t.language = :language AND t.is_active = 1',
+      array(':language' => $language->language));
     $query
       ->fields('t', array('translation', 'is_suggestion'))
       ->fields('st', array('has_suggestion'))
@@ -416,7 +416,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
   $export_string = $po_data = array();
 
   $result = $query->execute();
-  while ($string = $result->fetchObject()) {
+  foreach ($result as $string) {
     if ($string->sid != $previous_sid) {
       // New string in the stream.
       _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);

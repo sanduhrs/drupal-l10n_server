@@ -14,7 +14,7 @@ function l10n_packager_explore_downloads() {
   drupal_add_css(drupal_get_path('module', 'l10n_community') . '/l10n_community.css');
 
   $projects = l10n_server_get_projects();
-  $output = drupal_get_form('l10n_packager_download_project_form', $projects);
+  $form = drupal_get_form('l10n_packager_download_project_form', $projects);
 
   // @todo: remove hard-wired Drupal default from here.
   if (empty($_GET['project'])) {
@@ -27,12 +27,13 @@ function l10n_packager_explore_downloads() {
   }
   if (empty($project)) {
     drupal_set_message(t('Requested project not found.'), 'warning');
-    return $output;
+    return $form;
   }
 
   // Set proper title for given project.
   drupal_set_title(t('@project translation downloads', array('@project' => $project->title)), PASS_THROUGH);
 
+  $output = drupal_render($form);
   // Expire old entries and then try to look up our entry.
   cache_clear_all(NULL, 'cache_l10n_packager');
   $rendered = cache_get('download:' . $project->uri, 'cache_l10n_packager');
@@ -105,7 +106,7 @@ function l10n_packager_download_project_form_validate($form, &$form_state) {
  * Form submission.
  */
 function l10n_packager_download_project_form_submit($form, $form_state) {
-  drupal_goto('translate/downloads', array('query' => array('project' => '\' . $form_state[\'values\'][\'uri\']')));
+  drupal_goto('translate/downloads', array('query' => array('project' => '\\' . $form_state['values']['uri'])));
 }
 
 /**
@@ -114,8 +115,8 @@ function l10n_packager_download_project_form_submit($form, $form_state) {
 function l10n_packager_show_downloads($project) {
   $files = array();
   $branches = array();
-  $result = db_query('SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {files} f ON lf.fid = f.fid WHERE r.pid = :r.pid', array(':r.pid' => $project->pid));
-  while ($item = db_fetch_object($result)) {
+  $result = db_query('SELECT r.*, pr.*, pr.checked as release_checked, lf.*, f.* FROM {l10n_server_release} r INNER JOIN {l10n_packager_release} pr ON r.rid = pr.rid INNER JOIN {l10n_packager_file} lf ON r.rid = lf.rid INNER JOIN {file_managed} f ON lf.fid = f.fid WHERE r.pid = :pid', array(':pid' => $project->pid));
+  foreach ($result as $item) {
     // @todo: bad, bad harcoding of Drupal versioning schemes.
     $branch = preg_replace(($project->uri == 'drupal' ? '!^(\d\.)(.+)$!' : '!^(\d\.x-\d\.)(.+)$!'), '\1', $item->title) . 'x';
     $branches[$branch] = TRUE;
@@ -134,7 +135,12 @@ function l10n_packager_show_downloads($project) {
   foreach ($languages as $langcode => $language) {
     $row = array();
     // Start off the row with the language name and code.
-    $row[] = l(t($language->name), 'translate/languages/' . $langcode);
+    $row[] = array(
+      'data' => array(
+        '#type' => 'link',
+        '#title' => t($language->name),
+        '#href' => 'translate/languages/' . $langcode,
+      ));
     foreach (array_keys($branches) as $branch) {
       // Generate a cell for each major version.
       if (!empty($files[$langcode][$branch])) {
@@ -156,5 +162,5 @@ function l10n_packager_show_downloads($project) {
   }
 
   $header = array_merge(array(t('Languages')), array_keys($branches));
-  return theme('table', array('header' => $header, 'rows' => $table, 'attributes' => array('class' => 'l10n-packager-table')));
+  return theme('table', array('header' => $header, 'rows' => $table, 'attributes' => array('class' => array('l10n-packager-table'))));
 }
