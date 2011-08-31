@@ -122,12 +122,12 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
   $form['status']['translation'] = array(
     '#type' => 'select',
     '#options' => $translation_options,
-    '#default_value' => (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED | L10N_STATUS_IS_TRANSLATION),
+    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_TRANSLATED | L10N_STATUS_UNTRANSLATED | L10N_STATUS_IS_TRANSLATION),
   );
   $form['status']['suggestion'] = array(
     '#type' => 'select',
     '#options' => $suggestion_options,
-    '#default_value' => (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
+    '#default_value' => $form_state['values']['status'] & (L10N_STATUS_HAS_SUGGESTION | L10N_STATUS_NO_SUGGESTION | L10N_STATUS_IS_SUGGESTION),
   );
 
   $form['author'] = array(
