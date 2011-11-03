@@ -102,6 +102,13 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#attributes' => array('class' => $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default'),
   );
 
+  if ($form_state['values']['release'] != 'all' ) {
+    $form['startover'] = array(
+      '#value' => '<div class="start-over-link">' . l(t('Missing strings?'), 'translate/languages/' . $langcode . '/translate/reset/' . $form_state['values']['project'] . '/' . $form_state['values']['release']) . '</div>',
+      '#type' => 'markup',
+    );
+  }
+
   if (count($contexts = l10n_community_get_contexts()) > 1) {
     $form['context'] = array(
       '#title' => t('Context'),

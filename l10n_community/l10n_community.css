@@ -69,6 +69,13 @@ table.l10n-community-overview {
   left: 0; /* LTR */
   margin: 0 0 0.5em 1em; /* LTR */
 }
+.l10n-server-filter .filter-submit .start-over-link {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  margin: 0 0 0.5em 0; /* LTR */
+}
 
 /* Emphasized replaceable parts of translatables */
 em.l10n-community-marker {

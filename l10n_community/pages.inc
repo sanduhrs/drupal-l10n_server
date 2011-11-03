@@ -415,15 +415,14 @@ function l10n_community_project_releases($uri = NULL) {
     return '';
   }
 
-  return l10n_communinty_project_releases_table($releases, $uri, $project_name, TRUE, TRUE);
+  return l10n_communinty_project_releases_table($releases, $uri, $project_name);
 }
 
 /**
  * Display metadata based on a list of releases.
  */
-function l10n_communinty_project_releases_table($releases, $project_uri, $project_name, $link_releases = TRUE, $start_over = FALSE) {
+function l10n_communinty_project_releases_table($releases, $project_uri, $project_name, $link_releases = TRUE) {
   $rows = array();
-  $start_over = $start_over && user_access('start over packages');
   foreach ($releases as $release) {
     $file_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = %d', $release->rid));
     $error_count = db_result(db_query('SELECT COUNT(*) FROM {l10n_server_error} WHERE rid = %d', $release->rid));
@@ -437,40 +436,44 @@ function l10n_communinty_project_releases_table($releases, $project_uri, $projec
       $release->sid_count,
       $error_count ? l($error_count, 'translate/projects/' . $project_uri . '/releases/' . $release->rid, array('fragment' => 'source-warnings')) : $error_count,
     );
-    if ($start_over) {
-      $rows[count($rows) - 1][] = l(t('Start over'), 'translate/projects/' . $project_uri . '/releases/reset/' . $release->rid);
-    }
   }
   $header = array(t('Release'), t('Download'), t('File date'), t('Last parsed'), t('Files'), t('Strings'), t('Warnings'));
-  if ($start_over) {
-    $header[] = t('Operations');
-  }
   return theme('table', $header, $rows);
 }
 
 /**
  * Form callback to display a confirm form for resetting releases.
  */
-function l10n_communinty_projects_release_reset(&$form_state, $project_uri, $release_rid) {
-  $project = l10n_server_get_projects(array('uri' => $project_uri));
-  $releases = l10n_server_get_releases($project_uri, FALSE);
-  if (isset($releases[$release_rid])) {
-    $release = $releases[$release_rid];
-    $form = array(
-      'project' => array(
-        '#type' => 'value',
-        '#value' => $project,
-      ),
-      'release' => array(
-        '#type' => 'value',
-        '#value' => $release,
-      ),
-    );
-    return confirm_form($form, t('Are you sure you would like to start over with %project %release on this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'translate/projects/' . $project->uri . '/releases', t('This would remove almost all data associated with the release: files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. This action cannot be undone.'));
+function l10n_communinty_projects_release_reset(&$form_state, $langcode, $project_uri, $release_rid) {
+  if (user_access('start over packages')) {
+    $project = l10n_server_get_projects(array('uri' => $project_uri));
+    $releases = l10n_server_get_releases($project_uri, FALSE);
+    if (isset($releases[$release_rid])) {
+      $release = $releases[$release_rid];
+      $form = array(
+        'langcode' => array(
+          '#type' => 'value',
+          '#value' => $langcode,
+        ),
+        'project' => array(
+          '#type' => 'value',
+          '#value' => $project,
+        ),
+        'release' => array(
+          '#type' => 'value',
+          '#value' => $release,
+        ),
+      );
+      return confirm_form($form, t('Are you sure you would like to start over with %project %release on this Localization server?', array('%project' => $project->title, '%release' => $release->title)), 'translate/languages/' . $langcode . '/translate', t('This would remove almost all data associated with the release: files, line and parsing error information. Source strings found within this project and translations for them are temporarily kept. This action cannot be undone.'));
+    }
+    else {
+      drupal_set_message(t('The release is not found, or the selected %release release does not belong to the %project project.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)), 'error');
+      drupal_goto('translate/languages/' . $langcode . '/translate');
+    }
   }
   else {
-    drupal_set_message(t('The release is not found, or the selected %release release does not belongs to the %project project.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)), 'error');
-    drupal_goto('translate/projects/' . $project_uri . '/releases');
+    drupal_set_message(t('Please, contact your localization team manager (or any other translation community manager) with their personal contact form to solve this problem.'));
+    drupal_goto('translate/languages/' . $langcode . '/translate', 'project=' . $project_uri . '&release=' . $release_rid);
   }
 }
 
@@ -486,9 +489,9 @@ function l10n_communinty_projects_release_reset_submit($form, &$form_state) {
     drupal_set_message(t('Release data for %project %release was deleted from the Localization server.', array('%project' => $project->title, '%release' => $form_state['values']['release']->title)));
   }
   else {
-    drupal_set_message(t('The release is not found, or the selected %release release does not belongs to the %project project.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)), 'error');
+    drupal_set_message(t('The release is not found, or the selected %release release does not belong to the %project project.', array('%project' => $form_state['values']['project']->title, '%release' => $form_state['values']['release']->title)), 'error');
   }
-  $form_state['redirect'] = 'translate/projects/' . $form_state['values']['project']->uri . '/releases';
+  $form_state['redirect'] = 'translate/languages/' . $form_state['values']['langcode'] . '/translate';
 }
 
 /**
