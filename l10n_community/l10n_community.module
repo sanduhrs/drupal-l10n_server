@@ -262,15 +262,6 @@ function l10n_community_menu() {
     'file' => 'pages.inc',
     'type' => MENU_CALLBACK,
   );
-  $items['translate/languages/%l10n_community_language/translate/reset/%/%'] = array(
-    'load arguments' => array('%map'),
-    'title' => 'Reset release',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('l10n_communinty_projects_release_reset', 2, 5, 6),
-    'file' => 'pages.inc',
-    'access arguments' => array('browse translations'),
-    'type' => MENU_CALLBACK,
-  );
 
   return $items;
 }
@@ -356,7 +347,6 @@ function l10n_community_perm() {
     'submit suggestions',
     'moderate suggestions from others',
     'moderate own suggestions',
-    'start over packages',
   );
 }
 
