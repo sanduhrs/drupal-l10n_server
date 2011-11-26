@@ -530,7 +530,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
  */
 function l10n_community_translate_byline($name, $uid, $time, $medium, $type, $link_user = TRUE) {
   $params = array(
-    '!author' => $uid ? ($link_user ? theme('username', (object) array('name' => $name, 'uid' => $uid)) : check_plain($name)) : t('uknown user'),
+    '!author' => $uid ? ($link_user ? theme('username', (object) array('name' => $name, 'uid' => $uid)) : check_plain($name)) : t('unknown user'),
     // Also skip handling time if uid was not specified (for decline entries
     // in the update, which have time for ordering reasons, but no uid).
     '@date' => $time && $uid ? format_date($time) : t('unknown time'),
