@@ -47,6 +47,9 @@ table.l10n-community-overview {
 .l10n-server-filter .filter-widget .form-item {
   margin-top: 0;
 }
+.l10n-server-filter .form-item#edit-release-wrapper {
+  margin-bottom: 0;
+}
 .l10n-server-filter .form-item#edit-status-translation-wrapper {
   margin-bottom: 0;
 }

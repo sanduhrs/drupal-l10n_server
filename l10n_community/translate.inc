@@ -102,6 +102,11 @@ function l10n_community_filter_form(&$form_state, $langcode, $filters) {
     '#attributes' => array('class' => $form_state['values']['release'] == 'all' ? 'is-default' : 'is-not-default'),
   );
 
+  if ($form_state['values']['release'] != 'all' ) {
+    $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
+    $form['release']['#suffix'] = '<div class="start-over-link">' . l(t('Missing strings?'), 'translate/languages/' . $langcode . '/translate/reset/' . $selected_project->uri . '/' . $form_state['values']['release']) . '</div></div>';
+  }
+
   if (count($contexts = l10n_community_get_contexts()) > 1) {
     $form['context'] = array(
       '#title' => t('Context'),
