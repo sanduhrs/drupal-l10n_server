@@ -177,7 +177,7 @@ function l10n_drupal_drupalorg_scan() {
           ))
         ->execute();
       // Save last insert ID for release update code.
-      $project->pid = $last_pid
+      $project->pid = $last_pid;
       $projects[$project->uri] = $project;
     }
     unset($local_projects[$project->uri]);

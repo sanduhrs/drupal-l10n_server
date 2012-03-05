@@ -44,13 +44,13 @@ function l10n_community_explore_languages() {
     else {
       $stats = l10n_community_get_stats($langcode);
       $progress = array_shift(theme(
-                    'l10n_community_progress_columns',
-                    array(
-                      'sum' => $num_source,
-                      'translated' => @$string_counts[$langcode]['translations'],
-                      'has_suggestion' => @$string_counts[$langcode]['suggestions']
-                    )
-                  ));
+        'l10n_community_progress_columns',
+        array(
+          'sum' => $num_source,
+          'translated' => @$string_counts[$langcode]['translations'],
+          'has_suggestion' => @$string_counts[$langcode]['suggestions']
+        )
+      ));
       $table_rows[] = array(
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),
@@ -318,11 +318,11 @@ function l10n_community_block_stats_language($language) {
   return array(
     'subject' => t('Translation statistics'),
     'content' => theme('item_list', array('items' => array(
-                   format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
-                   format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
-                   format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
-                   format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
-                 ))),
+      format_plural($stats_numbers['users'], '1 contributor', '@count contributors'),
+      format_plural($stats_numbers['strings'], '1 string to translate', '@count strings to translate'),
+      format_plural($stats_numbers['translations'], '1 translation recorded', '@count translations recorded'),
+      format_plural($stats_numbers['suggestions'], '1 suggestion awaiting approval', '@count suggestions awaiting approval'),
+    ))),
   );
 }
 
@@ -549,7 +549,7 @@ function theme_l10n_community_progress_columns($variables) {
   // Compute numbers, percentages and provide alternate text titles.
   $done_percent = round($translated / $sum * 100, 2);
   $status = array(
-    'translated' => array((int) $translated, $done_percent, t('!percent translated')),
+    'translated' => array((int)$translated, $done_percent, t('!percent translated')),
     'untranslated' => array($sum - $translated, 100 - $done_percent, t('!percent untranslated')),
     // suggestions are not in the bar as they overlap with both translated and
     // untranslated strings, so we cannot display them here.
@@ -567,9 +567,9 @@ function theme_l10n_community_progress_columns($variables) {
   return array(
     $bar,
     ($sum - $translated),
-    (int) $has_suggestion
+    (int)$has_suggestion,
     //t('@num untranslated', array('@num' => ($sum - $translated))),
-    , //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions')),
+    //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions')),
   );
 }
 
@@ -640,11 +640,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
           $count2_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, ts.language FROM {l10n_server_line} l INNER JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE l.pid = :pid AND ts.has_suggestion = 1 GROUP BY ts.language";
           $count_args = array(':pid' => $id);
         }
-	$result = db_query($count1_sql, $count_args);
+        $result = db_query($count1_sql, $count_args);
         foreach ($result as $row) {
           $sums[$row->language]['translations'] = $row->translation_count;
         }
-	$result = db_query($count2_sql, $count_args);
+        $result = db_query($count2_sql, $count_args);
         foreach ($result as $row) {
           $sums[$row->language]['suggestions'] = $row->translation_count;
         }
@@ -722,7 +722,7 @@ function _l10n_community_alphabetic_pager() {
     ),
   );
   foreach ($initials as $link => $data) {
-    if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string) $link) {
+    if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string)$link) {
       $items[] = array(
         'class' => array('pager-current'),
         'data' => $data['title'],
