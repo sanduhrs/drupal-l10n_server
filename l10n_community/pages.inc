@@ -186,34 +186,35 @@ function l10n_community_explore_projects_jump_form_submit($form, &$form_state) {
  *   Language code, for example 'hu', 'pt-br', 'de', 'it'.
  */
 function l10n_community_overview_language($langcode = NULL) {
-  global $user;
-
   if (!isset($langcode)) {
     drupal_set_message(t('No language selected.'), 'error');
     return '';
   }
 
   $languages = l10n_community_get_languages();
-  $content_output = module_invoke('l10n_groups', 'l10n_community_build_language_page', $languages[$langcode]);
-  $content_output .= module_invoke('l10n_packager', 'l10n_community_build_language_page', $languages[$langcode]);
+  $content_output = array();
+  $content_output[]['#markup'] = module_invoke('l10n_groups', 'l10n_community_build_language_page', $languages[$langcode]);
+  $content_output[]['#markup'] = module_invoke('l10n_packager', 'l10n_community_build_language_page', $languages[$langcode]);
   if (empty($content_output)) {
     // Try to fill in with taxonomy.
     if (module_exists('taxonomy')) {
-      if ($term = taxonomy_get_term_by_name('l10n-server-' . $languages[$langcode]->language)) {
+      if ($terms = taxonomy_get_term_by_name('l10n-server-' . $languages[$langcode]->language)) {
         // Found tag, look for posts.
-        $result = taxonomy_select_nodes(array($term[0]->tid), 'or', 0, TRUE);
-        foreach ($result as $node) {
-          $content_output .= node_view(node_load($node->nid), 1);
+        $result = taxonomy_select_nodes(reset($terms)->tid);
+        foreach ($result as $nid) {
+          $content_output[] = node_view(node_load($nid), 'teaser');
         }
       }
       if (empty($content_output)) {
         // Either no such tag, or that tag has no posts currently.
-        $content_output = '<p>' . t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-' . $languages[$langcode]->language)) . '</p>';
+        $content_output[] = array(
+          '#markup' => '<p>' . t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-' . $languages[$langcode]->language)) . '</p>')
+        ;
       }
     }
     else {
       // No way found to fill in content here.
-      $content_output = '<p>' . t('No posts to display') . '</p>';
+      $content_output[] = '<p>' . t('No posts to display') . '</p>';
     }
   }
 
@@ -227,7 +228,6 @@ function l10n_community_overview_language($langcode = NULL) {
       l(t('Explore languages'), 'translate/languages'),
     )
   );
-
   return $content_output;
 }
 

@@ -414,8 +414,9 @@ function l10n_groups_broadcast($langcode) {
  */
 function l10n_groups_l10n_community_build_language_page($language) {
   $groups = l10n_groups_get_groups();
-  if (isset($groups[$language->language]) && node_access('view', $group_node = node_load($groups[$language->language]))) {
-    $output = check_markup($group_node->body, $group_node->format, $langcode = $language->language, FALSE);
+  $lang_code = $language->language;
+  if (isset($groups[$lang_code]) && node_access('view', $group_node = node_load($groups[$lang_code]))) {
+    $output = $group_node->body[LANGUAGE_NONE][0]['safe_value'];
   }
   else {
     $output = t('Group not found or not accessible. No information to display.');
