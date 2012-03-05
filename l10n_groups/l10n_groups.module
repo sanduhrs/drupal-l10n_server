@@ -97,7 +97,7 @@ function l10n_groups_init() {
 
   // Avoid using menu_get_item() since that would cripple the cache
   // for menu access checking.
-  if (($item = og_user_roles_menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
+  if (($item = menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
     // If on node view page for l10n_group nodes, redirect to our more full featured
     // version of the group with translation tabs and all.
     drupal_goto('translate/languages/' . $item['page_arguments'][0]->l10n_group_language);
@@ -112,7 +112,7 @@ function l10n_groups_set_context($langcode) {
   if (isset($groups[$langcode])) {
     // Set group context and ask for og details block.
     $node = node_load($groups[$langcode]);
-    og_set_group_context($node);
+    og_context(og_get_group('node', $node->nid));
   }
 }
 
