@@ -292,14 +292,16 @@ function l10n_groups_form($node, &$form_state) {
       '#required' => TRUE,
     );
   }
+  $body = $node->body[LANGUAGE_NONE][0];
   $form['body'] = array(
-    '#type' => 'textarea',
+    '#type' => 'text_format',
+    '#base_type' => 'textarea',
     '#title' => t('Welcome message'),
     '#description' => t('Welcome message to display on the group homepage.'),
-    '#default_value' => isset($node->body) ? $node->body : '',
+    '#default_value' => isset($body['value']) ? $body['value'] : '',
     '#rows' => 5,
+    '#format' => isset($body['format']) ? $body['format'] : NULL,
   );
-  $form['format'] = isset($node->format) ? filter_form($node->format) : filter_form();
   return $form;
 }
 
