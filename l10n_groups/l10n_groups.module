@@ -395,7 +395,7 @@ function l10n_groups_pick_go() {
 function l10n_groups_broadcast_access($langcode) {
   $groups = l10n_groups_get_groups();
   if (isset($groups[$langcode])) {
-    return og_broadcast_access(node_load($groups[$langcode]));
+    //return og_broadcast_access(node_load($groups[$langcode]));
   }
   return FALSE;
 }
