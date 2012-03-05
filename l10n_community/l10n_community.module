@@ -654,7 +654,8 @@ function l10n_community_update_message() {
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
   if ($string) {
-    $result = db_query_range("SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER(:str) AND status = 1 ORDER BY title", array(':str' => $string));
+    $sql = "SELECT title FROM {l10n_server_project} WHERE LOWER(title) LIKE LOWER(:str) AND status = 1 ORDER BY title";
+    $result = db_query_range($sql, 0, 10, array(':str' => $string . '%'));
     foreach ($result as $project) {
       $matches[$project->title] = check_plain($project->title);
     }
