@@ -400,12 +400,12 @@ function l10n_community_block_view($delta) {
           }
           elseif ($arg1 == 'projects' && !empty($arg2)) {
             $project = l10n_server_get_projects(array('uri' => $arg2));
-            include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+            module_load_include('inc', 'l10n_community', 'pages');
             return l10n_community_block_stats_project($project);
           }
           elseif ($arg1 == 'languages' && !empty($arg2) && empty($arg3)) {
             $languages = l10n_community_get_languages();
-            include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+            module_load_include('inc', 'l10n_community', 'pages');
             return l10n_community_block_stats_language($languages[$arg2]);
           }
         }
@@ -416,7 +416,7 @@ function l10n_community_block_view($delta) {
         if (arg(0) == 'translate') {
           $arg1 = arg(1);
           if (empty($arg1) || ($arg1 == 'downloads')) {
-            include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/welcome.inc';
+            module_load_include('inc', 'l10n_community', 'welcome');
             return array(
               'subject' => t('Quick navigation'),
               'content' => drupal_render(drupal_get_form('l10n_community_pick_go')) . '<div class="clearing"></div>',
@@ -431,7 +431,7 @@ function l10n_community_block_view($delta) {
         $arg3 = arg(3);
         if (arg(0) == 'translate' && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
           $languages = l10n_community_get_languages();
-          include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+          module_load_include('inc', 'l10n_community', 'pages');
           return l10n_community_block_contributors_language($languages[$arg2]);
         }
       }
@@ -820,7 +820,7 @@ function l10n_community_cache_clear_all() {
  */
 function l10n_communiy_rebuild_stats() {
   l10n_community_get_stats();
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+  module_load_include('inc', 'l10n_community', 'pages');
   l10n_community_get_string_count('languages');
   l10n_community_get_string_count('projects');
   if ($project = l10n_community_get_highlighted_project()) {

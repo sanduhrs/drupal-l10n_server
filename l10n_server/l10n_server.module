@@ -400,7 +400,7 @@ function l10n_server_theme($existing, $type, $theme, $path) {
  * loaded to run that function.
  */
 function l10n_server_settings_overview() {
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'system') . '/system.admin.inc';
+  module_load_include('inc', 'system', 'system.admin');
   return system_admin_menu_block_page();
 }
 

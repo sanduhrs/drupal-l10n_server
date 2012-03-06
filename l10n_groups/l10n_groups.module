@@ -405,7 +405,7 @@ function l10n_groups_broadcast_access($langcode) {
  */
 function l10n_groups_broadcast($langcode) {
   $groups = l10n_groups_get_groups();
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'og') . '/og.pages.inc';
+  module_load_include('inc', 'og', 'og.pages');
   return drupal_get_form('og_broadcast_form', node_load($groups[$langcode]));
 }
 

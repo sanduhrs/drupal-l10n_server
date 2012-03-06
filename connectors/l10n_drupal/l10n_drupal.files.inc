@@ -220,7 +220,7 @@ function l10n_drupal_parse_package($package_file, $release) {
   include_once 'Archive/Tar.php';
 
   // Potx module is already a dependency.
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';
+  module_load_include('inc', 'potx');
 
   // Generate temp folder to extract the tarball. tempnam() creates a regular
   // file, thus reserving the name. But we need a directory. Because $temp_name

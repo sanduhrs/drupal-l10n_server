@@ -37,7 +37,7 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   drupal_set_breadcrumb($breadcrumb);
 
   if (isset($project)) {
-    include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+    module_load_include('inc', 'l10n_community', 'pages');
     if (!$num_source = l10n_community_get_string_count('project', $project->pid)) {
       drupal_set_message(t('No strings found to export in this project yet.'), 'warning');
       return '';

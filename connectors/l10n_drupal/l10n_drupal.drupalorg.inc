@@ -373,8 +373,8 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   $error = $message = '';
 
   // Potx module is already a dependency.
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'potx') . '/potx.inc';
-  include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.files.inc';
+  module_load_include('inc', 'potx');
+  module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);

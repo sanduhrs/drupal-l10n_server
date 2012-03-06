@@ -17,7 +17,7 @@ function l10n_community_welcome_page() {
 
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
-    include_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'l10n_community') . '/pages.inc';
+    module_load_include('inc', 'l10n_community', 'pages');
     drupal_set_title(t('Translations'));
 
     $languages = l10n_community_get_languages();
