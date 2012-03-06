@@ -70,7 +70,7 @@ function l10n_community_explore_languages() {
   }
 
   if (!empty($_GET['sort']) && !empty($_GET['order'])) {
-    usort($table, 'l10n_server_sort_by_column_language');
+    usort($table_rows, 'l10n_server_sort_by_column_language');
   }
 
   $header = array(
