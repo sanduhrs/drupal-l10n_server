@@ -681,7 +681,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
             }
             $count_sql .= 'AND l.pid = %d';
             $count_args[] = $pid;
-            $data[$key] = db_result(db_query($count_sql, $count_args));
+            $data[$key] = db_query($count_sql, $count_args)->fetchField();
           }
         }
         cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);
