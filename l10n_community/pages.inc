@@ -676,11 +676,11 @@ function l10n_community_get_string_count($type, $id = NULL) {
             $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.$column = 1 ";
             if (isset($id)) {
               // Limit to language if desired.
-              $count_sql .= "AND ts.language = '%s' ";
-              $count_args[] = $id;
+              $count_sql .= "AND ts.language = :language ";
+              $count_args[':language'] = $id;
             }
-            $count_sql .= 'AND l.pid = %d';
-            $count_args[] = $pid;
+            $count_sql .= 'AND l.pid = :pid';
+            $count_args[':pid'] = $pid;
             $data[$key] = db_query($count_sql, $count_args)->fetchField();
           }
         }
