@@ -667,29 +667,22 @@ function l10n_community_get_string_count($type, $id = NULL) {
         foreach ($result as $row) {
           $sums[$row->pid] = array('count' => $row->string_count);
         }
-        // Get the count of distinct strings translated per project.
-        $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, l.pid FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.has_translation = 1 ";
-        if (isset($id)) {
-          // Limit to language if desired.
-          $count_sql .= "AND ts.language = :lng ";
-          $count_args[':lng'] = $id;
-        }
-        $count_sql .= 'GROUP BY l.pid';
-        $result = db_query($count_sql, $count_args);
-        foreach ($result as $row) {
-          $sums[$row->pid]['translations'] = $row->translation_count;
-        }
-        // Get the count of distinct strings having suggestions per project.
-        $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count, l.pid FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.has_suggestion = 1 ";
-        if (isset($id)) {
-          // Limit to language if desired.
-          $count_sql .= "AND ts.language = :lng ";
-          $count_args[':lng'] = $id;
-        }
-        $count_sql .= 'GROUP BY l.pid';
-        $result = db_query($count_sql, $count_args);
-        foreach ($result as $row) {
-          $sums[$row->pid]['suggestions'] = $row->translation_count;
+        // Get the count of distinct strings having translations and suggestions
+        // per project. This is run per project because big installs of the
+        // module were choking on GROUP BY based solutions.
+        foreach (array('translations' => 'has_translation', 'suggestions' => 'has_suggestion') as $key => $column) {
+          foreach ($sums as $pid => &$data) {
+            $count_args = array();
+            $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.$column = 1 ";
+            if (isset($id)) {
+              // Limit to language if desired.
+              $count_sql .= "AND ts.language = '%s' ";
+              $count_args[] = $id;
+            }
+            $count_sql .= 'AND l.pid = %d';
+            $count_args[] = $pid;
+            $data[$key] = db_result(db_query($count_sql, $count_args));
+          }
         }
         cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);
         return $sums;
