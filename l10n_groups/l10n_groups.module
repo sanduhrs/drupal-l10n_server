@@ -20,14 +20,6 @@ function l10n_groups_menu() {
     'type' => MENU_LOCAL_TASK,
     'weight' => 200,
   );
-  $items['translate/languages/%l10n_community_language/board'] = array(
-    'title' => 'Board',
-    'page callback' => 'l10n_groups_board_page',
-    'page arguments' => array(2),
-    'access arguments' => array('access localization community'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -15,
-  );
   return $items;
 }
 
@@ -143,6 +135,16 @@ function l10n_groups_block_view($delta) {
         return $block;
       }
   }
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function l10n_groups_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'l10n_groups'),
+  );
 }
 
 // = Organic groups node type ==================================================
@@ -424,20 +426,4 @@ function l10n_groups_l10n_community_build_language_page($language) {
     $output = t('Group not found or not accessible. No information to display.');
   }
   return '<div id="mission" class="og-mission">' . $output . '</div>';
-}
-
-/**
- * Overview dashboard for the group (to be).
- */
-function l10n_groups_board_page($langcode) {
-  $groups = l10n_groups_get_groups();
-  if (isset($groups[$langcode]) && node_access('view', $group_node = node_load($groups[$langcode]))) {
-    // Empty out body, so we do not repeat info from the welcome page. We do
-    // node rendering to get the attached view added by organic groups though.
-    $group_node->body = '';
-    return node_view($group_node, FALSE, TRUE);
-  }
-  else {
-    return '<p>' . t('Group not found or not accessible. No posts to display.') . '</p>';
-  }
 }
