@@ -422,13 +422,13 @@ function l10n_community_project_releases($uri = NULL) {
     return '';
   }
 
-  return l10n_communinty_project_releases_table($releases, $uri, $project_name);
+  return l10n_community_project_releases_table($releases, $uri, $project_name);
 }
 
 /**
  * Display metadata based on a list of releases.
  */
-function l10n_communinty_project_releases_table($releases, $project_uri, $project_name, $link_releases = TRUE) {
+function l10n_community_project_releases_table($releases, $project_uri, $project_name, $link_releases = TRUE) {
   $rows = array();
   foreach ($releases as $release) {
     $file_count = db_query('SELECT COUNT(*) FROM {l10n_server_file} WHERE rid = :rid', array(':rid' => $release->rid))->fetchField();
@@ -472,7 +472,7 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
 
   // Reproduce the basic release information from the parent page.
   $output = '<h3>' . t('Basic release information') . '</h3>';
-  $output .= l10n_communinty_project_releases_table(array($release), $uri, $project->title, FALSE);
+  $output .= l10n_community_project_releases_table(array($release), $uri, $project->title, FALSE);
 
   // List the files that we looked at.
   $output .= '<h3>' . t('Files parsed in this release') . '</h3>';
