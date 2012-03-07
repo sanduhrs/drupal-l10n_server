@@ -125,14 +125,72 @@ function l10n_groups_block_info() {
  * Implements hook_block_view().
  */
 function l10n_groups_block_view($delta) {
+  global $user;
   switch ($delta) {
     case 'info':
       $arg2 = arg(2);
       $arg3 = arg(3);
       if ((arg(0) == 'translate') && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
-        $block = module_invoke('og', 'block_details');
-        $block['subject'] = strip_tags($block['subject']);
-        return $block;
+        // Only display group details if we have a group context.
+        if (($group = og_context()) && $group->access()) {
+          // Get the membership informations
+          $og_membership = og_get_group_membership($group->gid, 'user', $user->uid);
+          if ($og_membership) {
+            if ($og_membership->state == OG_STATE_ACTIVE || user_access('administer nodes')) {
+              if (node_access('update', $group->getEntity())) {
+                $links['edit_group'] = l(t('Edit group'), "node/$group->etid/edit");
+              }
+              // Get the node creation links
+              foreach (node_type_get_types() as $id => $type) {
+                if (og_is_group_content_type('node', $id)) {
+                  $type_url_str = str_replace('_', '-', $id);
+                  if (node_access('create', $id)) {
+                    $links["create_$id"] = l(t('Create !type', array('!type' => $type->name)), "node/add/$type_url_str", array(
+                      'attributes' => array('title' => t('Add a new !type in this group.', array('!type' => $type->name))),
+                      'query' => array('gids_node' => array($group->etid)),
+                    ));
+                  }
+                }
+              }
+              // Get the number of members
+              $subscribers_count = db_select('og_membership', 'ogm')->condition('state', OG_STATE_ACTIVE)
+                ->condition('type', OG_MEMBERSHIP_TYPE_DEFAULT)->condition('entity_type', 'user')
+                ->condition('gid', $group->gid)->countQuery()->execute()->fetchField();
+              $links['subscribers'] = l(t('!subscribers-count members', array('!subscribers-count' => $subscribers_count)), "group/node/$group->etid/admin/people");
+              // Get the manager
+              $links['manager'] = t('Manager: !name', array('!name' => theme('username', array('account' => $group->user()))));
+              if (og_is_member($group->gid)) {
+                $links['my_membership'] = l(t('Leave this group'), "group/node/$group->etid/unsubscribe");
+              }
+              else {
+                $links['my_membership'] = l(t('Join'), "group/node/$group->etid/subscribe");
+              }
+            }
+            elseif ($og_membership->state == OG_STATE_PENDING) {
+              $links['approval'] = t('Your membership request awaits approval.');
+              $links['delete'] = l(t('Delete request'), "group/node/$group->etid/unsubscribe");
+            }
+          }
+          elseif (!$user->uid) {
+            $options = array('query' => array('destination' => drupal_get_destination()));
+            if (variable_get('user_register', 1) == 0) {
+              $links['must_login'] = t('You must <a href="!login">login</a> in order to post into this group.', array('!login' => url("user/login", $options)));
+            }
+            else {
+              $links['must_login'] = t('You must <a href="!register">register</a> or <a href="!login">login</a> in order to post into this group.', array('!register' => url("user/register", $options), '!login' => url("user/login", $options)));
+            }
+          }
+          else {
+            $links['subscribe'] = l(t('Join'), "group/node/$group->etid/subscribe");
+          }
+
+          // Modify these links by reference
+          drupal_alter('l10n_groups_links', $links, $group);
+
+          $block['content'] = theme('item_list', array('items' => $links, 'type' => 'ul'));
+          $block['subject'] = $group->getEntity()->title;
+          return $block;
+        }
       }
   }
 }
@@ -308,22 +366,11 @@ function l10n_groups_form($node, &$form_state) {
 }
 
 /**
- * Implements hook_og_create_links().
- */
-function l10n_groups_og_create_links($node) {
-  $links = array();
-  if (node_access('update', $node)) {
-    $links['edit_group'] = l(t('Edit group'), 'node/' . $node->nid . '/edit');
-  }
-  return $links;
-}
-
-/**
- * Implements hook_og_links_alter().
+ * Implements hook_l10n_groups_links_alter().
  *
  * @todo: move this to a localize.drupal.org specific module
  */
-function l10n_groups_og_links_alter(&$links, $node) {
+function l10n_groups_l10n_groups_links_alter(&$links, $group) {
   $link = NULL;
   if (isset($links['my_membership'])) {
     $link = &$links['my_membership'];
@@ -332,15 +379,13 @@ function l10n_groups_og_links_alter(&$links, $node) {
     $link = &$links['subscribe'];
   }
   if (!empty($link) && (strpos($link, t('Request membership')) || strpos($link, t('Join')))) {
-    if ($node->og_selective == OG_MODERATED) {
-      $txt = t('Request membership');
-    }
-    elseif ($node->og_selective == OG_OPEN) {
-      $txt = t('Join');
-    }
-    if (isset($txt)) {
-      $link = l('<span>' . $txt . '</span>', "og/subscribe/$node->nid", array('attributes' => array('rel' => 'nofollow', 'class' => array('link-button')), 'html' => TRUE, 'query' => drupal_get_destination()));
-    }
+    $link = l('<span>' . t('Join') . '</span>', "group/node/$group->etid/subscribe",
+      array(
+        'attributes' => array('rel' => 'nofollow', 'class' => array('link-button')),
+        'html' => TRUE,
+        'query' => drupal_get_destination(),
+      )
+    );
   }
 }
 
