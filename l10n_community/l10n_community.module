@@ -419,7 +419,7 @@ function l10n_community_block_view($delta) {
             module_load_include('inc', 'l10n_community', 'welcome');
             return array(
               'subject' => t('Quick navigation'),
-              'content' => drupal_render(drupal_get_form('l10n_community_pick_go')) . '<div class="clearing"></div>',
+              'content' => drupal_get_form('l10n_community_pick_go'),
             );
           }
         }
