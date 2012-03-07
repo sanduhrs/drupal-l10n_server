@@ -99,8 +99,9 @@ function l10n_community_welcome_page() {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Form definition for jumping to languages or projects
+ *
+ * @see l10n_community_block_view
  */
 function l10n_community_pick_go($form, &$form_state) {
   $form = array();
@@ -207,8 +208,7 @@ function l10n_community_pick_go($form, &$form_state) {
 }
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Validation handler for l10n_community_pick_go()
  */
 function l10n_community_pick_go_validate($form, &$form_state) {
   if (empty($form_state['values']['project']) && empty($form_state['values']['langcode'])) {
