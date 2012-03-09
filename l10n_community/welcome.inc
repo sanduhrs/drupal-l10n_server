@@ -13,7 +13,10 @@
  * fit perfectly with all listings, so I bended some stuff more to comply.
  */
 function l10n_community_welcome_page() {
-  if ($project = l10n_community_get_highlighted_project()) {
+  if (!variable_get('l10n_community_stats_enabled', TRUE)) {
+    return t('Statistics for projects have been disabled.');
+  }
+  elseif ($project = l10n_community_get_highlighted_project()) {
 
     // Similar to l10n_community_language_progress_for_project() with simpler
     // output more suitable for a welcoming overview.
