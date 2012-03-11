@@ -107,6 +107,10 @@ function l10n_server_sort_by_column_language($a, $b) {
 function l10n_community_explore_projects() {
   $output = '';
 
+  if(!variable_get('l10n_community_stats_enabled', TRUE)) {
+    return t('Statistics for projects have been disabled.');
+  }
+
   $pager_setting = variable_get('l10n_community_project_per_page', 10);
 
   $options = array('pager' => $pager_setting);
@@ -260,7 +264,10 @@ function l10n_community_overview_project($uri = NULL) {
   }
 
   $project = l10n_server_get_projects(array('uri' => $uri));
-  if (!$num_source = l10n_community_get_string_count('project', $project->pid)) {
+  if (!variable_get('l10n_community_stats_enabled', TRUE)) {
+    return t('Statistics for projects have been disabled.');
+  }
+  elseif (!$num_source = l10n_community_get_string_count('project', $project->pid)) {
     drupal_set_message(t('No strings found to translate in this project yet.'), 'warning');
     return '';
   }
