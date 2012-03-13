@@ -79,6 +79,9 @@ function l10n_packager_schema() {
         'default' => 0,
       ),
     ),
+    'indexes' => array(
+      'rid' => array('rid'),
+    ),
     'primary key' => array('drid'),
   );
   $schema['cache_l10n_packager'] = drupal_get_schema_unprocessed('system', 'cache');
@@ -144,5 +147,14 @@ function l10n_packager_update_6002() {
 function l10n_packager_update_6003() {
   $ret = array();
   db_add_field($ret, 'l10n_packager_file', 'sid_count', array('type' => 'int', 'not null' => TRUE, 'default' => 0));
+  return $ret;
+}
+
+/**
+ * Add index on rids in file table.
+ */
+function l10n_packager_update_6004() {
+  $ret = array();
+  db_add_index($ret, 'l10n_packager_file', 'rid', array('rid'));
   return $ret;
 }
