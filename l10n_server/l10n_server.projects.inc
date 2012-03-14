@@ -380,8 +380,7 @@ function l10n_server_admin_projects_edit_form($form, &$form_state, $project_uri 
 
   if (!empty($project->pid)) {
     if ($source != 'uploads') {
-      $form['uri']['#type'] = 'item';
-      $form['uri']['#markup'] = check_plain($form['uri']['#default_value']);
+      $form['uri']['#disabled'] = TRUE;
     }
     $form['connector_module']['#type'] = 'item';
     $form['connector_module']['#markup'] = check_plain($connector_list[$form['connector_module']['#default_value']]);
