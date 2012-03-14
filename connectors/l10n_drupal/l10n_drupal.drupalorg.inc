@@ -97,11 +97,11 @@ function l10n_drupal_drupalorg_scan() {
   // can have nodes with multiple terms, so just adding
   // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
   // would still match on other terms.
-  // TODO Check that this query is OK
   // (after applying http://drupal.org/node/224333#taxonomy_tables)
-  $result = db_query("SELECT DISTINCT pp.nid
-     FROM project_projects pp INNER JOIN taxonomy_index tn ON tn.nid = pp.nid
-     WHERE tn.tid = :tid", array(':tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
+  // TODO needs work when drupal.org goes D7
+  $result = db_query("SELECT DISTINCT pp.nid FROM project_projects pp
+    INNER JOIN term_node tn ON tn.nid = pp.nid WHERE tn.tid = :tid",
+    array(':tid' => L10N_DRUPAL_DRUPALORG_TRANSLATION_TID));
   $exclude_projects = $result->fetchCol();
 
   // Get all projects - published, unpublished equally, so we can update project
@@ -164,7 +164,7 @@ function l10n_drupal_drupalorg_scan() {
         continue;
       }
     }
-    else {
+    elseif (isset($project->title)) {
       // New project, not recorded before.
       $last_pid = db_insert('l10n_server_project')
         ->fields(array(
@@ -317,6 +317,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
   // This could take a long time.
   @set_time_limit(0);
 
+  $error = '';
   $filename = basename($release->download_link);
   $file = file_directory_temp() . '/' . $filename;
 
@@ -498,124 +499,3 @@ function l10n_drupal_drupalorg_exec($cmd) {
   }
   return TRUE;
 }
-
-/*
-  ARCHIVED CODE for initial project release syncup.
-
-  db_query('TRUNCATE l10n_community_error');
-  db_query('TRUNCATE l10n_community_file');
-  db_query('TRUNCATE l10n_community_line');
-  db_query('TRUNCATE l10n_community_string');
-  db_query('TRUNCATE l10n_community_translation');
-  db_query("UPDATE {l10n_server_release} SET last_parsed = 0");
-
-  include_once 'includes/locale.inc';
-  list($plurals, $formula) = _locale_import_parse_plural_forms('nplurals=2; plural=(n!=1);', 'automatic install of test');
-  db_query("UPDATE {languages} SET plurals = %d, formula = '%s' WHERE language = '%s'", $plurals, $formula, 'test');
-  return;
-
-  db_query('TRUNCATE l10n_community_project');
-  db_query('TRUNCATE l10n_community_release');
-
-  // Go back to projects database for releases.
-  db_set_active('projects');
-  $releases = array();
-
-  // List of contrib branches in the database which have releases.
-  $release_branches = array(
-  'DRUPAL-5--0-%',
-  'DRUPAL-5--1-%',
-  'DRUPAL-5--2-%',
-  'DRUPAL-5--3-%',
-  'DRUPAL-5--4-%',
-  'DRUPAL-5--5-%',
-  'DRUPAL-5--6-%',
-  'DRUPAL-5--7-%',
-  'DRUPAL-5--8-%',
-  'DRUPAL-5--9-%',
-  'DRUPAL-5--10-%',
-  'DRUPAL-5--11-%',
-
-  'DRUPAL-6--0-%',
-  'DRUPAL-6--1-%',
-  'DRUPAL-6--2-%',
-  'DRUPAL-6--3-%',
-  'DRUPAL-6--4-%',
-  'DRUPAL-6--5-%',
-  'DRUPAL-6--6-%',
-  'DRUPAL-6--7-%',
-  'DRUPAL-6--8-%',
-  'DRUPAL-6--9-%',
-  'DRUPAL-6--10-%',
-
-  'DRUPAL-7--0-%',
-  'DRUPAL-7--1-%',
-  'DRUPAL-7--2-%',
-  'DRUPAL-7--3-%',
-  'DRUPAL-7--4-%',
-  );
-  foreach ($release_branches as $branch) {
-  $result = db_query("
-  SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
-  FROM project_projects pp INNER JOIN
-  project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
-  node n ON pp.nid = n.nid INNER JOIN
-  project_release_file prf ON prn.nid = prf.nid INNER JOIN
-  files f ON prf.fid = f.fid INNER JOIN
-  node nn ON prn.nid = nn.nid
-  WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s'
-  ORDER BY prn.nid ASC",
-  $branch
-  );
-
-  // Fill in an array, so we can go back to our database and add in these
-  // details.
-  foreach ($result as $release) {
-  $releases[$release->uri][$branch] = $release;
-  }
-  }
-
-  $release_branches = array(
-  'DRUPAL-5%',
-  'DRUPAL-6%',
-  );
-  foreach ($release_branches as $branch) {
-  $result = db_query("
-  SELECT pp.uri, prn.version, f.filepath, f.timestamp, prf.filehash, nn.status
-  FROM project_projects pp INNER JOIN
-  project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
-  node n ON pp.nid = n.nid INNER JOIN
-  project_release_file prf ON prn.nid = prf.nid INNER JOIN
-  files f ON prf.fid = f.fid INNER JOIN
-  node nn ON prn.nid = nn.nid
-  WHERE prn.rebuild = 0 AND nn.status = 1 AND tag LIKE '%s' AND pp.nid = 3060
-  ORDER BY prn.nid ASC",
-  $branch
-  );
-
-  // Fill in an array, so we can go back to our database and add in these
-  // details.
-  foreach ($result as $release) {
-  $releases[$release->uri][$branch] = $release;
-  }
-  }
-
-  // Switch back to our local database.
-  db_set_active();
-
-  // Record all releases in our local database.
-  foreach ($releases as $uri => $project_releases) {
-  foreach ($project_releases as $release) {
-  $download_link = 'http://ftp.drupal.org/' . $release->filepath;
-  /*if ($existing_release = db_query("SELECT * FROM {l10n_server_release} WHERE download_link = '%s'", $download_link)->fetchObject()) {
-  // @todo: what happens to unpublished releases? drop data outright?
-  }
-  else if (!empty($release->status)) {
-  // New published release, not recorded before.
-  db_query(
-  "INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)",
-  $projects[$release->uri]->pid, $release->version, $download_link, $release->timestamp, $release->filehash, 0
-  );
-  }
-  }
-  }*/

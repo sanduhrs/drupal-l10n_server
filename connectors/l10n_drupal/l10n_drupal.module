@@ -55,24 +55,23 @@ function l10n_drupal_cron() {
  * Implements hook_l10n_server_connector_info().
  */
 function l10n_drupal_l10n_server_connector_info() {
-  global $db_url;
+  global $databases;
 
-  $connectors = array(
-    'l10n_drupal' => array(
-      'title' => t('Drupal packages'),
-      'sources' => array('files', 'uploads'),
-      'file' => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.files.inc',
-      // Only provide scan functionality if enabled.
-      'scan' => variable_get('l10n_server_connector_l10n_drupal_files_enabled', FALSE) ? 'l10n_drupal_files_scan' : NULL,
-      // Display warnings tab, because we are parsing source code here.
-      'warnings' => TRUE,
-    ),
+  $connectors = array();
+  $connectors['l10n_drupal'] = array(
+    'title' => t('Drupal packages'),
+    'sources' => array('files', 'uploads'),
+    'file' => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.files.inc',
+    // Only provide scan functionality if enabled.
+    'scan' => variable_get('l10n_server_connector_l10n_drupal_files_enabled', FALSE) ? 'l10n_drupal_files_scan' : NULL,
+    // Display warnings tab, because we are parsing source code here.
+    'warnings' => TRUE,
   );
 
   // Only include projects connector if the database is already set up.
   // This is obscure and internal enough that we should not expose it to
   // unaware eyes.
-  if (is_array($db_url) && isset($db_url['projects'])) {
+  if (isset($databases['projects']['default'])) {
     $connectors['l10n_project'] = array(
       'title' => t('Drupal.org packages'),
       'sources' => array('drupalorg'),
