@@ -446,3 +446,15 @@ function l10n_server_schema() {
 
   return $schema;
 }
+
+/**
+ * Add default value for the project weight
+ */
+function l10n_server_update_7000() {
+  db_change_field('l10n_server_project', 'weight', 'weight', array(
+    'description' => 'Project weight used for sorting. Lower weights float up to the top.',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}
