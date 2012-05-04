@@ -251,13 +251,13 @@ function l10n_packager_get_filepath($release, $language = NULL, $pattern = NULL)
   // Get version information from release title
   if ($release->uri == 'drupal') {
     // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
-    list($version, $extra) = explode('-', $release->title);
+    @list($version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
     $core = $major . '.x';
   }
   else {
     // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1
-    list($core, $version, $extra) = explode('-', $release->title);
+    @list($core, $version, $extra) = explode('-', $release->title);
     list($major, $minor) = explode('.', $version);
   }
   $replace = array(

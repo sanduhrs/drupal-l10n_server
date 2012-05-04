@@ -82,15 +82,16 @@ function l10n_packager_admin_check_directory($form_element) {
 function l10n_packager_admin_repackage_page() {
   $projects = l10n_server_get_projects();
 
-  $form = drupal_get_form('l10n_packager_admin_projects_form', $projects);
-  $form = array_merge($form, drupal_get_form('l10n_packager_admin_languages_form'));
+  $content = array();
+  $content[] = drupal_get_form('l10n_packager_admin_projects_form', $projects);
+  $content[] = drupal_get_form('l10n_packager_admin_languages_form');
 
   // @todo: make this project agnostic for others running l10n_server.
   if (!empty($projects['drupal'])) {
-    $form = array_merge($form, drupal_get_form('l10n_packager_admin_installer_form', $projects['drupal']));
+    $content[] = drupal_get_form('l10n_packager_admin_installer_form', $projects['drupal']);
   }
 
-  return $form;
+  return $content;
 }
 
 /**

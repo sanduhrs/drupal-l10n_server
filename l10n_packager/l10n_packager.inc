@@ -130,8 +130,8 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file_path = l10n_packager_create_path($file_path);
 
     // Now build the Drupal file object or update the old one.
-    if (!empty($file->fid) && !empty($file->filepath)) {
-      file_unmanaged_delete($file->filepath);
+    if (!empty($file->fid) && !empty($file->uri)) {
+      file_unmanaged_delete($file->uri);
     }
 
     // Check / upate / create all file data.
@@ -139,13 +139,13 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     $file->timestamp = $file->checked = $timestamp;
     $file->filename = basename($file_path);
     $file->filemime = $mime_type;
-    $file->filepath = $file_path;
-    file_unmanaged_move($export_name, $file->filepath, FILE_EXISTS_REPLACE);
-    $file->filesize = filesize($file->filepath);
+    $file->uri = $file_path;
+    file_unmanaged_move($export_name, $file->uri, FILE_EXISTS_REPLACE);
+    $file->filesize = filesize(drupal_realpath($file->uri));
     $file->sid_count = $sid_count;
 
     // Create / update file record and link to release.
-    drupal_write_record('files', $file, !empty($file->fid) ? 'fid' : array());
+    drupal_write_record('file_managed', $file, !empty($file->fid) ? 'fid' : array());
     drupal_write_record('l10n_packager_file', $file, !empty($file->drid) ? 'drid' : array());
     $variables['%filename'] = $file->filename;
     //watchdog('l10n_packager', 'Packaged release %release for language %language, created file %filename.', $variables);
