@@ -216,7 +216,10 @@ function l10n_drupal_parse_package($package_file, $release) {
 
   // l10n_drupal_requirements() makes sure there is a status
   // error if this is not installed.
-  include_once 'Archive/Tar.php';
+  if (!class_exists('Archive_Tar')) {
+    // Try to load Archive_Tar from PEAR directory structure
+    include_once 'Archive/Tar.php';
+  }
 
   // Potx module is already a dependency.
   module_load_include('inc', 'potx');
