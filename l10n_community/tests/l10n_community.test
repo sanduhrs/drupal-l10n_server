@@ -725,7 +725,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
    * Add a project with the given API version.
    */
   private function addProject($api_version = 6, $include_js = TRUE) {
-    include_once 'Archive/Tar.php';
+    // If Archive_Tar class does not exist, load it from PEAR directory structure
+    if (!class_exists('Archive_Tar')) {
+      include_once 'Archive/Tar.php';
+    }
 
     $version = $api_version . '.x-' . ($include_js ?  $this->version_js : $this->version_base);
 

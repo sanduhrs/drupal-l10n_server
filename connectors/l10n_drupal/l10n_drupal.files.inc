@@ -221,6 +221,9 @@ function l10n_drupal_parse_package($package_file, $release) {
   // Potx module is already a dependency.
   module_load_include('inc', 'potx');
 
+  // Set up status messages if not in automated mode.
+  potx_status('set', POTX_STATUS_STRUCTURED);
+
   // Generate temp folder to extract the tarball. tempnam() creates a regular
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
@@ -277,12 +280,10 @@ function l10n_drupal_parse_package($package_file, $release) {
       $messages = potx_status('get');
       if (count($messages)) {
         foreach ($messages as $error_message) {
-          db_insert('l10n_server_error')
-	    ->fields(array(
-                'rid' => $release->rid,
-                'value' => $error_message[5],
-              ))
-	    ->execute();
+          db_insert('l10n_server_error')->fields(array(
+            'rid' => $release->rid,
+            'value' => $error_message[0],
+          ))->execute();
         }
       }
     }
