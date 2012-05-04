@@ -147,10 +147,10 @@ function l10n_packager_show_downloads($project) {
         krsort($files[$langcode][$branch]);
         $latest_item = array_shift($files[$langcode][$branch]);
         $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename) . '</p>';
-        $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d', 0))) . '</p>';
+        $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d'))) . '</p>';
         $up_to_date = max($latest_item->checked, $latest_item->release_checked);
         if ($up_to_date > $latest_item->timestamp) {
-          $cell .= '<p class="l10n-packager-meta">' . t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d', 0))) . '</p>';
+          $cell .= '<p class="l10n-packager-meta">' . t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d'))) . '</p>';
         }
         $row[] = $cell;
       }
