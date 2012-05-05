@@ -179,5 +179,7 @@ function l10n_packager_update_6003() {
  * Add index on rids in files table.
  */
 function l10n_packager_update_6004() {
-  db_add_index('l10n_packager_file', 'rid', array('rid'));
+  if (!db_index_exists('l10n_packager_file', 'rid')) {
+    db_add_index('l10n_packager_file', 'rid', array('rid'));
+  }
 }
