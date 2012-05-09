@@ -415,25 +415,28 @@ function l10n_groups_get_groups() {
  * List groups a user is a member of to help jump there.
  */
 function l10n_groups_pick_go() {
-  global $user;
-
-  if (!empty($user->og_groups)) {
-    $groups = array();
-    foreach ($user->og_groups as $group) {
-      if ($group['type'] == 'l10n_group') {
-        $group = node_load($group['nid']);
-        $groups[$group->l10n_group_language] = l($group->title, 'translate/languages/' . $group->l10n_group_language);
+  $groups = og_get_entity_groups();
+  if (!empty($groups)) {
+    $l10n_groups = array();
+    foreach ($groups as $gid) {
+      $group = og_load($gid);
+      if ($group->entity_type == 'node') {
+        $node = node_load($group->etid);
+        if ($node->type == 'l10n_group') {
+          $l10n_groups[$node->l10n_group_language] = l($node->title, 'translate/languages/' . $node->l10n_group_language);
+        }
       }
     }
-    if (!empty($groups)) {
+    if (!empty($l10n_groups)) {
       return array(
         '#type' => 'item',
-        '#title' => count($groups) > 1 ? t('Your groups') : t('Your group'),
-        '#markup' => join(', ', $groups),
-        '#l10n_groups' => array_keys($groups),
+        '#title' => count($l10n_groups) > 1 ? t('Your groups') : t('Your group'),
+        '#markup' => join(', ', $l10n_groups),
+        '#l10n_groups' => array_keys($l10n_groups),
       );
     }
   }
+  return NULL;
 }
 
 /**
