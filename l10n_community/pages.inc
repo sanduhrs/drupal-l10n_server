@@ -420,11 +420,12 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
  *   Project URI.
  */
 function l10n_community_project_releases($uri = NULL) {
-  if (!isset($uri)) {
+  if (!$uri) {
     drupal_set_message(t('No project selected.'), 'error');
     return '';
   }
-  $project_name = drupal_get_title();
+  $project = l10n_server_get_projects(array('uri' => $uri));
+  $project_name = $project->title;
   drupal_set_title(t('@project releases', array('@project' => $project_name)), PASS_THROUGH);
 
   $releases = l10n_server_get_releases($uri);
