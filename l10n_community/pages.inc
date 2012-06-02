@@ -284,40 +284,42 @@ function l10n_community_overview_project($uri = NULL) {
  * Generate block data about project stats.
  */
 function l10n_community_block_stats_project($project) {
-  $num_source = l10n_community_get_string_count('project', $project->pid);
-  $releases = l10n_server_get_releases($project->uri, FALSE);
+  if (!empty($project)) {
+    $num_source = l10n_community_get_string_count('project', $project->pid);
+    $releases = l10n_server_get_releases($project->uri, FALSE);
 
-  $num_parsed = 0;
-  foreach ($releases as $release) {
-    if ($release->last_parsed > 0) {
-      $num_parsed++;
+    $num_parsed = 0;
+    foreach ($releases as $release) {
+      if ($release->last_parsed > 0) {
+        $num_parsed++;
+      }
     }
-  }
-  $num_releases = count($releases);
+    $num_releases = count($releases);
 
-  $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :uri", array(':uri' => $project->uri))->fetchField();
+    $num_warnings = db_query("SELECT COUNT(DISTINCT e.eid) FROM {l10n_server_project} p LEFT JOIN {l10n_server_release} r ON p.pid = r.pid LEFT JOIN {l10n_server_error} e ON r.rid = e.rid WHERE p.uri = :uri", array(':uri' => $project->uri))->fetchField();
 
-  // Build list of links for summary.
-  $list = array();
-  if (!empty($project->home_link)) {
-    $list[] = t('Project home') . ': <a href="' . check_url($project->home_link) . '">' . check_plain($project->home_link) . '</a>';
-  }
-  if ($num_releases == 0) {
-    // If we don't know of any releases, we do not list source string or warning
-    // information, since we should have all zeros there too. This summarizes
-    // our stand in short, that we do not yet have data here.
-    $list[] = t('No releases known yet');
-  }
-  else {
-    $list[] = l(format_plural($num_parsed, '1 release parsed', '@count releases parsed') . ' (' . format_plural($num_releases, '1 known', '@count known') . ')', 'translate/projects/' . $project->uri . '/releases');
-    $list[] = ($num_source == 0 ? t('No source strings found') : format_plural($num_source, '1 source string in total', '@count source strings in total'));
-    $list[] = ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings'));
-  }
+    // Build list of links for summary.
+    $list = array();
+    if (!empty($project->home_link)) {
+      $list[] = t('Project home') . ': <a href="' . check_url($project->home_link) . '">' . check_plain($project->home_link) . '</a>';
+    }
+    if ($num_releases == 0) {
+      // If we don't know of any releases, we do not list source string or warning
+      // information, since we should have all zeros there too. This summarizes
+      // our stand in short, that we do not yet have data here.
+      $list[] = t('No releases known yet');
+    }
+    else {
+      $list[] = l(format_plural($num_parsed, '1 release parsed', '@count releases parsed') . ' (' . format_plural($num_releases, '1 known', '@count known') . ')', 'translate/projects/' . $project->uri . '/releases');
+      $list[] = ($num_source == 0 ? t('No source strings found') : format_plural($num_source, '1 source string in total', '@count source strings in total'));
+      $list[] = ($num_warnings == 0 ? t('No source code warnings') : format_plural($num_warnings, '1 source code warning', '@count source code warnings'));
+    }
 
-  return array(
-    'subject' => t('Project statistics'),
-    'content' => theme('item_list', array('items' => $list)),
-  );
+    return array(
+      'subject' => t('Project statistics'),
+      'content' => theme('item_list', array('items' => $list)),
+    );
+  }
 }
 
 /**
