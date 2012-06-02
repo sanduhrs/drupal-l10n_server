@@ -197,8 +197,10 @@ function l10n_community_overview_language($langcode = NULL) {
 
   $languages = l10n_community_get_languages();
   $content_output = array();
-  $content_output[]['#markup'] = module_invoke('l10n_groups', 'l10n_community_build_language_page', $languages[$langcode]);
-  $content_output[]['#markup'] = module_invoke('l10n_packager', 'l10n_community_build_language_page', $languages[$langcode]);
+  // Append all modules implementing hook_l10n_community_build_language_page().
+  foreach (module_implements('l10n_community_build_language_page') as $module) {
+    $content_output[] = module_invoke($module, 'l10n_community_build_language_page', $languages[$langcode]);
+  }
   if (empty($content_output)) {
     // Try to fill in with taxonomy.
     if (module_exists('taxonomy')) {
@@ -212,13 +214,15 @@ function l10n_community_overview_language($langcode = NULL) {
       if (empty($content_output)) {
         // Either no such tag, or that tag has no posts currently.
         $content_output[] = array(
-          '#markup' => '<p>' . t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-' . $languages[$langcode]->language)) . '</p>')
-        ;
+          '#markup' => '<p>' . t('There are currently no posts set for display here. Mark posts to display here with the %tagname tag, using the taxonomy module.', array('%tagname' => 'l10n-server-' . $languages[$langcode]->language)) . '</p>'
+        );
       }
     }
     else {
       // No way found to fill in content here.
-      $content_output[] = '<p>' . t('No posts to display') . '</p>';
+      $content_output[] = array(
+        '#markup' => '<p>' . t('No posts to display') . '</p>'
+      );
     }
   }
 

@@ -462,6 +462,8 @@ function l10n_groups_broadcast($langcode) {
 // = Summary page outputs ======================================================
 
 /**
+ * Implements hook_l10n_community_build_language_page().
+ *
  * Organic groups group welcome info for language page.
  */
 function l10n_groups_l10n_community_build_language_page($language) {
@@ -473,5 +475,5 @@ function l10n_groups_l10n_community_build_language_page($language) {
   else {
     $output = t('Group not found or not accessible. No information to display.');
   }
-  return '<div id="mission" class="og-mission">' . $output . '</div>';
+  return array('#markup' => '<div id="mission" class="og-mission">' . $output . '</div>');
 }

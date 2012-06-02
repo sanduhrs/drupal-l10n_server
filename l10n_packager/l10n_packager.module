@@ -320,6 +320,8 @@ function l10n_packager_build_download_links($uri) {
 }
 
 /**
+ * Implements hook_l10n_community_build_language_page().
+ *
  * Build download table contents for the language view pages.
  */
 function l10n_packager_l10n_community_build_language_page($language) {
@@ -331,7 +333,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
   $rendered = cache_get('download:language:' . $language->language, 'cache_l10n_packager');
   // Not found, generate the list from our data.
   if (!empty($rendered)) {
-    return $rendered->data;
+    return array('#markup' => $rendered->data);
   }
 
   $output = '<h3 id="downloads">' . t('Top downloads') . '</h3>';
@@ -393,7 +395,7 @@ function l10n_packager_l10n_community_build_language_page($language) {
   }
 
   cache_set('download:language:' . $language->language, $output, 'cache_l10n_packager', REQUEST_TIME + 60 * 60 * 24);
-  return $output;
+  return array('#markup' => $output);
 }
 
 /**
