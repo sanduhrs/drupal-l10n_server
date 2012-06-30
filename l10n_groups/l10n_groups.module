@@ -101,10 +101,9 @@ function l10n_groups_init() {
  */
 function l10n_groups_set_context($langcode) {
   $groups = l10n_groups_get_groups();
-  if (isset($groups[$langcode])) {
-    // Set group context and ask for og details block.
-    $node = node_load($groups[$langcode]);
-    og_context(og_get_group('node', $node->nid));
+  // Set group context and ask for og details block.
+  if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
+    og_context('node', $node);
   }
 }
 
@@ -132,13 +131,15 @@ function l10n_groups_block_view($delta) {
       $arg3 = arg(3);
       if ((arg(0) == 'translate') && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
         // Only display group details if we have a group context.
-        if (($group = og_context()) && $group->access()) {
+        $context = og_context();
+        $group = entity_load_single($context['group_type'], $context['gid']);
+        if ($context && entity_access('view', 'node', $group)) {
           // Get the membership informations
-          $og_membership = og_get_group_membership($group->gid, 'user', $user->uid);
+          $og_membership = og_get_membership('node', $group->nid, 'user', $user->uid);
           if ($og_membership) {
             if ($og_membership->state == OG_STATE_ACTIVE || user_access('administer nodes')) {
-              if (node_access('update', $group->getEntity())) {
-                $links['edit_group'] = l(t('Edit group'), "node/$group->etid/edit");
+              if (node_access('update', $group)) {
+                $links['edit_group'] = l(t('Edit group'), "node/$group->nid/edit");
               }
               // Get the node creation links
               foreach (node_type_get_types() as $id => $type) {
@@ -147,7 +148,7 @@ function l10n_groups_block_view($delta) {
                   if (node_access('create', $id)) {
                     $links["create_$id"] = l(t('Create !type', array('!type' => $type->name)), "node/add/$type_url_str", array(
                       'attributes' => array('title' => t('Add a new !type in this group.', array('!type' => $type->name))),
-                      'query' => array('gids_node' => array($group->etid)),
+                      'query' => array('gids_node' => array($group->nid)),
                     ));
                   }
                 }
@@ -155,20 +156,21 @@ function l10n_groups_block_view($delta) {
               // Get the number of members
               $subscribers_count = db_select('og_membership', 'ogm')->condition('state', OG_STATE_ACTIVE)
                 ->condition('type', OG_MEMBERSHIP_TYPE_DEFAULT)->condition('entity_type', 'user')
-                ->condition('gid', $group->gid)->countQuery()->execute()->fetchField();
-              $links['subscribers'] = l(t('!subscribers-count members', array('!subscribers-count' => $subscribers_count)), "group/node/$group->etid/admin/people");
+                ->condition('gid', $group->nid)->countQuery()->execute()->fetchField();
+              $links['subscribers'] = l(t('!subscribers-count members', array('!subscribers-count' => $subscribers_count)), "group/node/$group->nid/admin/people");
               // Get the manager
-              $links['manager'] = t('Manager: !name', array('!name' => theme('username', array('account' => $group->user()))));
-              if (og_is_member($group->gid)) {
-                $links['my_membership'] = l(t('Leave this group'), "group/node/$group->etid/unsubscribe");
+              $account = user_load($group->uid);
+              $links['manager'] = t('Manager: !name', array('!name' => theme('username', array('account' => $account))));
+              if (og_is_member('node', $group->nid)) {
+                $links['my_membership'] = l(t('Leave this group'), "group/node/$group->nid/unsubscribe");
               }
               else {
-                $links['my_membership'] = l(t('Join'), "group/node/$group->etid/subscribe");
+                $links['my_membership'] = l(t('Join'), "group/node/$group->nid/subscribe");
               }
             }
             elseif ($og_membership->state == OG_STATE_PENDING) {
               $links['approval'] = t('Your membership request awaits approval.');
-              $links['delete'] = l(t('Delete request'), "group/node/$group->etid/unsubscribe");
+              $links['delete'] = l(t('Delete request'), "group/node/$group->nid/unsubscribe");
             }
           }
           elseif (!$user->uid) {
@@ -181,14 +183,14 @@ function l10n_groups_block_view($delta) {
             }
           }
           else {
-            $links['subscribe'] = l(t('Join'), "group/node/$group->etid/subscribe");
+            $links['subscribe'] = l(t('Join'), "group/node/$group->nid/subscribe");
           }
 
           // Modify these links by reference
           drupal_alter('l10n_groups_links', $links, $group);
 
           $block['content'] = theme('item_list', array('items' => $links, 'type' => 'ul'));
-          $block['subject'] = $group->getEntity()->title;
+          $block['subject'] = $group->title;
           return $block;
         }
       }
@@ -200,7 +202,7 @@ function l10n_groups_block_view($delta) {
  */
 function l10n_groups_views_api() {
   return array(
-    'api' => 2,
+    'api' => 3,
     'path' => drupal_get_path('module', 'l10n_groups'),
   );
 }
@@ -379,7 +381,7 @@ function l10n_groups_l10n_groups_links_alter(&$links, $group) {
     $link = &$links['subscribe'];
   }
   if (!empty($link) && (strpos($link, t('Request membership')) || strpos($link, t('Join')))) {
-    $link = l('<span>' . t('Join') . '</span>', "group/node/$group->etid/subscribe",
+    $link = l('<span>' . t('Join') . '</span>', "group/node/$group->nid/subscribe",
       array(
         'attributes' => array('rel' => 'nofollow', 'class' => array('link-button')),
         'html' => TRUE,
@@ -418,10 +420,9 @@ function l10n_groups_pick_go() {
   $groups = og_get_entity_groups();
   if (!empty($groups)) {
     $l10n_groups = array();
-    foreach ($groups as $gid) {
-      $group = og_load($gid);
-      if ($group->entity_type == 'node') {
-        $node = node_load($group->etid);
+    foreach ($groups as $group_type => $group) {
+      foreach ($group as $gid) {
+        $node = entity_load_single($group_type, $gid);
         if ($node->type == 'l10n_group') {
           $l10n_groups[$node->l10n_group_language] = l($node->title, 'translate/languages/' . $node->l10n_group_language);
         }

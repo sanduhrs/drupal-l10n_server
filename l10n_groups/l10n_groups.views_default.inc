@@ -46,12 +46,6 @@ function l10n_groups_views_default_views() {
   $handler->display->display_options['relationships']['og_membership_rel']['table'] = 'node';
   $handler->display->display_options['relationships']['og_membership_rel']['field'] = 'og_membership_rel';
   $handler->display->display_options['relationships']['og_membership_rel']['required'] = 1;
-  /* Relationship: OG membership: OG group gid */
-  $handler->display->display_options['relationships']['group']['id'] = 'group';
-  $handler->display->display_options['relationships']['group']['table'] = 'og_membership';
-  $handler->display->display_options['relationships']['group']['field'] = 'group';
-  $handler->display->display_options['relationships']['group']['relationship'] = 'og_membership_rel';
-  $handler->display->display_options['relationships']['group']['required'] = 1;
   /* Sort criterion: Content: Sticky */
   $handler->display->display_options['sorts']['sticky']['id'] = 'sticky';
   $handler->display->display_options['sorts']['sticky']['table'] = 'node';
@@ -73,11 +67,11 @@ function l10n_groups_views_default_views() {
   $handler->display->display_options['arguments']['null']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['null']['summary_options']['items_per_page'] = '25';
   $handler->display->display_options['arguments']['null']['must_not_be'] = 0;
-  /* Contextual filter: OG group: Og group ID */
+  /* Contextual filter: OG membership: Group ID */
   $handler->display->display_options['arguments']['gid']['id'] = 'gid';
-  $handler->display->display_options['arguments']['gid']['table'] = 'og';
+  $handler->display->display_options['arguments']['gid']['table'] = 'og_membership';
   $handler->display->display_options['arguments']['gid']['field'] = 'gid';
-  $handler->display->display_options['arguments']['gid']['relationship'] = 'group';
+  $handler->display->display_options['arguments']['gid']['relationship'] = 'og_membership_rel';
   $handler->display->display_options['arguments']['gid']['default_action'] = 'default';
   $handler->display->display_options['arguments']['gid']['default_argument_type'] = 'og_context';
   $handler->display->display_options['arguments']['gid']['default_argument_skip_url'] = 0;
@@ -115,7 +109,6 @@ function l10n_groups_views_default_views() {
     t('Offset'),
     t('No content has been posted in this group yet.'),
     t('OG membership from node'),
-    t('OG group'),
     t('All'),
     t('Page'),
   );
