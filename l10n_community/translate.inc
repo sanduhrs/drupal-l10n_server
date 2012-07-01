@@ -325,7 +325,7 @@ function l10n_community_translate_form($form, &$form_state, $language, $filters,
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Save changes'),
-      '#access' => user_access('submit suggestions'),
+      '#access' => l10n_community_access('submit suggestions'),
     ),
     'pager_bottom' => array(
       '#weight' => 10,
@@ -371,7 +371,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
     ),
   );
 
-  if (user_access('submit suggestions')) {
+  if (l10n_community_access('submit suggestions')) {
     $form['source']['edit'] = array(
       '#markup' => t('Translate'),
       '#prefix' => '<label title="' . t('Translate') . '">',
@@ -394,7 +394,7 @@ function _l10n_community_translate_form_item(&$form_state, $source, $language, $
   }
 
   // If the user may add new suggestions, display a textarea.
-  if (user_access('submit suggestions')) {
+  if (l10n_community_access('submit suggestions')) {
     $textarea = _l10n_community_translate_translation_textarea($source, $language->plurals);
     $form[$textarea->tid] = _l10n_community_translate_translation($form_state, $textarea, $source, $filters, $source_match);
   }
@@ -443,7 +443,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
   $is_own = $user->uid == $string->uid_entered;
   $is_active = $string->is_active && !$string->is_suggestion;
   $is_new = $string->tid == 'new';
-  $may_moderate = ($is_own ? user_access('moderate own suggestions') : user_access('moderate suggestions from others'));
+  $may_moderate = ($is_own ? l10n_community_access('moderate own suggestions') : l10n_community_access('moderate suggestions from others'));
 
   // This string is a match if it was data from the database and was entered by
   // the searched user or its text included the searched portion.
@@ -510,7 +510,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
                        ));
     }
     else {
-      if (user_access('submit suggestions')) {
+      if (l10n_community_access('submit suggestions')) {
         $form['edit'] = array(
           '#markup' => t('Edit a copy'),
           '#prefix' => '<label title="' . t('Edit a copy') . '">',

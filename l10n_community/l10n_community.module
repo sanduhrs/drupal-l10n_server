@@ -185,7 +185,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
-    'access callback' => 'user_access',
+    'access callback' => 'l10n_community_access',
     'access arguments' => array('browse translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -10,
@@ -195,7 +195,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_import_page',
     'page arguments' => array(2),
     'file' => 'import.inc',
-    'access callback' => 'user_access',
+    'access callback' => 'l10n_community_access',
     'access arguments' => array('import gettext files'),
     'type' => MENU_LOCAL_TASK,
     'weight' => -5,
@@ -205,7 +205,7 @@ function l10n_community_menu() {
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(NULL, 2),
     'file' => 'export.inc',
-    'access callback' => 'user_access',
+    'access callback' => 'l10n_community_access',
     'access arguments' => array('export gettext templates and translations'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 0,
@@ -231,7 +231,7 @@ function l10n_community_menu() {
     'title' => 'Export',
     'page callback' => 'l10n_community_export_page',
     'page arguments' => array(2),
-    'access callback' => 'user_access',
+    'access callback' => 'l10n_community_access',
     'access arguments' => array('export gettext templates and translations'),
     'file' => 'export.inc',
     'type' => MENU_LOCAL_TASK,
@@ -298,7 +298,7 @@ function l10n_community_access_warnings($uri) {
   if (!empty($connectors[$connector_name]) && !empty($connectors[$connector_name]['warnings'])) {
     // If this connector supports collecting warnings, display the tab.
     // Otherwise, this is only going to be misleading, so do not do that.
-    return user_access('access localization community');
+    return l10n_community_access('access localization community');
   }
   return FALSE;
 }
@@ -547,7 +547,7 @@ function l10n_community_get_language($langcode) {
  * Check whether the user has either review permissions.
  */
 function l10n_community_review_access() {
-  return user_access('moderate suggestions from others') || user_access('moderate own suggestions');
+  return l10n_community_access('moderate suggestions from others') || l10n_community_access('moderate own suggestions');
 }
 
 /**
@@ -1168,4 +1168,18 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
     ->execute();
 
   l10n_community_update_string_status($langcode, $sid);
+}
+
+/**
+ * Check if a user has access within the scope of l10n_server
+ * (with l10n_groups enabled or not)
+ *
+ * @param $string
+ */
+function l10n_community_access($string, $account = NULL) {
+  if (module_exists('l10n_groups')) {
+    $group = l10n_groups_set_context();
+    return $group && og_user_access($group['group_type'], $group['gid'], $string, $account);
+  }
+  return user_access($string, $account);
 }

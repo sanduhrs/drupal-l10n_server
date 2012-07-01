@@ -174,7 +174,7 @@ function l10n_community_pick_go($form, &$form_state) {
   }
 
   if (count($language_list) > 1) {
-    $projects_title = user_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
+    $projects_title = l10n_community_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
   }
   else {
     $projects_title = t('Pick a project for @language translation', array('@language' => $language_name));
@@ -231,7 +231,7 @@ function l10n_community_pick_go_submit($form, &$form_state) {
   if (!empty($form_state['values']['project']) && ($uri = l10n_community_project_uri_by_title($form_state['values']['project']))) {
     // Project surely selected, possibly with language too.
     if (!empty($form_state['values']['langcode'])) {
-      if (user_access('browse translations')) {
+      if (l10n_community_access('browse translations')) {
         drupal_goto('translate/languages/' . $form_state['values']['langcode'] . '/translate', array('query' => array('project' => '\\' . $uri)));
       }
       else {

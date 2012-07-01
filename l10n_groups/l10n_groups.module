@@ -58,6 +58,35 @@ function l10n_groups_permission() {
 }
 
 /**
+ * Implements hook_og_permission().
+ */
+function l10n_groups_og_permission() {
+  return array(
+    'browse translations' => array(
+      'title' => t('Browse translations'),
+    ),
+    'export gettext templates and translations' => array(
+      'title' => t('Export gettext templates and translations'),
+    ),
+    'import gettext files' => array(
+      'title' => t('Import gettext files'),
+    ),
+    'moderate own suggestions' => array(
+      'title' => t('Moderate own suggestions'),
+    ),
+    'moderate suggestions from others' => array(
+      'title' => t('Moderate suggestions from others'),
+    ),
+    'start over packages' => array(
+      'title' => t('Start over packages'),
+    ),
+    'submit suggestions' => array(
+      'title' => t('Submit suggestions'),
+    ),
+  );
+}
+
+/**
  * Implements hook_form_alter().
  *
  * Take care of the one translation group per language limitation.
@@ -80,12 +109,8 @@ function l10n_groups_form_alter(&$form, $form_state, $form_id) {
  * on the translation pages.
  */
 function l10n_groups_init() {
-  if (user_access('access localization community') && (arg(0) == 'translate') && in_array(arg(1), array('languages', 'details', 'suggestions', 'approve', 'decline')) && ($langcode = arg(2))) {
-    // If under a localization path URL for a language, set context.
-    if (!empty($langcode)) {
-      l10n_groups_set_context($langcode);
-    }
-  }
+  // Initialize context
+  l10n_groups_set_context();
 
   // Avoid using menu_get_item() since that would cripple the cache
   // for menu access checking.
@@ -99,12 +124,18 @@ function l10n_groups_init() {
 /**
  * Set group context to the group determined by $langcode.
  */
-function l10n_groups_set_context($langcode) {
-  $groups = l10n_groups_get_groups();
-  // Set group context and ask for og details block.
-  if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
-    og_context('node', $node);
+function l10n_groups_set_context() {
+  if (user_access('access localization community') && (arg(0) == 'translate') && in_array(arg(1), array('languages', 'details', 'suggestions', 'approve', 'decline')) && ($langcode = arg(2))) {
+    // If under a localization path URL for a language, set context.
+    if (!empty($langcode)) {
+      $groups = l10n_groups_get_groups();
+      // Set group context and ask for og details block.
+      if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
+        return og_context('node', $node);
+      }
+    }
   }
+  return FALSE;
 }
 
 /**
