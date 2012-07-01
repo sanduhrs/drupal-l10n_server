@@ -148,7 +148,7 @@ function l10n_groups_block_view($delta) {
                   if (node_access('create', $id)) {
                     $links["create_$id"] = l(t('Create !type', array('!type' => $type->name)), "node/add/$type_url_str", array(
                       'attributes' => array('title' => t('Add a new !type in this group.', array('!type' => $type->name))),
-                      'query' => array('gids_node' => array($group->nid)),
+                      'query' => array('og_group_ref' => $group->nid),
                     ));
                   }
                 }
