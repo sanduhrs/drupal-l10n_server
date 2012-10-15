@@ -143,11 +143,14 @@ function l10n_remote_xmlrpc_string_submit($langcode, $source, $translation, $uid
   }
 
   // Attempt to set group context with l10n_groups, if that module is available.
-  module_invoke('l10n_groups', 'set_context', $langcode);
-  // If og is enabled and group node is set, invoke user role update, so the
-  // following user_access() call will properly see the access permissions.
-  if ($group_node = module_invoke('og', 'get_group_context')) {
-    module_invoke('og_user_roles', 'grant_roles', $account, $group_node);
+  if (module_exists('l10n_groups')) {
+    l10n_groups_set_context($langcode);
+
+    // If og is enabled and group node is set, invoke user role update, so the
+    // following user_access() call will properly see the access permissions.
+    if ($group_node = og_get_group_context()) {
+      og_user_roles_grant_roles($account, $group_node);
+    }
   }
 
   // Check if the user has permission to submit strings in this language.
