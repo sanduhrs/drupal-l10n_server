@@ -391,7 +391,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     else {
       $table[] = array_merge(
         array(
-          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => array('project', $project->uri))), 'class' => array('rowhead')),
+          array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => array('project' => $project->uri))), 'class' => array('rowhead')),
         ),
         theme(
           'l10n_community_progress_columns',
