@@ -203,8 +203,9 @@ function l10n_drupal_drupalorg_scan() {
          project_release_file prf ON prn.nid = prf.nid INNER JOIN
          files f ON prf.fid = f.fid INNER JOIN
          node nn ON prn.nid = nn.nid
-    WHERE prn.rebuild = 0 AND f.timestamp > %d",
-    $last_sync - 60 * 60 * 24
+    WHERE prn.rebuild = 0 AND f.timestamp > %d AND f.filesize < %d",
+    $last_sync - 60 * 60 * 24,
+    (int) variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024)
   );
 
   // Fill in an array, so we can go back to our database and add in these
