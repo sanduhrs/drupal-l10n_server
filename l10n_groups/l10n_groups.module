@@ -117,7 +117,7 @@ function l10n_groups_block($op = 'list', $delta = 0, $edit = array()) {
         case 'info':
           $arg2 = arg(2);
           $arg3 = arg(3);
-          if ((arg(0) == 'translate') && (arg(1) == 'languages') && !empty($arg2) && empty($arg3)) {
+          if ((arg(0) == 'translate') && (arg(1) == 'languages') && !empty($arg2) && (empty($arg3) || $arg3 == 'board')) {
             $block = module_invoke('og', 'block_details');
             $block['subject'] = strip_tags($block['subject']);
             return $block;
