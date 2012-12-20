@@ -320,6 +320,7 @@ function l10n_server_schema() {
         'description' => 'The actual translation or suggestion.',
         'type' => 'text',
         'not null' => TRUE,
+        'binary' => TRUE,
       ),
       'uid_entered' => array(
         'description' => 'Reference to the {users}.uid who entered this translation or suggestion.',
@@ -458,3 +459,16 @@ function l10n_server_update_7000() {
     'default' => 0,
   ));
 }
+
+/**
+ * Mark l10n_server_translation.translation text field as binary for case sensitive MySQL matching.
+ */
+function l10n_server_update_7001() {
+  db_change_field('l10n_server_translation', 'translation', 'translation', array(
+    'description' => 'The actual translation or suggestion.',
+    'type' => 'text',
+    'not null' => TRUE,
+    'binary' => TRUE,
+  ));
+}
+
