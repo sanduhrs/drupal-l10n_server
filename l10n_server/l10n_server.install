@@ -76,6 +76,7 @@ function l10n_server_schema() {
         'description' => 'Project weight used for sorting. Lower weights float up to the top.',
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 0,
       ),
     ),
     'primary key' => array('pid'),
@@ -136,6 +137,7 @@ function l10n_server_schema() {
         'description' => 'Release weight used for sorting. Lower weights float up to the top.',
         'type' => 'int',
         'not null' => TRUE,
+        'default' => 0,
       ),
       'sid_count' => array(
         'description' => 'Count of source strings in this project release.',
