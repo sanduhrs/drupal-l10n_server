@@ -249,6 +249,12 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertCount($this->empty_error, 3, t('3 warnings found in Drupal 7 project releases.'));
   }
 
+  public function tearDown() {
+    // Make sure we state that only one language is defined before reseting locale in parent::tearDown()
+    variable_set('language_count', 1);
+    parent::tearDown();
+  }
+
   /**
    * Test submitting suggestions.
    */
