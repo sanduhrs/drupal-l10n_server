@@ -79,7 +79,7 @@
 
     var markup = function(string) {
       // Highlight placeholders with the l10n-placeholder class.
-      string = string.replace(/([!@%]|<(ins|del)>[!@%]<\/(ins|del)>)(\w+|<(ins|del)>\w+<\/(ins|del)>)/g, '<em class="l10n-placeholder">$&</em>');
+      string = string.replace(/([!@%]|<(ins|del)>[!@%]<\/(ins|del)>)([\w-]+|<(ins|del)>[\w-]+<\/(ins|del)>)/g, '<em class="l10n-placeholder">$&</em>');
 
       // Wrap HTML tags in <code> tags.
       string = string.replace(/(&lt;.+?(&gt;|$))/g, function(str) {
