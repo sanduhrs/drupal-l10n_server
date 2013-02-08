@@ -96,9 +96,14 @@ function l10n_groups_og_permission() {
  *   These might need to maintain a diff, not a full translation, so we need to think about this.
  */
 function l10n_groups_form_alter(&$form, $form_state, $form_id) {
-  if ($form_id == 'l10n_group_node_form' && empty($form['l10n_group_language']['#value']) && empty($form['l10n_group_language']['#options'])) {
-    drupal_set_message(t("All available languages have groups now. You cannot create another group until a new language is added on the administration interface."), 'error');
-    $form['submit']['#disabled'] = TRUE;
+  if ($form_id == 'l10n_group_node_form') {
+    if (empty($form['l10n_group_language']['#value']) && empty($form['l10n_group_language']['#options'])) {
+      drupal_set_message(t("All available languages have groups now. You cannot create another group until a new language is added on the administration interface."), 'error');
+      $form['submit']['#disabled'] = TRUE;
+    }
+    $form['body'][LANGUAGE_NONE][0]['#title'] = t('Welcome message');
+    $form['body'][LANGUAGE_NONE][0]['#description'] = t('Welcome message to display on the group homepage.');
+    $form['body'][LANGUAGE_NONE][0]['#rows'] = 5;
   }
 }
 
@@ -384,17 +389,11 @@ function l10n_groups_form($node, &$form_state) {
       '#weight' => -5,
       '#required' => TRUE,
     );
+
+    // Add a message to configure plurals for language.
+    drupal_set_message(t('Remember to configure plurals for the language you mean to create a group for.'), 'warning');
   }
-  $body = $node->body[LANGUAGE_NONE][0];
-  $form['body'] = array(
-    '#type' => 'text_format',
-    '#base_type' => 'textarea',
-    '#title' => t('Welcome message'),
-    '#description' => t('Welcome message to display on the group homepage.'),
-    '#default_value' => isset($body['value']) ? $body['value'] : '',
-    '#rows' => 5,
-    '#format' => isset($body['format']) ? $body['format'] : NULL,
-  );
+
   return $form;
 }
 
@@ -502,7 +501,12 @@ function l10n_groups_l10n_community_build_language_page($language) {
   $groups = l10n_groups_get_groups();
   $lang_code = $language->language;
   if (isset($groups[$lang_code]) && node_access('view', $group_node = node_load($groups[$lang_code]))) {
-    $output = $group_node->body[LANGUAGE_NONE][0]['safe_value'];
+    if (!empty($group_node->body[LANGUAGE_NONE][0])) {
+      $output = $group_node->body[LANGUAGE_NONE][0]['safe_value'];
+    }
+    else {
+      $output = '';
+    }
   }
   else {
     $output = t('Group not found or not accessible. No information to display.');

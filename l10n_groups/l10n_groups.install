@@ -8,9 +8,6 @@
  * Implements hook_install().
  */
 function l10n_groups_install() {
-  // Designate our node type as an OG group node type.
-  variable_set('og_content_type_usage_l10n_group', 'group');
-
   // Set up blocks for this module.
   $theme_key = variable_get('theme_default', 'bartik');
   $blocks = array(10 => 'info');
@@ -39,6 +36,15 @@ function l10n_groups_install() {
         ))
       ->execute();
   }
+
+  // Add a body field.
+  node_types_rebuild();
+  $types = node_type_get_types();
+  node_add_body_field($types['l10n_group']);
+
+  // Define l10n_group content as groups.
+  variable_set('og_group_type_l10n_group', TRUE);
+  og_create_field(OG_GROUP_FIELD, 'node', 'l10n_group');
 }
 
 /**
@@ -73,101 +79,11 @@ function l10n_groups_schema() {
   return $schema;
 }
 
-// -- Drupal 6 updates ---------------------------------------------------------
-
 /**
- * Migrate user permissions to og_user_roles.
+ * Implements hook_update_last_removed().
  */
-function l10n_groups_update_6000() {
-  /*
-    Permissions table.
-
-    'access localization community',             -- expected to be given to authenticated users
-    'browse translations',                       -- see prev.
-    'administer localization community',         -- expected to be given to admins
-
-    'export gettext templates and translations', -- given to "translation team mamber"
-    'import gettext files',                      -- given to "translation team member"
-    'submit suggestions',                        -- given to "translation team member"
-
-    'moderate suggestions from others',          -- given to "translation community moderator"
-
-    'moderate own suggestions',                  -- given to "translation self-moderator"
-
-    'configure member roles',                    -- given to "translation community manager"
-  */
-
-  // Remove permissions which are to be granted via og_user_roles from now on.
-  $result = db_query("SELECT rid, perm FROM {permission} ORDER BY rid");
-  foreach ($result as $role) {
-    $existing_perms = explode(', ', $role->perm);
-    $new_perms = array_diff($existing_perms, array('export gettext templates and translations', 'import gettext files', 'submit suggestions', 'moderate suggestions from others', 'moderate own suggestions'));
-    db_update('permission')
-      ->fields(array(
-          'perm' => implode(', ', $new_perms),
-        ))
-      ->condition('rid', $role->rid)
-      ->execute();
-  }
-
-  // Create four new roles to be used with og_user_roles.
-  db_insert('role')->fields(array('name' => 'translation team member'))->execute();
-  $q_get_rid = "SELECT rid FROM {role} WHERE name = ?";
-  $role_team = db_query($q_get_rid, array('translation team member'))->fetchField();
-
-  db_insert('role')->fields(array('name' => 'translation self-moderator'))->execute();
-  $role_self = db_query($q_get_rid, array('translation self-moderator'))->fetchField();
-
-  db_insert('role')->fields(array('name' => 'translation community moderator'))->execute();
-  $role_community = db_query($q_get_rid, array('translation community moderator'))->fetchField();
-
-  db_insert('role')->fields(array('name' => 'translation community manager'))->execute();
-  $role_manager = db_query($q_get_rid, array('translation community manager'))->fetchField();
-
-  // Grant permissions.
-  db_insert('permission')
-    ->fields(array(
-        'rid' => $role_team,
-        'perm' => 'export gettext templates and translations, import gettext files, submit suggestions',
-      ))
-    ->fields(array(
-        'rid' => $role_self,
-        'perm' => 'moderate own suggestions',
-      ))
-    ->fields(array(
-        'rid' => $role_community,
-        'perm' => 'moderate suggestions from others',
-      ))
-    ->fields(array(
-        'rid' => $role_manager,
-        'perm' => 'configure member roles',
-      ))
-    ->execute();
-
-
-  // Grant base team permissions to team members, moderation permissions to admins.
-  $q_insert = 'INSERT INTO {og_users_roles} (gid, uid, rid) SELECT nid, uid, :rid FROM {og_uid}';
-  $q_insert_admin = $q_insert . ' WHERE is_admin = 1';
-  db_query($q_insert, array(':rid' => $role_team));
-  db_query($q_insert_admin, array(':rid' => $role_community));
-  db_query($q_insert_admin, array(':rid' => $role_manager));
-
-  // Make these roles available for setting as og user roles.
-  variable_set('og_user_roles_roles_l10n_group', array($role_team => $role_team, $role_self => $role_self, $role_community => $role_community, $role_manager => $role_manager));
-  variable_set('og_user_roles_default_admin_role', $role_community);
-  variable_set('og_user_roles_default_role', $role_team);
-
-  // Update weight of this module to be before og_user_roles.
-  db_update('system')
-    ->fields(array('weight' => -2))
-    ->condition('type', 'module')
-    ->condition('name', 'l10n_groups')
-    ->execute();
-
-  // Finally, drop the model column, which we do not need anymore.
-  db_drop_field('l10n_groups_group', 'model');
-
-  return t('TODO Add a descriptive string here to show in the UI. l10n_groups_update_6000()');
+function l10n_groups_update_last_removed() {
+  return 6000;
 }
 
 /**
