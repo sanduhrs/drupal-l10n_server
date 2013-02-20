@@ -2,5 +2,6 @@ name = "Localization groups"
 description = Organic groups mapping for localization server
 dependencies[] = l10n_community
 dependencies[] = og_context
+dependencies[] = og_ui
 package = "Localization server"
 core = 7.x
