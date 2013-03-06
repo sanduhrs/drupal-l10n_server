@@ -22,10 +22,22 @@ function l10n_community_settings_form() {
     '#default_value' => variable_get('l10n_community_project_per_page', 10),
   );
   $form['l10n_community_stats_enabled'] = array(
-    '#title' => t('Enable statistics for projects'),
+    '#title' => t('Enable global statistics for projects'),
     '#description' => t('You can disable this option in case of heavy load on your server.'),
     '#type' => 'checkbox',
     '#default_value' => variable_get('l10n_community_stats_enabled', TRUE),
+  );
+  $form['l10n_community_stats_explore_projects_enabled'] = array(
+    '#title' => t('Enable <em>Explore projects</em> page'),
+    '#description' => t('You can disable this option in case of heavy load on your server as the <em>!link</em> page requires heavy SQL queries. This page also depends on the option above.', array('!link' => l('Explore projects', 'translate/projects'))),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('l10n_community_stats_explore_projects_enabled', TRUE),
+  );
+  $form['l10n_community_package_count'] = array(
+    '#title' => t('Fetch translation counts from Localization packager'),
+    '#description' => t('If l10n_packager module is enabled, translation counts will be fetched from parsed releases, thus skipping heavy SQL queries.'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('l10n_community_package_count', TRUE),
   );
   $form['l10n_community_import_user'] = array(
     '#title' => t('Account associated with bulk imports'),
