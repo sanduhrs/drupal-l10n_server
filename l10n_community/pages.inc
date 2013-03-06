@@ -108,7 +108,7 @@ function l10n_server_sort_by_column_language($a, $b) {
 function l10n_community_explore_projects() {
   $output = '';
 
-  if(!variable_get('l10n_community_stats_enabled', TRUE)) {
+  if (!variable_get('l10n_community_stats_enabled', TRUE) || !variable_get('l10n_community_stats_explore_projects_enabled', TRUE)) {
     return t('Statistics for projects have been disabled.');
   }
 
