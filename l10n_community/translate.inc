@@ -444,6 +444,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
   $is_active = $string->is_active && !$string->is_suggestion;
   $is_new = $string->tid == 'new';
   $may_moderate = ($is_own ? l10n_community_access('moderate own suggestions') : l10n_community_access('moderate suggestions from others'));
+  $may_moderate_suggestions = ($is_own ? user_access('decline own suggestions') : user_access('moderate suggestions from others'));
 
   // This string is a match if it was data from the database and was entered by
   // the searched user or its text included the searched portion.
@@ -492,7 +493,7 @@ function _l10n_community_translate_translation(&$form_state, $string, $source, $
   );
 
   if ($string->tid) {
-    if ($may_moderate && $string->tid != 'new') {
+    if (($may_moderate || $may_moderate_suggestions) && $string->tid != 'new') {
       $form['declined'] = array(
         '#type' => 'checkbox',
         '#title' => t('Decline'),

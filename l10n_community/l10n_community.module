@@ -360,6 +360,10 @@ function l10n_community_permission() {
       'title' => t('moderate own suggestions'),
       'description' => t('TODO Add a description for \'moderate own suggestions\''),
     ),
+    'decline own suggestions' => array(
+      'title' => t('decline own suggestions'),
+      'description' => t('TODO Add a description for \'decline own suggestions\''),
+    ),
   );
 }
 
