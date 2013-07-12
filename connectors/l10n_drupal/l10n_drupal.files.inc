@@ -429,6 +429,7 @@ function l10n_drupal_rmdir_recursive($directory) {
  *     - 5 for 5.x versions
  *     - 6 for 6.x versions
  *     - 7 for 7.x versions
+ *     - 8 for 8.x versions
  */
 function l10n_drupal_detect_major_version($path) {
   // Only interested in the filename.
@@ -449,6 +450,6 @@ function l10n_drupal_detect_major_version($path) {
  *   TRUE if the major version is supported, FALSE otherwise.
  */
 function l10n_drupal_is_supported_version($path) {
-  // Only Drupal 5.x, 6.x and 7.x projects are supported.
-  return in_array(l10n_drupal_detect_major_version($path), array(5, 6, 7));
+  // Only Drupal 5.x, 6.x, 7.x and 8.x projects are supported.
+  return in_array(l10n_drupal_detect_major_version($path), array(5, 6, 7, 8));
 }
