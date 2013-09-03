@@ -53,10 +53,43 @@ INSTALLATION
 - Locale (built into Drupal) is required. Organic Groups
   (http://drupal.org/project/og) is required by l10n_groups.
 
+- If you want to install the server rather quickly to only check its features,
+  check the quick setup section below.
+
 1. Enable l10n_community and l10n_localpacks at Administer >
    Site configuration > Modules. Optionally enable l10n_groups.
 
 2. Configure the connector at Administer > Localization Server.
+
+QUICK SETUP WITH DRUSH SCENARIO BUILDER
+--------------------------------------------------------------------------------
+
+If you require a quick setup as a developer, this is the fastest way.
+
+Drush will require the drush scenario builder (dsb) command ready to use.
+http://drupal.org/project/dsb
+
+Configure your local environment specific settings with the local.dsb.config.php
+file. Just add the following lines according to your system:
+
+$config['db url'] = 'mysql://<yourdbuser>:<yourdbpassword>@<yourdbhost>';
+$config['build target'] = '/path/to/your/drupalroot/';
+
+The build target path to your drupal root is NOT the current directory where you
+have downloaded l10n_server to. It's a completely separate drupal site that
+will be automatically installed by the scenario builder. Just create a directory
+and set build target to its path.
+
+Afterwards run the following command in your l10n_server folder:
+
+# drush dsb server
+
+Wait until the process completed. You can access your new server site in your
+browser with http://server.l10n.dev/.
+
+Alternatively, a scenario client-server is available. In addition to the server
+only install, it will setup a client multisite instance with l10n_client that
+is already connected to the server instance.
 
 HOW DOES IT WORK
 --------------------------------------------------------------------------------
