@@ -237,6 +237,17 @@ function l10n_packager_create_path($path) {
   $basepath = $currentpath = l10n_packager_directory();
   $finalpath = $basepath . '/' . $directory;
   $parts = explode('/', $directory);
+  $htaccess_path = drupal_realpath($basepath) . '/.htaccess';
+  if (!is_dir($basepath)) {
+    file_prepare_directory($basepath, FILE_CREATE_DIRECTORY);
+  }
+  if (!file_exists($htaccess_path)) {
+    $htaccess_lines = "\n\n<FilesMatch \"\.(po)$\">\n\tForceType \"text/plain; charset=utf-8\"\n\tAllow from ALL\n</FilesMatch>\n";
+    file_create_htaccess($basepath, FALSE);
+    drupal_chmod($htaccess_path, 0744);
+    file_put_contents($htaccess_path, $htaccess_lines, FILE_APPEND);
+    drupal_chmod($htaccess_path, 0444);
+  }
   while (is_dir($currentpath) && !is_dir($finalpath) && ($more = array_shift($parts))) {
     $currentpath .= '/' . $more;
     file_prepare_directory($currentpath, FILE_CREATE_DIRECTORY);
