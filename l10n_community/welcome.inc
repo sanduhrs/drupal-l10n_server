@@ -45,14 +45,12 @@ function l10n_community_welcome_page() {
       }
       else {
         $stats = l10n_community_get_stats($langcode);
-        $progress = array_shift(theme(
-                      'l10n_community_progress_columns',
-                      array(
-                        'sum' => $num_source,
-                        'translated' => @$string_counts[$langcode]['translations'],
-                        'has_suggestion' => @$string_counts[$langcode]['suggestions']
-                      )
-                    ));
+        $columns = theme('l10n_community_progress_columns', array(
+            'sum'            => $num_source,
+            'translated'     => @$string_counts[$langcode]['translations'],
+            'has_suggestion' => @$string_counts[$langcode]['suggestions']
+          ));
+        $progress = array_shift($columns);
         $table_rows[] = array(
           array(
             'data' => l(t($language->name), 'translate/languages/' . $langcode),
