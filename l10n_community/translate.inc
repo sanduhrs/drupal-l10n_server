@@ -750,6 +750,54 @@ function theme_l10n_community_translate_translation_list($variables) {
   return $output;
 }
 
+// = Translation form validation ===============================================
+
+/**
+ * Form validation callback for l10n_community_translate_form().
+ */
+function l10n_community_translate_form_validate($form, &$form_state) {
+  // Load original strings.
+  $originals = db_select('l10n_server_string', 's')
+    ->fields('s')
+    ->condition('sid', array_keys($form_state['values']['strings']))
+    ->execute()
+    ->fetchAllKeyed();
+
+  // Iterate outer structure built in l10n_community_translate_form().
+  foreach ($form_state['values']['strings'] as $sid => $string) {
+    $pattern = '/([!@%]|<(ins|del)>[!@%]<\/(ins|del)>)([\w-]+|<(ins|del)>[\w-]+<\/(ins|del)>)/';
+    $matches = array();
+
+    // If there are variable in the original string. Check in new suggestions.
+    // We need to explode the strings as they may contain plurals
+    // and check the corresponding plural.
+    $originals_plurals = l10n_community_unpack_string($originals[$sid]);
+    foreach ($originals_plurals as $sourceid => $sourcevalue) {
+      if (preg_match_all($pattern, $sourcevalue, $matches)) {
+        foreach ($string as $tid => $options) {
+          // Only process new suggestions.
+          if (isset($options['value']) && is_array($options['value']) && $tid === 'new') {
+            $not_found = array();
+            $value = $options['value'][$sourceid];
+            if ($value !== t('<New translation>')) {
+              foreach ($matches[0] as $match) {
+                if (!strstr($value, $match)) {
+                  $not_found[] = $match;
+                }
+              }
+            }
+            if ($not_found) {
+              form_set_error('strings][' . $sid . '][new][value][0', t('Missing variable(s) !variables', array('!variables' => implode(', ', $not_found))));
+            }
+          }
+        }
+
+      }
+    }
+  }
+}
+
+
 // = Translation form submission ===============================================
 
 /**
