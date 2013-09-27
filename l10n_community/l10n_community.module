@@ -879,7 +879,7 @@ function l10n_community_build_filter_values($params) {
     'status' => isset($params['status']) ? (int)$params['status'] : L10N_STATUS_ALL,
     'release' => 'all',
     'search' => !empty($params['search']) ? (string)$params['search'] : '',
-    'author' => !empty($params['author']) && ($account = array_shift(user_load_multiple(array(), array('name' => $params['author'])))) ? $account : NULL,
+    'author' => !empty($params['author']) && ($account = user_load_by_name($params['author'])) ? $account : NULL,
     // Dropdown, validated by form API.
     'context' => isset($params['context']) ? (string)$params['context'] : 'all',
     'limit' => (isset($params['limit']) && in_array($params['limit'], array(5, 10, 20, 30, 50))) ? (int)$params['limit'] : 10,

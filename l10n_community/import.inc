@@ -43,7 +43,7 @@ function l10n_community_import_form($form, &$form_state, $langcode) {
     '#description' => t('The maximum allowed size for uploads is %maxsize.', array('%maxsize' => format_size(file_upload_max_size()))),
   );
 
-  if (($import_name = variable_get('l10n_community_import_user', '')) && ($import_account = array_shift(user_load_multiple(array(), array('name' => $import_name))))) {
+  if (($import_name = variable_get('l10n_community_import_user', '')) && ($import_account = user_load_by_name($import_name))) {
     // If available, let the user import with attribution to a bulk import user.
     $form['import_uid'] = array(
       '#title' => t('Attribute import to'),
