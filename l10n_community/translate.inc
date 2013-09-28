@@ -1113,7 +1113,7 @@ function l10n_community_string_details($sid = 0, $ajax = 0) {
   $usage_list = theme('item_list', array('items' => $project_list));
   if ($ajax) {
     print $usage_list;
-    exit;
+    drupal_exit();
   }
   else {
     $output .= $usage_list;

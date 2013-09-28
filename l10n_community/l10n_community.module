@@ -668,7 +668,7 @@ function l10n_community_projects_autocomplete($string = '') {
     }
   }
   print drupal_json_encode($matches);
-  exit();
+  drupal_exit();
 }
 
 /**
@@ -944,7 +944,7 @@ function l10n_community_add_url_modifiers($langcode, $filters) {
   foreach ($urls as $url) {
     $replacements[url($url)] = url($url, array('query' => $filters));
   }
-  drupal_add_js(array('l10nServerURLs' => $replacements), array('type' => 'setting', 'scope' => JS_DEFAULT));
+  drupal_add_js(array('l10nServerURLs' => $replacements), array('type' => 'setting'));
 }
 
 // = AJAX callbacks ============================================================

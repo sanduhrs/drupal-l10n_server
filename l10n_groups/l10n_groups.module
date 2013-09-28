@@ -301,9 +301,9 @@ function l10n_groups_update($node) {
  * Implements hook_load().
  */
 function l10n_groups_load($nodes) {
-  $q = 'SELECT language AS l10n_group_language FROM {l10n_groups_group} WHERE nid = ?';
+  $q = 'SELECT language AS l10n_group_language FROM {l10n_groups_group} WHERE nid = :nid';
   foreach ($nodes as $nid => &$node) {
-    $node_additions = db_query($q, array($node->nid))->fetchObject();
+    $node_additions = db_query($q, array(':nid' => $nid))->fetchObject();
     foreach ($node_additions as $property => &$value) {
       $node->$property = $value;
     }
@@ -461,7 +461,7 @@ function l10n_groups_pick_go() {
     if (!empty($l10n_groups)) {
       return array(
         '#type' => 'item',
-        '#title' => count($l10n_groups) > 1 ? t('Your groups') : t('Your group'),
+        '#title' => format_plural(count($l10n_groups), t('Your group'), t('Your groups')),
         '#markup' => join(', ', $l10n_groups),
         '#l10n_groups' => array_keys($l10n_groups),
       );

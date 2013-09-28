@@ -302,7 +302,11 @@ function l10n_community_block_stats_project($project) {
     // Build list of links for summary.
     $list = array();
     if (!empty($project->home_link)) {
-      $list[] = t('Project home') . ': <a href="' . check_url($project->home_link) . '">' . check_plain($project->home_link) . '</a>';
+      $options = array(
+        'absolute' => TRUE,
+        'external' => TRUE
+      );
+      $list[] = t('Project home') . ': ' . l(check_plain($project->home_link), check_url($project->home_link), $options);
     }
     if ($num_releases == 0) {
       // If we don't know of any releases, we do not list source string or warning
