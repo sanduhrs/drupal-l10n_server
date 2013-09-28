@@ -129,7 +129,6 @@ function l10n_packager_show_downloads($project) {
 
   ksort($branches);
   $languages = l10n_community_get_languages();
-  $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
 
   $table = array();
   foreach ($languages as $langcode => $language) {
@@ -146,7 +145,7 @@ function l10n_packager_show_downloads($project) {
       if (!empty($files[$langcode][$branch])) {
         krsort($files[$langcode][$branch]);
         $latest_item = array_shift($files[$langcode][$branch]);
-        $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename) . '</p>';
+        $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', l10n_packager_get_download_url($project, $branch, $latest_item)) . '</p>';
         $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d'))) . '</p>';
         $up_to_date = max($latest_item->checked, $latest_item->release_checked);
         if ($up_to_date > $latest_item->timestamp) {

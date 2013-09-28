@@ -428,7 +428,6 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
   }
 
   ksort($branches);
-  $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
 
   $rows = array();
   $summary_list = array();
@@ -453,14 +452,14 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
           'data' => array(
             '#type' => 'link',
             '#title' => t('Download') . ' <span class="filesize">(' . format_size($latest_item->filesize) . ')</span>',
-            '#href' => $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename,
+            '#href' => l10n_packager_get_download_url($project, $branch, $latest_item),
             '#options' => array('html' => TRUE),
           )),
         format_date($latest_item->timestamp, 'custom', 'Y-M-d'),
         format_date($up_to_date, 'custom', 'Y-M-d'),
       ),
     );
-    $summary_list[] = l($latest_item->title, $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $latest_item->filename);
+    $summary_list[] = l($latest_item->title, l10n_packager_get_download_url($project, $branch, $latest_item));
   }
 
   if (count($summary_list) && $summary) {
@@ -493,4 +492,27 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
   }
 
   return $rows;
+}
+
+/**
+ * Generate a download URL for a PO file.
+ *
+ * @param object $project
+ * @param string $branch
+ * @param object $file
+ * @return string
+ */
+function l10n_packager_get_download_url($project, $branch, $file) {
+  $download_url = variable_get('l10n_packager_update_url', FALSE);
+  if ($download_url) {
+    return $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $file->filename;
+  }
+  return file_create_url($file->uri);
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function l10n_packager_flush_caches() {
+  return array('cache_l10n_packager');
 }
