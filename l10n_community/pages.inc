@@ -376,8 +376,16 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
     'title' => $title,
     'description' => $description,
   );
-  $num_source = l10n_community_get_string_count('project', $project->pid);
-  $string_counts = l10n_community_get_string_count('languages', $project->pid);
+  // Check for l10n_packager, for faster queries but only on latest release.
+  $remove_suggestions = FALSE;
+  if (module_exists('l10n_packager') && variable_get('l10n_community_package_count', TRUE)) {
+    list($num_source, $string_counts) = l10n_community_get_l10n_packager_string_count($project->pid);
+    $remove_suggestions = TRUE;
+  }
+  else {
+    $num_source = l10n_community_get_string_count('project', $project->pid);
+    $string_counts = l10n_community_get_string_count('languages', $project->pid);
+  }
 
   $table = array();
   foreach ($languages as $langcode => $language) {
@@ -395,24 +403,31 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
       );
     }
     else {
+      $progress = theme('l10n_community_progress_columns', array(
+          'sum' => $num_source,
+          'translated' => @$string_counts[$langcode]['translations'],
+          'has_suggestion' => @$string_counts[$langcode]['suggestions'],
+        )
+      );
+      if ($remove_suggestions) {
+        array_pop($progress);
+      }
       $table[] = array_merge(
         array(
           array('data' => l(t($language->name) . ' (' . $langcode . ')', 'translate/languages/' . $langcode . '/translate', array('query' => array('project' => $project->uri))), 'class' => array('rowhead')),
         ),
-        theme(
-          'l10n_community_progress_columns',
-          array(
-            'sum' => $num_source,
-            'translated' => @$string_counts[$langcode]['translations'],
-            'has_suggestion' => @$string_counts[$langcode]['suggestions']
-          ))
+        $progress
       );
     }
+  }
+  $headers = theme('l10n_community_progress_headers', array('mainhead' => t('Language')));
+  if ($remove_suggestions) {
+    array_pop($headers);
   }
   $block['content'] = theme(
     'table',
     array(
-      'header' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
+      'header' => $headers,
       'rows' => $table,
       'attributes' => array('class' => array('l10n-community-overview'))
     ));
@@ -586,7 +601,7 @@ function theme_l10n_community_progress_columns($variables) {
 
   return array(
     $bar,
-    ($sum - $translated),
+    max($sum - $translated, 0),
     (int)$has_suggestion,
     //t('@num untranslated', array('@num' => ($sum - $translated))),
     //($has_suggestion ? format_plural($has_suggestion, '@count has suggestions', '@count have suggestions') : t('no suggestions')),
@@ -718,6 +733,32 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
       return $accounts;
   }
+}
+
+/**
+ * Replacement for l10n_community_get_string_count when former stats are too
+ * slow
+ *
+ * @param int $pid
+ *   The project id to get string counts for
+ *
+ * @return array
+ *    first element is the number of original strings
+ *    second element is the number of translations for each language
+ */
+function l10n_community_get_l10n_packager_string_count($pid) {
+  // Faster queries with l10n_packager, first get latest release id from the
+  // l10n_packager_file table for the project requested, then get the
+  // translation count of the release
+  $rid = db_query("SELECT pf.rid FROM {l10n_server_release} sr INNER JOIN {l10n_packager_file} pf ON sr.rid = pf.rid WHERE pid = :pid ORDER BY pf.rid DESC LIMIT 0, 1", array(':pid' => $pid))->fetchField();
+  $results = db_query("SELECT language, sid_count FROM {l10n_packager_file} WHERE rid = :rid", array(':rid' => $rid))->fetchAllKeyed();
+  foreach($results as $language => $sid_count) {
+    $sums[$language]['translations'] = $sid_count;
+  }
+  ksort($sums);
+  // Finally, get the string count of the release
+  $num_source = db_query("SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.rid = :rid", array(':rid' => $rid))->fetchField();
+  return array($num_source, $sums);
 }
 
 /**

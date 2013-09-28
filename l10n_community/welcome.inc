@@ -24,8 +24,15 @@ function l10n_community_welcome_page() {
     drupal_set_title(t('Translations'));
 
     $languages = l10n_community_get_languages();
-    $num_source = l10n_community_get_string_count('project', $project->pid);
-    $string_counts = l10n_community_get_string_count('languages', $project->pid);
+
+    // Check for l10n_packager, for faster queries but only on latest release
+    if (module_exists('l10n_packager') && variable_get('l10n_community_package_count', TRUE)) {
+      list($num_source, $string_counts) = l10n_community_get_l10n_packager_string_count($project->pid);
+    }
+    else {
+      $num_source = l10n_community_get_string_count('project', $project->pid);
+      $string_counts = l10n_community_get_string_count('languages', $project->pid);
+    }
 
     $table_rows = array();
     foreach ($languages as $langcode => $language) {
