@@ -32,23 +32,31 @@ function l10n_drupal_cron() {
     l10n_drupal_files_scan(TRUE);
   }
   if (variable_get('l10n_server_connector_l10n_project_drupalorg_enabled', FALSE) && variable_get('l10n_server_connector_l10n_project_drupalorg_cron', FALSE)) {
+    $success = 0;
+    $goal = variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1);
+    $offset = 0;
+
     module_load_include('inc', 'l10n_drupal', 'l10n_drupal.drupalorg');
     l10n_drupal_drupalorg_scan();
 
-    // Pick the oldest releases we did not parse yet.
-    $result = db_query_range("
-      SELECT r.*
-      FROM {l10n_server_project} p INNER JOIN
-           {l10n_server_release} r ON p.pid = r.pid
-      WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
-              0, variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1)
-    );
-    $return = array();
-    foreach ($result as $release) {
-      l10n_drupal_drupalorg_parse_release($release);
-    }
+    do {
+      // Pick the oldest releases we did not parse yet.
+      $result = db_query_range("
+        SELECT r.*
+        FROM {l10n_server_project} p INNER JOIN
+             {l10n_server_release} r ON p.pid = r.pid
+        WHERE p.connector_module = 'l10n_project_drupalorg' AND p.status = 1 AND r.download_link != '' AND r.last_parsed = 0 ORDER BY r.file_date ASC",
+                $offset, $goal - $success);
+      $return = array();
+      foreach ($result as $release) {
+        $return = l10n_drupal_drupalorg_parse_release($release);
+        if (empty($return['error'])) {
+          $success++;
+        }
+        $offset++;
+      }
+    } while ($success < $goal && $release !== FALSE);
   }
-
 }
 
 /**
