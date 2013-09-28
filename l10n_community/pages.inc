@@ -411,7 +411,7 @@ function l10n_community_language_progress_for_project($project, $languages, $tit
   $block['content'] = theme(
     'table',
     array(
-      'headers' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
+      'header' => theme('l10n_community_progress_headers', array('mainhead' => t('Language'))),
       'rows' => $table,
       'attributes' => array('class' => array('l10n-community-overview'))
     ));
