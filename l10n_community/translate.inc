@@ -109,6 +109,11 @@ function l10n_community_filter_form($form, &$form_state, $langcode, $filters) {
     '#theme_wrappers' => array('form_element', 'l10n_community_filter_form_element'),
   );
 
+  if ($form_state['values']['release'] != 'all' ) {
+    $selected_project = $projects[l10n_community_project_uri_by_title($form_state['values']['project'])];
+    $form['release']['#field_suffix'] = '<div class="start-over-link">' . l(t('Missing strings?'), 'translate/languages/' . $langcode . '/translate/reset/' . $selected_project->uri . '/' . $form_state['values']['release']) . '</div>';
+  }
+
   if (count($contexts = l10n_community_get_contexts()) > 1) {
     $class_is_default_context = $form_state['values']['context'] == 'all' ? 'is-default' : 'is-not-default';
     $form['context'] = array(
