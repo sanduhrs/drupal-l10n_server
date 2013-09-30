@@ -51,7 +51,7 @@ function l10n_packager_settings_form($form, &$form_state) {
     '#default_value' => variable_get('l10n_packager_file_limit', 1),
   );
   // Logging settings
-  $period = array(0 => t('Never')) + drupal_map_assoc(array(3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200, 4838400, 9676800), 'format_interval');
+  $period = array(0 => t('Never'), 1 => t('Every cron run')) + drupal_map_assoc(array(3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200, 4838400, 9676800), 'format_interval');
   $form['l10n_packager_update'] = array(
     '#title' => t('Repackaging interval'),
     '#type' => 'select',
