@@ -248,7 +248,7 @@ function l10n_drupal_parse_package($package_file, $release) {
       $error = t('Error on untaring %filename file.', array('%filename' => $package_file));
 
       // Delete the files extracted from broken archive.
-      l10n_drupal_rmdir_recursive($temp_path);
+      file_unmanaged_delete_recursive($temp_path);
     }
     else {
       // Get all source files and save strings with our callback for this release.
@@ -262,7 +262,7 @@ function l10n_drupal_parse_package($package_file, $release) {
       $sid_count = l10n_drupal_added_string_counter();
 
       // Delete the extracted files.
-      l10n_drupal_rmdir_recursive($temp_path);
+      file_unmanaged_delete_recursive($temp_path);
 
       // Record changes of the scanned project in the database.
       $message = t('@filename (@files files, @sids strings) scanned.', array('@filename' => basename($package_file), '@files' => count($files), '@sids' => $sid_count));
@@ -471,37 +471,6 @@ function l10n_drupal_added_string_counter($sid = NULL, $reset = FALSE) {
   }
   else {
     $sids[$sid] = 1;
-  }
-}
-
-/**
- * Delete the complete contents of a directory recursively.
- *
- * @param $dirname
- *  The directory name to be deleted.
- */
-function l10n_drupal_rmdir_recursive($directory) {
-  if (!is_dir($directory)) {
-    return;
-  }
-  if (substr($directory, -1) != '/') {
-    $directory .= '/';
-  }
-  if ($handle = opendir($directory)) {
-    while ($file = readdir($handle)) {
-      if ($file == '.' or $file == '..') {
-        continue;
-      }
-      $path = $directory . '/' . $file;
-      if (is_dir($path)) {
-        l10n_drupal_rmdir_recursive($path);
-      }
-      else {
-        unlink($path);
-      }
-    }
-    rmdir($directory);
-    closedir($handle);
   }
 }
 
