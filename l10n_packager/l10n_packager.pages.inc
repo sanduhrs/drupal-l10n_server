@@ -16,17 +16,22 @@ function l10n_packager_explore_downloads() {
   $projects = l10n_server_get_projects();
   $form = drupal_get_form('l10n_packager_download_project_form', $projects);
 
-  // @todo: remove hard-wired Drupal default from here.
-  if (empty($_GET['project'])) {
-    if ($drupal = l10n_server_get_projects(array('uri' => 'drupal'))) {
-      $project = $drupal;
-    }
+  if (empty($_GET['project']) && module_exists('l10n_community')) {
+    $project = l10n_community_get_highlighted_project();
   }
-  else {
+  elseif (!empty($_GET['project'])) {
     $project = l10n_server_get_projects(array('uri' => $_GET['project']));
   }
+  else {
+    $projects = l10n_server_get_projects();
+    if (count($projects) == 1) {
+      $project = reset($projects);
+    }
+  }
   if (empty($project)) {
-    drupal_set_message(t('Requested project not found.'), 'warning');
+    if (!empty($_GET['project'])) {
+      drupal_set_message(t('Requested project not found.'), 'warning');
+    }
     return $form;
   }
 
