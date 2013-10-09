@@ -473,6 +473,25 @@ function l10n_server_admin_projects_release_edit_form($form, &$form_state, $proj
 }
 
 /**
+ * Form validation function for release editing/submission.
+ */
+function l10n_server_admin_projects_release_edit_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['previous_release']->rid)) {
+    // Check that only no release with this name already exists.
+    $result = db_query("SELECT * FROM {l10n_server_release} WHERE title = :title AND pid = :pid", array(
+      ':title' => $form_state['values']['title'],
+      ':pid'   => $form_state['values']['project']->pid,
+    ));
+    if ($result->fetchField()) {
+      form_set_error('title', t('The release version %title does already exist for %project. The release version should be unique per project.', array(
+        '%title'   => $form_state['values']['title'],
+        '%project' => $form_state['values']['project']->title,
+      )));
+    }
+  }
+}
+
+/**
  * Form submission function for release editing/submission.
  */
 function l10n_server_admin_projects_release_edit_form_submit($form, &$form_state) {
