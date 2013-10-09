@@ -265,7 +265,7 @@ function theme_l10n_server_admin_releases_form($variables) {
     }
     $table[] = $row;
     // Mark as rendered, already included its output above.
-    drupal_render($release_element['operations']);
+    $release_element['operations']['#printed'] = TRUE;
   }
   $headers = array(array(
                'data' => t('Release'),
