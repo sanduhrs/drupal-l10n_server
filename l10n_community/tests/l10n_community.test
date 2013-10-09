@@ -534,7 +534,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // CHECK DUPLICATES
 
     // Importing the same file, we should only get duplicates (and ignored).
-    $this->importPO($filename, $this->u_moderator->uid);
+    $this->importPO($filename, $this->u_moderator->uid, 1);
     $this->assertRaw(t('@count duplicate translations not saved', array('@count' => 4)));
     $this->assertRaw(t('@count source strings not found; their translations were ignored', array('@count' => 2)));
 
@@ -641,6 +641,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Import specified file to the given language.
+   * By default, string are imported as suggestions.
    */
   function importPO($filename, $import_uid, $is_suggestion = NULL, $assert = TRUE) {
     $edit = array();

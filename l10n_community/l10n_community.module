@@ -990,8 +990,10 @@ function l10n_community_ajax_releases($form, $form_state) {
  *   User ID to use to keep history of.
  * @param $medium
  *   Medium type constant L10N_SERVER_MEDIUM_*
+ * @param $force
+ *   Force replacing a suggestion if it already exists.
  */
-function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attribution, $uid_user, $medium) {
+function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attribution, $uid_user, $medium, $force = FALSE) {
 
   // Load source string and adjust translation whitespace based on source.
   $source_string = db_query('SELECT value FROM {l10n_server_string} WHERE sid = :sid', array(':sid' => $sid))->fetchField();
@@ -1015,7 +1017,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
     ->fetchObject();
 
   if (!empty($existing)) {
-    if ($existing->is_active == 0) {
+    if ($existing->is_active == 0 || ($existing->is_suggestion == 1 && $force)) {
       // If the existing item is not active, make it an active suggestion and clean up its possible previous approval information.
       db_update('l10n_server_translation')
         ->fields(array(

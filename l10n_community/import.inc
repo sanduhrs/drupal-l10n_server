@@ -183,7 +183,7 @@ function _l10n_community_import_one_string($value, $langcode = NULL, $is_suggest
       $value['msgstr'] = is_array($value['msgstr']) ? join("\0", $value['msgstr']) : $value['msgstr'];
 
       // Add this as a suggestion first.
-      $tid = l10n_community_add_suggestion($sid, $value['msgstr'], $langcode, $uid, $user->uid, L10N_SERVER_MEDIUM_IMPORT);
+      $tid = l10n_community_add_suggestion($sid, $value['msgstr'], $langcode, $uid, $user->uid, L10N_SERVER_MEDIUM_IMPORT, !$is_suggestion);
 
       if ($tid) {
         if ($is_suggestion) {
