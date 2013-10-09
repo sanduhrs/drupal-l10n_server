@@ -317,13 +317,14 @@ function l10n_server_admin_projects_cleanup_form_submit($form, &$form_state) {
 function l10n_server_admin_projects_edit_form($form, &$form_state, $project_uri = NULL) {
   if (!isset($project_uri)) {
     $connector_list = l10n_server_get_add_enabled_project_connectors();
+    $connectors_ids = array_keys($connector_list);
     // Provide sensible default for project if adding new one.
     $project = (object) array(
       'pid' => NULL,
       'uri' => '',
       'title' => '',
       'home_link' => '',
-      'connector_module' => array_shift(array_keys($connector_list)),
+      'connector_module' => array_shift($connectors_ids),
       'status' => 1,
       'weight' => 0,
     );
