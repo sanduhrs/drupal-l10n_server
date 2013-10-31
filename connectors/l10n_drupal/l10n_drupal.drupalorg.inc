@@ -89,6 +89,9 @@ function l10n_drupal_drupalorg_batch_operation($release, &$context) {
  */
 function l10n_drupal_drupalorg_scan() {
 
+  // Disable for now, since d.o changed dramatically.
+  return;
+
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
   db_set_active('projects');
