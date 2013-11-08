@@ -11,10 +11,9 @@
 define('L10N_DRUPAL_DRUPALORG_BATCH_PARSE_AMOUNT', 50);
 
 /**
- * The term IDs for projects on Drupal.org used here.
+ * The term ID for translations on Drupal.org.
  */
-define('L10N_DRUPAL_DRUPALORG_OBSOLETE_TID', 9994);
-define('L10N_DRUPAL_DRUPALORG_UNSUPPORTED_TID', 13032);
+define('L10N_DRUPAL_DRUPALORG_TRANSLATION_TID', 29);
 
 // == Front end functionality ==================================================
 
@@ -90,14 +89,33 @@ function l10n_drupal_drupalorg_batch_operation($release, &$context) {
  */
 function l10n_drupal_drupalorg_scan() {
 
+  // Disable for now, since d.o changed dramatically.
+  return;
+
   // settings.php has a $db_url['projects'] entry, which gives us access to
   // the projects database.
   db_set_active('projects');
 
+  // Got the limited list of translation projects first to exclude from the
+  // upcoming query. We cannot join on the term_node table there, since we
+  // can have nodes with multiple terms, so just adding
+  // tid != L10N_DRUPAL_DRUPALORG_TRANSLATION_TID would not help, the project
+  // would still match on other terms.
+  $result = db_query(
+    "SELECT DISTINCT pp.nid
+     FROM project_projects pp INNER JOIN
+          term_node tn ON tn.nid = pp.nid
+     WHERE tn.tid = %d", L10N_DRUPAL_DRUPALORG_TRANSLATION_TID
+  );
+  $exclude_projects = array();
+  while ($project = db_fetch_object($result)) {
+    // Cast to int to make sure we are secure.
+    $exclude_projects[] = (int) $project->nid;
+  }
+
   // Get all projects - published, unpublished equally, so we can update project
-  // status on our copy for projects which were previously published.
-  // Filter out projects marked as both 'Unsupported' and 'Obsolete' (see the
-  // sub-query) and only where there were any releases. We only parse releases,
+  // status on our copy for projects which were previously published. Only get
+  // projects however, where there were any releases. We only parse releases,
   // so there is no point to have data from other projects. Also, drupal.org
   // has some pseudo-projects for the webmasters or infrastructure team to
   // maintain issues queues, which are also only identifiable by looking at
@@ -108,13 +126,9 @@ function l10n_drupal_drupalorg_scan() {
      FROM project_projects pp INNER JOIN
           project_release_nodes prn ON pp.nid = prn.pid LEFT JOIN
           node n ON pp.nid = n.nid
-     WHERE pp.nid NOT IN (
-        SELECT ti.nid
-        FROM taxonomy_index ti
-        INNER JOIN taxonomy_index ti2 ON ti2.nid = ti.nid AND ti2.tid = %d
-        WHERE ti.tid = %d
-     ) AND prn.rebuild = 0
-     ORDER BY pp.nid", L10N_DRUPAL_DRUPALORG_OBSOLETE_TID, L10N_DRUPAL_DRUPALORG_UNSUPPORTED_TID
+     WHERE pp.nid NOT IN (" . join(', ', $exclude_projects) . ") AND
+           prn.rebuild = 0
+     ORDER BY pp.nid"
   );
 
   // Fill in an array, so we can go back to our database and add in these
