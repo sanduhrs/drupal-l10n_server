@@ -654,7 +654,7 @@ function l10n_community_get_string_count($type, $id = NULL) {
 
     case 'project':
       // Return a count of all strings in this project, id required.
-      return db_query('SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.pid = :pid', array(':pid' => $id))->fetchField();
+      return db_query('SELECT COUNT(DISTINCT l.sid) FROM {l10n_server_line} l WHERE l.pid = :pid', array(':pid' => $id))->fetchField();
 
     case 'languages':
       if ($stats = cache_get('l10n:count:languages:' . $id, 'cache')) {
@@ -757,7 +757,7 @@ function l10n_community_get_l10n_packager_string_count($pid) {
   }
   ksort($sums);
   // Finally, get the string count of the release
-  $num_source = db_query("SELECT COUNT(DISTINCT s.sid) FROM {l10n_server_line} l INNER JOIN {l10n_server_string} s ON l.sid = s.sid WHERE l.rid = :rid", array(':rid' => $rid))->fetchField();
+  $num_source = db_query("SELECT COUNT(DISTINCT l.sid) FROM {l10n_server_line} l WHERE l.rid = :rid", array(':rid' => $rid))->fetchField();
   return array($num_source, $sums);
 }
 
