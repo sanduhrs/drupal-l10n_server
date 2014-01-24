@@ -17,17 +17,17 @@ function l10n_drupal_rest_refresh_project_list() {
   $before = $last_sync - 60 * 60 * 24;
 
   // Fetch projects and releases since last sync.
-  $file_path = file_directory_path() . '/releases.tsv';
+  $file_path = file_directory_temp() . '/releases.tsv';
   $url = variable_get('l10n_drupal_rest_refresh_url', 'https://drupal.org/files/releases.tsv');
   // This will take some time, so we need to increase timeout.
   $response = drupal_http_request($url, array(), 'GET', NULL, 3, 300);
   if ($response->code == 200) {
     // Save as temporary file and release the memory.
-    file_save_data($response->data, $file_path, FILE_EXISTS_REPLACE);
+    file_put_contents($file_path, $response->data);
     unset($response);
     _l10n_drupal_rest_read_tsv($file_path, $before, $projects, $releases);
     // Remove file
-    file_delete($file_path);
+    unlink($file_path);
   }
   else {
     watchdog($connector_name, 'Releases URL %url is unreacheable.', array(
