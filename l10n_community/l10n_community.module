@@ -822,6 +822,7 @@ function l10n_community_get_stats($langcode = NULL) {
 function l10n_community_cron() {
   $lastrun = variable_get('l10n_cron_stats', 1);
   if (($_SERVER['REQUEST_TIME'] - $lastrun) > 3600) {
+    watchdog('l10n_community', 'Rebuilding community statistics (this may take a long time)');
     l10n_community_cache_clear_all();
     l10n_community_rebuild_stats();
     variable_set('l10n_cron_stats', $_SERVER['REQUEST_TIME']);
