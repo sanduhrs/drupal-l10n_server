@@ -252,9 +252,9 @@ function l10n_drupal_parse_package($package_file, $release) {
     }
     else {
       // Get all source files and save strings with our callback for this release.
-      $files = _potx_explore_dir($temp_path);
       l10n_drupal_callback_save_version(array($release->pid, $release->rid));
       $version = l10n_drupal_detect_major_version($package_file);
+      $files = _potx_explore_dir($temp_path, '*', $version);
       l10n_drupal_added_string_counter(NULL, TRUE);
       foreach ($files as $name) {
         _potx_process_file($name, substr($name, strlen($temp_path) + 1), 'l10n_drupal_callback_save_string', 'l10n_drupal_callback_save_version', $version);
