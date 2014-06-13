@@ -384,9 +384,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
       if (l10n_drupal_drupalorg_exec('tar -xvvzf ' . escapeshellarg($package_file) . ' -C ' . escapeshellarg($temp_path))) {
 
         // Get all source files and save strings with our callback for this release.
-        $files = _potx_explore_dir($temp_path);
-        l10n_drupal_save_file(array($release->pid, $release->rid));
         $version = l10n_drupal_detect_major_version($package_file);
+        $files = _potx_explore_dir($temp_path, '*', $version);
+        l10n_drupal_save_file(array($release->pid, $release->rid));
         l10n_drupal_added_string_counter(NULL, TRUE);
         foreach ($files as $name) {
           _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
