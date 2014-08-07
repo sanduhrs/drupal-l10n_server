@@ -18,7 +18,9 @@ function l10n_drupal_rest_refresh_project_list() {
 
   // Fetch projects and releases since last sync.
   $file_path = file_directory_temp() . '/releases.tsv';
-  $url = variable_get('l10n_drupal_rest_refresh_url', 'https://www.drupal.org/files/releases.tsv');
+  $url = variable_get('l10n_drupal_rest_refresh_url', L10N_DRUPAL_REST_REFRESH_URL);
+  // Add a timestamp GET parameter to prevent CDN caching.
+  $url = url($url, array('query' => array('time' => time())));
   // This will take some time, so we need to increase timeout.
   $response = drupal_http_request($url, array(), 'GET', NULL, 3, 300);
   if ($response->code == 200) {

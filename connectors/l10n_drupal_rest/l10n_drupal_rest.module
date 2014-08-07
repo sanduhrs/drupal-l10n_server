@@ -6,6 +6,11 @@
  */
 
 /**
+ * Constants.
+ */
+const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
+
+/**
  * Implementation of hook_cron().
  */
 function l10n_drupal_rest_cron() {
@@ -89,6 +94,13 @@ function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(
       '#default_value' => variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024),
       '#description'   => t('In bytes. Releases larger than this size will not be downloaded.'),
       '#weight'        => 0,
+    );
+    $form['l10n_drupal_rest_refresh_url'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Refresh URL'),
+      '#default_value' => variable_get('l10n_drupal_rest_refresh_url', L10N_DRUPAL_REST_REFRESH_URL),
+      '#description'   => t('URL to the releases.tsv file.'),
+      '#weight'        => 1,
     );
   }
 }
