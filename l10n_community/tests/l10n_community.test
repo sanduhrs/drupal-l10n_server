@@ -143,7 +143,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertMsgIDPlural('1 test string', '@count test strings');
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertMsgIDContext('Test string in context', 'Test context');
-    $this->assertCount('<td class="source"', 33);
+    $this->assertCount('<td class="source"', 39);
 
     // Check Drupal 5 specific pattern with strings.
     $this->drupalGet('translate/languages/hu/translate',
@@ -165,7 +165,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertMsgIDPlural('1 test string', '@count test strings');
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertMsgIDContext('Test string in context', 'Test context', FALSE);
-    $this->assertCount('<td class="source"', 28);
+    $this->assertCount('<td class="source"', 33);
 
     // Check Drupal 7 specific pattern with strings.
     $this->drupalGet('translate/languages/hu/translate',
@@ -176,7 +176,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->assertMsgIDPlural('1 test string', '@count test strings');
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
     $this->assertMsgIDContext('Test string in context', 'Test context');
-    $this->assertCount('<td class="source"', 26);
+    $this->assertCount('<td class="source"', 31);
 
     // RELEASES ====
 
@@ -195,7 +195,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
           'release' => $rid,
         )));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS', FALSE);
-    $this->assertCount('<td class="source"', 24);
+    $this->assertCount('<td class="source"', 25);
 
     // JS release should have JS strings.
     $query = db_select('l10n_server_project', 'p');
@@ -212,7 +212,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
           'release' => $rid,
         )));
     $this->assertMsgIDPlural('1 test string in JS', '@count test strings in JS');
-    $this->assertCount('<td class="source"', 28);
+    $this->assertCount('<td class="source"', 33);
 
     // CONTEXT ====
 
@@ -224,7 +224,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
         )));
     $this->assertMsgIDContext('Test string in context', 'Test context');
     $this->assertMsgID('This is a test string.', FALSE);
-    $this->assertCount('<td class="source"', 1);
+    $this->assertCount('<td class="source"', 7);
 
     // Filtering for context with project works.
     $this->drupalGet('translate/languages/hu/translate',
@@ -235,7 +235,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
         )));
     $this->assertMsgIDContext('Test string in context', 'Test context');
     $this->assertMsgID('This is a test string.', FALSE);
-    $this->assertCount('<td class="source"', 1);
+    $this->assertCount('<td class="source"', 7);
 
     // Filtering for context but with another project works (no result).
     $this->drupalGet('translate/languages/hu/translate',
@@ -243,6 +243,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
           'limit' => '50',
           'project' => $this->project_names[6],
           'context' => 'Test context',
+          'search' => 'is a',
         )));
     $this->assertRaw(t('No strings found with this filter. Try adjusting the filter options.'));
 
@@ -385,7 +386,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     $this->drupalGet('translate/languages/hu/translate',
       array('query' => array('limit' => '50')));
-    $this->assertCount('<td class="source"', 33);
+    $this->assertCount('<td class="source"', 39);
 
     $this->drupalGet('translate/languages/hu/translate',
       array('query' => array('status' =>'8', 'limit' =>'50')));
@@ -393,7 +394,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
     $this->drupalGet('translate/languages/hu/translate',
       array('query' => array('status' => '4', 'limit' => '50')));
-    $this->assertCount('<td class="source"', 29);
+    $this->assertCount('<td class="source"', 35);
 
     // Look for translations per user.
     $this->drupalGet('translate/languages/hu/translate',
@@ -782,10 +783,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $strings_to_find = array(
       5 => array(TRUE => 19),
       6 => array(
-        TRUE => 28,
-        FALSE => 24,
+        TRUE => 33,
+        FALSE => 25,
       ),
-      7 => array(TRUE => 26),
+      7 => array(TRUE => 31),
     );
     // Assert the right pattern for this feedback message.
     $this->assertRaw(t('@filename (@files files, @sids strings) scanned.', array('@filename' => basename($package_file), '@files' => $num_files, '@sids' => $strings_to_find[$api_version][$include_js])));
