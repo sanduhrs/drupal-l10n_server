@@ -1,0 +1,102 @@
+<?php
+
+/**
+ * @file
+ *   Localization server for Drupal using REST API.
+ */
+
+/**
+ * Implementation of hook_cron().
+ */
+function l10n_drupal_rest_cron() {
+  $connector_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_enabled', FALSE);
+  $cron_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_cron', FALSE);
+  if ($connector_enabled && $cron_enabled) {
+    $success = 0;
+    $offset = 0;
+    $goal = variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1);
+
+    module_load_include('inc', 'l10n_drupal', 'l10n_drupal.drupalorg');
+    module_load_include('inc', 'l10n_drupal_rest', 'l10n_drupal_rest.rest');
+    l10n_drupal_rest_refresh_project_list();
+
+    do {
+      // Pick the oldest releases we did not parse yet.
+      $query = db_select('l10n_server_project', 'p');
+      $query->innerJoin('l10n_server_release', 'r', 'p.pid = r.pid');
+      $releases = $query->fields('r')
+                        ->condition('p.connector_module', array(
+                          'l10n_project_drupalorg',
+                          'l10n_drupal_rest_restapi'
+                        ))
+                        ->condition('p.status', 1)
+                        ->condition('r.download_link', '', '!=')
+                        ->condition('r.last_parsed', 0)
+                        ->orderBy('r.file_date')
+                        ->range($offset, $goal - $success)
+                        ->execute()
+                        ->fetchAllAssoc('rid');
+      foreach($releases as $release) {
+        $return = l10n_drupal_drupalorg_parse_release($release);
+        if (empty($return['error'])) {
+          $success++;
+        }
+        $offset++;
+      }
+    } while ($success < $goal && count($releases) > 0);
+  }
+
+}
+
+/**
+ * Implementation of hook_l10n_server_connector_info().
+ */
+function l10n_drupal_rest_l10n_server_connector_info() {
+  $connectors['l10n_drupal_rest'] = array(
+    'title'    => t('Drupal.org packages'),
+    'sources'  => array('restapi'),
+    'file'     => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.drupalorg.inc',
+    // Only provide scan functionality if enabled.
+    'scan'     => variable_get('l10n_server_connector_l10n_drupal_rest_restapi_enabled', FALSE) ? 'l10n_drupal_drupalorg_scan_page' : NULL,
+    // Display warnings tab, because we are parsing source code here.
+    'warnings' => TRUE,
+  );
+
+  return $connectors;
+}
+
+/**
+ * Implementation of hook_l10n_server_source_info().
+ */
+function l10n_drupal_rest_l10n_server_source_info() {
+  return array(
+    'restapi' => array(
+      'title' => t('the drupal.org REST API'),
+      // Reuse file settings mostly (will be modified in form_alter()).
+      'form'  => 'l10n_server_connectors_files_settings_form',
+      'scan'  => TRUE,
+      'file'  => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
+    ),
+  );
+}
+
+// = Settings ==================================================================
+
+/**
+ * Implementation of hook_form_FORM_ID_alter().
+ */
+function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(&$form) {
+  if ($form['#connector_name'] == 'l10n_drupal_rest') {
+    // No file directory setting here.
+    $form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#access'] = FALSE;
+    unset($form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#after_build']);
+    // Setting for filesize limit
+    $form['l10n_server_connector_l10n_project_drupalorg_max_filesize'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Release files max filesize'),
+      '#default_value' => variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024),
+      '#description'   => t('In bytes. Releases larger than this size will not be downloaded.'),
+      '#weight'        => 0,
+    );
+  }
+}
