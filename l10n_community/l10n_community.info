@@ -1,6 +1,7 @@
 name = Localization community UI
 description = Community interface for string translation
 dependencies[] = l10n_server
+dependencies[] = potx (3.x)
 package = "Localization server"
 core = 7.x
 php = 5

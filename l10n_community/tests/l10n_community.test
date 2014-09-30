@@ -760,7 +760,7 @@ class L10nServerTestCase extends DrupalWebTestCase {
     // important for potx, just to be clear about identification).
     $tar->addString('potx_test_' . $api_version . '.info', file_get_contents(drupal_get_path('module', 'potx') . '/tests/potx_test_6.info'));
     $num_files = 2;
-    if ($include_js) {
+    if ($include_js && $api_version > 5) {
       // Add .js file regardless of api version. Although Drupal 5 parsing should
       // not pick this up, this packaging allows us to test for that exactly.
       $tar->addString('potx_test_' . $api_version . '.js', file_get_contents(drupal_get_path('module', 'potx') . '/tests/potx_test.js'));
