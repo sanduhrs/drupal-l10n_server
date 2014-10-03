@@ -418,6 +418,8 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         foreach ($files as $name) {
           _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
         }
+        potx_finish_processing('l10n_drupal_save_string', $version);
+
         $sid_count = l10n_drupal_added_string_counter();
 
         // Delete directory now that parsing is done.
