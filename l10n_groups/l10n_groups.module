@@ -514,3 +514,18 @@ function l10n_groups_l10n_community_build_language_page($language) {
   }
   return array('#markup' => '<div id="mission" class="og-mission">' . $output . '</div>');
 }
+
+/**
+ * Implements hook_views_post_render().
+ */
+function l10n_groups_views_post_render(&$view, &$output, &$cache) {
+  // Alter the title of the view to add the team name
+  if ($view->name == 'l10n_groups_ron') {
+    $context = og_context();
+    if (!empty($context)) {
+      $node = node_load($context['gid']);
+      $language = l10n_community_get_language($node->l10n_group_language);
+      $view->build_info['title'] = t('Board - @language', array('@language' => $language->name));
+    }
+  }
+}
