@@ -73,6 +73,8 @@ function l10n_drupal_rest_refresh_project_list() {
       // New published release, not recorded before.
       db_query("INSERT INTO {l10n_server_release} (pid, title, download_link, file_date, file_hash, last_parsed) VALUES (%d, '%s', '%s', %d, '%s', %d)", $pid, $release['version'], $download_link, $release['created'],
         $filehash, 0);
+      // Update last sync date with the date of this release if later.
+      $last_sync = max($last_sync, $release['created']);
     }
   }
 
@@ -89,7 +91,7 @@ function l10n_drupal_rest_refresh_project_list() {
   }
 
   // Set last sync time to limit number of releases to look at next time.
-  variable_set('l10n_drupal_rest_last_sync', time());
+  variable_set('l10n_drupal_rest_last_sync', $last_sync);
 }
 
 /**
