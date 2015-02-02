@@ -111,6 +111,8 @@ function l10n_drupal_rest_refresh_project_list() {
         '%t' => $release['version'],
         '%n' => $release['machine_name'],
       ));
+      // Update last sync date with the date of this release if later.
+      $last_sync = max($last_sync, $release['created']);
     }
   }
 
@@ -127,7 +129,7 @@ function l10n_drupal_rest_refresh_project_list() {
   }
 
   // Set last sync time to limit number of releases to look at next time.
-  variable_set('l10n_drupal_rest_last_sync', time());
+  variable_set('l10n_drupal_rest_last_sync', $last_sync);
 }
 
 /**

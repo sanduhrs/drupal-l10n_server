@@ -117,5 +117,12 @@ function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(
       '#description'   => t('URL to the releases.tsv file.'),
       '#weight'        => 1,
     );
+    $form['l10n_drupal_rest_last_sync'] = array(
+      '#type'          => 'textfield',
+      '#title'         => t('Sync releases after'),
+      '#default_value' => variable_get('l10n_drupal_rest_last_sync', 0),
+      '#description'   => t('UNIX timestamp to parse releases from.'),
+      '#weight'        => 2,
+    );
   }
 }
