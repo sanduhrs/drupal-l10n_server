@@ -18,12 +18,12 @@ function l10n_drupal_rest_drupal8_status() {
   $table_rows = array();
   foreach ($languages as $langcode => $language) {
     $stats = l10n_community_get_stats($langcode);
-    $columns = theme('l10n_community_progress_columns', array(
-      'sum'            => $num_source,
-      'translated'     => @$string_counts[$langcode]['translations'],
-      'has_suggestion' => @$string_counts[$langcode]['suggestions']
+    $progress = array_shift(theme(
+      'l10n_community_progress_columns',
+      $num_source,
+      @$string_counts[$langcode]['translations'],
+      @$string_counts[$langcode]['suggestions']
     ));
-    $progress = array_shift($columns);
     $table_rows[] = array(
       array(
         'data' => l(t($language->name), 'translate/languages/' . $langcode),
