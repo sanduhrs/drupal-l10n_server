@@ -18,7 +18,7 @@ function l10n_drupal_rest_cron() {
   $cron_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_cron', FALSE);
   if ($connector_enabled && $cron_enabled) {
     $success = $offset = $failed = 0;
-    $goal = variable_get('l10n_server_connector_l10n_project_drupalorg_limit', 1);
+    $goal = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_limit', 1);
 
     module_load_include('inc', 'l10n_drupal', 'l10n_drupal.drupalorg');
     module_load_include('inc', 'l10n_drupal_rest', 'l10n_drupal_rest.rest');
