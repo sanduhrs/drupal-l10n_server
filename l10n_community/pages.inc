@@ -740,17 +740,22 @@ function l10n_community_get_string_count($type, $id = NULL) {
  * slow
  *
  * @param int $pid
- *   The project id to get string counts for
+ *   The project id to get string counts for.
+ * @param int $rid
+ *   (Optional) The release id to get string counts for. If not provided, the
+ *   latest release of the project will be considered.
  *
  * @return array
  *    first element is the number of original strings
  *    second element is the number of translations for each language
  */
-function l10n_community_get_l10n_packager_string_count($pid) {
+function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
   // Faster queries with l10n_packager, first get latest release id from the
   // l10n_packager_file table for the project requested, then get the
-  // translation count of the release
-  $rid = db_query("SELECT pf.rid FROM {l10n_server_release} sr INNER JOIN {l10n_packager_file} pf ON sr.rid = pf.rid WHERE pid = :pid ORDER BY pf.rid DESC LIMIT 0, 1", array(':pid' => $pid))->fetchField();
+  // translation count of the release.
+  if (empty($rid)) {
+    $rid = db_query("SELECT pf.rid FROM {l10n_server_release} sr INNER JOIN {l10n_packager_file} pf ON sr.rid = pf.rid WHERE pid = :pid ORDER BY pf.rid DESC LIMIT 0, 1", array(':pid' => $pid))->fetchField();
+  }
   $results = db_query("SELECT language, sid_count FROM {l10n_packager_file} WHERE rid = :rid", array(':rid' => $rid))->fetchAllKeyed();
   foreach($results as $language => $sid_count) {
     $sums[$language]['translations'] = $sid_count;

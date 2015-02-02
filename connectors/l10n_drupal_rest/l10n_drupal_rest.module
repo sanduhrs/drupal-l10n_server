@@ -11,6 +11,21 @@
 const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
 
 /**
+ * Implements hook_menu().
+ */
+function l10n_drupal_rest_menu() {
+  $items = array();
+
+  $items['translate/drupal8'] = array(
+    'title' => 'Drupal 8 translation status',
+    'page callback' => 'l10n_drupal_rest_drupal8_status',
+    'file' => 'l10n_drupal_rest.drupal8.inc',
+    'access arguments' => array('access localization community'),
+  );
+  return $items;
+}
+
+/**
  * Implementation of hook_cron().
  */
 function l10n_drupal_rest_cron() {
