@@ -151,7 +151,7 @@ function l10n_server_connectors_files_settings_form(&$form_state, $connector_nam
     '#title' => t('Number of releases to look at once'),
     '#description' => t('The number of releases to scan on a manual or cron run. Scanning is synchronous, so you need to wait while extraction and parsing of file content is underway.'),
     '#type' => 'select',
-    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20)),
+    '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30)),
     '#default_value' => variable_get('l10n_server_connector_' . $connector_name . '_' . $source_name . '_limit', 1),
   );
   $form['l10n_server_connector_' . $connector_name . '_' . $source_name . '_cron'] = array(
