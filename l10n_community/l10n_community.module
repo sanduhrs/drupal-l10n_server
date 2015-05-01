@@ -181,7 +181,7 @@ function l10n_community_menu() {
   );
   // Tabs to translate, import and export projects.
   $items['translate/languages/%l10n_community_language/translate'] = array(
-    'title' => 'Translate',
+    'title' => 'Browse Translation',
     'page callback' => 'l10n_community_translate_page',
     'page arguments' => array(2),
     'file' => 'translate.inc',
