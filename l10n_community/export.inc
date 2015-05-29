@@ -401,7 +401,8 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
   while ($string = db_fetch_object($result)) {
     if ($string->sid != $previous_sid) {
-      // New string in the stream.
+      // New string in the stream. Store all the info about *the previous one*
+      // (if any).
       _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);
 
       // Now fill in the new string values.
@@ -417,6 +418,8 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
         'type'           => $string->type,
         'has_suggestion' => @$string->has_suggestion,
       );
+
+      // Count this source string with this first occurrence found.
       $sid_count++;
     }
     else {
@@ -435,9 +438,9 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     }
   }
   if ($previous_sid > 0) {
-    // Store the last string.
+    // Store the last string because that only has all its accumulated
+    // information available after the loop ended.
     _l10n_community_export_string_files($po_data, $uri, $language, $template, $export_string, $compact, $suggestions);
-    $sid_count++;
   }
 
   if (empty($po_data)) {
