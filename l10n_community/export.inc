@@ -489,7 +489,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $header .= "\"MIME-Version: 1.0\\n\"\n";
     $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
     $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
-    if ($language->formula && $language->plurals) {
+    if ((!empty($language->formula) || $language->formula === "0") && $language->plurals) {
       $header .= "\"Plural-Forms: nplurals=" . $language->plurals . "; plural=" . strtr($language->formula, array('$' => '')) . ";\\n\"\n";
     }
   }
@@ -508,7 +508,7 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
     $header .= "\"MIME-Version: 1.0\\n\"\n";
     $header .= "\"Content-Type: text/plain; charset=utf-8\\n\"\n";
     $header .= "\"Content-Transfer-Encoding: 8bit\\n\"\n";
-    if (isset($language) && $language->formula && $language->plurals) {
+    if (isset($language) && (!empty($language->formula) || $language->formula === "0") && $language->plurals) {
       $header .= "\"Plural-Forms: nplurals=" . $language->plurals . "; plural=" . strtr($language->formula, array('$' => '')) . ";\\n\"\n";
     }
     else {
