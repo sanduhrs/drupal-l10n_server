@@ -1192,15 +1192,22 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
 }
 
 /**
- * Check if a user has access within the scope of l10n_server
- * (with l10n_groups enabled or not)
+ * Check if a user has a permission (in the current group or globally).
  *
- * @param $string
+ * @param string $permission.
+ *   Permission name.
+ * @param object|null $account
+ *   (optional) User account object to check the permission against.
+ *
+ * @return bool
+ *   TRUE if the user has the $permission in the current group (if one is set)
+ *   or globally. FALSE if the user does not have the permission neither in the
+ *   current group (if one is set) neither globally.
  */
-function l10n_community_access($string, $account = NULL) {
-  if (module_exists('l10n_groups')) {
-    $group = l10n_groups_set_context();
-    return $group && og_user_access($group['group_type'], $group['gid'], $string, $account);
+function l10n_community_access($permission, $account = NULL) {
+  $group_access = FALSE;
+  if (module_exists('l10n_groups') && ($group = l10n_groups_set_context())) {
+    $group_access = og_user_access($group['group_type'], $group['gid'], $permission, $account);
   }
-  return user_access($string, $account);
+  return $group_access || user_access($permission, $account);
 }
