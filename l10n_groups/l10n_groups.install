@@ -85,3 +85,17 @@ function l10n_groups_schema() {
 function l10n_groups_update_last_removed() {
   return 6001;
 }
+
+/**
+ * Update the 'Localization group information' block.
+ */
+function l10n_groups_update_7100() {
+  // Delete the block from the table.
+  db_delete('blocks')
+    ->condition('module', 'l10n_groups')
+    ->condition('delta', 'info')
+    ->condition('theme', 'bluecheese');
+
+  // Flush the cache so that the new block settings are applied.
+  cache_clear_all();
+}
