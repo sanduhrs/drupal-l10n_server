@@ -151,6 +151,11 @@ function l10n_groups_block_info() {
     'info' => array(
       'info' => t('Localization group information'),
       'cache' => DRUPAL_NO_CACHE,
+      'visibility' => BLOCK_VISIBILITY_NOTLISTED,
+      'pages' => 'translate/languages/*/translate',
+      'weight' => -12,
+      'region' => 'sidebar_second',
+      'status' => 1,
     ),
   );
   return $blocks;
