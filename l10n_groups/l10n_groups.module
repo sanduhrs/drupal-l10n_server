@@ -226,7 +226,11 @@ function l10n_groups_block_view($delta) {
           drupal_alter('l10n_groups_links', $links, $group);
 
           $block['content'] = theme('item_list', array('items' => $links, 'type' => 'ul'));
-          $block['subject'] = theme('link', array('text' => $group->title, 'path' => 'node/' . $group->nid));
+          $block['subject'] = theme('link', array(
+            'text' => $group->title,
+            'path' => 'node/' . $group->nid,
+            'options' => array('html' => TRUE, 'attributes' => array()),
+          ));
           return $block;
         }
       }
