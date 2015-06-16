@@ -163,11 +163,10 @@ function l10n_groups_block_view($delta) {
   global $user;
   switch ($delta) {
     case 'info':
-      $on_language = (arg(0) == 'translate') && (arg(1) == 'languages') && arg(2);
-      $home_or_board = !arg(3) || arg(3) == 'board';
+      $on_language = (arg(0) == 'translate') && (arg(1) == 'languages') && arg(2) && (arg(3) != 'translate');
       $context = og_context();
-      // Display on language home or group node
-      if (($on_language && $home_or_board) || !empty($context)) {
+      // Display on language pages or group node.
+      if ($on_language || !empty($context)) {
         // Only display group details if we have a group context.
         $group = entity_load_single($context['group_type'], $context['gid']);
         if ($context && entity_access('view', 'node', $group)) {
@@ -227,7 +226,7 @@ function l10n_groups_block_view($delta) {
           drupal_alter('l10n_groups_links', $links, $group);
 
           $block['content'] = theme('item_list', array('items' => $links, 'type' => 'ul'));
-          $block['subject'] = $group->title;
+          $block['subject'] = theme('link', array('text' => $group->title, 'path' => 'node/' . $group->nid));
           return $block;
         }
       }
