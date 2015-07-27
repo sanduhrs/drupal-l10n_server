@@ -809,7 +809,7 @@ function _l10n_community_alphabetic_pager() {
  * Form callback to display a confirm form for resetting releases.
  */
 function l10n_community_projects_release_reset($form, &$form_state, $langcode, $project_uri, $release_rid) {
-  if (user_access('start over packages')) {
+  if (l10n_community_access('start over packages')) {
     $project = l10n_server_get_projects(array('uri' => $project_uri));
     $releases = l10n_server_get_releases($project_uri, FALSE);
     if (isset($releases[$release_rid])) {
