@@ -171,7 +171,7 @@ function l10n_groups_block_view($delta) {
       $on_language = (arg(0) == 'translate') && (arg(1) == 'languages') && arg(2) && (arg(3) != 'translate');
       $context = og_context();
       // Display on language pages or group node.
-      if ($on_language || !empty($context)) {
+      if ($on_language && !empty($context)) {
         // Only display group details if we have a group context.
         $group = entity_load_single($context['group_type'], $context['gid']);
         if ($context && entity_access('view', 'node', $group)) {
