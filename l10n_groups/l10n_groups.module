@@ -564,7 +564,7 @@ function l10n_groups_og_context_handler_translate_path() {
   // We're in the translate section
   $gids = array();
 
-  if ($path[0] == 'translate' && $path[1] == 'languages') {
+  if (sizeof($path) > 2 && $path[0] == 'translate' && $path[1] == 'languages') {
     if ($langcode = l10n_community_language_load($path[2])) {
       $groups = l10n_groups_get_groups();
       // Set group context and ask for og details block.
