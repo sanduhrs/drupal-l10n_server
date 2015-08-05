@@ -1206,8 +1206,10 @@ function l10n_community_approve_string($langcode, $sid, $tid) {
  */
 function l10n_community_access($permission, $account = NULL) {
   $group_access = FALSE;
-  if (module_exists('l10n_groups') && ($group = l10n_groups_set_context())) {
-    $group_access = og_user_access($group['group_type'], $group['gid'], $permission, $account);
+  if (module_exists('l10n_groups') && ($group = og_context())) {
+    if (isset($group['gid'])) {
+      $group_access = og_user_access($group['group_type'], $group['gid'], $permission, $account);
+    }
   }
   return $group_access || user_access($permission, $account);
 }

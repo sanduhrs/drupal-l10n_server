@@ -87,6 +87,21 @@ function l10n_groups_og_permission() {
 }
 
 /**
+ * Implements hook_og_context_negotiation_info().
+ */
+function l10n_groups_og_context_negotiation_info() {
+  $providers = array();
+
+  $providers['translate_path'] = array(
+    'name' => t('By translate path'),
+    'description' => t('Select group based on translation path alias'),
+    'callback' => 'l10n_groups_og_context_handler_translate_path',
+  );
+
+  return $providers;
+}
+
+/**
  * Implements hook_form_alter().
  *
  * Take care of the one translation group per language limitation.
@@ -114,9 +129,6 @@ function l10n_groups_form_alter(&$form, $form_state, $form_id) {
  * on the translation pages.
  */
 function l10n_groups_init() {
-  // Initialize context
-  l10n_groups_set_context();
-
   // Avoid using menu_get_item() since that would cripple the cache
   // for menu access checking.
   if (($item = menu_get_item()) && ($item['path'] == 'node/%') && ($item['page_arguments'][0]->type == 'l10n_group')) {
@@ -129,15 +141,19 @@ function l10n_groups_init() {
 /**
  * Set group context to the group determined by $langcode.
  */
-function l10n_groups_set_context() {
-  if (user_access('access localization community') && (arg(0) == 'translate') && in_array(arg(1), array('languages', 'details', 'suggestions', 'approve', 'decline')) && ($langcode = arg(2))) {
-    // If under a localization path URL for a language, set context.
-    if (!empty($langcode)) {
-      $groups = l10n_groups_get_groups();
-      // Set group context and ask for og details block.
-      if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
-        return og_context('node', $node);
-      }
+function l10n_groups_set_context($langcode = NULL) {
+
+  // If under a localization path URL for a language, set context.
+  if (user_access('access localization community') && (arg(0) == 'translate') && in_array(arg(1), array('languages', 'details', 'suggestions', 'approve', 'decline'))) {
+    $langcode = arg(2);
+  }
+
+  // If the langcode is passed in, then this should still catch the context.
+  if (!empty($langcode)) {
+    $groups = l10n_groups_get_groups();
+    // Set group context and ask for og details block.
+    if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
+      return og_context('node', $node);
     }
   }
   return FALSE;
@@ -177,44 +193,46 @@ function l10n_groups_block_view($delta) {
         if ($context && entity_access('view', 'node', $group)) {
           // Get the membership informations
           $og_membership = og_get_membership('node', $group->nid, 'user', $user->uid);
-          if ($og_membership) {
-            if ($og_membership->state == OG_STATE_ACTIVE || user_access('administer nodes')) {
-              if (node_access('update', $group)) {
-                $links['edit_group'] = l(t('Edit group'), "node/$group->nid/edit");
-              }
-              // Get the node creation links
-              foreach (node_type_get_types() as $id => $type) {
-                if (og_is_group_content_type('node', $id)) {
-                  $type_url_str = str_replace('_', '-', $id);
-                  if (node_access('create', $id)) {
-                    $links["create_$id"] = l(t('Create !type', array('!type' => $type->name)), "node/add/$type_url_str", array(
-                      'attributes' => array('title' => t('Add a new !type in this group.', array('!type' => $type->name))),
-                      'query' => array('og_group_ref' => $group->nid),
-                    ));
-                  }
+          $og_state = isset($og_membership->state) ? $og_membership->state : FALSE;
+          $is_admin = user_access('administer nodes');
+
+          // Edit Group
+          if (node_access('update', $group)) {
+            $links['edit_group'] = l(t('Edit group'), "node/$group->nid/edit");
+          }
+
+          // Items that require Active member or Administrator access
+          if ($og_state == OG_STATE_ACTIVE || $is_admin) {
+            // Get the node creation links
+            foreach (node_type_get_types() as $id => $type) {
+              if (og_is_group_content_type('node', $id)) {
+                $type_url_str = str_replace('_', '-', $id);
+                if (node_access('create', $id)) {
+                  $links["create_$id"] = l(t('Create !type', array('!type' => $type->name)), "node/add/$type_url_str", array(
+                    'attributes' => array('title' => t('Add a new !type in this group.', array('!type' => $type->name))),
+                    'query' => array('og_group_ref' => $group->nid),
+                  ));
                 }
               }
-              // Get the number of members
-              $subscribers_count = db_select('og_membership', 'ogm')->condition('state', OG_STATE_ACTIVE)
-                ->condition('type', OG_MEMBERSHIP_TYPE_DEFAULT)->condition('entity_type', 'user')
-                ->condition('gid', $group->nid)->countQuery()->execute()->fetchField();
-              $links['subscribers'] = l(t('!subscribers-count members', array('!subscribers-count' => $subscribers_count)), "group/node/$group->nid/admin/people");
-              // Get the manager
-              $account = user_load($group->uid);
-              $links['manager'] = t('Manager: !name', array('!name' => theme('username', array('account' => $account))));
-              if (og_is_member('node', $group->nid)) {
-                $links['my_membership'] = l(t('Leave this group'), "group/node/$group->nid/unsubscribe");
-              }
-              else {
-                $links['my_membership'] = l(t('Join'), "group/node/$group->nid/subscribe");
-              }
             }
-            elseif ($og_membership->state == OG_STATE_PENDING) {
-              $links['approval'] = t('Your membership request awaits approval.');
-              $links['delete'] = l(t('Delete request'), "group/node/$group->nid/unsubscribe");
-            }
+            // Get the number of members
+            $subscribers_count = db_select('og_membership', 'ogm')->condition('state', OG_STATE_ACTIVE)
+              ->condition('type', OG_MEMBERSHIP_TYPE_DEFAULT)->condition('entity_type', 'user')
+              ->condition('gid', $group->nid)->countQuery()->execute()->fetchField();
+            $links['subscribers'] = l(t('!subscribers-count members', array('!subscribers-count' => $subscribers_count)), "group/node/$group->nid/admin/people");
+            // Get the manager
+            $account = user_load($group->uid);
+            $links['manager'] = t('Manager: !name', array('!name' => theme('username', array('account' => $account))));
           }
-          elseif (!$user->uid) {
+          elseif ($og_state == OG_STATE_PENDING) {
+            $links['approval'] = t('Your membership request awaits approval.');
+            $links['delete'] = l(t('Delete request'), "group/node/$group->nid/unsubscribe");
+          }
+          if ($og_state == OG_STATE_BLOCKED || $og_state == OG_STATE_ACTIVE) {
+            $links['my_membership'] = l(t('Leave this group'), "group/node/$group->nid/unsubscribe");
+          }
+          // Anonymous Group Links
+          if (!$user->uid) {
             $options = array('query' => array('destination' => drupal_get_destination()));
             if (variable_get('user_register', 1) == 0) {
               $links['must_login'] = t('You must <a href="!login">login</a> in order to post into this group.', array('!login' => url("user/login", $options)));
@@ -223,7 +241,7 @@ function l10n_groups_block_view($delta) {
               $links['must_login'] = t('You must <a href="!register">register</a> or <a href="!login">login</a> in order to post into this group.', array('!register' => url("user/register", $options), '!login' => url("user/login", $options)));
             }
           }
-          else {
+          if ($user->uid > 0 && !$og_state) {
             $links['subscribe'] = l(t('Join'), "group/node/$group->nid/subscribe");
           }
 
@@ -536,4 +554,33 @@ function l10n_groups_views_post_render(&$view, &$output, &$cache) {
       $view->build_info['title'] = t('Board - @language', array('@language' => $language->name));
     }
   }
+}
+
+function l10n_groups_og_context_handler_translate_path() {
+  global $original_path;
+  // We need to get the original, unaltered query before its altered.
+  $original_path = check_plain($_GET['q']);
+  $path = explode('/', $original_path);
+  // We're in the translate section
+  $gids = array();
+
+  if ($path[0] == 'translate' && $path[1] == 'languages') {
+    if ($langcode = l10n_community_language_load($path[2])) {
+      $groups = l10n_groups_get_groups();
+      // Set group context and ask for og details block.
+      if (isset($groups[$langcode]) && $node = node_load($groups[$langcode])) {
+        if (!entity_access('view', 'node', $node)) {
+          // User can't access entity.
+          return array();
+        }
+
+        if (!og_is_group('node', $node)) {
+          // Entity is not a group.
+          return array();
+        }
+        $gids['node'] = array($node->nid);
+      }
+    }
+  }
+  return $gids;
 }
