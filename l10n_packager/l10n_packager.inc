@@ -143,6 +143,8 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     file_unmanaged_move($export_name, $file->uri, FILE_EXISTS_REPLACE);
     $file->filesize = filesize(drupal_realpath($file->uri));
     $file->sid_count = $sid_count;
+    // Create actual symlink to latest
+    l10n_packager_create_latest_symlink($file_path, $release, $language);
 
     // Create / update file record and link to release.
     drupal_write_record('file_managed', $file, !empty($file->fid) ? 'fid' : array());
@@ -218,6 +220,19 @@ function _l10n_packager_batch_repackage($rid, $langcode) {
   }
 }
 
+/*
+ * Create a symlink to the latest version of this locale for the project.
+ */
+function l10n_packager_create_latest_symlink($file, $release, $language) {
+
+  $target = drupal_realpath($file);
+  $target_dir = dirname($target);
+  $latest_file = $target_dir . '/' . l10n_packager_get_filepath($release, $language, '%project-%branch.%language.po');
+  if (file_exists($latest_file)) {
+    unlink($latest_file);
+  }
+  return symlink($target,  $latest_file);
+}
 // == Utility functions ========================================================
 
 /**
@@ -235,7 +250,9 @@ INNER JOIN {l10n_server_release} r ON p.pid = r.pid
 LEFT JOIN {l10n_packager_release} pr ON r.rid = pr.rid
 WHERE r.rid = :rid",
               array(':rid' => $rid));
-    return $result->fetchObject();
+    $release = $result->fetchObject();
+    l10n_packager_release_set_branch($release);
+    return $release;
   }
 }
 
@@ -267,4 +284,33 @@ function l10n_packager_release_get_files($rid) {
   $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {file_managed} f ON r.fid = f.fid WHERE r.rid = :rid',
             array(':rid' => $rid));
   return $result->fetchAllAssoc('language');
+}
+
+/*
+ * Determine the branch for a release. We should get this into a cross-site
+ * packaging module.
+ */
+function l10n_packager_release_set_branch(&$release) {
+  // Stupid hack for drupal core.
+  if ($release->uri == 'drupal') {
+    // Even stupider hack for determining semantic versioning for 8.x
+    // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
+    @list($version, $extra) = explode('-', $release->title);
+    list($core, $minor, $patch) = explode('.', $version);
+    // By default, set branch and core to the N.x version.
+    $branch = $core = $core . '.x';
+    // Using semantic versioning
+    if (isset($patch)) {
+      $branch = $core . '.' . $minor . '.x';
+    }
+    $release->branch = $branch;
+  }
+  else {
+    // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1
+    @list($core, $version, $extra) = explode('-', $release->title);
+    list($major, $minor) = explode('.', $version);
+    $release->branch = $core . '-' . $major . '.x';
+  }
+  $release->version = $version;
+  $release->core = $core;
 }
