@@ -374,6 +374,11 @@ function l10n_server_admin_projects_edit_form($form, &$form_state, $project_uri 
     '#description' => t('Weight of the project. Lighter projects float up when ordering by weight.'),
     '#default_value' => $project->weight,
   );
+  $form['status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enabled'),
+    '#default_value' => $project->status,
+  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save project'),
@@ -403,7 +408,7 @@ function l10n_server_admin_projects_edit_form_validate($form, &$form_state) {
  */
 function l10n_server_admin_projects_edit_form_submit($form, &$form_state) {
   $new_project = $form_state['values']['previous_project'];
-  foreach (array('uri', 'title', 'home_link', 'connector_module', 'weight') as $property) {
+  foreach (array('uri', 'title', 'home_link', 'connector_module', 'weight', 'status') as $property) {
     if (isset($form_state['values'][$property])) {
       $new_project->$property = $form_state['values'][$property];
     }
