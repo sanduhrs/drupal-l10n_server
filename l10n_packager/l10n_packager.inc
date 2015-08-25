@@ -297,12 +297,15 @@ function l10n_packager_release_set_branch(&$release) {
     // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
     @list($version, $extra) = explode('-', $release->title);
     list($core, $minor, $patch) = explode('.', $version);
-    // By default, set branch and core to the N.x version.
-    $branch = $core = $core . '.x';
     // Using semantic versioning
     if (isset($patch)) {
       $branch = $core . '.' . $minor . '.x';
     }
+    // Otherwise, set branch and core to the N.x version.
+    else {
+      $branch = $core . '.x';
+    }
+    $core = $core . '.x';
     $release->branch = $branch;
   }
   else {
