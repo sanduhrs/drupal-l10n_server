@@ -149,7 +149,7 @@ function l10n_packager_release_package($release, $language, $file = NULL, $times
     // Create / update file record and link to release.
     drupal_write_record('file_managed', $file, !empty($file->fid) ? 'fid' : array());
     drupal_write_record('l10n_packager_file', $file, !empty($file->drid) ? 'drid' : array());
-    module_invoke_all('l10n_packaged', $file);
+    module_invoke_all('l10n_packager_done', $file);
     return $file;
 
   }
@@ -220,18 +220,37 @@ function _l10n_packager_batch_repackage($rid, $langcode) {
   }
 }
 
-/*
+/**
  * Create a symlink to the latest version of this locale for the project.
+ *
+ * The symlink name has the pattern [project]-[branch].[langcode].po and will
+ * be placed is the same directory as the translation file.
+ *
+ * @param $file
+ *   The translation file to be symlinked.
+ * @param $release
+ *   Object containing the file's release information.
+ * @param $language
+ *   Language object.
+ *
+ * @return bool
+ *   Returns TRUE if a symlink was created.
  */
 function l10n_packager_create_latest_symlink($file, $release, $language) {
 
   $target = drupal_realpath($file);
   $target_dir = dirname($target);
   $latest_file = $target_dir . '/' . l10n_packager_get_filepath($release, $language, '%project-%branch.%language.po');
+
   if (file_exists($latest_file)) {
     unlink($latest_file);
+    // Allow modules to react to the symlink, such as purge a CDN.
+    $latest_file_object = new stdClass();
+    $latest_file_object->uri = $latest_file;
+    module_invoke_all('l10n_packager_done', $latest_file_object);
   }
-  return symlink($target,  $latest_file);
+
+  return symlink($target, $latest_file);
 }
 // == Utility functions ========================================================
 

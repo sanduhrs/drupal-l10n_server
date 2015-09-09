@@ -143,9 +143,9 @@ function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(
 }
 
 /**
- * Implementation of hook_l10n_packaged().
+ * Implementation of hook_l10n_packager_done().
  */
-function l10n_drupal_rest_l10n_packaged($file) {
+function l10n_drupal_rest_l10n_packager_done($file) {
   if ($fastly_key = variable_get('drupalorg_fastly_key', FALSE)) {
     $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
     $request = drupal_http_request($download_url . preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri), array(
