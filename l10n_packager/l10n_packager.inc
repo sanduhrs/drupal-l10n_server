@@ -245,7 +245,7 @@ function l10n_packager_create_latest_symlink($file, $release, $language) {
     unlink($latest_file);
     // Allow modules to react to the symlink, such as purge a CDN.
     $latest_file_object = new stdClass();
-    $latest_file_object->uri = l10n_packager_directory() . '/' . l10n_packager_get_filepath($release, $language);
+    $latest_file_object->uri = l10n_packager_directory() . '/' . l10n_packager_get_filepath($release, $language, '%core/%project/%project-%branch.%language.po');
     module_invoke_all('l10n_packager_done', $latest_file_object);
   }
 
