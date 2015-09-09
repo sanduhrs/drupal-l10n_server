@@ -237,16 +237,16 @@ function _l10n_packager_batch_repackage($rid, $langcode) {
  *   Returns TRUE if a symlink was created.
  */
 function l10n_packager_create_latest_symlink($file, $release, $language) {
-
   $target = drupal_realpath($file);
   $target_dir = dirname($target);
-  $latest_file = $target_dir . '/' . l10n_packager_get_filepath($release, $language, '%project-%branch.%language.po');
+  $filepath = l10n_packager_get_filepath($release, $language, '%project-%branch.%language.po');
+  $latest_file = $target_dir . '/' . $filepath;
 
   if (file_exists($latest_file)) {
     unlink($latest_file);
     // Allow modules to react to the symlink, such as purge a CDN.
     $latest_file_object = new stdClass();
-    $latest_file_object->uri = $latest_file;
+    $latest_file_object->uri = l10n_packager_directory() . '/' . $filepath;
     module_invoke_all('l10n_packager_done', $latest_file_object);
   }
 
