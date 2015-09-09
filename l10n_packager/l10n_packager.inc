@@ -305,7 +305,7 @@ function l10n_packager_release_get_files($rid) {
   return $result->fetchAllAssoc('language');
 }
 
-/*
+/**
  * Determine the branch for a release. We should get this into a cross-site
  * packaging module.
  */

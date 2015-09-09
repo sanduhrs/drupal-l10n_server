@@ -570,7 +570,7 @@ function l10n_server_get_project_initials() {
   return $initials;
 }
 
-/*
+/**
  * Helper function for sorting project versions.
  *
  * @see l10n_server_get_releases()
