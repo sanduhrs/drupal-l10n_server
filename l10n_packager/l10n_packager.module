@@ -228,7 +228,7 @@ function l10n_packager_export_metafile() {
  * Get directory for creating files
  */
 function l10n_packager_directory() {
-  return file_default_scheme() . '://l10n_packager';
+  return variable_get('l10n_packager_directory', file_default_scheme() . '://l10n_packager');
 }
 
 /**
