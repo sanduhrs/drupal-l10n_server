@@ -241,7 +241,7 @@ function l10n_server_menu() {
 
   // Development helpers.
   if (module_exists('devel_generate')) {
-    $items['admin/generate/languages'] = array(
+    $items['admin/config/development/generate-languages'] = array(
       'title' => 'Generate languages',
       'description' => 'Generate a given number of languages.',
       'page callback' => 'drupal_get_form',
@@ -249,7 +249,7 @@ function l10n_server_menu() {
       'access arguments' => array('administer localization server'),
       'file' => 'l10n_server.devel.inc',
     );
-    $items['admin/generate/translations'] = array(
+    $items['admin/config/development/generate-translations'] = array(
       'title' => 'Generate translations and suggestions',
       'description' => 'Generate a given number of translations and suggestions.',
       'page callback' => 'drupal_get_form',

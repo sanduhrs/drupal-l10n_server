@@ -82,11 +82,21 @@ function l10n_server_generate_languages_form_submit($form_id, &$form_state) {
  */
 function l10n_server_generate_translations_form($form, &$form_state) {
   $count = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
+  $limit = (int) $count * 0.75;
   if (empty($count)) {
     drupal_set_message(t('No source strings found, cannot generate translations and suggestions.'));
-    return;
   }
   else {
+    $form['limit'] = array(
+      '#type' => 'textfield',
+      '#title' => "Number of translations to generate per language",
+      '#default_value' => (int) $limit,
+      '#element_validate' => array('element_validate_integer_positive'),
+    );
+    $form['delete_existing'] = array(
+      '#type' => 'checkbox',
+      '#title' => "Delete all existing translations",
+    );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Do it!'),
@@ -101,29 +111,44 @@ function l10n_server_generate_translations_form($form, &$form_state) {
  * @todo Add suggestion generation.
  */
 function l10n_server_generate_translations_form_submit($form_id, &$form_state) {
-  db_delete('l10n_server_translation') ->execute();
-  drupal_set_message(t('Previous translations and suggestions deleted.'));
+  if ($form_state['values']['delete_existing']) {
+    db_delete('l10n_server_translation')->execute();
+    db_delete('l10n_server_status_flag')->execute();
+    drupal_set_message(t('Previous translations and suggestions deleted.'));
+  }
 
-  $count = db_query('SELECT COUNT(*) FROM {l10n_server_string}')->fetchField();
+  $limit = (int) $form_state['values']['limit'];
   $languages = language_list();
-  $limit = (int) $count * 0.75;
   foreach ($languages as $language) {
     if ($language->language != 'en') {
-      $uid1 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
-      $uid2 = db_query_range('SELECT uid FROM {users} ORDER BY RAND()', 0, 1);
+      $uid = db_select('users', 'u')
+        ->fields('u', array('uid'))
+        ->orderBy('RAND()')
+        ->execute()
+        ->fetchField();
 
-      db_query("
-INSERT INTO {l10n_server_translation}
-SELECT NULL, sid, :lng, value, :uid1, :uid2, :rt1, :rt2, 0, 0, 1
-FROM {l10n_server_string} LIMIT 0, :limit",
-        array(':lng' => $language->language,
-          ':uid1' => $uid1,
-          ':uid2' => $uid2,
-          ':rt1' => REQUEST_TIME,
-          ':rt2' => REQUEST_TIME,
-          ':limit' => $limit)
-      );
+      $query = db_select('l10n_server_string', 's')->range(0, $limit);
+      $query->addExpression('sid', 'sid');
+      $query->addExpression(':lng', 'language', array(':lng' => $language->language));
+      $query->addExpression('value', 'translation');
+      $query->addExpression($uid, 'uid_entered');
+      $query->addExpression(REQUEST_TIME, 'time_entered');
+      $query->addExpression(1, 'is_suggestion');
+      $query->addExpression(1, 'is_active');
+      $query->addExpression(REQUEST_TIME, 'time_changed');
+      db_insert('l10n_server_translation')
+        ->from($query)
+        ->execute();
+
+      $query = db_select('l10n_server_string', 's')->range(0, $limit);
+      $query->addExpression('sid', 'sid');
+      $query->addExpression(':lng', 'language', array(':lng' => $language->language));
+      $query->addExpression(1, 'has_suggestion');
+      $query->addExpression(1, 'has_translation');
+      db_insert('l10n_server_status_flag')
+        ->from($query)
+        ->execute();
     }
   }
-  drupal_set_message(format_plural($limit * count($langauges), '1 translation created.', '@count translations created.'));
+  drupal_set_message(format_plural($limit * count($languages), '1 translation created.', '@count translations created.'));
 }
