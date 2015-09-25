@@ -224,9 +224,22 @@
 
           var blurTimeout;
           textareas.each(function(n) {
-            var wrapper = $(this);
             var textarea = $(this);
             var text = translation.find('.l10n-string > span').eq(n);
+
+            var input_detect = function (e) {
+              // Encode and compute the diff for the text as text is typed.
+              var val = encode(textarea.val());
+              text
+                .data('worddiff:original', val)
+                .data('worddiff:markup', markup(val));
+              var oldPos = textarea.offset().top;
+              updateDiff();
+              var diff = textarea.offset().top - oldPos;
+              if (diff) {
+                window.scrollBy(0, diff);
+              }
+            };
 
             textarea
               .focus(function() {
@@ -247,19 +260,8 @@
                   translation[hasContent() ? 'addClass' : 'removeClass']('has-content');
                 }, 1000);
               })
-              .keyup(function() {
-                // Encode and compute the diff for the text as text is typed.
-                var val = encode(textarea.val());
-                text
-                  .data('worddiff:original', val)
-                  .data('worddiff:markup', markup(val));
-                var oldPos = textarea.offset().top;
-                updateDiff();
-                var diff = textarea.offset().top - oldPos;
-                if (diff) {
-                  window.scrollBy(0, diff);
-                }
-              });
+              .keyup(input_detect)
+              .bind('text', input_detect); // keyup event not work well on Firefox when typed with IME
           });
         }
       });
