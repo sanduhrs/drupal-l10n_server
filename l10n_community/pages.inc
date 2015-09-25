@@ -43,12 +43,13 @@ function l10n_community_explore_languages() {
     }
     else {
       $stats = l10n_community_get_stats($langcode);
-      $progress = array_shift(theme(
+      $progress_theme = theme(
         'l10n_community_progress_columns',
         $num_source,
         @$string_counts[$langcode]['translations'],
         @$string_counts[$langcode]['suggestions']
-      ));
+      );
+      $progress = array_shift($progress_theme);
       $table[] = array(
         array(
           'data' => l(t($language->name), 'translate/languages/' . $langcode),

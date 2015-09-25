@@ -21,12 +21,13 @@ function l10n_drupal_rest_drupal8_status() {
   $table_rows = array();
   foreach ($languages as $langcode => $language) {
     $stats = l10n_community_get_stats($langcode);
-    $progress = array_shift(theme(
+    $progress_theme = theme(
       'l10n_community_progress_columns',
       $num_source,
       @$string_counts[$langcode]['translations'],
       @$string_counts[$langcode]['suggestions']
-    ));
+    );
+    $progress = array_shift($progress_theme);
     $table_rows[] = array(
       array(
         'data' => l(t($language->name), 'translate/languages/' . $langcode . '/translate', array('query' => 'project=drupal&status=1&release=' . $rid)),
