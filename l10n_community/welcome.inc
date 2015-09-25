@@ -44,7 +44,10 @@ function l10n_community_welcome_page() {
             'class' => array('rowhead'),
           ),
           array(
-            'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array('@import-url' => url('admin/structure/translate/import'), '@language-config' => url('admin/config/language'))),
+            'data' => t('Uninitialized plural formula. Please set up the plural formula in <a href="@language-config">the langauge configuration</a> or alternatively <a href="@import-url">import a valid interface translation</a> for Drupal in this language.', array(
+              '@import-url' => url('admin/structure/translate/import'),
+              '@language-config' => url('admin/config/language'),
+            )),
             'class' => array('error'),
           ),
           array('data' => ''),
@@ -53,10 +56,10 @@ function l10n_community_welcome_page() {
       else {
         $stats = l10n_community_get_stats($langcode);
         $columns = theme('l10n_community_progress_columns', array(
-            'sum'            => $num_source,
-            'translated'     => @$string_counts[$langcode]['translations'],
-            'has_suggestion' => @$string_counts[$langcode]['suggestions']
-          ));
+          'sum' => $num_source,
+          'translated' => @$string_counts[$langcode]['translations'],
+          'has_suggestion' => @$string_counts[$langcode]['suggestions'],
+        ));
         $progress = array_shift($columns);
         $table_rows[] = array(
           array(
@@ -81,8 +84,15 @@ function l10n_community_welcome_page() {
     }
 
     $header = array(
-      array('data' => t('Language'), 'field' => 'language', 'class' => array('rowhead')),
-      array('data' => t('@project progress', array('@project' => $project->title)), 'field' => 'progress'),
+      array(
+        'data' => t('Language'),
+        'field' => 'language',
+        'class' => array('rowhead'),
+      ),
+      array(
+        'data' => t('@project progress', array('@project' => $project->title)),
+        'field' => 'progress',
+      ),
       array('data' => t('Contributors'), 'field' => 'contributors'),
     );
     $output = theme(
@@ -90,13 +100,16 @@ function l10n_community_welcome_page() {
       array(
         'header' => $header,
         'rows' => $table_rows,
-        'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted'))
+        'attributes' => array('class' => array('l10n-community-overview l10n-community-highlighted')),
       ));
 
     $projects = l10n_server_get_projects();
     $project_count = count($projects);
     if ($project_count > 1) {
-      $output .= '<p>' . format_plural($project_count, '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', array('@project' => $project->title, '@projects' => url('translate/projects'))) . '<p>';
+      $output .= '<p>' . format_plural($project_count, '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', '@project is just one of the <a href="@projects">@count projects translated on this server</a>. Check them out.', array(
+          '@project' => $project->title,
+          '@projects' => url('translate/projects'),
+        )) . '<p>';
     }
 
   }
@@ -142,7 +155,11 @@ function l10n_community_pick_go($form, &$form_state) {
     }
     $form['dummy'] = array(
       '#type' => 'markup',
-      '#markup' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array('@languages' => url('admin/config/regional/language'), '@connectors' => url('admin/l10n_server/connectors'), '@projects' => url('admin/l10n_server/projects'))) . $pconfig_tip,
+      '#markup' => t('No languages with plural formulas defined or no projects scanned yet. Check the <a href="@languages">configuration of languages</a>, <a href="@connectors">list of connectors</a> and <a href="@projects">projects</a>.', array(
+          '@languages' => url('admin/config/regional/language'),
+          '@connectors' => url('admin/l10n_server/connectors'),
+          '@projects' => url('admin/l10n_server/projects'),
+        )) . $pconfig_tip,
     );
     return $form;
   }
@@ -168,6 +185,7 @@ function l10n_community_pick_go($form, &$form_state) {
       '#description' => t('Alternatively you can <a href="@explore">explore languages</a>.', array('@explore' => url('translate/languages'))),
       '#default_value' => $default_language,
     );
+    $projects_title = l10n_community_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
   }
   else {
     // Only one language, store as form value.
@@ -176,14 +194,9 @@ function l10n_community_pick_go($form, &$form_state) {
       '#type' => 'value',
       '#value' => $language_code,
     );
-  }
-
-  if (count($language_list) > 1) {
-    $projects_title = l10n_community_access('browse translations') ? t('And/or pick a project') : t('Or pick a project');
-  }
-  else {
     $projects_title = t('Pick a project for @language translation', array('@language' => $language_name));
   }
+
   $form['project'] = array(
     '#title' => $projects_title,
     '#description' => t('Alternatively you can <a href="@explore">explore projects</a>.', array('@explore' => url('translate/projects'))),

@@ -9,7 +9,7 @@
   /**
    * Simple string encoding/escaping for proper HTML output.
    */
-  encode = function(str) {
+  var encode = function(str) {
     str = String(str);
     var replace = { '&': '&amp;', '<': '&lt;', '>': '&gt;' };
     for (var character in replace) {
@@ -61,17 +61,19 @@
       return false;
     });
 
+    var $filterForm = $('#l10n-community-filter-form');
+
     // Callback to show all filters.
     var showAllFilters = function() {
-      $('#l10n-community-filter-form .reveal-link').hide();
-      $('#l10n-community-filter-form .filter-widget:hidden').removeClass('js-hide').fadeIn();
+      $filterForm.find('.reveal-link').hide();
+      $filterForm.find('.filter-widget:hidden').removeClass('js-hide').fadeIn();
       return false;
-    }
+    };
 
     // If we did hide items, add a link to show all.
-    if ($('#l10n-community-filter-form .filter-widget:hidden')) {
-      $('#l10n-community-filter-form').find('.filter-submit').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
-      $('#l10n-community-filter-form .reveal-link').click(showAllFilters);
+    if ($filterForm.find('.filter-widget:hidden')) {
+      $filterForm.find('.filter-submit').append('<a href="#" class="reveal-link">' + Drupal.t('Reveal more filters') + '</a>');
+      $filterForm.find('.reveal-link').click(showAllFilters);
     }
 
      // Add title to all decline buttons. Will be modified dynamically.
@@ -115,7 +117,7 @@
 
       // Method to set status classes based on associated checkbox value.
       var setStatus = function(elem, status, value) {
-        newValue = elem.find('.' + status + ' :checkbox').attr('checked', value).attr('checked');
+        var newValue = elem.find('.' + status + ' :checkbox').attr('checked', value).attr('checked');
         elem[(newValue === undefined ? value : newValue) ? 'addClass' : 'removeClass']('is-' + status);
         if (status == 'declined') {
           elem.find('li.declined label').attr('title', value ? Drupal.t('Undo decline') : Drupal.t('Decline'));

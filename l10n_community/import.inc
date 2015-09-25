@@ -7,6 +7,9 @@
 
 /**
  * User interface for the translation import screen.
+ *
+ * @param $langcode
+ * @return array|mixed
  */
 function l10n_community_import_page($langcode) {
   $language = l10n_community_get_language($langcode);

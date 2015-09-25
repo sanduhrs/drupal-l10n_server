@@ -7,6 +7,10 @@
 
 /**
  * User interface for the translation export screen.
+ *
+ * @param null $uri
+ * @param null $langcode
+ * @return array|mixed|string
  */
 function l10n_community_export_page($uri = NULL, $langcode = NULL) {
   $breadcrumb = array(
@@ -49,6 +53,12 @@ function l10n_community_export_page($uri = NULL, $langcode = NULL) {
 
 /**
  * Translation export form. This is multi-step with the project selection.
+ *
+ * @param $form
+ * @param $form_state
+ * @param null $uri
+ * @param null $langcode
+ * @return array
  */
 function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode = NULL) {
 
@@ -64,7 +74,6 @@ function l10n_community_export_form($form, &$form_state, $uri = NULL, $langcode 
     );
   }
 
-  $form = array();
   if ($hide_projects) {
     // This only happens if we have a project to export via $uri.
     // In this case, $uri is already verified via the menu system.
@@ -229,6 +238,14 @@ function l10n_community_export_form_submit($form, &$form_state) {
 
 /**
  * Helper function to store the export string.
+ *
+ * @param $po_data
+ * @param $uri
+ * @param $language
+ * @param $template
+ * @param $export_string
+ * @param bool $compact
+ * @param bool $suggestions
  */
 function _l10n_community_export_string_files(&$po_data, $uri, $language, $template, $export_string, $compact = FALSE, $suggestions = FALSE) {
   $output = '';
@@ -343,21 +360,21 @@ function _l10n_community_export_string_files(&$po_data, $uri, $language, $templa
  * Generates the PO(T) files contents and wrap them in a tarball for a given
  * project.
  *
- * @param $uri
- *   Project URI.
- * @param $release
+ * @param $uri string Project URI.
+ * @param $release int
  *   Release number (rid) to generate tarball for, or NULL to generate
  *   with all releases considered.
- * @param $language
- *   Language object.
- * @param $template
+ * @param $language object Language object.
+ * @param $template bool
  *   TRUE if templates should be exported, FALSE if translations.
- * @param $compact
+ * @param $compact bool
  *   A compact export will skip outputting the comments, superfluous
- *   newlines, empty translations and the list of files. TRUE or FALSE.
- * @param $installer
+ *   newlines, empty translations and the list of files.
+ * @param $installer bool
  *   Whether we should only export the translations needed for the installer
  *   and not those needed for the runtime site.
+ * @param $suggestions bool
+ * @return array
  */
 function l10n_community_export($uri, $release = NULL, $language = NULL, $template = TRUE, $compact = FALSE, $installer = FALSE, $suggestions = FALSE) {
   $project = l10n_server_get_projects(array('uri' => $uri));
@@ -539,6 +556,9 @@ function l10n_community_export($uri, $release = NULL, $language = NULL, $templat
 
 /**
  * Print out a string on multiple lines
+ *
+ * @param $str
+ * @return string
  */
 function _l10n_community_export_string($str) {
   $stri = addcslashes($str, "\0..\37\\\"");
@@ -575,6 +595,10 @@ function _l10n_community_export_string($str) {
 
 /**
  * Custom word wrapping for Portable Object (Template) files.
+ *
+ * @param $str
+ * @param $len
+ * @return string
  */
 function _l10n_community_export_wrap($str, $len) {
   $words = explode(' ', $str);

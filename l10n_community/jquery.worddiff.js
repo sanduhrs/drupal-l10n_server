@@ -1,4 +1,3 @@
-
 /**
  * @file
  *  jQuery worddif algorithm implementation.
@@ -6,7 +5,7 @@
  *  Based on http://en.wikipedia.org/wiki/Longest_common_subsequence_problem
  */
 
-(function($) {
+(function ($) {
 
   /**
    * Fragment used to represent a string fragment in the diff.
@@ -29,9 +28,9 @@
   };
 
   var moveToEnd = function (a, i, k) {
-    if (!a.equiv && (!k[i-1] || k[i-1].equiv)) {
+    if (!a.equiv && (!k[i - 1] || k[i - 1].equiv)) {
       // Find next item equiv item.
-      for (var j = i+1; k[j] && !k[j].equiv; j++);
+      for (var j = i + 1; k[j] && !k[j].equiv; j++);
       if (k[j] && k[j].content === a.content) {
         k[i] = k[j];
         k[j] = a;
@@ -40,8 +39,8 @@
   };
 
   var aggregate = function (a, i, k) {
-    if (!a.equiv && k[i+1] && !k[i+1].equiv) {
-      k[i+1].content = a.content + k[i+1].content;
+    if (!a.equiv && k[i + 1] && !k[i + 1].equiv) {
+      k[i + 1].content = a.content + k[i + 1].content;
       delete k[i];
     }
   };
@@ -61,7 +60,9 @@
       for (var type in args) {
         args[type] = $.grep(
           args[type].split($.wordDiff.nonWord),
-          function (s) { return s.length; }
+          function (s) {
+            return s.length;
+          }
         );
       }
 
@@ -98,7 +99,9 @@
       var result = {};
 
       $.each(['del', 'ins'], function () {
-        result[this] = $.map(args[this], function (a) { return new Fragment(a); });
+        result[this] = $.map(args[this], function (a) {
+          return new Fragment(a);
+        });
       });
 
       // Backtrack through the matrix.
@@ -118,10 +121,10 @@
       }
 
       // Fill up gaps.
-      for (var i = 0; i < result.del.length; i++) {
+      for (i = 0; i < result.del.length; i++) {
         if (result.del[i].equiv && result.del[i].content.length < 3) {
-          var j = result.ins.indexOf(result.del[i]);
-          if (result.del[i-1] && result.del[i+1] && result.ins[j-1] && result.ins[j+1] && !result.del[i-1].equiv && !result.del[i+1].equiv && !result.ins[j-1].equiv && !result.ins[j+1].equiv){
+          j = result.ins.indexOf(result.del[i]);
+          if (result.del[i - 1] && result.del[i + 1] && result.ins[j - 1] && result.ins[j + 1] && !result.del[i - 1].equiv && !result.del[i + 1].equiv && !result.ins[j - 1].equiv && !result.ins[j + 1].equiv) {
             result.del[i].equiv = false;
             result.ins[j] = $.extend(true, {}, result.del[i]);
           }
@@ -130,11 +133,11 @@
 
       $.each(['del', 'ins'], function () {
         // Try to move changes to the end.
-        for (var i = 0; i < result[this].length; i++)
+        for (i = 0; i < result[this].length; i++)
           moveToEnd(result[this][i], i, result[this]);
 
         // Aggregate subsequent changes to minimize ins/del tags.
-        for (var i = 0; i < result[this].length; i++)
+        for (i = 0; i < result[this].length; i++)
           aggregate(result[this][i], i, result[this]);
       });
 
@@ -142,16 +145,14 @@
     },
 
     render: function (args, result) {
-      var diff = {
+      return {
         del: args.prefix + join(result.del, 'del') + args.suffix,
         ins: args.prefix + join(result.ins, 'ins') + args.suffix
       };
-
-      return diff;
     },
 
     diff: function (del, ins) {
-      var args = { 'del': del, 'ins': ins };
+      var args = {'del': del, 'ins': ins};
 
       $.wordDiff.tokenize(args);
       var matrix = $.wordDiff.lcs(args);
@@ -204,5 +205,5 @@
       }
     });
   };
-  
+
 })(jQuery);

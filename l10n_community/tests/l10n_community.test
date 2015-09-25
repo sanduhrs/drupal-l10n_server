@@ -42,9 +42,8 @@ class L10nServerTestCase extends DrupalWebTestCase {
       mkdir($this->temp_path);
     }
     else {
-      simpletest_clean_temporary_directory($this->temp_path);
+      file_unmanaged_delete_recursive($this->temp_path);
     }
-    //$this->full_temp_path = drupal_realpath($this->temp_path);
     $this->full_temp_path = $this->temp_path;
 
     // Set local package directory, so we can work with this.
@@ -649,6 +648,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
   /**
    * Import specified file to the given language.
    * By default, string are imported as suggestions.
+   *
+   * @param $filename
+   * @param $import_uid
+   * @param null $is_suggestion
+   * @param bool $assert
    */
   function importPO($filename, $import_uid, $is_suggestion = NULL, $assert = TRUE) {
     $edit = array();
@@ -665,6 +669,10 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Look for a string appearance on the page for $raw.
+   *
+   * @param $raw
+   * @param bool $match
+   * @return bool
    */
   private function assertMsgID($raw, $match = TRUE) {
     if ($match) {
@@ -680,6 +688,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Look for a singular/plural string appearance on the page for $raw.
+   *
+   * @param $raw_singular
+   * @param $raw_plural
+   * @param bool $match
+   * @return bool
    */
   private function assertMsgIDPlural($raw_singular, $raw_plural, $match = TRUE) {
     if ($match) {
@@ -696,6 +709,11 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Look for a string appearance on the page for $raw related to $context.
+   *
+   * @param $raw
+   * @param $context
+   * @param bool $match
+   * @return bool
    */
   private function assertMsgIDContext($raw, $context, $match = TRUE) {
     if ($match) {
@@ -710,9 +728,19 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Assert count of substring occurance in the output.
+   *
+   * @param $raw
+   * @param $count
+   * @param string $message
+   * @return bool
    */
-  private function assertCount($raw, $count) {
-    $message = t('"@raw" found @count times', array('@raw' => $raw, '@count' => $count));
+  private function assertCount($raw, $count, $message = '') {
+    if (!$message) {
+      $message = t('"@raw" found @count times', array(
+        '@raw' => $raw,
+        '@count' => $count,
+      ));
+    }
     return $this->assert(substr_count($this->content, $raw) === $count, $message);
   }
 
@@ -731,6 +759,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
 
   /**
    * Add a project with the given API version.
+   *
+   * @param int $api_version
+   * @param bool $include_js
    */
   private function addProject($api_version = 6, $include_js = TRUE) {
     // If Archive_Tar class does not exist, load it from PEAR directory structure
@@ -749,7 +780,6 @@ class L10nServerTestCase extends DrupalWebTestCase {
     }
     else {
       $temp_file = $this->full_temp_path . '/' . $this->project_names[$api_version];
-      $project_name = $this->project_names[$api_version];
     }
     $package_file = $temp_file . '-' . $version . '.tar.gz';
     $tar = new Archive_Tar($package_file, 'gz');

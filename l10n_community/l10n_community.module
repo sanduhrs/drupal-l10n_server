@@ -270,6 +270,9 @@ function l10n_community_menu() {
 
 /**
  * Menu loader function for %l10n_community_language to validate language code.
+ *
+ * @param $langcode
+ * @return bool
  */
 function l10n_community_language_load($langcode) {
   if (($languages = l10n_community_get_languages()) && isset($languages[$langcode]) && !empty($languages[$langcode]->plurals)) {
@@ -280,6 +283,9 @@ function l10n_community_language_load($langcode) {
 
 /**
  * Menu loader function for %l10n_community_project to validate project URI.
+ *
+ * @param $uri
+ * @return bool
  */
 function l10n_community_project_load($uri) {
   if (($projects = l10n_server_get_projects()) && isset($projects[$uri])) {
@@ -290,6 +296,9 @@ function l10n_community_project_load($uri) {
 
 /**
  * Title callback for project pages.
+ *
+ * @param $uri
+ * @return null|string
  */
 function l10n_community_page_title_project($uri) {
   if (($projects = l10n_server_get_projects()) && isset($projects[$uri])) {
@@ -300,6 +309,9 @@ function l10n_community_page_title_project($uri) {
 
 /**
  * Menu access callback for project warnings.
+ *
+ * @param $uri
+ * @return bool
  */
 function l10n_community_access_warnings($uri) {
   $project = l10n_server_get_projects(array('uri' => $uri));
@@ -428,7 +440,8 @@ function l10n_community_block_view($delta) {
           }
         }
       }
-      return;
+      break;
+
     case 'jump':
       if (user_access('access localization community')) {
         if (arg(0) == 'translate') {
@@ -442,7 +455,8 @@ function l10n_community_block_view($delta) {
           }
         }
       }
-      return;
+      break;
+
     case 'contributors':
       if (user_access('access localization community')) {
         $arg2 = arg(2);
@@ -453,7 +467,7 @@ function l10n_community_block_view($delta) {
           return l10n_community_block_contributors_language($languages[$arg2]);
         }
       }
-      return;
+      break;
   }
 }
 
@@ -487,7 +501,7 @@ function l10n_community_block_stats_front() {
 /**
  * Implements hook_user_view().
  */
-function l10n_community_user_view($account, $view_mode) {
+function l10n_community_user_view($account) {
   if (user_access('access localization community')) {
     // Add user contributions to its profile page
     $languages = l10n_community_get_languages('name');
@@ -517,11 +531,10 @@ function l10n_community_user_view($account, $view_mode) {
 /**
  * Helper function for language listing.
  *
- * @param $key
- *   Key name to restrict return value to.
- * @return
- *   If null, a list of language objects is returned, keyed by language code.
- *   Otherwise values referenced by $key are returned, keyed by language code.
+ * @param $key string Key name to restrict return value to.
+ * @return array
+ *  If null, a list of language objects is returned, keyed by language code.
+ *  Otherwise values referenced by $key are returned, keyed by language code.
  */
 function l10n_community_get_languages($key = NULL) {
   static $languages = NULL;
@@ -571,8 +584,7 @@ function l10n_community_review_access() {
 /**
  * Get all contexts from the database.
  *
- * @return
- *   Array of context values.
+ * @return array Array of context values.
  */
 function l10n_community_get_contexts() {
   $contexts = array();
@@ -586,12 +598,9 @@ function l10n_community_get_contexts() {
 /**
  * Make spacing and newlines the same in translation as in the source.
  *
- * @param $translation
- *   Translation string.
- * @param $source
- *   Source string.
- * @return
- *   Translation string with the right beginning and ending chars.
+ * @param $translation string Translation string.
+ * @param $source string Source string.
+ * @return string Translation string with the right beginning and ending chars.
  */
 function l10n_community_trim($translation, $source) {
   if (is_string($translation) && is_string($source)) {
@@ -671,6 +680,8 @@ function l10n_community_update_message() {
 
 /**
  * Retrieve a pipe delimited string of autocomplete suggestions for projects.
+ *
+ * @param string $string
  */
 function l10n_community_projects_autocomplete($string = '') {
   $matches = array();
@@ -687,6 +698,9 @@ function l10n_community_projects_autocomplete($string = '') {
 
 /**
  * Companion to autocomplete lookup to return uri by title.
+ *
+ * @param $title
+ * @return
  */
 function l10n_community_project_uri_by_title($title) {
   return db_query("SELECT uri FROM {l10n_server_project} WHERE title = :title", array(':title' => $title))->fetchField();
@@ -764,8 +778,8 @@ function theme_l10n_community_page($variables) {
 /**
  * Compute language community stats.
  *
- * @param $langcode
- *   Compute statistics for this language.
+ * @param $langcode string Compute statistics for this language.
+ * @return array
  */
 function l10n_community_get_stats($langcode = NULL) {
   if (!empty($langcode)) {
@@ -873,11 +887,11 @@ function l10n_community_get_highlighted_project() {
 /**
  * Check and sanitize arguments and build filter array.
  *
- * @param $params
- *   Associative array with unsanitized values.
+ * @param $params array Associative array with unsanitized values.
+ * @return array
  */
 function l10n_community_build_filter_values($params) {
-  $project = $release = NULL;
+  $release = NULL;
 
   // Convert array representation of flags to one integer.
   if (isset($params['status']) && is_array($params['status'])) {
@@ -948,6 +962,9 @@ function l10n_community_flat_filters($filters) {
 
 /**
  * Generate and add JS for URL replacements. These ensure we keep filter values.
+ *
+ * @param $langcode
+ * @param $filters
  */
 function l10n_community_add_url_modifiers($langcode, $filters) {
   $filters = l10n_community_flat_filters($filters);
@@ -993,6 +1010,7 @@ function l10n_community_ajax_releases($form, $form_state) {
  *   Medium type constant L10N_SERVER_MEDIUM_*
  * @param $force
  *   Force replacing a suggestion if it already exists.
+ * @return bool|int
  */
 function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attribution, $uid_user, $medium, $force = FALSE) {
 
@@ -1051,7 +1069,7 @@ function l10n_community_add_suggestion($sid, $translation, $langcode, $uid_attri
       ->execute();
     $type = L10N_SERVER_ACTION_ADD;
   }
-  $id = db_insert('l10n_server_translation_history')
+  db_insert('l10n_server_translation_history')
     ->fields(array(
     'tid' => $tid,
     'uid_action' => $uid_user,

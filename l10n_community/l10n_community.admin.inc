@@ -10,7 +10,7 @@
 /**
  * Settings form callback.
  */
-function l10n_community_settings_form($form, &$form_state) {
+function l10n_community_settings_form() {
   $projects = l10n_server_get_projects();
 
   $form = array();
