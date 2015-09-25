@@ -63,7 +63,7 @@ table.l10n-community-overview {
   margin: 0.5em;
   display: block;
 }
-.l10n-server-filter .filter-submit .reset-link {
+.l10n-server-filter .reset-link {
   position: absolute;
   bottom: 0;
   right: 0; /* LTR */
