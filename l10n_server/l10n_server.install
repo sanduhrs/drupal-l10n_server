@@ -259,6 +259,7 @@ function l10n_server_schema() {
       'sid' => array('sid'),
       'pid' => array('pid'),
       'rid' => array('rid'),
+      'sid_pid' => array('sid', 'pid'),
     ),
   );
 
@@ -470,5 +471,12 @@ function l10n_server_update_7001() {
     'not null' => TRUE,
     'binary' => TRUE,
   ));
+}
+
+/**
+ * Adds an index on l10n_server_line(sid,pid).
+ */
+function l10n_server_update_7002() {
+  db_add_index('l10n_server_line', 'sid_pid', array('sid', 'pid'));
 }
 
