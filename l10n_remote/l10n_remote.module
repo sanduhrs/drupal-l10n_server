@@ -35,8 +35,8 @@ function l10n_remote_menu() {
 function l10n_remote_permission() {
   return array(
     'submit suggestions remotely' => array(
-      'title' => t('submit suggestions remotely'),
-      'description' => t('TODO Add a description for \'submit suggestions remotely\''),
+      'title' => t('Submit suggestions remotely'),
+      'description' => t('Allow users to submit translations from remote systems to the translation server.'),
     ),
   );
 }

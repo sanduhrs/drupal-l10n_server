@@ -366,8 +366,8 @@ function l10n_server_project_admin_load($uri) {
 function l10n_server_permission() {
   return array(
     'administer localization server' => array(
-      'title' => t('administer localization server'),
-      'description' => t('TODO Add a description for \'administer localization server\''),
+      'title' => t('Administer localization server'),
+      'description' => t('Allow users to administer localization server.'),
     ),
   );
 }

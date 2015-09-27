@@ -355,40 +355,40 @@ function l10n_community_init() {
 function l10n_community_permission() {
   return array(
     'access localization community' => array(
-      'title' => t('access localization community'),
-      'description' => t('TODO Add a description for \'access localization community\''),
+      'title' => t('Access localization community'),
+      'description' => t('Allow users to access the localization community.'),
     ),
     'browse translations' => array(
-      'title' => t('browse translations'),
-      'description' => t('TODO Add a description for \'browse translations\''),
+      'title' => t('Browse translations'),
+      'description' => t('Allow users to browse through translations.'),
     ),
     'export gettext templates and translations' => array(
-      'title' => t('export gettext templates and translations'),
-      'description' => t('TODO Add a description for \'export gettext templates and translations\''),
+      'title' => t('Export gettext templates and translations'),
+      'description' => t('Allow users to export gettext templates and translation files.'),
     ),
     'import gettext files' => array(
-      'title' => t('import gettext files'),
-      'description' => t('TODO Add a description for \'import gettext files\''),
+      'title' => t('Import gettext files'),
+      'description' => t('Allow users to import translation files into localization server.'),
     ),
     'submit suggestions' => array(
-      'title' => t('submit suggestions'),
-      'description' => t('TODO Add a description for \'submit suggestions\''),
+      'title' => t('Submit suggestions'),
+      'description' => t('Allow user to submit new translation suggestions.'),
     ),
     'moderate suggestions from others' => array(
-      'title' => t('moderate suggestions from others'),
-      'description' => t('TODO Add a description for \'moderate suggestions from others\''),
+      'title' => t('Moderate suggestions from others'),
+      'description' => t('Allow users to moderate translation suggestions from other users.'),
     ),
     'moderate own suggestions' => array(
-      'title' => t('moderate own suggestions'),
-      'description' => t('TODO Add a description for \'moderate own suggestions\''),
+      'title' => t('Moderate own suggestions'),
+      'description' => t('Allow users to moderate its own suggestions.'),
     ),
     'decline own suggestions' => array(
-      'title' => t('decline own suggestions'),
-      'description' => t('TODO Add a description for \'decline own suggestions\''),
+      'title' => t('Decline own suggestions'),
+      'description' => t('Allow users to decline their own suggestions.'),
     ),
     'start over packages' => array(
-      'title' => t('start over packages'),
-      'description' => t('TODO Add a description for \'start over packages\''),
+      'title' => t('Start over packages'),
+      'description' => t('Allow users to start over with a project on localization server.'),
     ),
   );
 }

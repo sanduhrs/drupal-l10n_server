@@ -31,28 +31,28 @@ function l10n_groups_permission() {
     // @todo: administer permission not actually used for anything ATM
     // used to apply to all the node permissions below, but not anymore
     'administer localization groups' => array(
-      'title' => t('administer localization groups'),
-      'description' => t('TODO Add a description for \'administer localization groups\''),
+      'title' => t('Administer localization groups'),
+      'description' => t('Allow users to administer localization groups.'),
     ),
     'create localization group' => array(
-      'title' => t('create localization group'),
-      'description' => t('TODO Add a description for \'create localization group\''),
+      'title' => t('Create localization group'),
+      'description' => t('Allow users to create translation groups.'),
     ),
     'delete any localization group' => array(
-      'title' => t('delete any localization group'),
-      'description' => t('TODO Add a description for \'delete any localization group\''),
+      'title' => t('Delete any localization group'),
+      'description' => t('Allow users to delete any localization group.'),
     ),
     'delete own localization group' => array(
-      'title' => t('delete own localization group'),
-      'description' => t('TODO Add a description for \'delete own localization group\''),
+      'title' => t('Delete own localization group'),
+      'description' => t('Allow users to delete their own localization group.'),
     ),
     'edit any localization group' => array(
-      'title' => t('edit any localization group'),
-      'description' => t('TODO Add a description for \'edit any localization group\''),
+      'title' => t('Edit any localization group'),
+      'description' => t('Allow users to edit any localization group.'),
     ),
     'edit own localization group' => array(
-      'title' => t('edit own localization group'),
-      'description' => t('TODO Add a description for \'edit own localization group\''),
+      'title' => t('Edit own localization group'),
+      'description' => t('Allow users to edit their own localization group.'),
     ),
   );
 }
