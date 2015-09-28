@@ -858,9 +858,7 @@ function l10n_community_rebuild_stats() {
   l10n_community_get_stats();
   module_load_include('inc', 'l10n_community', 'pages');
   l10n_community_get_string_count('languages');
-  if(variable_get('l10n_community_stats_enabled', TRUE)) {
-    l10n_community_get_string_count('projects');
-  }
+
   if ($project = l10n_community_get_highlighted_project()) {
     l10n_community_get_string_count('languages', $project->pid);
   }

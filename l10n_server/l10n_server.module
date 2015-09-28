@@ -489,25 +489,30 @@ function l10n_server_release_file_upload_submit($form, &$form_state) {
 function l10n_server_get_projects($options = array()) {
   static $projects = array();
 
-  $select= db_select('l10n_server_project', 'p')->fields('p');
+  $select = db_select('l10n_server_project', 'p')->fields('p');
 
   // Consider returning all projects or just published ones.
-  if (empty($options['all'])) $select->condition('status', 1);
+  if (empty($options['all'])) {
+    $select->condition('status', 1);
+  }
 
-  if (isset($options['pager'])) {
-    if (isset($options['initial'])) {
-      $initials = l10n_server_get_project_initials();
-      if (isset($initials[$options['initial']])) {
-        $args = $initials[$options['initial']]['values'];
-        for ($i=0; $i < sizeof($args); $i++) { $arguments[':p_' . $i] = $args[$i]; }
-        $placeholders = implode(',', array_keys($arguments));
-	$select->where("SUBSTRING(title, 1, 1) IN ($placeholders)", $arguments);
+  if (isset($options['initial'])) {
+    $initials = l10n_server_get_project_initials();
+    if (isset($initials[$options['initial']])) {
+      $args = $initials[$options['initial']]['values'];
+      for ($i = 0 ; $i < sizeof($args) ; $i++) {
+        $arguments[':p_' . $i] = $args[$i];
       }
+      $placeholders = implode(',', array_keys($arguments));
+      $select->where("SUBSTRING(title, 1, 1) IN ($placeholders)", $arguments);
     }
-
+  }
+  if (isset($options['pager'])) {
     // If a pager view was asked for, collect data independently.
     $select->orderBy('title');
-    $result = $select->extend('PagerDefault')->limit($options['pager'])->execute();
+    $result = $select->extend('PagerDefault')
+                     ->limit($options['pager'])
+                     ->execute();
     $pager_results = $result->fetchAllAssoc('uri');
 
     // Save project information for later, if someone asks for it by uri.
@@ -515,28 +520,26 @@ function l10n_server_get_projects($options = array()) {
 
     return $pager_results;
   }
+  elseif (isset($options['uri'])) {
+    // A specific project was asked for.
+    if (isset($projects[$options['uri']])) {
+      // Can be served from the local cache.
+      return $projects[$options['uri']];
+    }
+    // Not found in cache, so query and cache before returning.
+    $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $options['uri']));
+    if ($project = $result->fetchObject()) {
+      $projects[$options['uri']] = $project;
+      return $project;
+    }
+  }
   else {
-    if (isset($options['uri'])) {
-      // A specific project was asked for.
-      if (isset($projects[$options['uri']])) {
-        // Can be served from the local cache.
-        return $projects[$options['uri']];
-      }
-      // Not found in cache, so query and cache before returning.
-      $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $options['uri']));
-      if ($project = $result->fetchObject()) {
-        $projects[$options['uri']] = $project;
-        return $project;
-      }
+    // A list of *all* projects was asked for.
+    $results = $select->orderBy('uri')->execute();
+    foreach ($results as $project) {
+      $projects[$project->uri] = $project;
     }
-    else {
-      // A list of *all* projects was asked for.
-      $results = $select->orderBy('uri')->execute();
-      foreach ($results as $project) {
-        $projects[$project->uri] = $project;
-      }
-      return $projects;
-    }
+    return $projects;
   }
 }
 

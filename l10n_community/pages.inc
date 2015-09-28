@@ -117,65 +117,113 @@ function l10n_server_sort_by_column_language($a, $b) {
  * a pager on this screen.
  */
 function l10n_community_explore_projects() {
-  $output = '';
+  $output = array();
 
-  if (!variable_get('l10n_community_stats_enabled', TRUE) || !variable_get('l10n_community_stats_explore_projects_enabled', TRUE)) {
+  // Kill switch in case we don't want statistics at all.
+  if (!variable_get('l10n_community_stats_enabled', TRUE)) {
     return t('Statistics for projects have been disabled.');
   }
 
-  $pager_setting = variable_get('l10n_community_project_per_page', 10);
-
-  $options = array('pager' => $pager_setting);
+  // Initialize our $initial letter.
   if (isset($_GET['initial'])) {
-    $options['initial'] = strtolower($_GET['initial']);
+    $initial = strtolower($_GET['initial']);
+  }
+  else {
+    $initials = array_keys(l10n_server_get_project_initials());
+    $initial = strtolower(array_shift($initials));
   }
 
-  if (!$projects = l10n_server_get_projects($options)) {
+  // Make a first query tp get the total number of projects.
+  $pager_setting = variable_get('l10n_community_project_per_page', 10);
+  $options['initial'] = $initial;
+  if (!$all_projects = l10n_server_get_projects($options)) {
     drupal_set_message(t('No projects found.'), 'error');
     return '';
   }
-
-  $languages = l10n_community_get_languages('name');
-  $language_count = count($languages);
-  $string_counts = l10n_community_get_string_count('projects');
+  $options['pager'] = $pager_setting;
+  $projects = l10n_server_get_projects($options);
 
   // If we have more projects compared to what we show at the moment, display
   // an autocomplete jumpbox to jump to a project.
-  if (count($string_counts) > $pager_setting) {
-    $form = drupal_get_form('l10n_community_explore_projects_jump_form');
-    $output .= drupal_render($form);
+  if (count($all_projects) > $pager_setting) {
+    $output[] = drupal_get_form('l10n_community_explore_projects_jump_form');
   }
 
-  $pager = theme('pager', array('tags' => NULL, 'element' => 0));
-
-  $output .= _l10n_community_alphabetic_pager();
-  $output .= $pager;
-
-  $table = array();
+  // Fetch all the pids, that we already have.
+  $pids = array();
   foreach ($projects as $project) {
-    $table[] = array_merge(
-      array(
-        array(
-          'data' => l($project->title, 'translate/projects/' . $project->uri),
-          'class' => array('rowhead'),
-        ),
-      ),
+    $pids [] = $project->pid;
+  }
+
+  if (variable_get('l10n_community_stats_explore_projects_enabled', TRUE)) {
+    // General community statistics.
+    $string_counts = array();
+    $query = db_select('l10n_server_line', 'l')
+      ->fields('l', array('pid'))
+      ->groupBy('pid');
+    $query->addExpression('COUNT(DISTINCT sid)', 'string_count');
+    $query->condition('pid', $pids);
+    $query->extend('PagerDefault')->limit($pager_setting);
+    $result = $query->execute();
+    foreach ($result as $row) {
+      $string_counts[$row->pid] = array('count' => $row->string_count);
+    }
+
+    // Get the count of distinct strings having translations and suggestions
+    // per project. This is run per project because big installs of the
+    // module were choking on GROUP BY based solutions.
+    foreach (array_keys($string_counts) as $pid) {
+      $query = db_select('l10n_server_line', 'l');
+      $query->condition('l.pid', $pid);
+      $query->leftJoin('l10n_server_status_flag', 'tst', 'l.sid = tst.sid AND tst.has_translation = 1');
+      $query->leftJoin('l10n_server_status_flag', 'tss', 'l.sid = tss.sid AND tst.has_suggestion = 1');
+      $query->addExpression('COUNT(DISTINCT tst.sid)', 'translations');
+      $query->addExpression('COUNT(DISTINCT tss.sid)', 'suggestions');
+      $string_counts[$pid] += $query->execute()->fetchAssoc();
+    }
+  }
+
+  $output[] = _l10n_community_alphabetic_pager($initial);
+  $output[] = array('#theme' => 'pager');
+
+  $languages = l10n_community_get_languages('name');
+  $language_count = count($languages);
+
+  $rows = array();
+  foreach ($projects as $project) {
+    $row = array();
+    $row[] = array(
+      'data' => l($project->title, 'translate/projects/' . $project->uri),
+      'class' => array('rowhead'),
+    );
+    if (variable_get('l10n_community_stats_explore_projects_enabled', TRUE)) {
       // Multiply summary count by languages handled, so we get an
       // accurate picture of completeness.
-      theme('l10n_community_progress_columns', array(
+      $row = array_merge($row, theme('l10n_community_progress_columns', array(
         'sum' => (@$string_counts[$project->pid]['count'] * $language_count),
         'translated' => @$string_counts[$project->pid]['translations'],
         'has_suggestion' => @$string_counts[$project->pid]['suggestions'],
-      ))
-    );
+      )));
+    }
+    $rows[] = $row;
   }
-  $output .= theme('table', array(
-    'header' => theme('l10n_community_progress_headers', array('mainhead' => t('Project'))),
-    'rows' => $table,
-    'attributes' => array('class' => array('l10n-community-overview')),
-  ));
-  $output .= $pager;
-  return $output . '<div class="clear-block"></div>';
+
+  $header = array(array('data' => t('Project'), 'class' => array('rowhead')));
+  if (variable_get('l10n_community_stats_explore_projects_enabled', TRUE)) {
+    $header = array_merge($header, array(
+      t('Progress'),
+      t('Untranslated'),
+      t('Suggestions'),
+    ));
+  }
+  $output[] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#attributes' => array('class' => array('l10n-community-overview')),
+  );
+  $output[] = array('#theme' => 'pager');
+  return $output;
 }
 
 /**
@@ -777,45 +825,6 @@ function l10n_community_get_string_count($type, $id = NULL) {
       }
       break;
 
-    case 'projects':
-      // Get summaries by projects. Restricted to a specific language, if $id is set.
-
-      // General community statistics.
-      if ($stats = cache_get('l10n:count:projects:' . $id, 'cache')) {
-        return $stats->data;
-      }
-      else {
-        // First get the count of strings available for translation.
-        $sums = $count_args = array();
-        $result = db_query("SELECT COUNT(DISTINCT sid) AS string_count, pid FROM {l10n_server_line} GROUP BY pid");
-        foreach ($result as $row) {
-          $sums[$row->pid] = array('count' => $row->string_count);
-        }
-        // Get the count of distinct strings having translations and suggestions
-        // per project. This is run per project because big installs of the
-        // module were choking on GROUP BY based solutions.
-        foreach (array(
-                   'translations' => 'has_translation',
-                   'suggestions' => 'has_suggestion',
-                 ) as $key => $column) {
-          foreach ($sums as $pid => &$data) {
-            $count_args = array();
-            $count_sql = "SELECT COUNT(DISTINCT ts.sid) AS translation_count FROM {l10n_server_line} l LEFT JOIN {l10n_server_status_flag} ts ON l.sid = ts.sid WHERE ts.$column = 1 ";
-            if (isset($id)) {
-              // Limit to language if desired.
-              $count_sql .= "AND ts.language = :language ";
-              $count_args[':language'] = $id;
-            }
-            $count_sql .= 'AND l.pid = :pid';
-            $count_args[':pid'] = $pid;
-            $data[$key] = db_query($count_sql, $count_args)->fetchField();
-          }
-        }
-        cache_set('l10n:count:projects:' . $id, $sums, 'cache', CACHE_PERMANENT);
-        return $sums;
-      }
-      break;
-
     case 'top-people':
       // Get summaries of people having most active translations per language.
       // Skip anonymous since that is used for placeholders when there was
@@ -861,19 +870,12 @@ function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
 /**
  * Create an alphabetic pager for browsing projects.
  */
-function _l10n_community_alphabetic_pager() {
-  $output = '';
-
+function _l10n_community_alphabetic_pager($initial) {
   // Create an array of pager elements, setting a special class on the active element
   $initials = l10n_server_get_project_initials();
-  $items = array(
-    array(
-      'class' => array(isset($_GET['initial']) ? 'pager-item' : 'pager-current'),
-      'data' => isset($_GET['initial']) ? l(t('All'), 'translate/projects') : t('All'),
-    ),
-  );
+  $items = array();
   foreach ($initials as $link => $data) {
-    if (isset($_GET['initial']) && strtolower($_GET['initial']) === (string) $link) {
+    if ($initial === (string) $link) {
       $items[] = array(
         'class' => array('pager-current'),
         'data' => $data['title'],
@@ -890,14 +892,11 @@ function _l10n_community_alphabetic_pager() {
   // Only display this pager if there was over 2 items. 'All' is the first item
   // and then if we only have one item to filter additionally, we only have one
   // possible letter. Not much value for displaying this pager.
-  if (count($items) > 2) {
-    $output .= theme('item_list', array(
-      'items' => $items,
-      'title' => NULL,
-      'type' => 'ul',
-      'attributes' => array('class' => array('pager pager-alphabetic')),
-    ));
-  }
+  $output = array(
+    '#theme' => 'item_list',
+    '#items' => $items,
+    '#attributes' => array('class' => array('pager pager-alphabetic')),
+  );
 
   return $output;
 }

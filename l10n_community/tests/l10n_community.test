@@ -114,8 +114,9 @@ class L10nServerTestCase extends DrupalWebTestCase {
     $this->drupalGet('translate/languages');
     $this->assertText('Hungarian', t('With projects in place, language list is visible.'));
 
-    $this->drupalGet('translate/projects');
     foreach ($this->project_names as $api => $name) {
+      $initial = substr(strtolower($name), 0, 1);
+      $this->drupalGet('translate/projects', array('query' => array('initial' => $initial)));
       $this->assertText($name, t('@project name is shown on project page.', array('@project' => $name)));
     }
 
