@@ -63,7 +63,6 @@ function l10n_groups_schema() {
         'description' => 'References {node}.nid, pointing to the organic group node for this translation group.',
         'type' => 'int',
         'not null' => TRUE,
-        'disp-width' => '11',
       ),
       'language' => array(
         'description' => 'References {language}.language, pointing to the language of this translation group.',
