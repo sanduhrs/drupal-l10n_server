@@ -132,6 +132,7 @@ function l10n_packager_update_last_removed() {
 function l10n_packager_update_7000(&$sandbox) {
   // Killswitch as localize.drupal.org implements this in its own hook.
   if (variable_get('l10n_packager_skip_update_7000', FALSE)) {
+    variable_del('l10n_packager_skip_update_7000');
     return NULL;
   }
 
