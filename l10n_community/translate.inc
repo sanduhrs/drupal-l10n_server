@@ -840,7 +840,7 @@ function l10n_community_translate_form_validate($form, &$form_state) {
 
   // Iterate outer structure built in l10n_community_translate_form().
   foreach ($form_state['values']['strings'] as $sid => $string) {
-    $pattern = '/([!@%]|<(ins|del)>[!@%]<\/(ins|del)>)([\w-]+|<(ins|del)>[\w-]+<\/(ins|del)>)/';
+    $pattern = '/([!@%:]|<(ins|del)>[!@%:]<\/(ins|del)>)([\w-]+|<(ins|del)>[\w-]+<\/(ins|del)>)/';
     $matches = array();
 
     // If there are variable in the original string. Check in new suggestions.
