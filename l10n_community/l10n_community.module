@@ -439,20 +439,21 @@ function l10n_community_block_view($delta) {
             return l10n_community_block_stats_language($languages[$arg2]);
           }
         }
+        if (drupal_is_front_page()) {
+          return l10n_community_block_stats_front();
+        }
       }
       break;
 
     case 'jump':
       if (user_access('access localization community')) {
-        if (arg(0) == 'translate') {
-          $arg1 = arg(1);
-          if (empty($arg1) || ($arg1 == 'downloads')) {
-            module_load_include('inc', 'l10n_community', 'welcome');
-            return array(
-              'subject' => t('Quick navigation'),
-              'content' => drupal_get_form('l10n_community_pick_go'),
-            );
-          }
+        $arg1 = arg(1);
+        if ((arg(0) == 'translate' && (empty($arg1) || ($arg1 == 'downloads'))) || drupal_is_front_page()) {
+          module_load_include('inc', 'l10n_community', 'welcome');
+          return array(
+            'subject' => t('Quick navigation'),
+            'content' => drupal_get_form('l10n_community_pick_go'),
+          );
         }
       }
       break;
