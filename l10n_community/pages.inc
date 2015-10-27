@@ -731,7 +731,7 @@ function theme_l10n_community_progress_columns($variables) {
   $bar = '<div class="l10n-community-progress">';
   foreach ($status as $key => $values) {
     if ($values[1] > 0) {
-      $bar .= '<div class="l10n-community-progress-' . $key . '" style="width:' . $values[1] . '%;" title="' . strtr($values[2], array('!percent' => $values[1] . '%')) . '"></div>';
+      $bar .= '<div class="l10n-community-progress-' . $key . '" style="width:' . $values[1] . '%;" title="' . strtr($values[2], array('!percent' => $done_percent . '%')) . '"></div>';
     }
   }
   $bar .= '</div>';
