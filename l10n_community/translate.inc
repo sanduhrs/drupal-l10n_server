@@ -957,29 +957,37 @@ function l10n_community_translate_form_submit($form, &$form_state) {
 /**
  * Get strings under some conditions.
  *
- * @param $langcode
+ * @param string $langcode
  *   Language code to use for the lookup.
- * @param $filters
- *   - 'project'
+ * @param array $filters
+ *   - 'project' (object)
  *     Project object to look up strings for.
- *   - 'status'
+ *   - 'status' (int)
  *     Filter strings by status. See L10N_STATUS_ALL,
- *     L10N_STATUS_UNTRANSLATED, L10N_STATUS_HAS_SUGGESTION and
- *     L10N_STATUS_TRANSLATED.
- *   - 'release'
+ *     L10N_STATUS_UNTRANSLATED, L10N_STATUS_TRANSLATED,
+ *     L10N_STATUS_NO_SUGGESTION, L10N_STATUS_HAS_SUGGESTION,
+ *     L10N_STATUS_IS_TRANSLATION, L10N_STATUS_IS_SUGGESTION.
+ *   - 'release' (int)
  *     Release id of the particular project release to filter with.
  *     Use NULL to not filter on releases.
- *   - 'search'
+ *   - 'search' (string)
  *     Substring to search for in all source and translation strings.
- *   - 'context'
+ *   - 'context' (string)
  *     From Drupal 7, separate contexts are supported. POTX_CONTEXT_NONE is
  *     the default, if the code does not specify a context otherwise.
- * @param $pager
- *   Number of strings to be returned in a pager. Should be NULL if
- *   no pager should be used.
- * @return array An array of string records from database.
+ *   - 'sid' (int)
+ *     Source string ID.
+ *   - 'author' (object)
+ *     User object for author to look up. Will both return suggestions and
+ *     translations authored by the user. 
+ * @param int $pager
+ *   Number of strings to be returned in a pager.
+ *
+ * @return array 
+ *   An array of is_active = 1 string record objects from the database 
+ *   matching the filters provided.
  */
-function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
+function l10n_community_get_strings($langcode, $filters, $pager) {
   $query = db_select('l10n_server_string', 's')->distinct();
   $query->leftJoin('l10n_server_status_flag', 'ts',
     's.sid = ts.sid AND ts.language = :language', array(':language' => $langcode));
@@ -1068,13 +1076,7 @@ function l10n_community_get_strings($langcode, $filters, $pager = NULL) {
     }
   }
 
-  // We either need a pager or a full result.
-  if (isset($pager)) {
-    $strings = $query->extend('PagerDefault')->limit($pager)->execute();
-  }
-  else {
-    $strings = $query->execute();
-  }
+  $strings = $query->extend('PagerDefault')->limit($pager)->execute();
   $result = array();
   foreach ($strings as $string) {
     if ($string->is_suggestion) {
