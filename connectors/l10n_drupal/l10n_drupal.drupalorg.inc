@@ -327,6 +327,8 @@ function l10n_drupal_drupalorg_parse_release($release) {
   $filename = basename($release->download_link);
   $file = file_directory_temp() . '/' . $filename;
 
+  watchdog('l10n_drupal', 'Retrieving @filename for parsing.', array('@filename' => $filename));
+
   // Check filename for a limited set of allowed chars. Help make sure
   // that all the command line code later is not exploited.
   if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
@@ -407,8 +409,13 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Extract the local file to the temporary directory.
   else {
     if (l10n_drupal_drupalorg_exec('mkdir ' . escapeshellarg($temp_path))) {
+
+      watchdog('l10n_drupal', 'Extracting @filename.', array('@filename' => basename($package_file)));
+
       // Try extracting the tarball to this directory.
       if (l10n_drupal_drupalorg_exec('tar -xvvzf ' . escapeshellarg($package_file) . ' -C ' . escapeshellarg($temp_path))) {
+
+        watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', array('@filename' => basename($package_file)));
 
         // Get all source files and save strings with our callback for this release.
         $version = l10n_drupal_detect_major_version($package_file);
@@ -437,12 +444,12 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
 
         // Parsed this releases files.
         db_update('l10n_server_release')
-	  ->fields(array(
+          ->fields(array(
               'sid_count' => $sid_count,
               'last_parsed' => REQUEST_TIME,
             ))
-	  ->condition('rid', $release->rid)
-	  ->execute();
+          ->condition('rid', $release->rid)
+          ->execute();
 
         // Update error list for this release. Although the errors are related to
         // files, we are not interested in the fine details, the file names are in
@@ -453,11 +460,11 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         if (isset($messages['error']) && is_array($messages['error'])) {
           foreach ($messages['error'] as $error_message) {
             db_insert('l10n_server_error')
-	      ->fields(array(
+              ->fields(array(
                   'rid' => $release->rid,
                   'value' => $error_message,
                 ))
-	      ->execute();
+              ->execute();
           }
         }
       }
