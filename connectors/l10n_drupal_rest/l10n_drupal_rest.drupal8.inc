@@ -56,7 +56,7 @@ function l10n_drupal_rest_drupal8_status() {
 
   $header = array(
     array('data' => t('Language'), 'field' => 'language', 'class' => array('rowhead')),
-    array('data' => t('Drupal 8 core progress'), 'field' => 'progress'),
+    array('data' => t('Drupal @release core progress', array('@release' => $release_title)), 'field' => 'progress'),
     array('data' => t('Contributors'), 'field' => 'contributors'),
   );
   $output .= theme(

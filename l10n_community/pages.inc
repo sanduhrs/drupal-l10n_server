@@ -711,16 +711,17 @@ function theme_l10n_community_progress_columns($variables) {
 
   // Compute numbers, percentages and provide alternate text titles.
   $done_percent = round($translated / $sum * 100, 2);
+  $alt_text = format_plural($sum - $translated, '!percent translated (@count string to go)', '!percent translated (@count strings to go)');
   $status = array(
     'translated' => array(
       (int) $translated,
       $done_percent,
-      t('!percent translated'),
+      $alt_text,
     ),
     'untranslated' => array(
       $sum - $translated,
       100 - $done_percent,
-      t('!percent untranslated'),
+      $alt_text,
     ),
     // suggestions are not in the bar as they overlap with both translated and
     // untranslated strings, so we cannot display them here.
