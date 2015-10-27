@@ -988,7 +988,7 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  *   matching the filters provided.
  */
 function l10n_community_get_strings($langcode, $filters, $pager) {
-  $query = db_select('l10n_server_string', 's')->distinct();
+  $query = db_select('l10n_server_string', 's');
   $query->leftJoin('l10n_server_status_flag', 'ts',
     's.sid = ts.sid AND ts.language = :language', array(':language' => $langcode));
   $query->leftJoin('l10n_server_translation', 't',
@@ -1017,6 +1017,7 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
   // Add submitted by condition
   if (!empty($filters['author'])) {
     $query->condition('t.uid_entered', $filters['author']->uid);
+    $query->distinct();
   }
 
   // Release restriction.
@@ -1032,6 +1033,7 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     elseif ($project) {
       $query->condition('l.pid', $project->pid);
     }
+    $query->distinct();
   }
 
   // Context based filtering.
@@ -1047,6 +1049,7 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     $query->condition(db_or()
       ->condition('s.value', '%' . db_like($search) . '%', 'LIKE')
       ->condition('t.translation', '%' . db_like($search) . '%', 'LIKE'));
+    $query->distinct();
   }
 
   // Restriction based on string status by translation / suggestions.
@@ -1061,6 +1064,7 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     }
     elseif ($filters['status'] & L10N_STATUS_IS_TRANSLATION) {
       $query->condition('t.is_suggestion', '0');
+      $query->distinct();
     }
 
     if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
@@ -1073,6 +1077,7 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     }
     elseif ($filters['status'] & L10N_STATUS_IS_SUGGESTION) {
       $query->condition('t.is_suggestion', '1');
+      $query->distinct();
     }
   }
 
