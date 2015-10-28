@@ -991,23 +991,16 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
   $query = db_select('l10n_server_string', 's');
   $query->leftJoin('l10n_server_status_flag', 'ts',
     's.sid = ts.sid AND ts.language = :language', array(':language' => $langcode));
-  $query->leftJoin('l10n_server_translation', 't',
-    'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
-  $query->leftJoin('users', 'u', 'u.uid = t.uid_entered');
   $query
     ->fields('s', array('sid', 'value', 'context'))
-    ->fields('t', array(
-      'tid',
-      'language',
-      'translation',
-      'uid_entered',
-      'time_entered',
-      'time_changed',
-      'is_suggestion',
-      'is_active',
-    ))
-    ->fields('ts', array('has_suggestion', 'has_translation'));
-  $query->addField('u', 'name', 'username');
+    ->fields('ts', array('language', 'has_suggestion', 'has_translation'));
+
+  // Add the translation table only if needed for one of the filters.
+  if (!empty($filters['author']) || !empty($filters['search']) || (isset($filters['status']) && ($filters['status'] & L10N_STATUS_IS_TRANSLATION)|| ($filters['status'] & L10N_STATUS_IS_SUGGESTION))) {
+    $query->distinct();
+    $query->leftJoin('l10n_server_translation', 't',
+      'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
+  }
 
   // Add sid filtering.
   if (!empty($filters['sid'])) {
@@ -1017,10 +1010,9 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
   // Add submitted by condition
   if (!empty($filters['author'])) {
     $query->condition('t.uid_entered', $filters['author']->uid);
-    $query->distinct();
   }
 
-  // Release restriction.
+  // Project or release restriction.
   $release = empty($filters['release']) || $filters['release'] === 'all' ? NULL : $filters['release'];
   $project = $filters['project'];
   if ($release || $project) {
@@ -1049,7 +1041,6 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     $query->condition(db_or()
       ->condition('s.value', '%' . db_like($search) . '%', 'LIKE')
       ->condition('t.translation', '%' . db_like($search) . '%', 'LIKE'));
-    $query->distinct();
   }
 
   // Restriction based on string status by translation / suggestions.
@@ -1064,7 +1055,6 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     }
     elseif ($filters['status'] & L10N_STATUS_IS_TRANSLATION) {
       $query->condition('t.is_suggestion', '0');
-      $query->distinct();
     }
 
     if ($filters['status'] & L10N_STATUS_HAS_SUGGESTION) {
@@ -1077,44 +1067,57 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     }
     elseif ($filters['status'] & L10N_STATUS_IS_SUGGESTION) {
       $query->condition('t.is_suggestion', '1');
-      $query->distinct();
     }
   }
 
   $strings = $query->extend('PagerDefault')->limit($pager)->execute();
+
+  // Properties to merge in for strings that do not have translations.
+  $no_translation_properties = array(
+    'tid' => 0,
+    'translation' => '',
+    'uid_entered' => 0,
+    'time_entered' => 0,
+    'time_changed' => 0,
+    'is_suggestion' => 0,
+    'is_active' => 0,
+    'username' => '',
+  );
+
   $result = array();
   foreach ($strings as $string) {
-    if ($string->is_suggestion) {
-      // This string is not a translation, but we need that as a "parent" to display.
-      if (!$string->has_translation) {
-        // No parent translation. Pretend this does not exist.
-        // The display code will call for the suggestions.
-        $string->translation = '';
-      }
-      else {
-        $q = db_select('l10n_server_translation', 't');
-        $q->leftJoin('users', 'u', 'u.uid = t.uid_entered');
-        $q->fields('t', array(
-          'tid',
-          'translation',
-          'uid_entered',
-          'time_entered',
-          'time_changed',
-          'is_suggestion',
-          'is_active',
-        ));
-        $q->addField('u', 'name', 'username');
-        $q->condition('t.language', $string->language)
-          ->condition('t.sid', $string->sid)
-          ->condition('t.is_active', 1)
-          ->condition('t.is_suggestion', 0);
-        $translation = $q->execute()->fetchAssoc();
+    // Assume no parent translation. The display code will handle this.
+    foreach ($no_translation_properties as $key => $value) {
+      $string->$key = $value;
+    }
 
-        if (!empty($translation)) {
-          // It does have a translation however, so let's load it, and override.
-          foreach ($translation as $key => $value) {
-            $string->$key = $value;
-          }
+    // If there is supposed to be a translation, load it. We did not load it
+    // in the query above to limit the tables used for the search. We also may
+    // have found a suggestion above in which case we need the translation
+    // loaded anyway. This query should use indexes even if the above did not.
+    if ($string->has_translation) {
+      $q = db_select('l10n_server_translation', 't');
+      $q->leftJoin('users', 'u', 'u.uid = t.uid_entered');
+      $q->fields('t', array(
+        'tid',
+        'translation',
+        'uid_entered',
+        'time_entered',
+        'time_changed',
+        'is_suggestion',
+        'is_active',
+      ));
+      $q->addField('u', 'name', 'username');
+      $q->condition('t.language', $string->language)
+        ->condition('t.sid', $string->sid)
+        ->condition('t.is_active', 1)
+        ->condition('t.is_suggestion', 0);
+      $translation = $q->execute()->fetchAssoc();
+
+      if (!empty($translation)) {
+        // Add the translation details to the string object.
+        foreach ($translation as $key => $value) {
+          $string->$key = $value;
         }
       }
     }
