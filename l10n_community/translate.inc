@@ -997,9 +997,13 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
 
   // Add the translation table only if needed for one of the filters.
   if (!empty($filters['author']) || !empty($filters['search']) || (isset($filters['status']) && ($filters['status'] & L10N_STATUS_IS_TRANSLATION)|| ($filters['status'] & L10N_STATUS_IS_SUGGESTION))) {
-    $query->distinct();
     $query->leftJoin('l10n_server_translation', 't',
       'ts.sid = t.sid AND ts.language = t.language AND t.is_active = 1');
+    // The translation table has a 1:N relationship to sources. We need to
+    // limit results to unique sids. A group by on sid with ordering by null
+    // appears to be the fastest solution (as opposed to eg. DISTINCT).
+    $query->groupBy('sid');
+    $query->orderBy('NULL');
   }
 
   // Add sid filtering.
@@ -1025,7 +1029,11 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     elseif ($project) {
       $query->condition('l.pid', $project->pid);
     }
-    $query->distinct();
+    // The line table has a 1:N relationship to sources. We need to limit 
+    // results to unique sids. A group by on sid with ordering by null appears
+    // to be the fastest solution (as opposed to eg. DISTINCT).
+    $query->groupBy('sid');
+    $query->orderBy('NULL');
   }
 
   // Context based filtering.
