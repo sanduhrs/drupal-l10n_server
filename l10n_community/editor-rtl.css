@@ -1,12 +1,17 @@
-li.translation {
+td li.translation {
   direction: rtl;
   padding: 4px 20px 4px 0;
   clear: right;
+  text-align: right;
 }
 
-li.translation > .selector {
+td li.translation > .selector {
   left: auto;
   right: 2px;
+}
+
+.l10n-table {
+  direction: rtl;
 }
 
 .l10n-table ul.actions {
