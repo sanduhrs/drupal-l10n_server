@@ -588,7 +588,7 @@ function l10n_community_project_releases_table($releases, $project_uri, $project
       empty($release->download_link) ? t('n/a') : l(basename($release->download_link), $release->download_link),
       empty($release->file_date) ? t('n/a') : format_date($release->file_date),
       empty($release->last_parsed) ? t('in queue') : format_date($release->last_parsed),
-      $file_count,
+      $file_count ? l($file_count, 'translate/projects/' . $project_uri . '/releases/' . $release->rid, array('fragment' => 'parsed-files')) : $file_count,
       $release->sid_count,
       $error_count ? l($error_count, 'translate/projects/' . $project_uri . '/releases/' . $release->rid, array('fragment' => 'source-warnings')) : $error_count,
     );
@@ -633,39 +633,9 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   $output = '<h3>' . t('Basic release information') . '</h3>';
   $output .= l10n_community_project_releases_table(array($release), $uri, $project->title, FALSE);
 
-  // List the files that we looked at.
-  $output .= '<h3>' . t('Files parsed in this release') . '</h3>';
-  $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = :rid', array(':rid' => $release->rid));
-  $rows = array();
-  foreach ($result as $file) {
-    // Shorten revision information, remove repetitive data.
-    if (strpos($file->revision, ': n/a')) {
-      $revision = t('n/a');
-    }
-    else {
-      $revision = substr($file->revision, strpos($file->revision, ',v') + 3);
-    }
-    // Insert word break hints for the browser to avoid breaking the page layout
-    // for long file names and paths.
-    $rows[] = array(
-      str_replace(array('/', '_'), array(
-        '/<wbr />',
-        '_<wbr />',
-      ), $file->location),
-      str_replace('/', '/<wbr />', $revision),
-    );
-  }
-  $headers = array(t('File location'), t('Version information'));
-  if (count($rows)) {
-    $output .= theme('table', array('header' => $headers, 'rows' => $rows));
-  }
-  else {
-    $output .= '<p>' . t('No files found to parse in this release.') . '</p>';
-  }
-
   // List of release parse warnings we found.
-  $output .= '<a id="source-warnings"></a>';
-  $output .= '<h3>' . t('Source code warnings identified') . '</h3>';
+  $output .= '<h3 id="source-warnings">' . t('Source code warnings identified') . '</h3>';
+  $output .= '<p>' . t('Some of these warnings may indicate issues in how certain APIs are used, while others are false positives of legitimate use of the APIs in a non-standard way.') . '</p>';
   $result = db_query("SELECT * FROM {l10n_server_error} WHERE rid = :rid", array(':rid' => $release->rid));
   $rows = array();
   foreach ($result as $warning) {
@@ -677,6 +647,28 @@ function l10n_community_project_release($uri = NULL, $rid = NULL) {
   }
   else {
     $output .= '<p>' . t('No source code warnings identified in this release.') . '</p>';
+  }
+
+  // List the files that we looked at.
+  $output .= '<h3 id="parsed-files">' . t('Files parsed in this release') . '</h3>';
+  $result = db_query('SELECT * FROM {l10n_server_file} WHERE rid = :rid', array(':rid' => $release->rid));
+  $rows = array();
+  foreach ($result as $file) {
+    // Insert word break hints for the browser to avoid breaking the page layout
+    // for long file names and paths.
+    $rows[] = array(
+      str_replace(array('/', '_'), array(
+        '/<wbr />',
+        '_<wbr />',
+      ), $file->location),
+    );
+  }
+  $headers = array(t('File location'));
+  if (count($rows)) {
+    $output .= theme('table', array('header' => $headers, 'rows' => $rows));
+  }
+  else {
+    $output .= '<p>' . t('No files found to parse in this release.') . '</p>';
   }
 
   return $output;
