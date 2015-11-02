@@ -391,7 +391,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Generate temp folder to extract the tarball. tempnam() creates a regular
   // file, thus reserving the name. But we need a directory. Because $temp_name
   // is unique, we can append '_dir', and it will still be unique.
-  $temp_name = tempnam(file_directory_temp(), 'l10n_drupal_drupalorg_');
+  $temp_name = tempnam('/tmp', 'l10n_drupal_drupalorg_');
   $temp_path = $temp_name . '_dir';
 
   // Nothing to do if the file is not there or the extraction folder is taken.
