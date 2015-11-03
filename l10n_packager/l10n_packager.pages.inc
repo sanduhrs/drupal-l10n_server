@@ -45,8 +45,8 @@ function l10n_packager_explore_downloads() {
   // Not found, generate the list from our data.
   if (empty($rendered)) {
     $downloads = l10n_packager_show_downloads($project);
-    // Store for later use.
-    cache_set('download:' . $project->uri, $downloads, 'cache_l10n_packager', REQUEST_TIME + 60 * 60 * 24);
+    // Store for later use (cached for an hour).
+    cache_set('download:' . $project->uri, $downloads, 'cache_l10n_packager', REQUEST_TIME + 60 * 60);
     $output .= $downloads;
   }
   else {
@@ -151,10 +151,10 @@ function l10n_packager_show_downloads($project) {
         krsort($files[$langcode][$branch]);
         $latest_item = array_shift($files[$langcode][$branch]);
         $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', l10n_packager_get_download_url($project, $branch, $latest_item)) . '</p>';
-        $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d'))) . '</p>';
+        $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', array('@generated' => format_date($latest_item->timestamp, 'custom', 'Y-M-d H:i'))) . '</p>';
         $up_to_date = max($latest_item->checked, $latest_item->release_checked);
         if ($up_to_date > $latest_item->timestamp) {
-          $cell .= '<p class="l10n-packager-meta">' . t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d'))) . '</p>';
+          $cell .= '<p class="l10n-packager-meta">' . t('Up to date as of: @checked', array('@checked' => format_date($up_to_date, 'custom', 'Y-M-d H:i'))) . '</p>';
         }
         $row[] = $cell;
       }
