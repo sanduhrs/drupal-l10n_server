@@ -384,6 +384,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Potx module is already a dependency.
   module_load_include('inc', 'potx');
   module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
+  module_load_include('inc', 'potx', 'potx.local');
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -419,6 +420,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
 
         // Get all source files and save strings with our callback for this release.
         $version = l10n_drupal_detect_major_version($package_file);
+        potx_local_init($temp_path);
         $files = _potx_explore_dir($temp_path, '*', $version);
         l10n_drupal_save_file(array($release->pid, $release->rid));
         l10n_drupal_added_string_counter(NULL, TRUE);
