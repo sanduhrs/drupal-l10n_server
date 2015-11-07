@@ -71,6 +71,10 @@ td.source {
     padding: 0;
   }
 
+  td.source .string-context {
+    font-style: italic;
+  }
+
 td li.translation {
   padding: 4px 0 4px 20px; /* LTR */
   clear: left; /* LTR */
