@@ -308,12 +308,11 @@ function l10n_community_translate_page($langcode) {
     )
   );
 
-  $output = array(
-    // Add the filter form.
-    drupal_get_form('l10n_community_filter_form', $langcode, $filters),
-    // Output the strings form.
-    drupal_get_form('l10n_community_translate_form', $language, $filters, $langcode),
-  );
+  // Add the filter form.
+  $output['filter'] = drupal_get_form('l10n_community_filter_form', $langcode, $filters);
+  // Output the strings form.
+  $max_limit = max($output['filter']['limit']['#options']);
+  $output['result'] = drupal_get_form('l10n_community_translate_form', $language, $filters, $langcode, $max_limit);
   return $output;
 }
 
@@ -325,14 +324,14 @@ function l10n_community_translate_page($langcode) {
  * @param $language object A language object.
  * @param $filters array An array of filters applied to the strings.
  * @param $langcode
+ * @param $limit
  * @return array
- * @throws \Exception
  */
-function l10n_community_translate_form($form, &$form_state, $language, $filters, $langcode) {
+function l10n_community_translate_form($form, &$form_state, $language, $filters, $langcode, $limit) {
   // When rebuilding the form upon submit, the pagination may have changed, so
   // we pass the sids submitted to be sure to process submitted strings.
   if (!empty($form_state['input']['strings'])) {
-    $sids = array_keys($form_state['input']['strings']);
+    $sids = array_slice(array_keys($form_state['input']['strings']), 0, $limit);
     $strings = l10n_community_get_strings($langcode, $filters, $filters['limit'], $sids);
   }
   else {
