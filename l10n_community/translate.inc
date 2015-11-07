@@ -281,7 +281,6 @@ function l10n_community_translate_page($langcode) {
   $language = l10n_community_get_language($langcode);
   $filters = l10n_community_build_filter_values($_GET);
   l10n_community_add_url_modifiers($langcode, $filters);
-  $strings = l10n_community_get_strings($langcode, $filters, $filters['limit']);
 
   // Add RTL style if the current language's direction is RTL
   if ($language->direction == LANGUAGE_RTL) {
@@ -309,32 +308,41 @@ function l10n_community_translate_page($langcode) {
     )
   );
 
-  // Add the filter form.
   $output = array(
+    // Add the filter form.
     drupal_get_form('l10n_community_filter_form', $langcode, $filters),
+    // Output the strings form.
+    drupal_get_form('l10n_community_translate_form', $language, $filters, $langcode),
   );
-
-  // Output the actual strings.
-  if (!count($strings)) {
-    drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
-  }
-  else {
-    $output[] = drupal_get_form('l10n_community_translate_form', $language, $filters, $strings);
-  }
   return $output;
 }
 
 /**
  * Form callback: List translations and suggestions.
  *
+ * @param $form
  * @param $form_state array The form state array.
  * @param $language object A language object.
  * @param $filters array An array of filters applied to the strings.
- * @param $strings array The strings to render.
+ * @param $langcode
  * @return array
+ * @throws \Exception
  */
-function l10n_community_translate_form($form, &$form_state, $language, $filters, $strings) {
-  $pager = theme('pager', array('tags' => NULL, 'element' => 0));
+function l10n_community_translate_form($form, &$form_state, $language, $filters, $langcode) {
+  // When rebuilding the form upon submit, the pagination may have changed, so
+  // we pass the sids submitted to be sure to process submitted strings.
+  if (!empty($form_state['input']['strings'])) {
+    $sids = array_keys($form_state['input']['strings']);
+    $strings = l10n_community_get_strings($langcode, $filters, $filters['limit'], $sids);
+  }
+  else {
+    $strings = l10n_community_get_strings($langcode, $filters, $filters['limit']);
+  }
+
+  if (!count($strings)) {
+    drupal_set_message(t('No strings found with this filter. Try adjusting the filter options.'));
+    return FALSE;
+  }
 
   // The form will show but the submit buttons will only appear if the user has
   // permissions to submit suggestions. This allows the use of this form to review
@@ -350,7 +358,7 @@ function l10n_community_translate_form($form, &$form_state, $language, $filters,
     ),
     'pager_top' => array(
       '#weight' => -10,
-      '#markup' => $pager,
+      '#theme' => 'pager',
     ),
     'strings' => array(
       '#tree' => TRUE,
@@ -363,7 +371,7 @@ function l10n_community_translate_form($form, &$form_state, $language, $filters,
     ),
     'pager_bottom' => array(
       '#weight' => 10,
-      '#markup' => $pager,
+      '#theme' => 'pager',
     ),
   );
 
@@ -982,12 +990,14 @@ function l10n_community_translate_form_submit($form, &$form_state) {
  *     translations authored by the user. 
  * @param int $pager
  *   Number of strings to be returned in a pager.
+ * @param array $sids
+ *   An array of sids to load, else the sids will be taken from pager.
  *
  * @return array 
  *   An array of is_active = 1 string record objects from the database 
  *   matching the filters provided.
  */
-function l10n_community_get_strings($langcode, $filters, $pager) {
+function l10n_community_get_strings($langcode, $filters, $pager, $sids = array()) {
   $query = db_select('l10n_server_string', 's');
   $query->leftJoin('l10n_server_status_flag', 'ts',
     's.sid = ts.sid AND ts.language = :language', array(':language' => $langcode));
@@ -1078,7 +1088,12 @@ function l10n_community_get_strings($langcode, $filters, $pager) {
     }
   }
 
-  $strings = $query->extend('PagerDefault')->limit($pager)->execute();
+  if (empty($sids)) {
+    $strings = $query->extend('PagerDefault')->limit($pager)->execute();
+  }
+  else {
+    $strings = $query->condition('s.sid', $sids)->execute();
+  }
 
   // Properties to merge in for strings that do not have translations.
   $no_translation_properties = array(
