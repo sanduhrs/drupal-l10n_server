@@ -60,3 +60,105 @@ function l10n_drupal_require_potx_with_context() {
 
   return $requirement;
 }
+
+/**
+ * Implements hook_schema().
+ */
+function l10n_drupal_schema() {
+  $schema = array();
+
+  $schema['l10n_drupal_parsed_module_data'] = array(
+    'description' => 'Parsed data for modules (Drupal 8+)',
+    'fields' => array(
+      'module_name' => array(
+        'description' => 'Module name.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'dependencies' => array(
+        'description' => 'The module\'s dependencies.',
+        'type' => 'text',
+        'size' => 'medium',
+        'serialize' => TRUE,
+      ),
+      'parsed_schema' => array(
+        'description' => 'The module\'s parsed schema.',
+        'type' => 'text',
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('module_name'),
+  );
+  $schema['l10n_drupal_schema_reverse_lookup'] = array(
+    'description' => 'A reverse lookup table for finding modules based on schema key',
+    'fields' => array(
+      'schema_key' => array(
+        'description' => 'The schema key',
+        'type' => 'varchar',
+        'length' => '500',
+      ),
+      'module_name' => array(
+        'description' => 'The array name',
+        'type' => 'varchar',
+        'length' => '255',
+      )
+    ),
+    'indexes' => array(
+      'schema_key' => array('schema_key'),
+      'module_name' => array('module_name'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Install newly required tables potx_parsed_data and potx_schema_reverse_lookup
+ */
+function l10n_drupal_update_7100() {
+  db_create_table('l10n_drupal_parsed_module_data', array(
+    'description' => 'Parsed data for modules (Drupal 8+)',
+    'fields' => array(
+      'module_name' => array(
+        'description' => 'Module name.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'dependencies' => array(
+        'description' => 'The module\'s dependencies.',
+        'type' => 'text',
+        'size' => 'medium',
+        'serialize' => TRUE,
+      ),
+      'parsed_schema' => array(
+        'description' => 'The module\'s parsed schema.',
+        'type' => 'text',
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('module_name'),
+  ));
+  db_create_table('l10n_drupal_schema_reverse_lookup', array(
+    'description' => 'A reverse lookup table for finding modules based on schema key',
+    'fields' => array(
+      'schema_key' => array(
+        'description' => 'The schema key',
+        'type' => 'varchar',
+        'length' => '500',
+      ),
+      'module_name' => array(
+        'description' => 'The array name',
+        'type' => 'varchar',
+        'length' => '255',
+      )
+    ),
+    'indexes' => array(
+      'schema_key' => array('schema_key'),
+      'module_name' => array('module_name'),
+    ),
+  ));
+}
