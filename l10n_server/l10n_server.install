@@ -239,9 +239,9 @@ function l10n_server_schema() {
     ),
     'indexes' => array(
       'fid' => array('fid'),
-      'pid' => array('pid'),
+      'pid_sid' => array('pid', 'sid'),
       'rid' => array('rid'),
-      'sid_pid' => array('sid', 'pid'),
+      'sid' => array('sid'),
     ),
   );
 
@@ -451,4 +451,14 @@ function l10n_server_update_7002() {
  */
 function l10n_server_update_7003() {
   db_drop_index('l10n_server_line', 'sid');
+}
+
+/**
+ * Adds an index on l10n_server_line(pid,sid).
+ */
+function l10n_server_update_7004() {
+  db_add_index('l10n_server_line', 'pid_sid', array('pid', 'sid'));
+  db_drop_index('l10n_server_line', 'pid');
+  db_add_index('l10n_server_line', 'sid', array('sid'));
+  db_drop_index('l10n_server_line', 'sid_pid');
 }
