@@ -553,7 +553,7 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
     if ($existing_file) {
       if ($existing_file->revision != $revision) {
         // Changed revision on a file.
-        db_query("UPDATE {l10n_server_file} SET revision = '%s' WHERE fid = %d", $revision, $existing_file->fid);
+        db_query("UPDATE {l10n_server_file} SET revision = :revision WHERE fid = :fid", [':revision' => $revision, ':fid' => $existing_file->fid]);
       }
       $fid = $existing_file->fid;
     }
