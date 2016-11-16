@@ -249,7 +249,7 @@ function l10n_packager_create_latest_symlink($file, $release, $language) {
     module_invoke_all('l10n_packager_done', $latest_file_object);
   }
 
-  return symlink($target, $latest_file);
+  return symlink(basename($target), $latest_file);
 }
 // == Utility functions ========================================================
 
