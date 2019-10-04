@@ -13,11 +13,8 @@
  */
 function hook_l10n_packager_packaged($file) {
   // Purge the Fastly CDN cache for this file.
-  if ($fastly_key = variable_get('drupalorg_fastly_key', FALSE)) {
+  if (function_exists('drupalorg_crosssite_fastly_purge_url')) {
     $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
-    $request = drupal_http_request($download_url . preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri), array(
-      'headers' => array('Fastly-Key' => $fastly_key),
-      'method' => 'PURGE',
-    ));
+    drupalorg_crosssite_fastly_purge_url($download_url . preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri));
   }
 }
