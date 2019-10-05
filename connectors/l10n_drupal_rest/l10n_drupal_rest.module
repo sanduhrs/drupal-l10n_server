@@ -152,7 +152,7 @@ function l10n_drupal_rest_l10n_packager_done($file) {
     drupalorg_crosssite_fastly_purge_url($download_base . $file_path);
 
     // “all” is an alias for “8.x”, clear it too, if applicable.
-    $all_file_path = preg_replace('%^/8.x%', '/all', $file_path);
+    $all_file_path = preg_replace('%^/8\.x%', '/all', $file_path);
     if ($all_file_path !== $file_path) {
       drupalorg_crosssite_fastly_purge_url($download_base . $all_file_path);
     }
