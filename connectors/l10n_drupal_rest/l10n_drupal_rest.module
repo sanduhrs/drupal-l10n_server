@@ -147,7 +147,14 @@ function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(
  */
 function l10n_drupal_rest_l10n_packager_done($file) {
   if (function_exists('drupalorg_crosssite_fastly_purge_url')) {
-    $download_url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
-    drupalorg_crosssite_fastly_purge_url($download_url . preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri));
+    $download_base = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
+    $file_path = preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri);
+    drupalorg_crosssite_fastly_purge_url($download_base . $file_path);
+
+    // “all” is an alias for “8.x”, clear it too, if applicable.
+    $all_file_path = preg_replace('%^/8.x%', '/all', $file_path);
+    if ($all_file_path !== $file_path) {
+      drupalorg_crosssite_fastly_purge_url($download_base . $all_file_path);
+    }
   }
 }
