@@ -310,21 +310,22 @@ function l10n_packager_release_get_files($rid) {
  */
 function l10n_packager_release_set_branch(&$release) {
   // Stupid hack for drupal core.
-  if ($release->uri == 'drupal') {
-    // Even stupider hack for determining semantic versioning for 8.x
-    // Core releases are like: 6.1, 6.2, 6.x-dev, 6.x-beta1
-    @list($version, $extra) = explode('-', $release->title);
-    list($core, $minor, $patch) = explode('.', $version);
-    // Using semantic versioning
-    if (isset($patch)) {
-      $branch = $core . '.' . $minor . '.x';
+  if ($release->uri === 'drupal') {
+    // Version has -extra removed, 6.0-beta1 becomes 6.0.
+    $version = explode('-', $release->title)[0];
+    // Set branch to everything before the last dot, and append an x. For
+    // example, 6.1, 6.2, 6.x-dev, 6.0-beta1 all become 6.x. 8.7.13 becomes
+    // 8.7.x
+    $release->branch = preg_replace('#\.[^.]*$#', '.x', $release->title);
+    // Major version is the first component before the .
+    $major = explode('.', $release->branch)[0];
+    if ($major >= 8) {
+      // In D8 & later, start removing “API compatibility” part of the path.
+      $core = 'all';
     }
-    // Otherwise, set branch and core to the N.x version.
     else {
-      $branch = $core . '.x';
+      $core = $major . '.x';
     }
-    $core = $core . '.x';
-    $release->branch = $branch;
   }
   else {
     // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1
