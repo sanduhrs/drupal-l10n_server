@@ -151,7 +151,7 @@ function _l10n_drupal_rest_read_tsv($file_path, $before, &$projects, &$releases)
         continue;
       }
       // Filter out sandboxes and malformed releases.
-      if (count($data) < 5 || is_numeric($data[$headers['project_machine_name']])) {
+      if (count($data) < 4 || is_numeric($data[$headers['project_machine_name']])) {
         continue;
       }
       $time = strtotime($data[$headers['created']]);
