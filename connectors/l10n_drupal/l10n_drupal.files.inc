@@ -612,6 +612,11 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     return;
   }
 
+  if (!drupal_validate_utf8($value)) {
+    potx_status('error', t('Invalid UTF-8 string attempted to be localized.'), $file, $line);
+    return;
+  }
+
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$file])) {
     // Explode files array to pid, rid and fid.
