@@ -138,6 +138,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   module_load_include('inc', 'potx');
   module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
   module_load_include('inc', 'l10n_drupal', 'l10n_drupal.potx');
+  module_load_include('inc', 'l10n_packager');
 
   // Set up status messages if not in automated mode.
   potx_status('set', POTX_STATUS_MESSAGE);
@@ -163,16 +164,21 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Extract the local file to the temporary directory.
   else {
     if (l10n_drupal_drupalorg_exec('mkdir ' . escapeshellarg($temp_path))) {
-
       watchdog('l10n_drupal', 'Extracting @filename.', array('@filename' => basename($package_file)));
 
       // Try extracting the tarball to this directory.
       if (l10n_drupal_drupalorg_exec('tar -xvvzf ' . escapeshellarg($package_file) . ' -C ' . escapeshellarg($temp_path))) {
-
         watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', array('@filename' => basename($package_file)));
 
         // Get all source files and save strings with our callback for this release.
-        $version = l10n_drupal_detect_major_version($package_file);
+        $release->uri = explode('-', basename($package_file))[0];
+        l10n_packager_release_set_branch($release);
+        if ($release->core === 'all') {
+          $version = POTX_API_8;
+        }
+        else {
+          $version = explode('.', $release->core)[0];
+        }
         _l10n_drupal_potx_init();
         $files = _potx_explore_dir($temp_path, '*', $version);
         l10n_drupal_save_file(array($release->pid, $release->rid));
