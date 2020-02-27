@@ -497,7 +497,12 @@ function l10n_packager_project_downloads($project, $language, $summary = FALSE, 
 function l10n_packager_get_download_url($project, $branch, $file) {
   $download_url = variable_get('l10n_packager_update_url', FALSE);
   if ($download_url) {
-    return $download_url . '/' . intval($branch) . '.x/' . $project->uri . '/' . $file->filename;
+    module_load_include('inc', 'l10n_packager');
+    $release = new stdClass();
+    $release->title = $file->title;
+    $release->uri = $project->uri;
+    l10n_packager_release_set_branch($release);
+    return $download_url . '/' . $release->core . '/' . $project->uri . '/' . $file->filename;
   }
   return file_create_url($file->uri);
 }
