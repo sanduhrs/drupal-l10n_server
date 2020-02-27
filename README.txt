@@ -39,8 +39,8 @@ The localization server module suite consists of a few possible components:
        file system directory. The projects and releases are identified based
        on placement and naming of the package files. 
      
-     - l10n_project: To be used on drupal.org only! Maintains a relation with
-       the drupal.org project and release listings, syncronizes tarballs,
+     - l10n_drupal_rest: To be used on Drupal.org only! Maintains a relation
+       with the Drupal.org project and release listings, syncronizes tarballs,
        collects translatables automatically.
 
 INSTALLATION

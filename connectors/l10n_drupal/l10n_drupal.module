@@ -52,23 +52,6 @@ function l10n_drupal_l10n_server_connector_info() {
 }
 
 /**
- * Implements hook_l10n_server_source_info().
- */
-function l10n_drupal_l10n_server_source_info() {
-  return array(
-    'drupalorg' => array(
-      'title' => t('the drupal.org database'),
-      // Reuse file settings mostly (will be modified in form_alter()).
-      'form' => 'l10n_server_connectors_files_settings_form',
-      'scan' => TRUE,
-      'file' => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
-    ),
-  );
-}
-
-// = Settings ==================================================================
-
-/**
  * Implements hook_form_FORM_ID_alter().
  */
 function l10n_drupal_form_l10n_server_connectors_files_settings_form_alter(&$form, &$form_state) {
@@ -80,19 +63,6 @@ function l10n_drupal_form_l10n_server_connectors_files_settings_form_alter(&$for
       '#default_value' => variable_get('l10n_server_connector_l10n_drupal_files_drupal_home', 0),
       '#description' => t('Assigns http://drupal.org/project/<em>project</em> type home links to projects. These home links are used to guide users to the home pages of the projects. The setting only affects newly parsed packages.'),
       '#weight' => 100,
-    );
-  }
-  elseif ($form['#connector_name'] == 'l10n_project') {
-    // No file directory setting here.
-    $form['l10n_server_connector_l10n_project_drupalorg_directory']['#access'] = FALSE;
-    unset($form['l10n_server_connector_l10n_project_drupalorg_directory']['#after_build']);
-    // Setting for filesize limit.
-    $form['l10n_server_connector_l10n_project_drupalorg_max_filesize'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Release files max filesize'),
-      '#default_value' => variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024),
-      '#description' => t('In bytes. Releases larger than this size will not be downloaded.'),
-      '#weight' => 0,
     );
   }
 }
