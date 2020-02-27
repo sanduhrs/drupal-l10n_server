@@ -6,8 +6,7 @@
  */
 
 /**
- * @todo Please document this function.
- * @see http://drupal.org/node/1354
+ * Menu callback, search for project, and show its translation downloads.
  */
 function l10n_packager_explore_downloads() {
   drupal_add_css(drupal_get_path('module', 'l10n_packager') . '/l10n_packager.css');
