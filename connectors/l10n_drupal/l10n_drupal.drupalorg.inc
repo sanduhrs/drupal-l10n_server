@@ -68,7 +68,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
  *   Release object.
  */
 function l10n_drupal_drupalorg_parse_package($package_file, $release) {
-  $error = $message = '';
+  $error = '';
 
   // Potx module is already a dependency.
   module_load_include('inc', 'potx');
@@ -131,13 +131,11 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
-        $message_arguments = array(
+        watchdog('l10n_drupal', '@filename (@files files, @sids strings) scanned.', [
           '@filename' => basename($package_file),
           '@files' => count($files),
           '@sids' => $sid_count,
-        );
-        $message_t = t('@filename (@files files, @sids strings) scanned.', $message_arguments);
-        $message = '@filename (@files files, @sids strings) scanned.';
+        ]);
 
         // Parsed this releases files.
         db_update('l10n_server_release')
@@ -180,10 +178,5 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
     watchdog('l10n_drupal', $error, $error_arguments, WATCHDOG_ERROR);
     $return['error'] = $error_t;
   }
-  if ($message) {
-    watchdog('l10n_drupal', $message, $message_arguments);
-    $return['message'] = $message_t;
-  }
-
   return $return;
 }
