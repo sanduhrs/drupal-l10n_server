@@ -99,11 +99,11 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
 
   // Extract the local file to the temporary directory.
   else {
-    if (l10n_drupal_drupalorg_exec('mkdir ' . escapeshellarg($temp_path))) {
+    if (drush_shell_exec('mkdir %s', $temp_path)) {
       watchdog('l10n_drupal', 'Extracting @filename.', array('@filename' => basename($package_file)));
 
       // Try extracting the tarball to this directory.
-      if (l10n_drupal_drupalorg_exec('tar -xvvzf ' . escapeshellarg($package_file) . ' -C ' . escapeshellarg($temp_path))) {
+      if (drush_shell_exec('tar -xvvzf %s -C %s', $package_file, $temp_path)) {
         watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', array('@filename' => basename($package_file)));
 
         // Get all source files and save strings with our callback for this release.
@@ -127,7 +127,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         $sid_count = l10n_drupal_added_string_counter();
 
         // Delete directory now that parsing is done.
-        l10n_drupal_drupalorg_exec('rm -rf ' . escapeshellarg($temp_path));
+        drush_shell_exec('rm -rf %s', $temp_path);
         unlink($package_file);
 
         // Record changes of the scanned project in the database.
@@ -167,7 +167,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
       }
       else {
         // Delete directory if we did not manage to extract the tarball.
-        l10n_drupal_drupalorg_exec('rm -rf ' . escapeshellarg($temp_path));
+        drush_shell_exec('rm -rf %s', $temp_path);
       }
     }
   }
@@ -186,28 +186,4 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   }
 
   return $return;
-}
-
-/**
- * Wrapper for exec() that logs errors to the watchdog.
- *
- * Taken from project/release/package-release-nodes.php.
- *
- * @param $cmd
- *   String of the command to execute (assumed to be safe, the caller is
- *   responsible for calling escapeshellcmd()).
- *
- * @return
- *   TRUE if the command was successful (0 exit status), else FALSE.
- */
-function l10n_drupal_drupalorg_exec($cmd) {
-  // Make sure we grab stderr, too.
-  $output = array();
-  exec("$cmd 2>&1", $output, $rval);
-  if ($rval) {
-    $output = htmlspecialchars(is_array($output) ? implode("\n", $output) : $output);
-    watchdog('l10n_drupal', '%cmd failed with status !rval<pre>' . $output . '</pre>', array('%cmd' => $cmd, '!rval' => $rval), WATCHDOG_ERROR);
-    return FALSE;
-  }
-  return TRUE;
 }
