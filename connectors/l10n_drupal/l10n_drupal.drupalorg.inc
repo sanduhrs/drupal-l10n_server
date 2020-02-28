@@ -22,7 +22,6 @@ function l10n_drupal_drupalorg_parse_release($release) {
   // that all the command line code later is not exploited.
   if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
     $error_arguments = array('%file' => $file);
-    $error_t = t('Filename %file contains malicious characters.', $error_arguments);
     $error = 'Filename %file contains malicious characters.';
   }
 
@@ -30,7 +29,6 @@ function l10n_drupal_drupalorg_parse_release($release) {
   // so remove file, letting the code come back to this release later.
   elseif (file_exists($file)) {
     $error_arguments = array('%file' => $file);
-    $error_t = t('File %file already exists, deleting.', $error_arguments);
     $error = 'File %file already exists, deleting.';
     unlink($file);
   }
@@ -41,7 +39,6 @@ function l10n_drupal_drupalorg_parse_release($release) {
       '%download_link' => $release->download_link,
       '%error' => $contents->code . ' ' . $contents->error,
     );
-    $error_t = t('Unable to download and save %download_link file (%error).', $error_arguments);
     $error = 'Unable to download and save %download_link file (%error).';
   }
 
@@ -54,7 +51,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
 
   if ($error) {
     watchdog('l10n_drupal', $error, $error_arguments, WATCHDOG_ERROR);
-    $return['error'] = $error_t;
+    return FALSE;
   }
   return $return;
 }
@@ -88,12 +85,10 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Nothing to do if the file is not there or the extraction folder is taken.
   if (!file_exists($package_file)) {
     $error_arguments = array('%file' => $package_file);
-    $error_t = t('Package to parse (%file) does not exist.', $error_arguments);
     $error = 'Package to parse (%file) does not exist.';
   }
   elseif (is_dir($temp_path)) {
     $error_arguments = array('%path' => $temp_path);
-    $error_t = t('Temporary directory %path already exists.', $error_arguments);
     $error = 'Temporary directory %path already exists.';
   }
 
@@ -173,10 +168,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Remove temporary file we used to reserve the name for the directory.
   unlink($temp_name);
 
-  $return = array();
   if ($error) {
     watchdog('l10n_drupal', $error, $error_arguments, WATCHDOG_ERROR);
-    $return['error'] = $error_t;
+    return FALSE;
   }
-  return $return;
+  return TRUE;
 }

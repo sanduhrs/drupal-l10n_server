@@ -56,8 +56,7 @@ function l10n_drupal_rest_cron() {
                         ->execute()
                         ->fetchAllAssoc('rid');
       foreach($releases as $release) {
-        $return = l10n_drupal_drupalorg_parse_release($release);
-        if (empty($return['error'])) {
+        if (l10n_drupal_drupalorg_parse_release($release)) {
           $success++;
         }
         else {
