@@ -83,8 +83,6 @@ function l10n_drupal_rest_l10n_server_connector_info() {
     'title'    => t('Drupal.org packages'),
     'sources'  => array('restapi'),
     'file'     => drupal_get_path('module', 'l10n_drupal') . '/l10n_drupal.drupalorg.inc',
-    // Only provide scan functionality if enabled.
-    'scan'     => variable_get('l10n_server_connector_l10n_drupal_rest_restapi_enabled', FALSE) ? 'l10n_drupal_drupalorg_scan_page' : NULL,
     // Display warnings tab, because we are parsing source code here.
     'warnings' => TRUE,
   );
@@ -101,7 +99,6 @@ function l10n_drupal_rest_l10n_server_source_info() {
       'title' => t('the drupal.org REST API'),
       // Reuse file settings mostly (will be modified in form_alter()).
       'form'  => 'l10n_server_connectors_files_settings_form',
-      'scan'  => TRUE,
       'file'  => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
     ),
   );
