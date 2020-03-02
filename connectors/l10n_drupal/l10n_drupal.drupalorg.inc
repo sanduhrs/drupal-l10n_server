@@ -10,26 +10,26 @@
  */
 function l10n_drupal_drupalorg_parse_release($release) {
   $filename = basename($release->download_link);
-  $file = file_directory_temp() . '/' . $filename;
+  $package_file = file_directory_temp() . '/' . $filename;
 
   watchdog('l10n_drupal', 'Retrieving @filename for parsing.', array('@filename' => $filename));
 
   // Check filename for a limited set of allowed chars. Help make sure
   // that all the command line code later is not exploited.
   if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
-    watchdog('l10n_drupal', 'Filename %file contains malicious characters.', ['%file' => $file], WATCHDOG_ERROR);
+    watchdog('l10n_drupal', 'Filename %file contains malicious characters.', ['%file' => $package_file], WATCHDOG_ERROR);
     return FALSE;
   }
 
   // Already downloaded. Probably result of faulty file download left around,
   // so remove file, letting the code come back to this release later.
-  if (file_exists($file)) {
-    unlink($file);
-    watchdog('l10n_drupal', 'File %file already exists, deleting.', ['%file' => $file], WATCHDOG_WARNING);
+  if (file_exists($package_file)) {
+    unlink($package_file);
+    watchdog('l10n_drupal', 'File %file already exists, deleting.', ['%file' => $package_file], WATCHDOG_WARNING);
   }
 
   // Download the tar.gz file from drupal.org and save it in the local filesystem.
-  if (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($file, $contents->data))) {
+  if (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($package_file, $contents->data))) {
     watchdog('l10n_drupal', 'Unable to download and save %download_link file (%error).', [
       '%download_link' => $release->download_link,
       '%error' => $contents->code . ' ' . $contents->error,
@@ -37,23 +37,6 @@ function l10n_drupal_drupalorg_parse_release($release) {
     return FALSE;
   }
 
-  // Extract and parse the local file and remove the tarball.
-  $return = l10n_drupal_drupalorg_parse_package($file, $release);
-  // Clear stats cache, so new data shows up.
-  cache_clear_all('l10n:stats', 'cache');
-
-  return $return;
-}
-
-/**
- * Parses contents of a specific local package file.
- *
- * @param $package_file
- *   Path to the package file to be extracted and parsed.
- * @param $release
- *   Release object.
- */
-function l10n_drupal_drupalorg_parse_package($package_file, $release) {
   // Potx module is already a dependency.
   module_load_include('inc', 'potx');
   module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
@@ -78,10 +61,10 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
     return FALSE;
   }
 
-  watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', array('@filename' => basename($package_file)));
+  watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', ['@filename' => $filename]);
 
   // Get all source files and save strings with our callback for this release.
-  $release->uri = explode('-', basename($package_file))[0];
+  $release->uri = explode('-', $filename)[0];
   l10n_packager_release_set_branch($release);
   if ($release->core === 'all') {
     $version = POTX_API_8;
@@ -106,7 +89,7 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
 
   // Record changes of the scanned project in the database.
   watchdog('l10n_drupal', '@filename (@files files, @sids strings) scanned.', [
-    '@filename' => basename($package_file),
+    '@filename' => $filename,
     '@files' => count($files),
     '@sids' => $sid_count,
   ]);
@@ -136,6 +119,9 @@ function l10n_drupal_drupalorg_parse_package($package_file, $release) {
         ->execute();
     }
   }
+
+  // Clear stats cache, so new data shows up.
+  cache_clear_all('l10n:stats', 'cache');
 
   return TRUE;
 }
