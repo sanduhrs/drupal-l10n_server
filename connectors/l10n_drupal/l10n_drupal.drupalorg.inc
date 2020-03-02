@@ -9,9 +9,6 @@
  * Download and parse the picked release.
  */
 function l10n_drupal_drupalorg_parse_release($release) {
-  // This could take a long time.
-  @set_time_limit(0);
-
   $error = '';
   $filename = basename($release->download_link);
   $file = file_directory_temp() . '/' . $filename;
