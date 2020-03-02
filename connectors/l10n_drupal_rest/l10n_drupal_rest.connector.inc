@@ -2,7 +2,7 @@
 
 /**
  * @file
- *  Drupal.org project database integration for l10n_drupal.
+ * Download releases from Drupal.org and scan for strings.
  */
 
 /**
@@ -12,25 +12,24 @@ function l10n_drupal_drupalorg_parse_release($release) {
   $filename = basename($release->download_link);
   $package_file = file_directory_temp() . '/' . $filename;
 
-  watchdog('l10n_drupal', 'Retrieving @filename for parsing.', array('@filename' => $filename));
+  watchdog('l10n_drupal_rest', 'Retrieving @filename for parsing.', ['@filename' => $filename]);
 
-  // Check filename for a limited set of allowed chars. Help make sure
-  // that all the command line code later is not exploited.
+  // Check filename for a limited set of allowed chars.
   if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
-    watchdog('l10n_drupal', 'Filename %file contains malicious characters.', ['%file' => $package_file], WATCHDOG_ERROR);
+    watchdog('l10n_drupal_rest', 'Filename %file contains malicious characters.', ['%file' => $package_file], WATCHDOG_ERROR);
     return FALSE;
   }
 
   // Already downloaded. Probably result of faulty file download left around,
-  // so remove file, letting the code come back to this release later.
+  // so remove file.
   if (file_exists($package_file)) {
     unlink($package_file);
-    watchdog('l10n_drupal', 'File %file already exists, deleting.', ['%file' => $package_file], WATCHDOG_WARNING);
+    watchdog('l10n_drupal_rest', 'File %file already exists, deleting.', ['%file' => $package_file], WATCHDOG_WARNING);
   }
 
-  // Download the tar.gz file from drupal.org and save it in the local filesystem.
+  // Download the tar.gz file from Drupal.org and save it.
   if (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($package_file, $contents->data))) {
-    watchdog('l10n_drupal', 'Unable to download and save %download_link file (%error).', [
+    watchdog('l10n_drupal_rest', 'Unable to download and save %download_link file (%error).', [
       '%download_link' => $release->download_link,
       '%error' => $contents->code . ' ' . $contents->error,
     ], WATCHDOG_ERROR);
@@ -49,19 +48,19 @@ function l10n_drupal_drupalorg_parse_release($release) {
   // Generate temp folder to extract the tarball.
   $temp_path = drush_tempdir();
 
-  // Nothing to do if the file is not there or the extraction folder is taken.
+  // Nothing to do if the file is not there.
   if (!file_exists($package_file)) {
-    watchdog('l10n_drupal', 'Package to parse (%file) does not exist.', ['%file' => $package_file], WATCHDOG_ERROR);
+    watchdog('l10n_drupal_rest', 'Package to parse (%file) does not exist.', ['%file' => $package_file], WATCHDOG_ERROR);
     return FALSE;
   }
 
   // Extract the local file to the temporary directory.
   if (!drush_shell_exec('tar -xvvzf %s -C %s', $package_file, $temp_path)) {
-    watchdog('l10n_drupal', 'Failed to extract %file.', ['%file' => $package_file], WATCHDOG_ERROR);
+    watchdog('l10n_drupal_rest', 'Failed to extract %file.', ['%file' => $package_file], WATCHDOG_ERROR);
     return FALSE;
   }
 
-  watchdog('l10n_drupal', 'Parsing extracted @filename for strings.', ['@filename' => $filename]);
+  watchdog('l10n_drupal_rest', 'Parsing extracted @filename for strings.', ['@filename' => $filename]);
 
   // Get all source files and save strings with our callback for this release.
   $release->uri = explode('-', $filename)[0];
@@ -74,7 +73,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
   }
   _l10n_drupal_potx_init();
   $files = _potx_explore_dir($temp_path, '*', $version);
-  l10n_drupal_save_file(array($release->pid, $release->rid));
+  l10n_drupal_save_file([$release->pid, $release->rid]);
   l10n_drupal_added_string_counter(NULL, TRUE);
   foreach ($files as $name) {
     _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
@@ -88,7 +87,7 @@ function l10n_drupal_drupalorg_parse_release($release) {
   unlink($package_file);
 
   // Record changes of the scanned project in the database.
-  watchdog('l10n_drupal', '@filename (@files files, @sids strings) scanned.', [
+  watchdog('l10n_drupal_rest', '@filename (@files files, @sids strings) scanned.', [
     '@filename' => $filename,
     '@files' => count($files),
     '@sids' => $sid_count,
@@ -96,10 +95,10 @@ function l10n_drupal_drupalorg_parse_release($release) {
 
   // Parsed this releases files.
   db_update('l10n_server_release')
-    ->fields(array(
-        'sid_count' => $sid_count,
-        'last_parsed' => REQUEST_TIME,
-      ))
+    ->fields([
+      'sid_count' => $sid_count,
+      'last_parsed' => REQUEST_TIME,
+    ])
     ->condition('rid', $release->rid)
     ->execute();
 
@@ -107,15 +106,15 @@ function l10n_drupal_drupalorg_parse_release($release) {
   // files, we are not interested in the fine details, the file names are in
   // the error messages as text. We assume no other messages are added while
   // importing, so we can safely use drupal_get_message() to grab our errors.
-  db_delete('l10n_server_error') ->condition('rid', $release->rid) ->execute();
+  db_delete('l10n_server_error')->condition('rid', $release->rid)->execute();
   $messages = drupal_get_messages('error');
   if (isset($messages['error']) && is_array($messages['error'])) {
     foreach ($messages['error'] as $error_message) {
       db_insert('l10n_server_error')
-        ->fields(array(
+        ->fields([
           'rid' => $release->rid,
           'value' => $error_message,
-        ))
+        ])
         ->execute();
     }
   }
