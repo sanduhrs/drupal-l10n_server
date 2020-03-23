@@ -237,15 +237,22 @@ function _l10n_packager_batch_repackage($rid, $langcode) {
  *   Returns TRUE if a symlink was created.
  */
 function l10n_packager_create_latest_symlink($file, $release, $language) {
+  // If there is a minor version number, remove it. “Branch” is only
+  // '{major}.x' or '{compatibility}-{major}.x'. So a new dev branch can fall
+  // back to the latest translation for the major branch. For example, 9.1.x,
+  // when there are no tagged 9.1.* releases, can get the 9.0.0-beta1
+  // translations.
+  $abbreviated_release = clone $release;
+  $abbreviated_release->branch = preg_replace('/\.[0-9]+\.x$/', '.x', $abbreviated_release->branch);
+
   $target = drupal_realpath($file);
-  $target_dir = dirname($target);
-  $latest_file = $target_dir . '/' . l10n_packager_get_filepath($release, $language, '%project-%branch.%language.po');
+  $latest_file = dirname($target) . '/' . l10n_packager_get_filepath($abbreviated_release, $language, '%project-%branch.%language.po');
 
   if (file_exists($latest_file)) {
     unlink($latest_file);
-    // Allow modules to react to the symlink, such as purge a CDN.
     $latest_file_object = new stdClass();
-    $latest_file_object->uri = l10n_packager_directory() . '/' . l10n_packager_get_filepath($release, $language, '%core/%project/%project-%branch.%language.po');
+    $latest_file_object->uri = l10n_packager_directory() . '/' . l10n_packager_get_filepath($abbreviated_release, $language, '%core/%project/%project-%branch.%language.po');
+    // Allow modules to react to the symlink, such as purge a CDN.
     module_invoke_all('l10n_packager_done', $latest_file_object);
   }
 
