@@ -16,10 +16,10 @@ const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv'
 function l10n_drupal_rest_menu() {
   $items = array();
 
-  $items['translate/drupal8'] = array(
-    'title' => 'Drupal 8 translation status',
-    'page callback' => 'l10n_drupal_rest_drupal8_status',
-    'file' => 'l10n_drupal_rest.drupal8.inc',
+  $items['translate/drupal_core'] = array(
+    'title' => 'Drupal core translation status',
+    'page callback' => 'l10n_drupal_rest_drupal_core_status',
+    'file' => 'l10n_drupal_rest.drupal_core.inc',
     'access arguments' => array('access localization community'),
   );
   return $items;
