@@ -1,0 +1,13 @@
+{
+    "name": "drupal/l10n_server",
+    "description": "Base backend module for localization server.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Stefan Auditor",
+            "email": "stefan@auditor.email"
+        }
+    ],
+    "require": {}
+}

@@ -1,5 +1,0 @@
-name = "Localization server for Gettext files"
-description = Manages translatable strings with Gettext standard input/output.
-dependencies[] = l10n_server
-package = "Localization server connectors"
-core = 7.x
