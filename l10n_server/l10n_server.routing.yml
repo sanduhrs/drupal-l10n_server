@@ -1,0 +1,15 @@
+l10n_server.settings_overview:
+  path: '/admin/config/l10n_server'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Localization server'
+  requirements:
+    _permission: 'administer localization server'
+
+l10n_server.connectors:
+  path: '/admin/config/l10n_server/connectors'
+  defaults:
+    _form: '\Drupal\l10n_server\Form\SettingsForm'
+    _title: 'Connectors'
+  requirements:
+    _permission: 'administer localization server'

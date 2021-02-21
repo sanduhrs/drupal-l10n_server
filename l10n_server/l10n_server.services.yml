@@ -1,0 +1,4 @@
+services:
+  plugin.manager.l10n_server_connector:
+    class: Drupal\l10n_server\ConnectorManager
+    parent: default_plugin_manager

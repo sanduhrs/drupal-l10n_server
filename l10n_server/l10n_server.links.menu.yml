@@ -1,0 +1,13 @@
+l10n_server.settings_overview:
+  title: Localization server
+  route_name: l10n_server.settings_overview
+  parent: system.admin_config
+  description: 'Configuration options for the localization server.'
+  position: right
+  weight: -2
+
+l10n_server.connectors:
+  title: Localization server
+  route_name: l10n_server.connectors
+  parent: l10n_server.settings_overview
+  description: 'Enable and configure different data source and data format handlers..'

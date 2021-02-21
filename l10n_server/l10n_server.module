@@ -8,6 +8,9 @@
 /**
  * Action flag for string addition.
  */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
 define('L10N_SERVER_ACTION_ADD', 1);
 
 /**
@@ -55,12 +58,13 @@ define('L10N_SERVER_MEDIUM_REMOTE', 3);
 /**
  * Implements hook_help().
  */
-function l10n_server_help($path, $args) {
-  if ($path == 'admin/l10n_server/connectors') {
-    // Add help to connector configuration.
-    return t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href="@modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array('@modules' => url('admin/modules')));
+function l10n_server_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    case 'l10n_server.connectors':
+      return '<p>' . t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href=":modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array(':modules' => \Drupal\Core\Url::fromRoute('system.modules_list')->toString()));
   }
 
+  return;
   if (in_array($path, array('admin/config/language', 'admin/config/language/edit/%')) && !module_exists('l10n_pconfig')) {
     // Add tip to language management.
     return t('The <a href="@pconfig">Plural formula configurator</a> module is recommended for plural formula setup.', array('@pconfig' => 'http://drupal.org/project/l10n_pconfig'));
@@ -82,7 +86,7 @@ function l10n_server_help($path, $args) {
   if ($path == 'admin/l10n_server/projects/releases/%') {
     // Help for release management pages.
     $project = l10n_server_get_projects(array('uri' => $args[4]));
-    list($connector, $source) = l10n_server_split_connector($project->connector_module);
+    [$connector, $source] = l10n_server_split_connector($project->connector_module);
     if ($source == 'files') {
       return t('This project is managed based on files in the file system. The connector will create releases as it finds the files, so it is not possible to add releases manually.');
     }
@@ -361,18 +365,6 @@ function l10n_server_project_admin_load($uri) {
 }
 
 /**
- * Implements hook_permission().
- */
-function l10n_server_permission() {
-  return array(
-    'administer localization server' => array(
-      'title' => t('Administer localization server'),
-      'description' => t('Allow users to administer localization server.'),
-    ),
-  );
-}
-
-/**
  * Implements hook_theme().
  */
 function l10n_server_theme($existing, $type, $theme, $path) {
@@ -428,7 +420,7 @@ function l10n_server_l10n_server_source_info() {
  * Implements hook_form_FORM_ID_alter().
  */
 function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$form, &$form_state) {
-  list($connector, $source) = l10n_server_split_connector($form['project']['#value']->connector_module);
+  [$connector, $source] = l10n_server_split_connector($form['project']['#value']->connector_module);
   if ($source == 'uploads') {
     if (!empty($form['previous_release']['#value']->last_parsed)) {
       $form['last_parsed'] = array(
@@ -456,7 +448,7 @@ function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$f
  * Custom submission handler for release editing when upload method is used.
  */
 function l10n_server_release_file_upload_submit($form, &$form_state) {
-  list($connector, $source) = l10n_server_split_connector($form_state['values']['project']->connector_module);
+  [$connector, $source] = l10n_server_split_connector($form_state['values']['project']->connector_module);
   $connectors = l10n_server_get_connectors();
 
   if (isset($connectors[$connector])) {

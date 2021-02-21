@@ -6,19 +6,9 @@
  */
 
 /**
- * Implements hook_install().
- */
-function l10n_server_install() {
-  if (!db_table_exists('l10n_community_project')) {
-    // Only run the schema installation if l10n_community was
-    // not installed previously. Used to help the transition process.
-  }
-}
-
-/**
  * Implements hook_schema().
  */
-function l10n_server_schema() {
+function l10n_server_schema(): array {
   $schema = array();
 
   $schema['l10n_server_project'] = array(
@@ -416,49 +406,8 @@ function l10n_server_schema() {
 }
 
 /**
- * Add default value for the project weight
+ * Implements hook_update_last_removed().
  */
-function l10n_server_update_7000() {
-  db_change_field('l10n_server_project', 'weight', 'weight', array(
-    'description' => 'Project weight used for sorting. Lower weights float up to the top.',
-    'type' => 'int',
-    'not null' => TRUE,
-    'default' => 0,
-  ));
-}
-
-/**
- * Mark l10n_server_translation.translation text field as binary for case sensitive MySQL matching.
- */
-function l10n_server_update_7001() {
-  db_change_field('l10n_server_translation', 'translation', 'translation', array(
-    'description' => 'The actual translation or suggestion.',
-    'type' => 'text',
-    'not null' => TRUE,
-    'binary' => TRUE,
-  ));
-}
-
-/**
- * Adds an index on l10n_server_line(sid,pid).
- */
-function l10n_server_update_7002() {
-  db_add_index('l10n_server_line', 'sid_pid', array('sid', 'pid'));
-}
-
-/**
- * Drop index on l10n_server_line(sid).
- */
-function l10n_server_update_7003() {
-  db_drop_index('l10n_server_line', 'sid');
-}
-
-/**
- * Adds an index on l10n_server_line(pid,sid).
- */
-function l10n_server_update_7004() {
-  db_add_index('l10n_server_line', 'pid_sid', array('pid', 'sid'));
-  db_drop_index('l10n_server_line', 'pid');
-  db_add_index('l10n_server_line', 'sid', array('sid'));
-  db_drop_index('l10n_server_line', 'sid_pid');
+function l10n_server_update_last_removed(): int {
+  return 7004;
 }

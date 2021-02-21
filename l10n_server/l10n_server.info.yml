@@ -1,0 +1,8 @@
+name: 'Localization server'
+type: module
+description: 'Base backend module for localization server'
+package: 'Localization server'
+core_version_requirement: ^9
+dependencies:
+  - drupal:locale
+  - l10n_pconfig:l10n_pconfig
