@@ -1,17 +1,18 @@
 <?php
+declare(strict_types=1);
 
 namespace Drupal\l10n_gettext\Plugin\l10n_server\Connector;
 
 use Drupal\l10n_server\ConnectorPluginBase;
 
 /**
- * Checks if a user name is unique on the site.
+ * A plugin to use pot files.
  *
  * @Connector(
  *   id = "gettext",
  *   label = @Translation("Gettext files"),
  *   description = @Translation("Drupal packages from the file system"),
- *   sources = {
+ *   supported_sources = {
  *    "uploads",
  *   }
  * )

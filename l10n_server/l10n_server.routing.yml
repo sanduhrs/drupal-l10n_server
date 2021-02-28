@@ -13,3 +13,35 @@ l10n_server.connectors:
     _title: 'Connectors'
   requirements:
     _permission: 'administer localization server'
+
+l10n_server.connector.scan:
+  path: '/admin/config/l10n_server/connectors/scan/{connector}/{source}'
+  defaults:
+    _controller: '\Drupal\l10n_server\Controller\ConnectorController::scan'
+    _title: 'Scan for new data'
+  requirements:
+    _permission: 'administer localization server'
+    l10n_server_connector_plugin: '[a-z]'
+    l10n_server_source_plugin: '[a-z]'
+  options:
+    parameters:
+      connector:
+        type: l10n_server_connector_plugin
+      source:
+        type: l10n_server_source_plugin
+
+l10n_server.connector.configure:
+  path: '/admin/config/l10n_server/connectors/config/{connector}/{source}'
+  defaults:
+    _form: 'Drupal\l10n_server\Form\ConnectorConfiguration'
+    _title: 'Configure'
+  requirements:
+    _permission: 'administer localization server'
+    l10n_server_connector_plugin: '[a-z]'
+    l10n_server_source_plugin: '[a-z]'
+  options:
+    parameters:
+      connector:
+        type: l10n_server_connector_plugin
+      source:
+        type: l10n_server_source_plugin

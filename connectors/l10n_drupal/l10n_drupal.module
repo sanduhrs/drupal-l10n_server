@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 /**
  * @file
@@ -9,11 +10,13 @@
  */
 
 // = Core hooks ================================================================
+use Drupal\Core\Routing\RouteMatchInterface;
 
 /**
  * Implements hook_help().
  */
-function l10n_drupal_help($path, $arg) {
+function l10n_drupal_help($route_name, RouteMatchInterface $route_match) {
+  return;
   if (($arg[0] == 'translate') && ($arg[1] == 'projects') && ($arg[3] == 'releases') && !empty($arg[4])) {
     $project = l10n_server_get_projects(array('uri' => $arg[2]));
     if ($project->connector_module == 'l10n_drupal_files') {
@@ -26,7 +29,7 @@ function l10n_drupal_help($path, $arg) {
 /**
  * Implements hook_cron().
  */
-function l10n_drupal_cron() {
+function _l10n_drupal_cron() {
   if (variable_get('l10n_server_connector_l10n_drupal_files_enabled', FALSE) && variable_get('l10n_server_connector_l10n_drupal_files_cron', FALSE)) {
     module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
     l10n_drupal_files_scan(TRUE);

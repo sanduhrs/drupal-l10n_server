@@ -1,4 +1,21 @@
 services:
-  plugin.manager.l10n_server_connector:
+  plugin.manager.l10n_server.connector:
     class: Drupal\l10n_server\ConnectorManager
     parent: default_plugin_manager
+  plugin.manager.l10n_server.source:
+    class: Drupal\l10n_server\SourceManager
+    parent: default_plugin_manager
+    calls:
+      - [setConfigFactory, ['@config.factory']]
+  param_converter.l10n_server.connector_plugin:
+    class: Drupal\l10n_server\ParamConverter\L10NServerConnectorPluginParamConverter
+    arguments:
+      - '@plugin.manager.l10n_server.connector'
+    tags:
+      - { name: paramconverter }
+  param_converter.l10n_server.source_plugin:
+    class: Drupal\l10n_server\ParamConverter\L10NServerSourcePluginParamConverter
+    arguments:
+      - '@plugin.manager.l10n_server.source'
+    tags:
+      - { name: paramconverter }

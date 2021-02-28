@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Drupal\l10n_server\Annotation;
 
@@ -7,7 +8,7 @@ use Drupal\Component\Annotation\Plugin;
 /**
  * Defines a connector annotation object.
  *
- * Plugin Namespace: Plugin/l10n_server/connector.
+ * Plugin Namespace: Plugin/l10n_server/Connector.
  *
  * @see \Drupal\l10n_server\ConnectorInterface
  * @see \Drupal\l10n_server\ConnectorManager
@@ -33,7 +34,9 @@ class Connector extends Plugin {
   public $label;
 
   /**
-   * @var array
+   * List of l10n_server source plugin ids.
+   *
+   * @var string[]
    */
-  public $sources;
+  public $supported_sources;
 }

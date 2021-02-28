@@ -1,5 +1,5 @@
 <?php
-
+declare(strict_types=1);
 
 namespace Drupal\l10n_server;
 
@@ -12,34 +12,52 @@ abstract class ConnectorPluginBase extends PluginBase implements ConnectorInterf
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->setConfiguration($configuration);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setConfiguration(array $configuration): void {
-    $this->configuration = $configuration;
   }
 
   /**
    * {@inheritdoc}
    */
   public function getLabel(): string {
-    return $this->pluginDefinition['label'] ?? '';
+    return (string) $this->pluginDefinition['label'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getDescription(): string {
-    return $this->pluginDefinition['description'] ?? '';
+    return (string) $this->pluginDefinition['description'];
   }
 
   /**
    * {@inheritdoc}
    */
   public function getSources(): array {
-    return $this->pluginDefinition['sources'];
+    return $this->pluginDefinition['supported_sources'];
   }
+
+  /**
+   * @inheritDoc
+   */
+  public function calculateDependencies() {
+    $modules = NULL;
+    /** @var \Drupal\l10n_server\SourceManager $manager */
+    $manager = \Drupal::service('plugin.manager.l10n_server.source');
+    foreach ($this->getSources() as $plugin_id) {
+      if ($manager->hasDefinition($plugin_id)) {
+        /** @var \Drupal\l10n_server\SourceInterface $source */
+        $source = $manager->createInstance($plugin_id);
+        $provider = $source->getPluginDefinition()['provider'];
+        if ($provider !== 'l10n_server') {
+          $modules[] = $source->getPluginDefinition()['provider'];
+        }
+      }
+    }
+
+    if ($modules) {
+      return ['modules' => $modules];
+    }
+    return [];
+  }
+
+
 }
