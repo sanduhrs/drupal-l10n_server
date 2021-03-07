@@ -9,6 +9,7 @@
  * Implements hook_requirements().
  */
 function l10n_drupal_requirements($phase) {
+  return;
   $requirements = array();
   // Ensure translations don't break at install time.
   $t = get_t();

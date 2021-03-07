@@ -8,7 +8,7 @@
 /**
  * Implements hook_schema().
  */
-function l10n_server_schema(): array {
+function _l10n_server_schema(): array {
   $schema = array();
 
   $schema['l10n_server_project'] = array(

@@ -32,17 +32,17 @@ class ConnectorConfiguration extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state, ?ConnectorInterface $connector = NULL, ?ConfigurableSourcePluginBase $source = NULL) {
     assert($source instanceof ConfigurableSourcePluginBase);
     assert($connector instanceof ConnectorInterface);
-    $form['connector'] = $connector;
-    $form['source'] = $source;
+    $form_state->set('connector', $connector);
+    $form_state->set('source', $source);
     $form = $source->buildConfigurationForm($form, $form_state);
     return parent::buildForm($form, $form_state);
   }
 
   /**
-   * @inheritDoc
+   * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    $source = $form['source'];
+    $source = $form_state->get('source');
     assert($source instanceof ConfigurableSourcePluginBase);
     $source->validateConfigurationForm($form, $form_state);
     parent::validateForm($form, $form_state);
@@ -50,12 +50,12 @@ class ConnectorConfiguration extends ConfigFormBase {
 
 
   /**
-   * @inheritDoc
+   * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $source = $form['source'];
+    $source = $form_state->get('source');
     assert($source instanceof ConfigurableSourcePluginBase);
-    $connector = $form['connector'];
+    $connector = $form_state->get('connector');
     assert($connector instanceof ConnectorInterface);
     $source->submitConfigurationForm($form, $form_state);
     $this->config('l10n_server.settings')->set($source->getPluginId(), $source->getConfiguration())

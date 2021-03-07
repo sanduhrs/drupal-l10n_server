@@ -8,6 +8,11 @@ use Drupal\Core\Plugin\PluginBase;
 abstract class SourcePluginBase extends PluginBase implements SourceInterface {
 
   /**
+   * @var \Drupal\l10n_server\ConnectorInterface
+   */
+  protected $connector;
+
+  /**
    * {@inheritdoc}
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {

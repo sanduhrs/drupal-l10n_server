@@ -21,6 +21,11 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
   protected $connectorManager;
 
   /**
+   * @var \Drupal\l10n_server\ConnectorInterface
+   */
+  protected $connector;
+
+  /**
    * The configuration factory service.
    *
    * @var \Drupal\Core\Config\ConfigFactoryInterface
@@ -41,6 +46,10 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
     $this->connectorManager = $connectorManager;
   }
 
+  public function setConnector(ConnectorInterface $connector) {
+    $this->connector = $connector;
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -48,13 +57,10 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
     $instance = new static($configuration, $plugin_id, $plugin_definition);
     $instance->setConnectorManager($container->get('plugin.manager.l10n_server.connector'));
     $instance->setConfigFactory($container->get('config.factory'));
-    dpm(func_get_args());
-    #$instance->configFactory->get('l10n_server.settings')->get($plugin_id);
     $instance->setConfiguration($configuration);
 
     return $instance;
   }
-
 
   /**
    * {@inheritdoc}

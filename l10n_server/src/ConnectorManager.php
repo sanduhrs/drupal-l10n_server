@@ -19,4 +19,14 @@ class ConnectorManager extends DefaultPluginManager implements ConnectorManagerI
     $this->alterInfo('l10n_server_connector_info');
     $this->setCacheBackend($cache_backend, 'l10n_server_connector_info_plugins');
   }
+
+  public function getOptionsList(): array {
+    $options = [];
+    /** @var \Drupal\l10n_server\ConnectorInterface $definition */
+    foreach ($this->getDefinitions() as $id => $definition) {
+      $plugin = $this->createInstance($id);
+      $options[$plugin->getPluginId()] = $plugin->getLabel();
+    }
+    return $options;
+  }
 }

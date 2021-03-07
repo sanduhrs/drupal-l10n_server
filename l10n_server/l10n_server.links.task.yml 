@@ -1,0 +1,12 @@
+entity.l10n_server_project.collection:
+  title: 'Projects and releases'
+  route_name: entity.l10n_server_project.collection
+  base_route: l10n_server.settings_overview
+entity.l10n_server_project.edit_form:
+  title: Edit
+  route_name: entity.l10n_server_project.edit_form
+  base_route: entity.l10n_server_project.collection
+entity.l10n_server_project.delete_form:
+  title: Delete
+  route_name: entity.l10n_server_project.delete_form
+  base_route: entity.l10n_server_project.collection

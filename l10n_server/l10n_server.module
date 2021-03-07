@@ -10,6 +10,7 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
 
 define('L10N_SERVER_ACTION_ADD', 1);
 
@@ -61,7 +62,10 @@ define('L10N_SERVER_MEDIUM_REMOTE', 3);
 function l10n_server_help($route_name, RouteMatchInterface $route_match) {
   switch ($route_name) {
     case 'l10n_server.connectors':
-      return '<p>' . t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href=":modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array(':modules' => \Drupal\Core\Url::fromRoute('system.modules_list')->toString()));
+      return '<p>' . t('Localization server connectors handle data from different locations, parsing source files to make them available for translation. <a href=":modules">Look at the list of modules</a> where connectors are grouped under the "Localization server connectors" header. Enable at least one connector appropriate for your use.', array(':modules' => Url::fromRoute('system.modules_list')->toString()));
+    case 'entity.l10n_server_project.collection':
+      return '<p>' . t('Projects are created automatically or manually based on <a href=":connectors">your connector configuration</a>. File system based connectors need scanning to be run but create projects and releases automatically in that process.', array(':connectors' => Url::fromRoute('l10n_server.connectors')->toString()));
+
   }
 
   return;

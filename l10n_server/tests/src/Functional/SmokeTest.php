@@ -26,6 +26,10 @@ class SmokeTest extends BrowserTestBase {
     $this->drupalGet('admin/config/l10n_server/connectors');
     $this->assertSession()->statusCodeEquals(403);
 
+    $this->drupalGet('admin/config/l10n_server/projects');
+    $this->assertSession()->statusCodeEquals(403);
+
+
     $admin_user = $this->drupalCreateUser(['administer localization server']);
     $this->drupalLogin($admin_user);
     $this->drupalGet('admin/config/l10n_server');
@@ -33,5 +37,10 @@ class SmokeTest extends BrowserTestBase {
     $this->drupalGet('admin/config/l10n_server/connectors');
     $this->assertSession()->statusCodeEquals(200);
     $this->assertSession()->pageTextContains('No localization server connectors found.');
+
+    $this->drupalGet('admin/config/l10n_server/projects');
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->pageTextContains('There are no projects yet.');
+
   }
 }
