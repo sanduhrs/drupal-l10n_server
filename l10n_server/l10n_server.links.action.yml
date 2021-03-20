@@ -1,6 +1,11 @@
 entity.l10n_server_project.add:
-  title: 'Add Project'
+  title: 'Add project'
   route_name: entity.l10n_server_project.add_form
-  weight: 15
   appears_on:
     - entity.l10n_server_project.collection
+
+entity.l10n_server_release.add:
+  title: 'Add release'
+  route_name: entity.l10n_server_release.add_form
+  appears_on:
+    - entity.l10n_server_release.collection

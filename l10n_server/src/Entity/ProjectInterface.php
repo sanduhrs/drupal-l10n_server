@@ -12,4 +12,5 @@ interface ProjectInterface extends ContentEntityInterface {
 
   public function getHomepage();
   public function getConnectorModule();
+  public function getEnabled();
 }

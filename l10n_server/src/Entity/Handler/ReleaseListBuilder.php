@@ -5,7 +5,8 @@ namespace Drupal\l10n_server\Entity\Handler;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
-use Drupal\Core\Link;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\l10n_server\Entity\ProjectInterface;
 use function \assert;
@@ -14,17 +15,23 @@ use function \array_merge;
 /**
  * Provides the list builder handler for the Project entity.
  */
-class ProjectListBuilder extends EntityListBuilder {
+class ReleaseListBuilder extends EntityListBuilder {
+
+  /**
+   * @inheritDoc
+   */
+  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
+    parent::__construct($entity_type, $storage);
+    dpm(\Drupal::routeMatch(), __METHOD__);
+  }
+
 
   /**
    * {@inheritdoc}
    */
   public function buildHeader(): array {
     $header = [];
-    $header['label'] = ['data' => $this->t('Project')];
-    $header['homepage'] = ['data' => $this->t('Homepage')];
-    $header['last_parsed'] = ['data' => $this->t('Releases')];
-    $header['releases'] = ['data' => $this->t('Last time project was parsed')];
+    $header['label'] = ['data' => $this->t('Release')];
     return array_merge($header, parent::buildHeader());
   }
 
@@ -35,8 +42,6 @@ class ProjectListBuilder extends EntityListBuilder {
     assert($entity instanceof ProjectInterface);
     $row = [];
     $row['label']['data'] = $entity->label();
-    $row['homepage']['data'] = $entity->getHomepage();
-    $row['releases']['data'] = Link::createFromRoute(t('Releases'), 'entity.l10n_server_release.collection', ['l10n_server_project' => $entity->id()]);
     return array_merge($row, parent::buildRow($entity));
   }
 
@@ -44,7 +49,7 @@ class ProjectListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   protected function getTitle(): TranslatableMarkup {
-    return $this->t('Projects and releases');
+    return $this->t('Releases');
   }
 
 }

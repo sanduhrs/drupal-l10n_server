@@ -10,3 +10,17 @@ entity.l10n_server_project.delete_form:
   title: Delete
   route_name: entity.l10n_server_project.delete_form
   base_route: entity.l10n_server_project.collection
+
+
+entity.l10n_server_release.collection:
+  title: 'Releases'
+  route_name: entity.l10n_server_release.collection
+  base_route: entity.l10n_server_project.collection
+entity.l10n_server_release.edit_form:
+  title: Edit
+  route_name: entity.l10n_server_release.edit_form
+  base_route: entity.l10n_server_release.collection
+entity.l10n_server_release.delete_form:
+  title: Delete
+  route_name: entity.l10n_server_release.delete_form
+  base_route: entity.l10n_server_release.collection

@@ -46,6 +46,7 @@ use Drupal\link\Plugin\Field\FieldType\LinkItem;
  *     "collection" = "/admin/config/l10n_server/projects",
  *     "delete-form" = "/admin/config/l10n_server/projects/{l10n_server_project}/delete",
  *     "edit-form" = "/admin/config/l10n_server/projects/{l10n_server_project}/edit",
+ *     "releases" = "/admin/config/l10n_server/projects/{l10n_server_project}/releases"
  *   },
  * )
  */
@@ -83,11 +84,10 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
       ->setSettings([
         'max_length' => 50
       ]);
-    $fields['homepage'] = BaseFieldDefinition::create('link')
+    $fields['homepage'] = BaseFieldDefinition::create('uri')
       ->setLabel(t('Homepage'))
-      ->setSetting('link_type', LinkItem::LINK_EXTERNAL)
       ->setDisplayOptions('form', [
-        'type' => 'link_default',
+        'type' => 'uri',
       ])
       ->setDescription(t('Link to project home page.'));
 
@@ -96,7 +96,7 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
     $fields['enabled']->setLabel(t('Enabled'));
     $fields['enabled']->setDescription(t('Disable to stop scanning and parsing new releases.'));
 
-    $fields['last_parsed'] = BaseFieldDefinition::create('integer')
+    $fields['last_parsed'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Last time project was parsed'))
       ->setReadOnly(TRUE)
       ->setDescription(t('Unix timestamp of last time project was parsed.'));
@@ -116,10 +116,14 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
   }
 
   public function getHomepage() {
-    return $this->get('homepage')->getValue();
+    return $this->get('homepage')->value;
   }
 
   public function getConnectorModule() {
     return $this->get('connector_module')->value;
+  }
+
+  public function getEnabled() {
+    return $this->get('enabled')->value;
   }
 }
