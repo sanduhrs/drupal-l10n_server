@@ -36,13 +36,6 @@ abstract class SourcePluginBase extends PluginBase implements SourceInterface {
   /**
    * {@inheritdoc}
    */
-  public function getSources(): array {
-    return $this->pluginDefinition['sources'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function supportScan(): bool {
     // Lets the plugin decide.
     return FALSE;

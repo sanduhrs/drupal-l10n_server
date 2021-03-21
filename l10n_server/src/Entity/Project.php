@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\l10n_server\ConnectorInterface;
 
 /**
  * Provides the Project entity.
@@ -126,15 +127,35 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
     $storage->delete($releases);
   }
 
-  public function getHomepage() {
+  /**
+   * {@inheritdoc}
+   */
+  public function getHomepage(): string {
     return $this->get('homepage')->value;
   }
 
-  public function getConnectorModule() {
+  /**
+   * {@inheritdoc}
+   */
+  public function getConnectorModule(): string {
     return $this->get('connector_module')->value;
   }
 
-  public function getEnabled() {
-    return $this->get('enabled')->value;
+  /**
+   * {@inheritdoc}
+   */
+  public function getConnector(): ?ConnectorInterface {
+    /** @var \Drupal\l10n_server\ConnectorManager $manager */
+    $manager = \Drupal::service('plugin.manager.l10n_server.connector');
+    /** @var \Drupal\l10n_server\ConnectorInterface $plugin */
+    $plugin = $manager->createInstance($this->getConnectorModule());
+    return $plugin;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEnabled(): bool {
+    return (bool) $this->get('enabled')->value;
   }
 }

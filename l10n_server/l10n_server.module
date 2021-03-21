@@ -421,6 +421,24 @@ function l10n_server_l10n_server_source_info() {
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function l10n_server_form_alter(array &$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if ($form_id === 'l10n_server_release_form') {
+    /** @var \Drupal\l10n_server\Entity\Release $release */
+    $release = $form_state->getFormObject()->getEntity();
+    if ($release->isNew() && ($connector = $release->getProject()->getConnector()) && $connector instanceof \Drupal\l10n_server\ConnnectorUploadHandlerInterface && in_array('upload', $connector->getSources())) {
+
+      /** @var \Drupal\l10n_server\SourceManager $manager */
+      $manager = \Drupal::service('plugin.manager.l10n_server.source');
+      /** @var \Drupal\l10n_server\Plugin\l10n_server\Source\Upload $uploadPlugin */
+      $uploadPlugin = $manager->createInstance('upload');
+      $uploadPlugin->uploadFormElement($form, $form_state, $connector);
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
 function l10n_server_form_l10n_server_admin_projects_release_edit_form_alter(&$form, &$form_state) {

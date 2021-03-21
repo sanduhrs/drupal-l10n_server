@@ -19,7 +19,7 @@ class ReleaseForm extends ContentEntityForm {
     /** @var \Drupal\l10n_server\Entity\Release $project */
     $release = $this->entity;
     if ($release->isNew()) {
-      $form['pid'] = ['#type' => 'value', '#value' => $this->getRequest()->get('l10n_server_project')];
+      $release->setProject($this->getRequest()->get('l10n_server_project'));
     }
     return $form;
   }
@@ -29,7 +29,7 @@ class ReleaseForm extends ContentEntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     $saved = parent::save($form, $form_state);
-    /** @var \Drupal\l10n_server\Entity\Release $project */
+    /** @var \Drupal\l10n_server\Entity\Release $release */
     $release = $this->entity;
     $form_state->setRedirect($this->entity->toUrl('collection')->getRouteName(), ['l10n_server_project' => $release->getProjectId()]);
     return $saved;

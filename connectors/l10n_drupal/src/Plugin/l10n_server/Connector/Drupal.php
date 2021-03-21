@@ -14,7 +14,7 @@ use Drupal\l10n_server\ConnectorPluginBase;
  *   description = @Translation("Drupal packages from the file system"),
  *   supported_sources = {
  *    "filesystem",
- *    "uploads",
+ *    "upload",
  *   }
  * )
  */

@@ -27,7 +27,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
  *     },
  *     "form" = {
  *       "default" = "Drupal\l10n_server\Form\ReleaseForm",
- *       "delete" = "Drupal\Core\Entity\ContentEntityDeleteForm",
+ *       "delete" = "Drupal\l10n_server\Form\ReleaseDeleteForm",
  *     },
  *     "list_builder" = "Drupal\l10n_server\Entity\Handler\ReleaseListBuilder",
  *     "views_data" = "Drupal\views\EntityViewsData",
@@ -107,6 +107,14 @@ class Release extends ContentEntityBase implements ReleaseInterface {
         'type' => 'number',
       ]);
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProject(ProjectInterface $project): ReleaseInterface {
+    $this->set('pid', $project);
+    return $this;
   }
 
   /**

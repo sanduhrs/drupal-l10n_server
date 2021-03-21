@@ -23,4 +23,6 @@ interface ReleaseInterface extends ContentEntityInterface {
    * @return \Drupal\l10n_server\Entity\ProjectInterface
    */
   public function getProject(): ProjectInterface;
+
+  public function setProject(ProjectInterface $project): ReleaseInterface;
 }
