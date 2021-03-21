@@ -16,23 +16,12 @@ class ReleaseForm extends ContentEntityForm {
    */
   public function form(array $form, FormStateInterface $form_state) {
     $form = parent::form($form, $form_state);
-    $form['pid'] = ['#type' => 'value', '#value' => $this->getRequest()->get('l10n_server_project')];
+    /** @var \Drupal\l10n_server\Entity\Release $project */
+    $release = $this->entity;
+    if ($release->isNew()) {
+      $form['pid'] = ['#type' => 'value', '#value' => $this->getRequest()->get('l10n_server_project')];
+    }
     return $form;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-    parent::validateForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-
-    parent::submitForm($form, $form_state);
   }
 
   /**

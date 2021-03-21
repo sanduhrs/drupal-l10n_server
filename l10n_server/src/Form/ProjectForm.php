@@ -18,7 +18,7 @@ class ProjectForm extends ContentEntityForm {
   protected $connector_manager;
 
   /**
-   * @inheritDoc
+   * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
     $instance = parent::create($container);
@@ -30,7 +30,7 @@ class ProjectForm extends ContentEntityForm {
    * {@inheritdoc}
    */
   public function form(array $form, FormStateInterface $form_state) {
-    /** @var \Drupal\l10n_server\Entity\Project $project */
+    /** @var \Drupal\l10n_server\Entity\ProjectInterface $project */
     $project = $this->entity;
     $form = parent::form($form, $form_state);
     $form['uri'] = [
@@ -78,11 +78,7 @@ class ProjectForm extends ContentEntityForm {
       return TRUE;
     }
     return FALSE;
-    // Check for a link assigned to this menu.
-    #return $this->menuLinkManager->menuNameInUse($value);
   }
-
-
 
   /**
    * {@inheritdoc}
@@ -104,7 +100,6 @@ class ProjectForm extends ContentEntityForm {
   public function save(array $form, FormStateInterface $form_state) {
     $saved = parent::save($form, $form_state);
     $form_state->setRedirectUrl($this->entity->toUrl('collection'));
-
     return $saved;
   }
 

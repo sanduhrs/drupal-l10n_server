@@ -10,4 +10,17 @@ use Drupal\Core\Entity\ContentEntityInterface;
  */
 interface ReleaseInterface extends ContentEntityInterface {
 
+  /**
+   * ID of the referenced project.
+   *
+   * @return int
+   */
+  public function getProjectId(): int;
+
+  /**
+   * Referenced project.
+   *
+   * @return \Drupal\l10n_server\Entity\ProjectInterface
+   */
+  public function getProject(): ProjectInterface;
 }

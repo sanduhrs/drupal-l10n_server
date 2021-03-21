@@ -5,8 +5,6 @@ namespace Drupal\l10n_server\Entity\Handler;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
-use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\l10n_server\Entity\ProjectInterface;
 use function \assert;
@@ -16,15 +14,6 @@ use function \array_merge;
  * Provides the list builder handler for the Project entity.
  */
 class ReleaseListBuilder extends EntityListBuilder {
-
-  /**
-   * @inheritDoc
-   */
-  public function __construct(EntityTypeInterface $entity_type, EntityStorageInterface $storage) {
-    parent::__construct($entity_type, $storage);
-    dpm(\Drupal::routeMatch(), __METHOD__);
-  }
-
 
   /**
    * {@inheritdoc}

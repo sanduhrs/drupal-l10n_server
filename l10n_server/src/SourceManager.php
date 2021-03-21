@@ -8,14 +8,16 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
-class SourceManager extends DefaultPluginManager implements ConnectorManagerInterface {
+class SourceManager extends DefaultPluginManager {
 
   /**
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
 
-
+  /**
+   * {@inheritdoc}
+   */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
     parent::__construct(
       'Plugin/l10n_server/Source',

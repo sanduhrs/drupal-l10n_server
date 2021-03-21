@@ -110,24 +110,14 @@ class Release extends ContentEntityBase implements ReleaseInterface {
   }
 
   /**
-   * @param \Drupal\l10n_server\Entity\ProjectInterface $project
-   *
-   * @return $this
-   */
-  public function setProject(ProjectInterface $project) {
-    $this->set('pid', $project->id());
-    return $this;
-  }
-
-  /**
-   * @return int
+   * {@inheritdoc}
    */
   public function getProjectId(): int {
     return (int) $this->getProject()->id();
   }
 
   /**
-   * @return \Drupal\l10n_server\Entity\ProjectInterface
+   * {@inheritdoc}
    */
   public function getProject(): ProjectInterface {
     return $this->get('pid')->first()
@@ -135,4 +125,5 @@ class Release extends ContentEntityBase implements ReleaseInterface {
       ->getTarget()
       ->getValue();
   }
+
 }

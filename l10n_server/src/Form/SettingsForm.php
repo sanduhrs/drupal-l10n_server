@@ -105,7 +105,6 @@ final class SettingsForm extends ConfigFormBase {
             'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
           ];
         }
-        #dump($source);
         if ($source instanceof ConfigurableSourcePluginBase) {
           /** SourceInterface&ConfigurableInterface $source */
           $links['configure'] = [
@@ -141,6 +140,5 @@ final class SettingsForm extends ConfigFormBase {
       ->set('enabled_connectors', $submitted_values)
       ->save();
   }
-
 
 }

@@ -8,6 +8,10 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 class ConnectorManager extends DefaultPluginManager implements ConnectorManagerInterface {
+
+  /**
+   * {@inheritdoc}
+   */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
     parent::__construct(
       'Plugin/l10n_server/Connector',
@@ -20,6 +24,9 @@ class ConnectorManager extends DefaultPluginManager implements ConnectorManagerI
     $this->setCacheBackend($cache_backend, 'l10n_server_connector_info_plugins');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getOptionsList(): array {
     $options = [];
     /** @var \Drupal\l10n_server\ConnectorInterface $definition */

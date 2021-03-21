@@ -8,7 +8,6 @@ use Drupal\Core\Entity\Routing\AdminHtmlRouteProvider;
 
 class ReleaseRouteProvider extends AdminHtmlRouteProvider {
 
-
   /**
    * {@inheritdoc}
    */

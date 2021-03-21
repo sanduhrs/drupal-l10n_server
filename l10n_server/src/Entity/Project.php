@@ -8,7 +8,6 @@ use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\link\Plugin\Field\FieldType\LinkItem;
 
 /**
  * Provides the Project entity.
@@ -113,6 +112,18 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
         'type' => 'number',
       ]);
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function delete() {
+    parent::delete();
+    /** @var \Drupal\Core\Entity\ContentEntityStorageInterface $storage */
+    $storage = $this->entityTypeManager()->getStorage('l10n_server_release');
+    /** @var \Drupal\l10n_server\Entity\ReleaseInterface[] $releases */
+    $releases = $storage->loadByProperties(['pid' => $this->id()]);
+    $storage->delete($releases);
   }
 
   public function getHomepage() {
