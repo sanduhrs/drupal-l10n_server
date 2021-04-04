@@ -1,9 +1,52 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file
- *   Localization server installation, update and uninstallation.
+ * Install, update, and uninstall functions for the Localization server module.
  */
+
+/**
+ * Implements hook_schema().
+ */
+function l10n_server_schema(): array {
+  $schema = [];
+  $schema['l10n_server_string'] = [
+    'description' => 'Value of translatable strings found.',
+    'fields' => [
+      'sid' => [
+        'description' => 'Unique identifier of this string.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ],
+      'value' => [
+        'description' => 'The actual translatable string. For strings with multiple plural versions, we store them as the same translatable with a \0 separator (unlike Drupal itself), because it is easier to match translations with them (for multiple plural versions) this way, and we can force people to translate both at once.',
+        'type' => 'text',
+        'mysql_type' => 'blob',
+        'not null' => TRUE,
+      ],
+      'context' => [
+        'type' => 'varchar_ascii',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The context this string applies to. Only applicable to some strings in Drupal 7 and its modules.',
+      ],
+      'hashkey' => [
+        'description' => 'MD5 hash of the concatenation of value and context, used for quick lookups when these two are known (imports, new releases, remote submissions).',
+        'type' => 'char',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+    ],
+    'primary key' => ['sid'],
+    'unique keys' => [
+      'hashkey' => ['hashkey'],
+    ],
+  ];
+  return $schema;
+}
 
 /**
  * Implements hook_schema().

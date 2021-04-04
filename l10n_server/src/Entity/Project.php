@@ -8,7 +8,9 @@ use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\l10n_server\ConnectorInterface;
+use function t;
 
 /**
  * Provides the Project entity.
@@ -56,7 +58,7 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
   /**
    * {@inheritdoc}
    */
-  public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
+  public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
     // Add the published field.
     $fields += static::publishedBaseFieldDefinitions($entity_type);
@@ -130,7 +132,7 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
   /**
    * {@inheritdoc}
    */
-  public function getHomepage(): string {
+  public function getHomepage(): ?string {
     return $this->get('homepage')->value;
   }
 

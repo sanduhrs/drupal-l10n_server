@@ -55,7 +55,7 @@ class ProjectForm extends ContentEntityForm {
       '#type' => 'radios',
       '#title' => $this->t('Connector handling project data'),
       '#description' => $this->t('Data and source handler for this project. Cannot be modified later.'),
-      '#default_value' => $project->getConnectorModule(),
+      '#default_value' => !$project->isNew() ? $project->getConnectorModule() : NULL,
       '#options' => $this->connector_manager->getOptionsList(),
       '#required' => TRUE,
       '#disabled' => !$project->isNew(),

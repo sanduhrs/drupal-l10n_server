@@ -27,12 +27,16 @@ class ConnectorManager extends DefaultPluginManager implements ConnectorManagerI
   /**
    * {@inheritdoc}
    */
-  public function getOptionsList(): array {
+  public function getOptionsList(bool $enabled_only = TRUE): array {
     $options = [];
-    /** @var \Drupal\l10n_server\ConnectorInterface $definition */
+    $enabled_connectors = \Drupal::config('l10n_server.settings')
+      ->get('enabled_connectors');
     foreach ($this->getDefinitions() as $id => $definition) {
+      /** @var \Drupal\l10n_server\ConnectorInterface $plugin */
       $plugin = $this->createInstance($id);
-      $options[$plugin->getPluginId()] = $plugin->getLabel();
+      if ($enabled_only && \in_array($plugin->getPluginId(), $enabled_connectors)) {
+        $options[$plugin->getPluginId()] = $plugin->getLabel();
+      }
     }
     return $options;
   }

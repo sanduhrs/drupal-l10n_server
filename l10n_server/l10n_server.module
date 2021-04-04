@@ -11,6 +11,8 @@
 
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
+use Drupal\l10n_server\SourceString;
 
 define('L10N_SERVER_ACTION_ADD', 1);
 
@@ -427,7 +429,7 @@ function l10n_server_form_alter(array &$form, \Drupal\Core\Form\FormStateInterfa
   if ($form_id === 'l10n_server_release_form') {
     /** @var \Drupal\l10n_server\Entity\Release $release */
     $release = $form_state->getFormObject()->getEntity();
-    if ($release->isNew() && ($connector = $release->getProject()->getConnector()) && $connector instanceof \Drupal\l10n_server\ConnnectorUploadHandlerInterface && in_array('upload', $connector->getSources())) {
+    if ($release->isNew() && ($connector = $release->getProject()->getConnector()) && $connector instanceof ConnnectorUploadHandlerInterface && in_array('upload', $connector->getSources())) {
 
       /** @var \Drupal\l10n_server\SourceManager $manager */
       $manager = \Drupal::service('plugin.manager.l10n_server.source');

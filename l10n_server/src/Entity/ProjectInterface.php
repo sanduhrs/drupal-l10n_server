@@ -11,7 +11,7 @@ use Drupal\l10n_server\ConnectorInterface;
  */
 interface ProjectInterface extends ContentEntityInterface {
 
-  public function getHomepage(): string;
+  public function getHomepage(): ?string;
   public function getConnectorModule(): string;
   public function getConnector(): ?ConnectorInterface;
   public function getEnabled(): bool;

@@ -7,6 +7,6 @@ namespace Drupal\l10n_server;
 use Drupal\file\FileInterface;
 
 interface ConnnectorUploadHandlerInterface {
-  public function uploadHandler(FileInterface $file);
+  public static function uploadHandler(FileInterface $file);
   public function getUploadValidators(): array;
 }

@@ -19,3 +19,7 @@ services:
       - '@plugin.manager.l10n_server.source'
     tags:
       - { name: paramconverter }
+  l10n_server.source_string_storage:
+    class: Drupal\l10n_server\SourceString
+    arguments:
+      - '@database'

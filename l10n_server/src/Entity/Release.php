@@ -106,6 +106,13 @@ class Release extends ContentEntityBase implements ReleaseInterface {
       ->setDisplayOptions('form', [
         'type' => 'number',
       ]);
+
+    $fields['sid_count'] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Count of source strings'))
+      ->setDescription(t('Count of source strings in this project release.'))
+      ->setReadOnly(TRUE)
+      ->setRequired(TRUE)
+      ->setDefaultValue(0);
     return $fields;
   }
 
@@ -132,6 +139,22 @@ class Release extends ContentEntityBase implements ReleaseInterface {
       ->get('entity')
       ->getTarget()
       ->getValue();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLastParsed(): ReleaseInterface {
+    $this->set('last_parsed', \Drupal::time()->getRequestTime());
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSourceStringCounter(int $count): ReleaseInterface {
+    $this->set('sid_count', $count);
+    return $this;
   }
 
 }

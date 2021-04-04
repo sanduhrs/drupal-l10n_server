@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_gettext\Plugin\l10n_server\Connector;
 
+use Drupal\Component\Gettext\PoStreamReader;
 use Drupal\file\FileInterface;
 use Drupal\l10n_server\ConnectorPluginBase;
 use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
@@ -21,8 +22,14 @@ use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
  */
 class GetText extends ConnectorPluginBase implements ConnnectorUploadHandlerInterface {
 
-  public function uploadHandler(FileInterface $file) {
-    dpm(func_get_args(), __METHOD__);
+  public static function uploadHandler(FileInterface $file) {
+    $langcode = NULL;
+    $reader = new PoStreamReader();
+    $reader->setURI($file->getFileUri());
+    $reader->open();
+    $writer = new \Drupal\l10n_server\PoDatabaseWriter();
+    $writer->writeItems($reader, -1);
+    $file->delete();
   }
 
   public function getUploadValidators(): array {
