@@ -29,7 +29,7 @@ class ConnectorManager extends DefaultPluginManager implements ConnectorManagerI
    */
   public function getOptionsList(bool $enabled_only = TRUE): array {
     $options = [];
-    $enabled_connectors = \Drupal::config('l10n_server.settings')
+    $enabled_connectors = (array) \Drupal::config('l10n_server.settings')
       ->get('enabled_connectors');
     foreach ($this->getDefinitions() as $id => $definition) {
       /** @var \Drupal\l10n_server\ConnectorInterface $plugin */

@@ -7,7 +7,6 @@ namespace Drupal\l10n_server\Plugin\l10n_server\Source;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\file\FileInterface;
 use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
-use Drupal\l10n_server\Entity\ReleaseInterface;
 use Drupal\l10n_server\SourcePluginBase;
 use Drupal\l10n_server\SourceString;
 
@@ -31,8 +30,8 @@ class Upload extends SourcePluginBase {
       ),
       '#upload_validators' => $connector->getUploadValidators()
     ];
-    $form['#validate'][] = '\\' . __CLASS__ .  '::validateUpload';
-    $form['actions']['submit']['#submit'][] = '\\' . __CLASS__ . '::uploadHandler';
+    $form['#validate'][] = [$this, 'validateUpload'];
+    $form['actions']['submit']['#submit'][] = [$this, 'uploadHandler'];
     $form_state->setTemporaryValue('connector', $connector);
   }
 
@@ -40,7 +39,7 @@ class Upload extends SourcePluginBase {
     /** @var \Drupal\l10n_server\ConnnectorUploadHandlerInterface $connector */
     $connector = $form_state->getTemporaryValue('connector');
     $files = file_save_upload('new_source', $connector->getUploadValidators());
-    $file = $files ? reset($files) : NULL;
+    $file = $files ? \reset($files) : NULL;
     if (!$file instanceof FileInterface) {
       $form_state->setErrorByName('new_source');
     }
@@ -55,7 +54,7 @@ class Upload extends SourcePluginBase {
       /** @var \Drupal\l10n_server\ConnnectorUploadHandlerInterface $connector */
       $connector = $form_state->getTemporaryValue('connector');
       $connector::uploadHandler($form_state->getValue('new_source'));
-      /** @var \Drupal\l10n_server\Entity\Release $release */
+      /** @var \Drupal\l10n_server\Entity\ReleaseInterface $release */
       $release = $form_state->getFormObject()->getEntity();
       $release->setLastParsed();
       $release->setSourceStringCounter(SourceString::$counter);

@@ -8,7 +8,6 @@ use Drupal\Core\Entity\EntityPublishedInterface;
 use Drupal\Core\Entity\EntityPublishedTrait;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\l10n_server\ConnectorInterface;
 use function t;
 
@@ -97,6 +96,12 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
     // \Drupal\Core\Entity\EntityPublishedTrait::publishedBaseFieldDefinitions().
     $fields['enabled']->setLabel(t('Enabled'));
     $fields['enabled']->setDescription(t('Disable to stop scanning and parsing new releases.'));
+    $fields['enabled']
+      ->setDisplayOptions('form', [
+        'type' => 'boolean_checkbox',
+        'settings' => [
+          'display_label' => TRUE,
+        ]]);
 
     $fields['last_parsed'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Last time project was parsed'))

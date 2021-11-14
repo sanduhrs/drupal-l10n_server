@@ -7,6 +7,7 @@ use Drupal\Component\Gettext\PoStreamReader;
 use Drupal\file\FileInterface;
 use Drupal\l10n_server\ConnectorPluginBase;
 use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
+use Drupal\l10n_server\PoDatabaseWriter;
 
 /**
  * A plugin to use pot files.
@@ -23,11 +24,10 @@ use Drupal\l10n_server\ConnnectorUploadHandlerInterface;
 class GetText extends ConnectorPluginBase implements ConnnectorUploadHandlerInterface {
 
   public static function uploadHandler(FileInterface $file) {
-    $langcode = NULL;
     $reader = new PoStreamReader();
     $reader->setURI($file->getFileUri());
     $reader->open();
-    $writer = new \Drupal\l10n_server\PoDatabaseWriter();
+    $writer = new PoDatabaseWriter();
     $writer->writeItems($reader, -1);
     $file->delete();
   }

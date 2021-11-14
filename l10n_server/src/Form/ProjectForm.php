@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Drupal\l10n_server\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\EntityConstraintViolationListInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -24,6 +25,20 @@ class ProjectForm extends ContentEntityForm {
     $instance = parent::create($container);
     $instance->connector_manager = $container->get('plugin.manager.l10n_server.connector');
     return $instance;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $connectors = $this->connector_manager->getOptionsList();
+    if (\count($connectors) === 0) {
+      // @todo Event -> redirect connectors page.
+      $this->messenger()->addError($this->t('You need to enable at least one localization server connector.'));
+      return $form;
+    }
+
+    return parent::buildForm($form, $form_state);
   }
 
   /**
@@ -51,12 +66,15 @@ class ProjectForm extends ContentEntityForm {
       // A project's machine name cannot be changed.
       '#disabled' => !$project->isNew(),
     ];
+
+    $connectors = $this->connector_manager->getOptionsList();
+    $initial_value = \count($connectors) === 1 ? \key($connectors) : NULL;
     $form['connector_module'] = [
       '#type' => 'radios',
       '#title' => $this->t('Connector handling project data'),
       '#description' => $this->t('Data and source handler for this project. Cannot be modified later.'),
-      '#default_value' => !$project->isNew() ? $project->getConnectorModule() : NULL,
-      '#options' => $this->connector_manager->getOptionsList(),
+      '#default_value' => !$project->isNew() ? $project->getConnectorModule() : $initial_value,
+      '#options' => $connectors,
       '#required' => TRUE,
       '#disabled' => !$project->isNew(),
     ];
@@ -72,7 +90,7 @@ class ProjectForm extends ContentEntityForm {
    * @return bool
    *   Returns TRUE if the project uri already exists, FALSE otherwise.
    */
-  public function projectUriExists($value) {
+  public function projectUriExists($value): bool {
     // Check first to see if a project with this ID exists.
     if ($this->entityTypeManager->getStorage('l10n_server_project')->getQuery()->condition('pid', $value)->range(0, 1)->count()->execute()) {
       return TRUE;
@@ -85,6 +103,24 @@ class ProjectForm extends ContentEntityForm {
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
     parent::validateForm($form, $form_state);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditedFieldNames(FormStateInterface $form_state) {
+    return \array_merge(['connector_module'], parent::getEditedFieldNames($form_state));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function flagViolations(EntityConstraintViolationListInterface $violations, array $form, FormStateInterface $form_state) {
+    foreach ($violations->getByField('connector_module') as $violation) {
+      $form_state->setErrorByName('connector_module', $violation->getMessage());
+    }
+
+    parent::flagViolations($violations, $form, $form_state);
   }
 
   /**

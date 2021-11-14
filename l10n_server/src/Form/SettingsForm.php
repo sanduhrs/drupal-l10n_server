@@ -84,11 +84,11 @@ final class SettingsForm extends ConfigFormBase {
         continue;
       }
       $connector = $this->connectorManager->createInstance($id);
-      assert($connector instanceof ConnectorInterface);
+      \assert($connector instanceof ConnectorInterface);
       $options[$connector->getPluginId()] = [
         'connector' => [$connector->getLabel(), $connector->getDescription()],
       ];
-      if (!in_array($connector->getPluginId(), $enabled_connectors)) {
+      if (!\in_array($connector->getPluginId(), $enabled_connectors)) {
         continue;
       }
       $links = NULL;
@@ -98,7 +98,7 @@ final class SettingsForm extends ConfigFormBase {
           continue;
         }
         $source = $this->sourceManager->createInstance($source_plugin_id);
-        assert($source instanceof SourceInterface);
+        \assert($source instanceof SourceInterface);
         if ($source->supportScan()) {
           $links['scan'] = [
             'title' => $this->t('Scan'),
@@ -124,7 +124,7 @@ final class SettingsForm extends ConfigFormBase {
       '#type' => 'tableselect',
       '#header' => $header,
       '#options' => $options,
-      '#default_value' => array_combine($enabled_connectors, $enabled_connectors),
+      '#default_value' => \array_combine($enabled_connectors, $enabled_connectors),
       '#empty' => $this->t('No localization server connectors found.'),
     );
 
@@ -135,7 +135,7 @@ final class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $submitted_values = array_values(array_filter($form_state->getValue('connectors', [])));
+    $submitted_values = \array_values(\array_filter($form_state->getValue('connectors', [])));
     $this->config('l10n_server.settings')
       ->set('enabled_connectors', $submitted_values)
       ->save();

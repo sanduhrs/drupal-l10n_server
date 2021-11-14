@@ -25,7 +25,7 @@ class FileSystem extends ConfigurableSourcePluginBase {
       '#description' => $this->t('The directory on the local file system to be scanned for source data. Either relative to the Drupal site root or an absolute path on your file system. Drupal should have read access to the files and directories found there. Projects are identified based on subdirectory names or the first part of filenames if put directly in the root directory. Releases are identified based on the second part of package filenames. Examples: Fishbowl/fishbowl-1.2.tar.gz is from project "Fishbowl" in version 1.2, while campwizard-3.4.tar.gz is project "campwizard" in version 3.4.'),
       '#type' => 'textfield',
       '#required' => TRUE,
-      '#default_value' => $this->configuration['source_directory'] ?? PublicStream::basePath() . DIRECTORY_SEPARATOR . $this->connector->getPluginId(),
+      '#default_value' => $this->configuration['source_directory'] ?? PublicStream::basePath() . DIRECTORY_SEPARATOR . 'l10n_' . $this->connector->getPluginId(),
       '#after_build' => ['system_check_directory'],
     ];
     return $form;
