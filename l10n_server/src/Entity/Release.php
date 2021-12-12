@@ -31,6 +31,7 @@ use Drupal\Core\Field\BaseFieldDefinition;
  *     },
  *     "list_builder" = "Drupal\l10n_server\Entity\Handler\ReleaseListBuilder",
  *     "views_data" = "Drupal\views\EntityViewsData",
+ *     "storage_schema" = "\Drupal\l10n_server\ReleaseStorageSchema",
  *   },
  *   admin_permission = "administer localization server",
  *   entity_keys = {
@@ -66,7 +67,7 @@ class Release extends ContentEntityBase implements ReleaseInterface {
         'type' => 'string_textfield',
       ])
       ->setSettings([
-        'max_length' => 128
+        'max_length' => 128,
       ]);
     $fields['download_link'] = BaseFieldDefinition::create('uri')
       ->setLabel(t('Download link'))
@@ -99,6 +100,7 @@ class Release extends ContentEntityBase implements ReleaseInterface {
       ->setLabel(t('Weight'))
       ->setDescription(t('Release weight used for sorting. Lower weights float up to the top.'))
       ->setDefaultValue(0)
+      ->setRequired(TRUE)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'number_integer',

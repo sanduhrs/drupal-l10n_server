@@ -25,7 +25,8 @@ interface SourceInterface extends PluginInspectionInterface {
   public function getDescription(): string;
 
   /**
-   * Allows the user to trigger the plugin to scan this source via link for new data.
+   * Allows the user to trigger the plugin
+   * to scan this source via link for new data.
    *
    * @return bool
    */

@@ -1,9 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * @file
- *   Localization server for Drupal installation/uninstallation and updates.
+ * Install, update, and uninstall functions for Localization server connector for Drupal module.
  */
+
+/**
+ * Implements hook_install().
+ */
+function l10n_drupal_install($is_syncing) {
+  if (!$is_syncing) {
+    $config = \Drupal::configFactory()->getEditable('l10n_server.settings');
+    $enabled_connectors = (array) $config->get('enabled_connectors');
+    $enabled_connectors[] = 'drupal';
+    $config->set('enabled_connectors', $enabled_connectors)->save(TRUE);
+  }
+}
 
 /**
  * Implements hook_requirements().

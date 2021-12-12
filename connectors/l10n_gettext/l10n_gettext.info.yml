@@ -1,4 +1,4 @@
-name: 'Localization server for Gettext files'
+name: 'Localization server connector for Gettext files'
 type: module
 description: 'Manages translatable strings with Gettext standard input/output.'
 package: 'Localization server connectors'

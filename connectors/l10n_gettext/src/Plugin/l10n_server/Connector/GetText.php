@@ -15,7 +15,7 @@ use Drupal\l10n_server\PoDatabaseWriter;
  * @Connector(
  *   id = "gettext",
  *   label = @Translation("Gettext files"),
- *   description = @Translation("Drupal packages from the file system"),
+ *   description = @Translation("Allows to upload .pot (Portable Object Template) files which contains source for translations"),
  *   supported_sources = {
  *    "upload",
  *   }

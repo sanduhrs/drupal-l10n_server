@@ -61,7 +61,7 @@ class ProjectForm extends ContentEntityForm {
         'replace_pattern' => '[^a-z0-9-]+',
         'replace' => '-',
         'standalone' => TRUE,
-        'label' => $this->t('Project URI')
+        'label' => $this->t('Project URI'),
       ],
       // A project's machine name cannot be changed.
       '#disabled' => !$project->isNew(),
@@ -90,9 +90,9 @@ class ProjectForm extends ContentEntityForm {
    * @return bool
    *   Returns TRUE if the project uri already exists, FALSE otherwise.
    */
-  public function projectUriExists($value): bool {
+  public function projectUriExists(string $value): bool {
     // Check first to see if a project with this ID exists.
-    if ($this->entityTypeManager->getStorage('l10n_server_project')->getQuery()->condition('pid', $value)->range(0, 1)->count()->execute()) {
+    if ($this->entityTypeManager->getStorage('l10n_server_project')->getQuery()->accessCheck(FALSE)->condition('uri', $value)->range(0, 1)->count()->execute()) {
       return TRUE;
     }
     return FALSE;
@@ -101,15 +101,8 @@ class ProjectForm extends ContentEntityForm {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-    parent::validateForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   protected function getEditedFieldNames(FormStateInterface $form_state) {
-    return \array_merge(['connector_module'], parent::getEditedFieldNames($form_state));
+    return \array_merge(['connector_module', 'uri'], parent::getEditedFieldNames($form_state));
   }
 
   /**
@@ -119,15 +112,10 @@ class ProjectForm extends ContentEntityForm {
     foreach ($violations->getByField('connector_module') as $violation) {
       $form_state->setErrorByName('connector_module', $violation->getMessage());
     }
-
+    foreach ($violations->getByField('uri') as $violation) {
+      $form_state->setErrorByName('uri', $violation->getMessage());
+    }
     parent::flagViolations($violations, $form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
-    parent::submitForm($form, $form_state);
   }
 
   /**
@@ -135,6 +123,17 @@ class ProjectForm extends ContentEntityForm {
    */
   public function save(array $form, FormStateInterface $form_state) {
     $saved = parent::save($form, $form_state);
+    switch ($saved) {
+      case SAVED_NEW:
+        $this->messenger()->addStatus($this->t('Created new project %project.', ['%project' => $this->entity->label()]));
+        $this->logger('l10n_server')->notice('Created new project %project.', ['%project' => $this->entity->label()]);
+        break;
+
+      case SAVED_UPDATED:
+        $this->messenger()->addStatus($this->t('Updated project %project.', ['%project' => $this->entity->label()]));
+        $this->logger('l10n_server')->notice('Updated project %project.', ['%project' => $this->entity->label()]);
+        break;
+    }
     $form_state->setRedirectUrl($this->entity->toUrl('collection'));
     return $saved;
   }

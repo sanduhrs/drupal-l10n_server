@@ -35,12 +35,14 @@ use function t;
  *     },
  *     "list_builder" = "Drupal\l10n_server\Entity\Handler\ProjectListBuilder",
  *     "views_data" = "Drupal\views\EntityViewsData",
+ *     "storage_schema" = "Drupal\l10n_server\ProjectStorageSchema",
  *   },
  *   admin_permission = "administer localization server",
  *   entity_keys = {
  *    "id" = "pid",
  *    "label" = "title",
  *    "published" = "enabled",
+ *    "uuid" = "uuid",
  *   },
  *   links = {
  *     "add-form" = "/admin/config/l10n_server/projects/add",
@@ -52,6 +54,7 @@ use function t;
  * )
  */
 class Project extends ContentEntityBase implements ProjectInterface, EntityPublishedInterface {
+
   use EntityPublishedTrait;
 
   /**
@@ -59,8 +62,12 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type): array {
     $fields = parent::baseFieldDefinitions($entity_type);
+
+    $fields['uuid']->setDescription(t('The project UUID.'));
+
     // Add the published field.
     $fields += static::publishedBaseFieldDefinitions($entity_type);
+
     $fields['title'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Project name'))
       ->setDescription(t('Human readable name of project.'))
@@ -69,21 +76,21 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
         'type' => 'string_textfield',
       ])
       ->setSettings([
-        'max_length' => 128
+        'max_length' => 128,
       ]);
     $fields['uri'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Project URI'))
       ->setDescription(t('Short name of project used in paths. This will appear in paths like translate/projects/uri at the end. Suggested to use lowercase only.'))
       ->setRequired(TRUE)
       ->setSettings([
-        'max_length' => 50
-      ]);
+        'max_length' => 50,
+      ])->addConstraint('L10nServerProjectUriUnique');
     $fields['connector_module'] = BaseFieldDefinition::create('string')
-      ->setLabel(t('Connector handling project data '))
+      ->setLabel(t('Connector handling project data'))
       ->setDescription(t('Data and source handler for this project. Cannot be modified later.'))
       ->setRequired(TRUE)
       ->setSettings([
-        'max_length' => 50
+        'max_length' => 50,
       ]);
     $fields['homepage'] = BaseFieldDefinition::create('uri')
       ->setLabel(t('Homepage'))
@@ -112,6 +119,7 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
       ->setLabel(t('Weight'))
       ->setDescription(t('Project weight used for sorting. Lower weights float up to the top.'))
       ->setDefaultValue(0)
+      ->setRequired(TRUE)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'number_integer',

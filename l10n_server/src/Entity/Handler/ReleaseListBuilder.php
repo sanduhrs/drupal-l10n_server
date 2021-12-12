@@ -6,7 +6,7 @@ namespace Drupal\l10n_server\Entity\Handler;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\l10n_server\Entity\ProjectInterface;
+use Drupal\l10n_server\Entity\ReleaseInterface;
 use function \assert;
 use function \array_merge;
 
@@ -28,7 +28,7 @@ class ReleaseListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity): array {
-    assert($entity instanceof ProjectInterface);
+    assert($entity instanceof ReleaseInterface);
     $row = [];
     $row['label']['data'] = $entity->label();
     return array_merge($row, parent::buildRow($entity));

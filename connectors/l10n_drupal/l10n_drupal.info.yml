@@ -1,4 +1,4 @@
-name: 'Localization server for Drupal'
+name: 'Localization server connector for Drupal'
 type: module
 description: 'Extracts translatable strings from Drupal packages.'
 package: 'Localization server connectors'
