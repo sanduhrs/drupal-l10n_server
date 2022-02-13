@@ -28,4 +28,8 @@ interface ReleaseInterface extends ContentEntityInterface {
 
   public function setLastParsed(): ReleaseInterface;
   public function setSourceStringCounter(int $count): ReleaseInterface;
+
+  public function getLastTimeParsed(): int;
+  public function getDownloadLink(): ?string;
+  public function getFileDate(): ?int;
 }

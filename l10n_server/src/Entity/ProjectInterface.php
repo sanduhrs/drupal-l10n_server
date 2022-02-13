@@ -15,4 +15,5 @@ interface ProjectInterface extends ContentEntityInterface {
   public function getConnectorModule(): string;
   public function getConnector(): ?ConnectorInterface;
   public function getEnabled(): bool;
+  public function getLastTimeParsed(): ?int;
 }

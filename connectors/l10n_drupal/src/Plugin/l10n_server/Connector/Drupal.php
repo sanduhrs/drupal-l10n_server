@@ -13,8 +13,7 @@ use Drupal\l10n_server\ConnectorPluginBase;
  *   label = @Translation("Drupal packages"),
  *   description = @Translation("Drupal packages from the file system"),
  *   supported_sources = {
- *    "filesystem",
- *    "upload",
+ *    "filesystem"
  *   }
  * )
  */

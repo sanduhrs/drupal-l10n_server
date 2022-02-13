@@ -173,4 +173,11 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
   public function getEnabled(): bool {
     return (bool) $this->get('enabled')->value;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLastTimeParsed(): ?int {
+    return $this->get('last_parsed')->value;
+  }
 }

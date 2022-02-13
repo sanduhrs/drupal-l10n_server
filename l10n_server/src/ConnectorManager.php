@@ -6,6 +6,9 @@ namespace Drupal\l10n_server;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
+use function array_search;
+use function array_unique;
+use function in_array;
 
 class ConnectorManager extends DefaultPluginManager implements ConnectorManagerInterface {
 
@@ -27,17 +30,42 @@ class ConnectorManager extends DefaultPluginManager implements ConnectorManagerI
   /**
    * {@inheritdoc}
    */
-  public function getOptionsList(bool $enabled_only = TRUE): array {
+  public function getOptionsList(): array {
     $options = [];
     $enabled_connectors = (array) \Drupal::config('l10n_server.settings')
       ->get('enabled_connectors');
     foreach ($this->getDefinitions() as $id => $definition) {
       /** @var \Drupal\l10n_server\ConnectorInterface $plugin */
       $plugin = $this->createInstance($id);
-      if ($enabled_only && \in_array($plugin->getPluginId(), $enabled_connectors)) {
+      if (in_array('upload', $plugin->getSources()) && in_array($plugin->getPluginId(), $enabled_connectors)) {
         $options[$plugin->getPluginId()] = $plugin->getLabel();
       }
     }
     return $options;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setConnectorPluginStatus(string $module, bool $status = TRUE): void {
+    $config = \Drupal::configFactory()->getEditable('l10n_server.settings');
+    $enabled_connectors = (array) $config->get('enabled_connectors');
+
+    foreach ($this->getDefinitions() as $id => $definition) {
+      /** @var \Drupal\l10n_server\ConnectorInterface $plugin */
+      $plugin = $this->createInstance($id);
+      $provider = $plugin->getPluginDefinition()['provider'];
+      if ($module === $provider) {
+        if ($status) {
+          $enabled_connectors[] = $plugin->getPluginId();
+        }
+        else {
+          $index = array_search($plugin->getPluginId(), $enabled_connectors);
+          unset($enabled_connectors[$index]);
+        }
+        $enabled_connectors = array_unique($enabled_connectors);
+        $config->set('enabled_connectors', $enabled_connectors)->save(TRUE);
+      }
+    }
   }
 }

@@ -23,8 +23,8 @@ class ProjectListBuilder extends EntityListBuilder {
     $header = [];
     $header['label'] = ['data' => $this->t('Project')];
     $header['homepage'] = ['data' => $this->t('Homepage')];
-    $header['last_parsed'] = ['data' => $this->t('Releases')];
-    $header['releases'] = ['data' => $this->t('Last time project was parsed')];
+    $header['last_parsed'] = ['data' => $this->t('Last time project was parsed')];
+    $header['releases'] = ['data' => $this->t('Releases')];
     return array_merge($header, parent::buildHeader());
   }
 
@@ -35,7 +35,8 @@ class ProjectListBuilder extends EntityListBuilder {
     assert($entity instanceof ProjectInterface);
     $row = [];
     $row['label']['data'] = $entity->label();
-    $row['homepage']['data'] = $entity->getHomepage();
+    $row['homepage']['data'] = $entity->getHomepage() ?? '-';
+    $row['last_parsed']['data'] = $entity->getLastTimeParsed() ?? '-';
     $row['releases']['data'] = Link::createFromRoute(t('Releases'), 'entity.l10n_server_release.collection', ['l10n_server_project' => $entity->id()]);
     return array_merge($row, parent::buildRow($entity));
   }

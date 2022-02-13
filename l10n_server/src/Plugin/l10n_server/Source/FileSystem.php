@@ -28,14 +28,22 @@ class FileSystem extends ConfigurableSourcePluginBase {
       '#default_value' => $this->configuration['source_directory'] ?? PublicStream::basePath() . DIRECTORY_SEPARATOR . 'l10n_' . $this->connector->getPluginId(),
       '#after_build' => ['system_check_directory'],
     ];
-    return $form;
-  }
+    $form['scan_limit'] = [
+      '#title' => $this->t('Number of releases to look at once'),
+      '#description' => $this->t('The number of releases to scan on a manual or cron run. Scanning is synchronous, so you need to wait while extraction and parsing of file content is underway.'),
+      '#type' => 'number',
+      '#default_value' => $this->configuration['scan_limit'] ?? 1,
+      '#min' => 1,
+    ];
+    $form['cron_enabled'] = array(
+      '#title' => t('Run scanning on cron'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->configuration['cron_enabled'] ?? FALSE,
+      '#description' => $this->t('It is advised to set up a regular cron run to parse new files, instead of hitting the Scan tab manually.'),
+    );
 
-  /**
-   * {@inheritdoc}
-   */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-    // TODO: Implement validateConfigurationForm() method.
+
+    return $form;
   }
 
 }

@@ -23,6 +23,9 @@ use Drupal\l10n_server\PoDatabaseWriter;
  */
 class GetText extends ConnectorPluginBase implements ConnnectorUploadHandlerInterface {
 
+  /**
+   * {@inheritdoc}
+   */
   public static function uploadHandler(FileInterface $file) {
     $reader = new PoStreamReader();
     $reader->setURI($file->getFileUri());
@@ -32,6 +35,9 @@ class GetText extends ConnectorPluginBase implements ConnnectorUploadHandlerInte
     $file->delete();
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getUploadValidators(): array {
     return ['file_validate_extensions' => ['pot']];
   }

@@ -5,11 +5,12 @@ namespace Drupal\Tests\l10n_server\Kernel;
 
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\l10n_server\Entity\Project;
+use \Drupal\KernelTests\KernelTestBase;
 
 /**
  * @coversClass \Drupal\l10n_server\Plugin\Validation\Constraint\L10nServerProjectUriUnique
  */
-class L10nServerProjectUriUniqueTest extends \Drupal\KernelTests\KernelTestBase {
+class L10nServerProjectUriUniqueTest extends KernelTestBase {
 
   /**
    * {@inheritdoc}

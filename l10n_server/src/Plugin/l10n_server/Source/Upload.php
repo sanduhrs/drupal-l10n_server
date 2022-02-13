@@ -28,7 +28,7 @@ class Upload extends SourcePluginBase {
         '#description' => $this->t('Upload a source file to parse and store translatable strings from for this release.'),
         '#upload_validators' =>  $connector->getUploadValidators(),
       ),
-      '#upload_validators' => $connector->getUploadValidators()
+      '#upload_validators' => $connector->getUploadValidators(),
     ];
     $form['#validate'][] = [$this, 'validateUpload'];
     $form['actions']['submit']['#submit'][] = [$this, 'uploadHandler'];

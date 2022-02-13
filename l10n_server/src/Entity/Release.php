@@ -72,7 +72,6 @@ class Release extends ContentEntityBase implements ReleaseInterface {
     $fields['download_link'] = BaseFieldDefinition::create('uri')
       ->setLabel(t('Download link'))
       ->setDescription(t('Download link for this release of the software.'))
-      ->setDefaultValue('')
       ->setDisplayOptions('form', [
         'type' => 'uri',
       ]);
@@ -157,6 +156,27 @@ class Release extends ContentEntityBase implements ReleaseInterface {
   public function setSourceStringCounter(int $count): ReleaseInterface {
     $this->set('sid_count', $count);
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLastTimeParsed(): int {
+    return (int) $this->get('last_parsed')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDownloadLink(): ?string {
+    return $this->get('download_link')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFileDate(): ?int {
+    return $this->get('file_date')->value;
   }
 
 }
