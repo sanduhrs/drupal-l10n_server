@@ -12,6 +12,7 @@ use Drupal\l10n_server\ConnectorManager;
 use Drupal\l10n_server\SourceInterface;
 use Drupal\l10n_server\SourceManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use function assert, array_values, in_array, array_combine, array_filter;
 
 /**
  * Defines a form that configures devel settings.
@@ -51,14 +52,14 @@ final class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'l10n_server_settings_form';
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
+  protected function getEditableConfigNames(): array {
     return [
       'l10n_server.settings',
     ];
@@ -67,7 +68,7 @@ final class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state): array {
 
     $header = [
       'connector' => ['data' => $this->t('Connector'), 'colspan' => 2],
@@ -84,11 +85,11 @@ final class SettingsForm extends ConfigFormBase {
         continue;
       }
       $connector = $this->connectorManager->createInstance($id);
-      \assert($connector instanceof ConnectorInterface);
+      assert($connector instanceof ConnectorInterface);
       $options[$connector->getPluginId()] = [
         'connector' => [$connector->getLabel(), $connector->getDescription()],
       ];
-      if (!\in_array($connector->getPluginId(), $enabled_connectors)) {
+      if (!in_array($connector->getPluginId(), $enabled_connectors)) {
         continue;
       }
       $links = NULL;
@@ -98,18 +99,18 @@ final class SettingsForm extends ConfigFormBase {
           continue;
         }
         $source = $this->sourceManager->createInstance($source_plugin_id);
-        \assert($source instanceof SourceInterface);
-        if ($source->supportScan()) {
-          $links['scan'] = [
-            'title' => $this->t('Scan'),
-            'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
-          ];
-        }
+        assert($source instanceof SourceInterface);
         if ($source instanceof ConfigurableSourcePluginBase) {
           /** SourceInterface&ConfigurableInterface $source */
           $links['configure'] = [
             'title' => $this->t('Configure'),
             'url' => Url::fromRoute('l10n_server.connector.configure', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
+          ];
+        }
+        if ($source->supportScan()) {
+          $links['scan'] = [
+            'title' => $this->t('Scan'),
+            'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
           ];
         }
       }
@@ -124,7 +125,7 @@ final class SettingsForm extends ConfigFormBase {
       '#type' => 'tableselect',
       '#header' => $header,
       '#options' => $options,
-      '#default_value' => \array_combine($enabled_connectors, $enabled_connectors),
+      '#default_value' => array_combine($enabled_connectors, $enabled_connectors),
       '#empty' => $this->t('No localization server connectors found.'),
     );
 
@@ -135,7 +136,7 @@ final class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $submitted_values = \array_values(\array_filter($form_state->getValue('connectors', [])));
+    $submitted_values = array_values(array_filter($form_state->getValue('connectors', [])));
     $this->config('l10n_server.settings')
       ->set('enabled_connectors', $submitted_values)
       ->save();

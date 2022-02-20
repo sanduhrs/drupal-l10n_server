@@ -4,14 +4,13 @@ declare(strict_types=1);
 namespace Drupal\l10n_server;
 
 use Drupal\Component\Plugin\ConfigurableInterface;
-use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginFormInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements ConfigurableInterface, PluginFormInterface, DependentPluginInterface, ContainerFactoryPluginInterface {
+abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements ConfigurableInterface, PluginFormInterface, ContainerFactoryPluginInterface {
 
   /**
    * The l10n_server connector service.
@@ -97,10 +96,4 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
     $this->setConfiguration($form_state->getValues());
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function calculateDependencies() {
-    return [];
-  }
 }

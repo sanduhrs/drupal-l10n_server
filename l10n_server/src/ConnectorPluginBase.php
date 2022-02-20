@@ -28,29 +28,4 @@ abstract class ConnectorPluginBase extends PluginBase implements ConnectorInterf
     return $this->pluginDefinition['supported_sources'];
   }
 
-  /**
-   * @inheritDoc
-   */
-  public function calculateDependencies() {
-    $modules = NULL;
-    /** @var \Drupal\l10n_server\SourceManager $manager */
-    $manager = \Drupal::service('plugin.manager.l10n_server.source');
-    foreach ($this->getSources() as $plugin_id) {
-      if ($manager->hasDefinition($plugin_id)) {
-        /** @var \Drupal\l10n_server\SourceInterface $source */
-        $source = $manager->createInstance($plugin_id);
-        $provider = $source->getPluginDefinition()['provider'];
-        if ($provider !== 'l10n_server') {
-          $modules[] = $source->getPluginDefinition()['provider'];
-        }
-      }
-    }
-
-    if ($modules) {
-      return ['modules' => $modules];
-    }
-    return [];
-  }
-
-
 }

@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_server;
 
-use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 
 /**
@@ -13,7 +12,7 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
  * @see \Drupal\l10n_server\SourceManager
  * @see plugin_api
  */
-interface ConnectorInterface extends PluginInspectionInterface, DependentPluginInterface {
+interface ConnectorInterface extends PluginInspectionInterface {
 
   /**
    * {@inheritdoc}

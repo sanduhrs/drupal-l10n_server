@@ -26,7 +26,7 @@ interface ReleaseInterface extends ContentEntityInterface {
 
   public function setProject(ProjectInterface $project): ReleaseInterface;
 
-  public function setLastParsed(): ReleaseInterface;
+  public function setLastParsed(?int $time): ReleaseInterface;
   public function setSourceStringCounter(int $count): ReleaseInterface;
 
   public function getLastTimeParsed(): int;

@@ -17,7 +17,7 @@ use Drupal\l10n_server\SourceString;
  *   description = @Translation("Allows to upload the sources for translations.")
  * )
  */
-class Upload extends SourcePluginBase {
+final class Upload extends SourcePluginBase {
 
   public function uploadFormElement(&$form, FormStateInterface $form_state, ConnnectorUploadHandlerInterface $connector) {
     $form['new_source'] = [

@@ -145,8 +145,8 @@ class Release extends ContentEntityBase implements ReleaseInterface {
   /**
    * {@inheritdoc}
    */
-  public function setLastParsed(): ReleaseInterface {
-    $this->set('last_parsed', \Drupal::time()->getRequestTime());
+  public function setLastParsed(?int $time): ReleaseInterface {
+    $this->set('last_parsed', $time ?? \Drupal::time()->getRequestTime());
     return $this;
   }
 
@@ -176,7 +176,7 @@ class Release extends ContentEntityBase implements ReleaseInterface {
    * {@inheritdoc}
    */
   public function getFileDate(): ?int {
-    return $this->get('file_date')->value;
+    return (int) $this->get('file_date')->value;
   }
 
 }

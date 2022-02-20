@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Drupal\l10n_server\Form;
@@ -7,20 +8,21 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\l10n_server\ConfigurableSourcePluginBase;
 use Drupal\l10n_server\ConnectorInterface;
+use function assert;
 
 class ConnectorConfiguration extends ConfigFormBase {
 
   /**
    * {@inheritdoc}
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'l10n_server_connector_configuration';
   }
 
   /**
    * {@inheritdoc}
    */
-  protected function getEditableConfigNames() {
+  protected function getEditableConfigNames(): array {
     return [
       'l10n_server.settings',
     ];
@@ -41,7 +43,7 @@ class ConnectorConfiguration extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state): void {
     $source = $form_state->get('source');
     assert($source instanceof ConfigurableSourcePluginBase);
     $source->validateConfigurationForm($form, $form_state);
@@ -52,14 +54,15 @@ class ConnectorConfiguration extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
     $source = $form_state->get('source');
     assert($source instanceof ConfigurableSourcePluginBase);
     $connector = $form_state->get('connector');
     assert($connector instanceof ConnectorInterface);
     $source->submitConfigurationForm($form, $form_state);
-    $this->config('l10n_server.settings')->set($source->getPluginId(), $source->getConfiguration())
-      ->set('dependencies', $connector->calculateDependencies())->save();
+    $this->config('l10n_server.settings')
+      ->set($source->getPluginId(), $source->getConfiguration())
+      ->save();
   }
 
 }
