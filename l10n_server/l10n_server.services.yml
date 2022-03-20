@@ -5,8 +5,6 @@ services:
   plugin.manager.l10n_server.source:
     class: Drupal\l10n_server\SourceManager
     parent: default_plugin_manager
-    calls:
-      - [setConfigFactory, ['@config.factory']]
   param_converter.l10n_server.connector_plugin:
     class: Drupal\l10n_server\ParamConverter\L10NServerConnectorPluginParamConverter
     arguments:

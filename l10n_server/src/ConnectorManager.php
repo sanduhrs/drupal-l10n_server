@@ -9,7 +9,6 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use function array_search;
 use function array_unique;
-use function in_array;
 use Traversable;
 
 final class ConnectorManager extends DefaultPluginManager implements ConnectorManagerInterface {
@@ -40,12 +39,10 @@ final class ConnectorManager extends DefaultPluginManager implements ConnectorMa
    */
   public function getOptionsList(): array {
     $options = [];
-    $enabled_connectors = (array) $this->editableConfig
-      ->get('enabled_connectors');
     foreach ($this->getDefinitions() as $id => $definition) {
       /** @var \Drupal\l10n_server\ConnectorInterface $plugin */
       $plugin = $this->createInstance($id);
-      if (in_array($plugin->getPluginId(), $enabled_connectors, TRUE)) {
+      if ($plugin->isEnabled()) {
         $options[$plugin->getPluginId()] = $plugin->getLabel();
       }
     }
@@ -74,6 +71,18 @@ final class ConnectorManager extends DefaultPluginManager implements ConnectorMa
         $this->editableConfig->set('enabled_connectors', $enabled_connectors)->save(TRUE);
       }
     }
+  }
+
+  public function removePluginConfigurationMultiple(array $plugin_ids) {
+    $connectors = $this->editableConfig->get('connectors');
+    foreach ($plugin_ids as $plugin_id) {
+      unset($connectors[$plugin_id]);
+    }
+    $this->editableConfig->set('connectors', $connectors)->save();
+  }
+
+  public function removePluginConfiguration(string $plugin_id) {
+    $this->removePluginConfigurationMultiple([$plugin_id]);
   }
 
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Drupal\l10n_server;
 
 use Drupal\Component\Plugin\PluginInspectionInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 
 /**
  * Defines the interface for a l10n_server source.
@@ -12,7 +13,7 @@ use Drupal\Component\Plugin\PluginInspectionInterface;
  * @see \Drupal\l10n_server\ConnectorManager
  * @see plugin_api
  */
-interface SourceInterface extends PluginInspectionInterface {
+interface SourceInterface extends PluginInspectionInterface, ContainerFactoryPluginInterface {
 
   /**
    * {@inheritdoc}

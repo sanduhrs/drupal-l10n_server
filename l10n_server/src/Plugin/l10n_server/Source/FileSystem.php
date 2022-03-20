@@ -10,11 +10,21 @@ use Drupal\l10n_server\ConfigurableSourcePluginBase;
 /**
  * @Source(
  *   id = "filesystem",
- *   label = @Translation("The file system"),
- *   description = @Translation("Allows to use a file system path to find translations.")
+ *   label = @Translation("file system"),
  * )
  */
 final class FileSystem extends ConfigurableSourcePluginBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration(): array {
+    $config = parent::defaultConfiguration();
+    $config['source_directory'] =  PublicStream::basePath() . DIRECTORY_SEPARATOR . 'l10n_filesytem';
+    $config['scan_limit'] =  1;
+    $config['cron_enabled'] =  FALSE;
+    return $config;
+  }
 
   /**
    * {@inheritdoc}
@@ -38,7 +48,7 @@ final class FileSystem extends ConfigurableSourcePluginBase {
     $form['cron_enabled'] = array(
       '#title' => t('Run scanning on cron'),
       '#type' => 'checkbox',
-      '#default_value' => $this->configuration['cron_enabled'] ?? FALSE,
+      '#default_value' => $this->isCronEnabled(),
       '#description' => $this->t('It is advised to set up a regular cron run to parse new files, instead of hitting the Scan tab manually.'),
     );
     return $form;
@@ -52,11 +62,16 @@ final class FileSystem extends ConfigurableSourcePluginBase {
   }
 
   public function getSourceDirectory(): string {
-    return $this->configuration['source_directory'] ?? PublicStream::basePath() . DIRECTORY_SEPARATOR . 'l10n_' . $this->connector->getPluginId();
+    return $this->configuration['source_directory'];
   }
 
   public function getScanLimit(): int {
-    return (int) ($this->configuration['scan_limit'] ?? 1);
+    return (int) $this->configuration['scan_limit'];
   }
+
+  public function isCronEnabled(): bool {
+    return (bool) $this->configuration['cron_enabled'];
+  }
+
 
 }

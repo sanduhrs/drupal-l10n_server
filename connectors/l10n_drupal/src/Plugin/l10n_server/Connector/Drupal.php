@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Drupal\l10n_drupal\Plugin\l10n_server\Connector;
 
-use Drupal\Core\Utility\ProjectInfo;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\l10n_drupal\Exception\MissingProjectCodeNameOrVersionNumberException;
-use Drupal\l10n_server\ConnectorPluginBase;
+use Drupal\l10n_server\ConfigurableConnectorPluginBase;
 use Drupal\l10n_server\ConnnectorScanHandlerInterface;
 use Drupal\l10n_server\Entity\Project;
 use Drupal\l10n_server\Entity\ProjectInterface;
@@ -24,16 +25,38 @@ use function sprintf;
  * @Connector(
  *   id = "drupal",
  *   label = @Translation("Drupal packages"),
- *   description = @Translation("Drupal packages from the file system"),
+ *   deriver = "Drupal\l10n_server\Plugin\Derivative\ConnectorSources",
  *   supported_sources = {
- *    "filesystem"
+ *    "filesystem",
+ *    "upload"
  *   }
  * )
  */
-class Drupal extends ConnectorPluginBase implements ConnnectorScanHandlerInterface {
+class Drupal extends ConfigurableConnectorPluginBase implements ConnnectorScanHandlerInterface {
 
   private const MAJOR_VERSION = [5, 6, 7, 8, 9];
 
+  /**
+   * {@inheritdoc}
+   */
+  public function defaultConfiguration(): array {
+    $config = parent::defaultConfiguration();
+    $config['drupal_home'] = TRUE;
+    return $config;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    $form['drupal_home'] = array(
+      '#title' => $this->t('Assign drupal.org home links to packages'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->configuration['drupal_home'],
+      '#description' => $this->t('Assigns https://drupal.org/project/<em>project</em> type home links to projects. These home links are used to guide users to the home pages of the projects. The setting only affects newly parsed packages.'),
+    );
+    return $form;
+  }
 
   public function fileExtension(): string {
     return 'tar.gz';
@@ -139,5 +162,6 @@ class Drupal extends ConnectorPluginBase implements ConnnectorScanHandlerInterfa
     // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
     return (int) $version;
   }
+
 
 }

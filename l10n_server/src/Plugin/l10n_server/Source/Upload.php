@@ -13,8 +13,7 @@ use Drupal\l10n_server\SourceString;
 /**
  * @Source(
  *   id = "upload",
- *   label = @Translation("File upload"),
- *   description = @Translation("Allows to upload the sources for translations.")
+ *   label = @Translation("file upload"),
  * )
  */
 final class Upload extends SourcePluginBase {

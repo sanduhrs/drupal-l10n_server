@@ -6,13 +6,15 @@ namespace Drupal\l10n_server\Form;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
-use Drupal\l10n_server\ConfigurableSourcePluginBase;
+use Drupal\l10n_server\ConfigurableConnectorInterface;
+use Drupal\l10n_server\ConfigurableSourceInterface;
 use Drupal\l10n_server\ConnectorInterface;
 use Drupal\l10n_server\ConnectorManager;
-use Drupal\l10n_server\SourceInterface;
 use Drupal\l10n_server\SourceManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use function assert, array_values, in_array, array_combine, array_filter;
+use function array_diff;
+use function array_intersect_key;
+use function assert, array_values, array_combine, array_filter;
 
 /**
  * Defines a form that configures devel settings.
@@ -71,7 +73,7 @@ final class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state): array {
 
     $header = [
-      'connector' => ['data' => $this->t('Connector'), 'colspan' => 2],
+      'connector' => ['data' => $this->t('Connector'), 'colspan' => 1],
       'operations' => $this->t('Operations'),
     ];
 
@@ -81,38 +83,28 @@ final class SettingsForm extends ConfigFormBase {
     $connectors = $this->connectorManager->getDefinitions();
     $options = [];
     foreach ($connectors as $id => $definition) {
-      if (!$this->connectorManager->hasDefinition($id)) {
-        continue;
-      }
       $connector = $this->connectorManager->createInstance($id);
       assert($connector instanceof ConnectorInterface);
       $options[$connector->getPluginId()] = [
-        'connector' => [$connector->getLabel(), $connector->getDescription()],
+        'connector' => [$this->t('@title from @source', array('@title' => $connector->getLabel(), '@source' => $connector->getSourceInstance()->getLabel()))],
       ];
-      if (!in_array($connector->getPluginId(), $enabled_connectors)) {
+      if (!$connector->isEnabled()) {
         continue;
       }
       $links = NULL;
       $options[$connector->getPluginId()]['operations'] = ['data' => ['#type' => 'operations', '#links' => $links]];
-      foreach ($connector->getSources() as $source_plugin_id) {
-        if (!$this->sourceManager->hasDefinition($source_plugin_id)) {
-          continue;
-        }
-        $source = $this->sourceManager->createInstance($source_plugin_id);
-        assert($source instanceof SourceInterface);
-        if ($source instanceof ConfigurableSourcePluginBase) {
-          /** SourceInterface&ConfigurableInterface $source */
-          $links['configure'] = [
-            'title' => $this->t('Configure'),
-            'url' => Url::fromRoute('l10n_server.connector.configure', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
-          ];
-        }
-        if ($source->supportScan()) {
-          $links['scan'] = [
-            'title' => $this->t('Scan'),
-            'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId(), 'source' => $source->getPluginId()]),
-          ];
-        }
+      $source = $connector->getSourceInstance();
+      if ($source instanceof ConfigurableSourceInterface || $connector instanceof ConfigurableConnectorInterface) {
+        $links['configure'] = [
+          'title' => $this->t('Configure'),
+          'url' => Url::fromRoute('l10n_server.connector.configure', ['connector' => $connector->getPluginId()]),
+        ];
+      }
+      if ($source->supportScan()) {
+        $links['scan'] = [
+          'title' => $this->t('Scan'),
+          'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId()]),
+        ];
       }
       if ($links) {
         $options[$connector->getPluginId()]['operations']['data']['#links'] = $links;
@@ -136,9 +128,12 @@ final class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $submitted_values = array_values(array_filter($form_state->getValue('connectors', [])));
+    $origin = $form_state->getValue('connectors', []);
+    $enabled = array_values(array_filter($origin));
+    $disabled = array_keys(array_diff($origin, array_filter($origin)));
+    $this->connectorManager->removePluginConfigurationMultiple($disabled);
     $this->config('l10n_server.settings')
-      ->set('enabled_connectors', $submitted_values)
+      ->set('enabled_connectors', $enabled)
       ->save();
   }
 

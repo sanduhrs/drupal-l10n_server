@@ -4,21 +4,50 @@ declare(strict_types=1);
 namespace Drupal\l10n_server;
 
 use Drupal\Component\Utility\NestedArray;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginWithFormsTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use function array_intersect_key;
 
-abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements ConfigurableSourceInterface {
+abstract class ConfigurableConnectorPluginBase extends ConnectorPluginBase implements ConfigurableConnectorInterface {
 
   use PluginWithFormsTrait;
+
+  /**
+   * The l10n_server connector service.
+   *
+   * @var \Drupal\l10n_server\ConnectorManager
+   */
+  protected $connectorManager;
+
+  /**
+   * @var \Drupal\l10n_server\ConnectorInterface
+   */
+  protected $connector;
+
+  /**
+   * The configuration factory service.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $configFactory;
+
+  /**
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   */
+  public function setConfigFactory(ConfigFactoryInterface $configFactory): void {
+    $this->configFactory = $configFactory;
+  }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->setConfigFactory($container->get('config.factory'));
     $instance->setConfiguration($configuration);
+
     return $instance;
   }
 

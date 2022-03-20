@@ -38,7 +38,7 @@ class L10NServerSourcePluginParamConverter implements ParamConverterInterface {
   public function convert($value, $definition, $name, array $defaults) {
     if (!empty($value) && $this->sourceManager->hasDefinition($value)) {
       /** @var \Drupal\l10n_server\SourceInterface $instance */
-      $instance = $this->sourceManager->createInstance($value, $this->sourceManager->getPluginConfiguration($value));
+      $instance = $this->sourceManager->createInstance($value);
       if ($instance instanceof ConfigurableSourcePluginBase && !empty($defaults['connector']) && $defaults['connector'] instanceof ConnectorInterface) {
         $instance->setConnector($defaults['connector']);
       }
