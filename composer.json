@@ -1,0 +1,10 @@
+{
+  "name": "drupal/l10n_server",
+  "description": "Base backend module for localization server",
+  "type": "drupal-module",
+  "homepage": "http://drupal.org/project/l10n_server",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "drupal/core": "^9.0 || ^10.0"
+  }
+}
