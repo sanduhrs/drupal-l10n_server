@@ -1,7 +1,7 @@
-name: 'Localization server connector for Drupal'
+name: 'Localization Server connector for Drupal'
 type: module
 description: 'Extracts translatable strings from Drupal packages.'
-package: 'Localization server connectors'
+package: 'Localization Server Connectors'
 core_version_requirement: ^9
 dependencies:
   - l10n_server:l10n_server
