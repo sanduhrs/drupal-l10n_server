@@ -63,6 +63,75 @@ INSTALLATION
   for Gettext files" which should enable all dependencies. Enable the connector
   in the administration interface and set up a project with a .po file.
 
+ARCHITECTURE
+--------------------------------------------------------------------------------
+
+### Localization Server
+
+1. The l10n_server base module provides a database backend to store projects,
+   releases and the translatable strings found in them. The data model is as
+   follows:
+
+    project =(1:n)> release =(1:n)> file =(1:n)> line =(1:n)> string =(1:n)> translation
+
+   Which means that granular information is available about where strings are
+   used. Extraction warning reports also have their place connected to releases.
+   All these tables are only provided by this module though, and not filled
+   up with actual data. Connector modules are expected to provide the project,
+   release, file, line and string data, based on their own discovery mechanisms.
+
+   This design allows the module suite to be used in corporate settings, where
+   in-house translation teams need their own project releases translated, and
+   they have no connection to drupal.org projects.
+
+2. The localization community module provides a user interface on top of the
+   database that allows users to enter suggestions and translations as well
+   as moderate submissions.
+
+3. The community server is designed to be able to work with Organic Groups.
+   Each language can have one organic group on the site, which provides a
+   discusson space for group members *and* makes it possible to hand out
+   permissions (ie. differentiate between group managers and members if a
+   group needs this level of permission).
+
+   Group managers can choose a permission model of either open or controlled.
+   A controlled model allows members of the group to suggest translations,
+   while approval rights are limited to group admins. An open model allows
+   all members to suggest and approve as well.
+
+4. Translations can be approached from the list of language groups or the
+   list of projects. On the second level, detailed summaries related to the
+   selected language or project are shown as well as other stats.
+   These two interfaces allow people to get different overviews (summaries)
+   of the translations hosted on the site, as well as make it possible to
+   import and export translations based on languages or projects.
+
+5. Translation can either happen on the site (which only requires a user
+   account with privileges to translate) or off-site. The online interface
+   allows translators to provide suggestions for strings.
+
+6. Off-site translation support is possible with exporting Gettext PO(T)
+   files of a specific project release. Translators can work with offline
+   translation tools and import the modified PO files later. Exports can be
+   generated in various formats.
+
+7. Extracted strings are stored related to projects, releases, files
+   and lines. So if a string appears multiple times in the same file
+   but on different lines, these are stored as separate relations.
+   Strings are only stored once, relations are made between lines and
+   strings. Source strings also store optinal context information.
+
+### Localization Client
+
+Unfortunately Localization Client is not yet ported to Drupal 8/9 in its full
+feature set yet. However, when/if it is ported, it would provide a user
+interface to update local translations as well as submit translations remotely
+to drupal.org if the localization sharing setting is enabled. Once sharing is
+set up, to keep attribution intact, per-user API keys should also be set up.
+Each user should request and set their own API key via their user (My account)
+page on the client site. The l10n_remote module supports this on the server
+side.
+
 CONTRIBUTORS
 --------------------------------------------------------------------------------
 
