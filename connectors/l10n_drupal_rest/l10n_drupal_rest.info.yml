@@ -6,4 +6,4 @@ core_version_requirement: ^9
 dependencies:
   - l10n_server:l10n_server
   - l10n_drupal:l10n_drupal
-  - potx:potx
+  #- potx:potx
