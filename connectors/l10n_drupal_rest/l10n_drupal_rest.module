@@ -7,6 +7,8 @@
 
 /**
  * Constants.
+ *
+ * @todo move to source plugin?
  */
 const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
 
@@ -26,39 +28,39 @@ function l10n_drupal_rest_menu() {
 }
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
+ *
+ * @todo queue API?
  */
 function l10n_drupal_rest_cron() {
-  return;
+  $connector = \Drupal::service('plugin.manager.l10n_server.connector')
+    ->createInstance('drupal_rest', []);
+  $source = \Drupal::service('plugin.manager.l10n_server.source')
+    ->createInstance('restapi', []);
 
-  $connector_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_enabled', FALSE);
-  $cron_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_cron', FALSE);
-  if ($connector_enabled && $cron_enabled) {
+  if ($connector->isEnabled() && $source->isCronEnabled()) {
     $success = $offset = $failed = 0;
-    $goal = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_limit', 1);
+    $goal = $source->getScanLimit();
 
-    module_load_include('inc', 'l10n_drupal_rest', 'l10n_drupal_rest.connector');
-    module_load_include('inc', 'l10n_drupal_rest', 'l10n_drupal_rest.rest');
-    l10n_drupal_rest_refresh_project_list();
+    $connector->refreshProjectList($source);
 
     do {
       // Pick the oldest releases we did not parse yet.
-      $query = db_select('l10n_server_project', 'p');
-      $query->innerJoin('l10n_server_release', 'r', 'p.pid = r.pid');
-      $releases = $query->fields('r')
-                        ->condition('p.connector_module', array(
-                          'l10n_project_drupalorg',
-                          'l10n_drupal_rest_restapi'
-                        ))
-                        ->condition('p.status', 1)
-                        ->condition('r.download_link', '', '!=')
-                        ->condition('r.last_parsed', 0)
-                        ->orderBy('r.file_date')
-                        ->range($offset, $goal - $success)
-                        ->execute()
-                        ->fetchAllAssoc('rid');
-      foreach($releases as $release) {
-        if (l10n_drupal_drupalorg_parse_release($release)) {
+      $release_ids = \Drupal::entityQuery('l10n_server_release')
+        ->condition('pid.entity.connector_module', ['drupal', 'drupal_rest'])
+        ->condition('pid.entity.enabled', 1)
+        ->condition('download_link', '', '<>')
+        ->condition('last_parsed', 0)
+        ->sort('file_date')
+        ->range($offset, $goal - $success)
+        ->execute();
+
+      $releases = \Drupal::entityTypeManager()
+        ->getStorage('l10n_server_release')
+        ->loadMultiple($release_ids);
+
+      foreach ($releases as $release) {
+        if ($connector->drupalOrgParseRelease($release)) {
           $success++;
         }
         else {
@@ -68,10 +70,10 @@ function l10n_drupal_rest_cron() {
       }
     } while ($success < $goal && count($releases) > 0);
 
-    watchdog('l10n_drupal', 'Parsed %success releases successfully, %fails failed parsing.', array(
+    \Drupal::logger('l10n_drupal')->notice('Parsed @success releases successfully, @fails failed parsing.', [
       '%success' => $success,
       '%fails'   => $failed,
-    ), WATCHDOG_INFO);
+    ]);
   }
 
 }
