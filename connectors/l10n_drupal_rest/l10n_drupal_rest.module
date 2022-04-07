@@ -29,6 +29,8 @@ function l10n_drupal_rest_menu() {
  * Implementation of hook_cron().
  */
 function l10n_drupal_rest_cron() {
+  return;
+
   $connector_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_enabled', FALSE);
   $cron_enabled = variable_get('l10n_server_connector_l10n_drupal_rest_restapi_cron', FALSE);
   if ($connector_enabled && $cron_enabled) {
