@@ -6,6 +6,8 @@ namespace Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector;
 
 use Drupal\l10n_server\Annotation\Connector;
 use Drupal\l10n_server\ConnectorPluginBase;
+use Drush\Drush;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * A plugin to use source code of drupal.org package.
@@ -21,10 +23,36 @@ use Drupal\l10n_server\ConnectorPluginBase;
  */
 class DrupalRest extends ConnectorPluginBase {
 
+  /**
+   * @var \Drupal\Core\File\FileSystem
+   */
+  private $fileSystem;
+
+  /**
+   * @var \GuzzleHttp\Client
+   */
+  private $httpClient;
+
+  /**
+   * @var \Drupal\Core\Database\Connection
+   */
+  private $databaseConnection;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->fileSystem = $container->get('file_system');
+    $instance->httpClient = $container->get('http_client');
+    $instance->databaseConnection = $container->get('database');
+    return $instance;
+  }
+
   // @todo: type $release (query result object).
   public function drupalOrgParseRelease($release) {
     $filename = basename($release->download_link);
-    $package_file = file_directory_temp() . '/' . $filename;
+    $package_file = $this->fileSystem->getTempDirectory() . '/' . $filename;
 
     \Drupal::logger('l10n_drupal_rest')->notice('Retrieving @filename for parsing.', ['@filename' => $filename]);
 
@@ -42,21 +70,16 @@ class DrupalRest extends ConnectorPluginBase {
     }
 
     // Download the tar.gz file from Drupal.org and save it.
-    if (!(($contents = drupal_http_request($release->download_link)) && ($contents->code == 200) && file_put_contents($package_file, $contents->data))) {
-      \Drupal::logger('l10n_drupal_rest')>error('Unable to download and save %download_link file (%error).', [
+    if (!(($contents = $this->httpClient->get($release->download_link)) && ($contents->code == 200) && file_put_contents($package_file, $contents->data))) {
+      \Drupal::logger('l10n_drupal_rest')->error('Unable to download and save %download_link file (%error).', [
         '%download_link' => $release->download_link,
         '%error' => $contents->code . ' ' . $contents->error,
       ]);
       return FALSE;
     }
 
-    // Potx module is already a dependency.
-    module_load_include('inc', 'potx');
-    module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
-    module_load_include('inc', 'l10n_drupal', 'l10n_drupal.potx');
-    module_load_include('inc', 'l10n_packager');
-
     // Set up status messages if not in automated mode.
+    //@todo: Check this call is still operational.
     potx_status('set', POTX_STATUS_MESSAGE);
 
     // Generate temp folder to extract the tarball.
@@ -69,7 +92,7 @@ class DrupalRest extends ConnectorPluginBase {
     }
 
     // Extract the local file to the temporary directory.
-    if (!drush_shell_exec('tar -xvvzf %s -C %s', $package_file, $temp_path)) {
+    if (!Drush::process('tar -xvvzf %s -C %s', $package_file, $temp_path)) {
       \Drupal::logger('l10n_drupal_rest')->error('Failed to extract %file.', ['%file' => $package_file]);
       return FALSE;
     }
@@ -78,6 +101,7 @@ class DrupalRest extends ConnectorPluginBase {
 
     // Get all source files and save strings with our callback for this release.
     $release->uri = explode('-', $filename)[0];
+    //@todo: Check this call is still operational.
     l10n_packager_release_set_branch($release);
     if ($release->core === 'all') {
       $version = POTX_API_8;
@@ -97,7 +121,7 @@ class DrupalRest extends ConnectorPluginBase {
     $sid_count = l10n_drupal_added_string_counter();
 
     // Delete directory now that parsing is done.
-    drush_shell_exec('rm -rf %s', $temp_path);
+    Drush::process('rm -rf %s', $temp_path);
     unlink($package_file);
 
     // Record changes of the scanned project in the database.
@@ -108,7 +132,7 @@ class DrupalRest extends ConnectorPluginBase {
     ]);
 
     // Parsed this releases files.
-    db_update('l10n_server_release')
+    $this->databaseConnection->update('l10n_server_release')
       ->fields([
         'sid_count' => $sid_count,
         'last_parsed' => REQUEST_TIME,
@@ -120,11 +144,11 @@ class DrupalRest extends ConnectorPluginBase {
     // files, we are not interested in the fine details, the file names are in
     // the error messages as text. We assume no other messages are added while
     // importing, so we can safely use drupal_get_message() to grab our errors.
-    db_delete('l10n_server_error')->condition('rid', $release->rid)->execute();
-    $messages = drupal_get_messages('error');
+    $this->databaseConnection->delete('l10n_server_error')->condition('rid', $release->rid)->execute();
+    $messages = $this->messenger->messagesByType('error');
     if (isset($messages['error']) && is_array($messages['error'])) {
       foreach ($messages['error'] as $error_message) {
-        db_insert('l10n_server_error')
+        $this->databaseConnection->insert('l10n_server_error')
           ->fields([
             'rid' => $release->rid,
             'value' => $error_message,
@@ -134,7 +158,8 @@ class DrupalRest extends ConnectorPluginBase {
     }
 
     // Clear stats cache, so new data shows up.
-    cache_clear_all('l10n:stats', 'cache');
+    //@todo: Implement a better caching strategy (tags).
+    //cache_clear_all('l10n:stats', 'cache');
 
     return TRUE;
   }
