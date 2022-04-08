@@ -1,0 +1,6 @@
+services:
+  ardennes_api.commands:
+    class: \Drupal\l10n_packager\Commands\packagerCommands
+    tags:
+      - { name: drush.command }
+    arguments: ['@entity_type.manager', '@logger.factory']

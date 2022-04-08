@@ -5,15 +5,6 @@ namespace Drupal\l10n_packager\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-<<<<<<< Updated upstream
-use Drupal\Core\Url;
-use Drupal\l10n_server\ConfigurableConnectorInterface;
-use Drupal\l10n_server\ConfigurableSourceInterface;
-use Drupal\l10n_server\ConnectorInterface;
-use function array_diff;
-use function assert, array_values, array_combine, array_filter;
-=======
->>>>>>> Stashed changes
 
 /**
  * Defines a form that configures l10n_packager settings.
@@ -42,56 +33,6 @@ final class SettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state): array {
 
     $settings = $this->config('l10n_server.settings');
-
-
-//    $header = [
-//      'connector' => ['data' => $this->t('Connector'), 'colspan' => 1],
-//      'operations' => $this->t('Operations'),
-//    ];
-
-//    $settings = $this->config('l10n_server.settings');
-//    $enabled_connectors = $settings->get('enabled_connectors') ?? [];
-//
-//    $connectors = $this->connectorManager->getDefinitions();
-//    $options = [];
-//    foreach ($connectors as $id => $definition) {
-//      $connector = $this->connectorManager->createInstance($id);
-//      assert($connector instanceof ConnectorInterface);
-//      $options[$connector->getPluginId()] = [
-//        'connector' => [$this->t('@title from @source', array('@title' => $connector->getLabel(), '@source' => $connector->getSourceInstance()->getLabel()))],
-//      ];
-//      if (!$connector->isEnabled()) {
-//        continue;
-//      }
-//      $links = NULL;
-//      $options[$connector->getPluginId()]['operations'] = ['data' => ['#type' => 'operations', '#links' => $links]];
-//      $source = $connector->getSourceInstance();
-//      if ($source instanceof ConfigurableSourceInterface || $connector instanceof ConfigurableConnectorInterface) {
-//        $links['configure'] = [
-//          'title' => $this->t('Configure'),
-//          'url' => Url::fromRoute('l10n_server.connector.configure', ['connector' => $connector->getPluginId()]),
-//        ];
-//      }
-//      if ($source->supportScan()) {
-//        $links['scan'] = [
-//          'title' => $this->t('Scan'),
-//          'url' => Url::fromRoute('l10n_server.connector.scan', ['connector' => $connector->getPluginId()]),
-//        ];
-//      }
-//      if ($links) {
-//        $options[$connector->getPluginId()]['operations']['data']['#links'] = $links;
-//      }
-//      else {
-//        $options[$connector->getPluginId()]['operations'] = '';
-//      }
-//    }
-//    $form['connectors'] = array(
-//      '#type' => 'tableselect',
-//      '#header' => $header,
-//      '#options' => $options,
-//      '#default_value' => array_combine($enabled_connectors, $enabled_connectors),
-//      '#empty' => $this->t('No localization server connectors found.'),
-//    );
 
     $cron = $settings->get('l10n_packager_cron') ?? 0;
     $form['l10n_packager_cron'] = array(
@@ -132,7 +73,7 @@ final class SettingsForm extends ConfigFormBase {
     );
 
     $options = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-    $release_limit = $settings->get('l10n_packager_release_limit') ?? 10;
+    $release_limit = $settings->get('l10n_packager_release_limit') ?? L10N_PACKAGER_RELEASE_LIMIT_DEFAULT;
     $form['l10n_packager_release_limit'] = array(
       '#title' => t('Number of releases to check at once'),
       '#description' => t('The number of releases to check on a manual or cron run.'),

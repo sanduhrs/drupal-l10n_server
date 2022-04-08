@@ -31,6 +31,11 @@ const L10N_PACKAGER_FILEPATH = '%core/%project/%project-%release.%language.po';
 const L10N_PACKAGER_API_VERSION = '1.1';
 
 /**
+ * Packager release limit default value.
+ */
+const L10N_PACKAGER_RELEASE_LIMIT_DEFAULT = 10;
+
+/**
  * Implements hook_menu().
  */
 function l10n_packager_menu() {
@@ -303,7 +308,7 @@ function l10n_packager_build_download_links($uri) {
     $url = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
     $list = array();
     foreach ($paths as $path => $dummy) {
-      list($core, $name) = explode('/', $path);
+      [$core, $name] = explode('/', $path);
       $list[] = array('data' => array(
                   '#type' => 'link',
                   '#title' => t('Translations for @core_version', array('@core_version' => $core)),
