@@ -55,63 +55,64 @@ function l10n_packager_explore_downloads() {
   return $output;
 }
 
-/**
- * Form callback. Allow user to pick project to show downloads for.
- */
-function l10n_packager_download_project_form($form, &$form_state, $projects) {
-  if (empty($form_state['values'])) {
-    $form_state['values'] = array(
-      // @todo: bad, bad hardcoding of Drupal as project.
-      'project' => (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : 'Drupal core'),
-    );
-  }
-  $form['project'] = array(
-    '#default_value' => $form_state['values']['project'],
-    '#title' => t('Pick a project'),
-  );
-  if (($count = count($projects)) <= 30) {
-    // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
-    $form['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
-    $form['project']['#options'] = array();
-    foreach ($projects as $project) {
-      // Title used to conform to the autocomplete behavior.
-      $form['project']['#options'][$project->title] = $project->title;
-    }
-  }
-  else {
-    // Autocomplete field for more then 30 projects.
-    $form['project'] += array(
-      '#type' => 'textfield',
-      '#autocomplete_path' => 'translate/project-autocomplete',
-    );
-  }
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Show downloads'),
-  );
-  return $form;
-}
-
-/**
- * Form validation.
- */
-function l10n_packager_download_project_form_validate($form, &$form_state) {
-  if (!empty($form_state['values']['project'])) {
-    if ($project = l10n_server_get_projects(array('uri' => l10n_community_project_uri_by_title($form_state['values']['project'])))) {
-      $form_state['values']['uri'] = $project->uri;
-    }
-    else {
-      form_set_error('project', t('Invalid project name.'));
-    }
-  }
-}
-
-/**
- * Form submission.
- */
-function l10n_packager_download_project_form_submit($form, $form_state) {
-  drupal_goto('translate/downloads', array('query' => array('project' =>  $form_state['values']['uri'])));
-}
+/** MOVED TO DownloadTranslationForm. */
+///**
+// * Form callback. Allow user to pick project to show downloads for.
+// */
+//function l10n_packager_download_project_form($form, &$form_state, $projects) {
+//  if (empty($form_state['values'])) {
+//    $form_state['values'] = array(
+//      // @todo: bad, bad hardcoding of Drupal as project.
+//      'project' => (isset($_GET['project']) && isset($projects[$_GET['project']]) ? $projects[$_GET['project']]->title : 'Drupal core'),
+//    );
+//  }
+//  $form['project'] = array(
+//    '#default_value' => $form_state['values']['project'],
+//    '#title' => t('Pick a project'),
+//  );
+//  if (($count = count($projects)) <= 30) {
+//    // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
+//    $form['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+//    $form['project']['#options'] = array();
+//    foreach ($projects as $project) {
+//      // Title used to conform to the autocomplete behavior.
+//      $form['project']['#options'][$project->title] = $project->title;
+//    }
+//  }
+//  else {
+//    // Autocomplete field for more then 30 projects.
+//    $form['project'] += array(
+//      '#type' => 'textfield',
+//      '#autocomplete_path' => 'translate/project-autocomplete',
+//    );
+//  }
+//  $form['submit'] = array(
+//    '#type' => 'submit',
+//    '#value' => t('Show downloads'),
+//  );
+//  return $form;
+//}
+//
+///**
+// * Form validation.
+// */
+//function l10n_packager_download_project_form_validate($form, &$form_state) {
+//  if (!empty($form_state['values']['project'])) {
+//    if ($project = l10n_server_get_projects(array('uri' => l10n_community_project_uri_by_title($form_state['values']['project'])))) {
+//      $form_state['values']['uri'] = $project->uri;
+//    }
+//    else {
+//      form_set_error('project', t('Invalid project name.'));
+//    }
+//  }
+//}
+//
+///**
+// * Form submission.
+// */
+//function l10n_packager_download_project_form_submit($form, $form_state) {
+//  drupal_goto('translate/downloads', array('query' => array('project' =>  $form_state['values']['uri'])));
+//}
 
 /**
  * Generate list of file downloads for given project.
