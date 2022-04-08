@@ -50,6 +50,9 @@ class DrupalRest extends ConnectorPluginBase {
    */
   private $state;
 
+  /** @var \Drupal\Core\Entity\EntityTypeManagerInterface */
+  private $entityTypeManager;
+
   /**
    * @var \Drupal\Core\Logger\LoggerChannelInterface
    */
@@ -74,6 +77,7 @@ class DrupalRest extends ConnectorPluginBase {
     $instance->httpClient = $container->get('http_client');
     $instance->databaseConnection = $container->get('database');
     $instance->state = $container->get('state');
+    $instance->entityTypeManager = $container->get('entity_type.manager');
     $instance->logger = $container->get('logger.factory')->get('l10n_drupal_rest');
     return $instance;
   }
@@ -291,98 +295,88 @@ class DrupalRest extends ConnectorPluginBase {
       return;
     }
 
-    //    // Record all non-existing projects in our local database.
-    //    foreach ($projects as $project_name => $project_title) {
-    //      if ($existing_project = db_select('l10n_server_project', 'p')
-    //        ->fields('p')
-    //        ->condition('uri', $project_name)
-    //        ->execute()
-    //        ->fetchAssoc()
-    //      ) {
-    //        // Check that the title is correct
-    //        if ($existing_project['title'] != $project_title) {
-    //          db_update('l10n_server_project')
-    //            ->fields(array('title' => $project_title))
-    //            ->condition('uri', $project_name)
-    //            ->execute();
-    //          watchdog($connector_name, 'Project %n renamed to %t.', array(
-    //            '%t' => $project_title,
-    //            '%n' => $project_name,
-    //          ));
-    //        }
-    //      }
-    //      else {
-    //        $project_count++;
-    //        db_insert('l10n_server_project')->fields(array(
-    //          'uri'              => $project_name,
-    //          'title'            => $project_title,
-    //          'last_parsed'      => REQUEST_TIME,
-    //          'home_link'        => 'http://drupal.org/project/' . $project_name,
-    //          'connector_module' => $connector_name,
-    //          'status'           => 1,
-    //        ))->execute();
-    //        watchdog($connector_name, 'Project %t (%n) added.', array(
-    //          '%t' => $project_title,
-    //          '%n' => $project_name,
-    //        ));
-    //      }
-    //    }
-    //
-    //    // Record all releases in our local database.
-    //    foreach ($releases as $release) {
-    //      $download_link = "http://ftp.drupal.org/files/projects/{$release['machine_name']}-{$release['version']}.tar.gz";
-    //      if ($existing_release = db_select('l10n_server_release', 'r')
-    //        ->fields('r')
-    //        ->condition('download_link', $download_link)
-    //        ->execute()
-    //        ->fetchAssoc()
-    //      ) {
-    //        // @TODO What happens to unpublished releases? drop data outright?
-    //      }
-    //      else {
-    //        $release_count++;
-    //        // Get the project pid
-    //        $pid = db_select('l10n_server_project', 'p')
-    //          ->fields('p', array('pid'))
-    //          ->condition('uri', $release['machine_name'])
-    //          ->execute()
-    //          ->fetchField();
-    //
-    //        // @TODO What about filehash?
-    //        $filehash = '';
-    //        // New published release, not recorded before.
-    //        db_insert('l10n_server_release')->fields(array(
-    //          'pid'           => $pid,
-    //          'title'         => $release['version'],
-    //          'download_link' => $download_link,
-    //          'file_date'     => $release['created'],
-    //          'file_hash'     => $filehash,
-    //          'last_parsed'   => 0,
-    //          'weight'        => 0,
-    //        ))->execute();
-    //        watchdog($connector_name, 'Release %t from project %n added.', array(
-    //          '%t' => $release['version'],
-    //          '%n' => $release['machine_name'],
-    //        ));
-    //        // Update last sync date with the date of this release if later.
-    //        $last_sync = max($last_sync, $release['created']);
-    //      }
-    //    }
-    //
-    //    // Report some informations.
-    //    if ($release_count || $project_count) {
-    //      watchdog($connector_name, 'Fetched info about %p projects and %r releases.',
-    //        array(
-    //          '%p' => $project_count,
-    //          '%r' => $release_count,
-    //        ));
-    //    }
-    //    else {
-    //      watchdog($connector_name, 'No new info about projects and releases.');
-    //    }
-    //
-    //    // Set last sync time to limit number of releases to look at next time.
-    //    $this->state->set(static::LAST_SYNC, $last_sync);
+    // Record all non-existing projects in our local database.
+    $project_storage = $this->entityTypeManager->getStorage('l10n_server_project');
+    foreach ($projects as $project_name => $project_title) {
+      // Check if project exists.
+      if ($existing_projects = $project_storage->getQuery()->condition('uri', $project_name)->execute()) {
+        /** @var \Drupal\l10n_server\Entity\Project $existing_project */
+        $existing_project = $project_storage->load(reset($existing_projects));
+        // Check that the title is correct, if not update it.
+        if ($existing_project->get('title')->value !== $project_title) {
+          $existing_project->set('title', $project_title)->save();
+          $this->logger->info('Project %n renamed to %t.', [
+            '%t' => $project_title,
+            '%n' => $project_name,
+          ]);
+        }
+      }
+      else {
+        $project_count++;
+        $project_storage->create(
+          [
+            'uri' => $project_name,
+            'title' => $project_title,
+            'last_parsed' =>  $_SERVER['REQUEST_TIME'],
+            // @todo home_link (D7) was changed to homepage (D9) check usage.
+            'homepage' => 'http://drupal.org/project/' . $project_name,
+            'connector_module' => $connector_name,
+            'status' => 1,
+          ]
+        )->save();
+        $this->logger->notice('Project %t (%n) added.', array(
+          '%t' => $project_title,
+          '%n' => $project_name,
+        ));
+      }
+    }
+
+    // Record all releases in our local database.
+    $release_storage = $this->entityTypeManager->getStorage('l10n_server_release');
+    foreach ($releases as $release) {
+      $download_link = "http://ftp.drupal.org/files/projects/{$release['machine_name']}-{$release['version']}.tar.gz";
+      if ($release_storage->getQuery()->condition('download_link', $download_link)->execute()) {
+        // @todo (D7) What happens to unpublished releases? drop data outright?
+      }
+      else {
+        $release_count++;
+        // Get the project pid
+        $projects = $project_storage->getQuery()->condition('uri', $release['machine_name'])->execute();
+        $pid = reset($projects);
+        // @todo (d7) What about filehash?
+        $filehash = '';
+        // New published release, not recorded before.
+        $release_storage->create([
+          'pid'           => $pid,
+          'title'         => $release['version'],
+          'download_link' => $download_link,
+          'file_date'     => $release['created'],
+          'file_hash'     => $filehash,
+          'last_parsed'   => 0,
+          'weight'        => 0,
+        ])->save();
+        $this->logger->notice('Release %t from project %n added.', [
+          '%t' => $release['version'],
+          '%n' => $release['machine_name'],
+        ]);
+        // Update last sync date with the date of this release if later.
+        $last_sync = max($last_sync, $release['created']);
+      }
+    }
+
+    // Report some informations.
+    if ($release_count || $project_count) {
+      $this->logger->notice('Fetched info about %p projects and %r releases.', [
+        '%p' => $project_count,
+        '%r' => $release_count,
+      ]);
+    }
+    else {
+      $this->logger->notice('No new info about projects and releases.');
+    }
+
+    // Set last sync time to limit number of releases to look at next time.
+    $this->state->set(static::LAST_SYNC, $last_sync);
   }
 
   /**
