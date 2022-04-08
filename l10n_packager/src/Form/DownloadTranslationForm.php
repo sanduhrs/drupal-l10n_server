@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Drupal\l10n_packager\Form;
+
 use Drupal\Core\Form\FormBase;
 
 final class DownloadTranslationForm extends FormBase {

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Drupal\l10n_packager\Plugin\Block;
+
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Path\CurrentPathStack;
 use Psr\Container\ContainerInterface;
