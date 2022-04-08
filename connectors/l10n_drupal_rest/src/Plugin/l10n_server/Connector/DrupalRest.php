@@ -58,8 +58,18 @@ class DrupalRest extends ConnectorPluginBase {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+  public static function create(
+    ContainerInterface $container,
+    array $configuration,
+    $plugin_id,
+    $plugin_definition
+  ) {
+    $instance = parent::create(
+      $container,
+      $configuration,
+      $plugin_id,
+      $plugin_definition
+    );
     $instance->fileSystem = $container->get('file_system');
     $instance->httpClient = $container->get('http_client');
     $instance->databaseConnection = $container->get('database');
@@ -69,15 +79,25 @@ class DrupalRest extends ConnectorPluginBase {
   }
 
   // @todo: type $release (query result object).
-  public function drupalOrgParseRelease($release) {
+
+  /**
+   * @throws \Exception
+   */
+  public function drupalOrgParseRelease($release): bool {
     $filename = basename($release->download_link);
     $package_file = $this->fileSystem->getTempDirectory() . '/' . $filename;
 
-    \Drupal::logger('l10n_drupal_rest')->notice('Retrieving @filename for parsing.', ['@filename' => $filename]);
+    \Drupal::logger('l10n_drupal_rest')->notice(
+      'Retrieving @filename for parsing.',
+      ['@filename' => $filename]
+    );
 
     // Check filename for a limited set of allowed chars.
     if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
-      \Drupal::logger('l10n_drupal_rest')->error('Filename %file contains malicious characters.', ['%file' => $package_file]);
+      \Drupal::logger('l10n_drupal_rest')->error(
+        'Filename %file contains malicious characters.',
+        ['%file' => $package_file]
+      );
       return FALSE;
     }
 
@@ -85,15 +105,24 @@ class DrupalRest extends ConnectorPluginBase {
     // so remove file.
     if (file_exists($package_file)) {
       unlink($package_file);
-      \Drupal::logger('l10n_drupal_rest')->warning('File %file already exists, deleting.', ['%file' => $package_file]);
+      \Drupal::logger('l10n_drupal_rest')->warning(
+        'File %file already exists, deleting.',
+        ['%file' => $package_file]
+      );
     }
 
     // Download the tar.gz file from Drupal.org and save it.
-    if (!(($contents = $this->httpClient->get($release->download_link)) && ($contents->code == 200) && file_put_contents($package_file, $contents->data))) {
-      \Drupal::logger('l10n_drupal_rest')->error('Unable to download and save %download_link file (%error).', [
-        '%download_link' => $release->download_link,
-        '%error' => $contents->code . ' ' . $contents->error,
-      ]);
+    if (!(($contents = $this->httpClient->get($release->download_link))
+      && ($contents->code === 200)
+      && file_put_contents($package_file, $contents->data))) {
+
+      \Drupal::logger('l10n_drupal_rest')->error(
+        'Unable to download and save %download_link file (%error).',
+        [
+          '%download_link' => $release->download_link,
+          '%error' => $contents->code . ' ' . $contents->error,
+        ]
+      );
       return FALSE;
     }
 
@@ -106,17 +135,26 @@ class DrupalRest extends ConnectorPluginBase {
 
     // Nothing to do if the file is not there.
     if (!file_exists($package_file)) {
-      \Drupal::logger('l10n_drupal_rest')->error('Package to parse (%file) does not exist.', ['%file' => $package_file]);
+      \Drupal::logger('l10n_drupal_rest')->error(
+        'Package to parse (%file) does not exist.',
+        ['%file' => $package_file]
+      );
       return FALSE;
     }
 
     // Extract the local file to the temporary directory.
-    if (!Drush::process('tar -xvvzf %s -C %s', $package_file, $temp_path)) {
-      \Drupal::logger('l10n_drupal_rest')->error('Failed to extract %file.', ['%file' => $package_file]);
+    if (!Drush::process(['tar', '-xvvzf', $package_file, '-C', $temp_path])) {
+      \Drupal::logger('l10n_drupal_rest')->error(
+        'Failed to extract %file.',
+        ['%file' => $package_file]
+      );
       return FALSE;
     }
 
-    \Drupal::logger('l10n_drupal_rest')->notice('Parsing extracted @filename for strings.', ['@filename' => $filename]);
+    \Drupal::logger('l10n_drupal_rest')->notice(
+      'Parsing extracted @filename for strings.',
+      ['@filename' => $filename]
+    );
 
     // Get all source files and save strings with our callback for this release.
     $release->uri = explode('-', $filename)[0];
@@ -133,28 +171,37 @@ class DrupalRest extends ConnectorPluginBase {
     l10n_drupal_save_file([$release->pid, $release->rid]);
     l10n_drupal_added_string_counter(NULL, TRUE);
     foreach ($files as $name) {
-      _potx_process_file($name, strlen($temp_path) + 1, 'l10n_drupal_save_string', 'l10n_drupal_save_file', $version);
+      _potx_process_file(
+        $name,
+        strlen($temp_path) + 1,
+        'l10n_drupal_save_string',
+        'l10n_drupal_save_file',
+        $version
+      );
     }
     potx_finish_processing('l10n_drupal_save_string', $version);
 
     $sid_count = l10n_drupal_added_string_counter();
 
     // Delete directory now that parsing is done.
-    Drush::process('rm -rf %s', $temp_path);
+    Drush::process(['rm', '-rf', $temp_path]);
     unlink($package_file);
 
     // Record changes of the scanned project in the database.
-    \Drupal::logger('l10n_drupal_rest')->notice('@filename (@files files, @sids strings) scanned.', [
-      '@filename' => $filename,
-      '@files' => count($files),
-      '@sids' => $sid_count,
-    ]);
+    \Drupal::logger('l10n_drupal_rest')->notice(
+      '@filename (@files files, @sids strings) scanned.',
+      [
+        '@filename' => $filename,
+        '@files' => count($files),
+        '@sids' => $sid_count,
+      ]
+    );
 
     // Parsed this releases files.
     $this->databaseConnection->update('l10n_server_release')
       ->fields([
         'sid_count' => $sid_count,
-        'last_parsed' => REQUEST_TIME,
+        'last_parsed' => \Drupal::time()->getRequestTime(),
       ])
       ->condition('rid', $release->rid)
       ->execute();
@@ -163,22 +210,27 @@ class DrupalRest extends ConnectorPluginBase {
     // files, we are not interested in the fine details, the file names are in
     // the error messages as text. We assume no other messages are added while
     // importing, so we can safely use drupal_get_message() to grab our errors.
-    $this->databaseConnection->delete('l10n_server_error')->condition('rid', $release->rid)->execute();
+    $this->databaseConnection->delete('l10n_server_error')->condition(
+      'rid',
+      $release->rid
+    )->execute();
     $messages = $this->messenger->messagesByType('error');
     if (isset($messages['error']) && is_array($messages['error'])) {
       foreach ($messages['error'] as $error_message) {
-        $this->databaseConnection->insert('l10n_server_error')
+        $this->databaseConnection
+          ->insert('l10n_server_error')
           ->fields([
             'rid' => $release->rid,
             'value' => $error_message,
           ])
+          // @todo: catch Exception?
           ->execute();
       }
     }
 
+    // @todo: Implement a better caching strategy (tags).
     // Clear stats cache, so new data shows up.
-    //@todo: Implement a better caching strategy (tags).
-    //cache_clear_all('l10n:stats', 'cache');
+    // cache_clear_all('l10n:stats', 'cache');
 
     return TRUE;
   }

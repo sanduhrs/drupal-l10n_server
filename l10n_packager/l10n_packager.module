@@ -8,27 +8,27 @@
 /**
  * Release packager status: do not repackage anymore.
  */
-define('L10N_PACKAGER_DISABLED', 0);
+const L10N_PACKAGER_DISABLED = 0;
 
 /**
  * Release packager status: keep repackaging.
  */
-define('L10N_PACKAGER_ACTIVE', 1);
+const L10N_PACKAGER_ACTIVE = 1;
 
 /**
  * Release packager status: error.
  */
-define('L10N_PACKAGER_ERROR', 2);
+const L10N_PACKAGER_ERROR = 2;
 
 /**
  * Default path structure for generated files
  */
-define('L10N_PACKAGER_FILEPATH', '%core/%project/%project-%release.%language.po');
+const L10N_PACKAGER_FILEPATH = '%core/%project/%project-%release.%language.po';
 
 /**
  * Packager API version.
  */
-define('L10N_PACKAGER_API_VERSION', '1.1');
+const L10N_PACKAGER_API_VERSION = '1.1';
 
 /**
  * Implements hook_menu().
