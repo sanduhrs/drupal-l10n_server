@@ -12,6 +12,8 @@ use Drupal\Core\Form\FormStateInterface;
  */
 final class DownloadTranslationForm extends FormBase {
 
+  public const DEFAULT_PROJECT = 'Drupal core';
+
   /**
    * {@inheritdoc}
    */
@@ -22,12 +24,12 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state): array {
+  public function buildForm(array $form, FormStateInterface $form_state, string $project = self::DEFAULT_PROJECT): array {
     $defaultValues = $form_state->getValues();
 
     $form['project'] = [
       // @todo: check the structure of the array ('values' key?).
-      '#default_value' => $defaultValues['values']['project'] ?? 'Drupal core',
+      '#default_value' => $defaultValues['values']['project'] ?? self::DEFAULT_PROJECT,
       '#title' => t('Pick a project'),
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/project-autocomplete',
