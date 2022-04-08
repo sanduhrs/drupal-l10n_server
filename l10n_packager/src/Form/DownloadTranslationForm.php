@@ -24,12 +24,15 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state, string $project = self::DEFAULT_PROJECT): array {
-    $defaultValues = $form_state->getValues();
+  public function buildForm(
+    array $form,
+    FormStateInterface $form_state,
+    string $project = self::DEFAULT_PROJECT
+  ): array {
+    $defaultValues = $form_state->cleanValues()->getValues();
 
     $form['project'] = [
-      // @todo: check the structure of the array ('values' key?).
-      '#default_value' => $defaultValues['values']['project'] ?? self::DEFAULT_PROJECT,
+      '#default_value' => $defaultValues['project'] ?? $project,
       '#title' => t('Pick a project'),
       '#type' => 'textfield',
       '#autocomplete_path' => 'translate/project-autocomplete',
@@ -46,11 +49,14 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state): void {
+  public function validateForm(
+    array &$form,
+    FormStateInterface $form_state
+  ): void {
     parent::validateForm($form, $form_state);
-    $defaultValues = $form_state->getValues();
+    $defaultValues = $form_state->cleanValues()->getValues();
 
-    if (empty($defaultValues['values']['project'])) {
+    if (empty($defaultValues['project'])) {
       $form_state->setErrorByName('project', $this->t('Invalid project name.'));
     }
 
@@ -66,11 +72,14 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state): void {
-//    drupal_goto(
-//      'translate/downloads',
-//      ['query' => ['project' => $form_state['values']['uri']]]
-//    );
+  public function submitForm(
+    array &$form,
+    FormStateInterface $form_state
+  ): void {
+    $form_state->setRedirect(
+      'l10n_packager.download_project_translations',
+      ['project' => $form_state->getValue('project') ?? self::DEFAULT_PROJECT]
+    );
   }
 
 }

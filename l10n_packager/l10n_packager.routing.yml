@@ -1,9 +1,10 @@
-#l10n_packager.download_translations:
-#  path: '/translate/download/'
-#  defaults:
-#    _form: '\Drupal\l10n_packager\Form\DownloadTranslationForm'
-#    _title: 'Download translations'
-#  requirements:
+l10n_packager.download_translations:
+  path: '/translate/download'
+  defaults:
+    _form: '\Drupal\l10n_packager\Form\DownloadTranslationForm'
+    _title: 'Download translations'
+  requirements:
+    _access: 'TRUE'
 #    _permission: 'access localization community'
 l10n_packager.download_project_translations:
   path: '/translate/download/{project}'
@@ -15,7 +16,8 @@ l10n_packager.download_project_translations:
     _form: '\Drupal\l10n_packager\Form\DownloadTranslationForm'
     _title: 'Download translations'
   requirements:
-    _permission: 'access localization community'
+    _access: 'TRUE'
+#    _permission: 'access localization community'
 l10n_packager.configure:
   path: 'admin/l10n_server/packager/configure'
   defaults:
