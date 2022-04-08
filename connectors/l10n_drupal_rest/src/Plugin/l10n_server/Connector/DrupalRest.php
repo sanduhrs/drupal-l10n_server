@@ -274,11 +274,11 @@ class DrupalRest extends ConnectorPluginBase {
       try {
         /** @var \Drupal\file\FileRepositoryInterface $fileRepository */
         $file_repository = \Drupal::service('file.repository');
-        $file = $file_repository->writeData($response->getBody(), $file_path, FileSystemInterface::EXISTS_RENAME);
+        $file_repository->writeData((string) $response->getBody(), $file_path, FileSystemInterface::EXISTS_RENAME);
         unset($response);
-        _l10n_drupal_rest_read_tsv($file_path, $before, $projects, $releases);
+        $this->readTsv($file_path, $before, $projects, $releases);
         // Remove file
-        file_delete($file);
+        $this->fileSystem->delete($file_path);
       }
       catch (\Exception $exception) {
         $this->logger->error($exception->getMessage());
@@ -383,6 +383,51 @@ class DrupalRest extends ConnectorPluginBase {
     //
     //    // Set last sync time to limit number of releases to look at next time.
     //    $this->state->set(static::LAST_SYNC, $last_sync);
+  }
+
+  /**
+   * Parse the release file for projects and releases newer than before
+   *
+   * @param $file_path
+   * @param $before
+   * @param $projects
+   * @param $releases
+   * @return mixed
+   */
+   private function readTsv($file_path, $before, &$projects, &$releases) {
+    $headers = array();
+    if (($handle = fopen($file_path, "r")) !== FALSE) {
+      while (($data = fgetcsv($handle, 1000, "\t")) !== FALSE) {
+        // Get headers
+        if (empty($headers)) {
+          $headers = array_flip($data);
+          continue;
+        }
+        // Filter out sandboxes and malformed releases.
+        if (count($data) < 4 || is_numeric($data[$headers['project_machine_name']])) {
+          continue;
+        }
+        $time = strtotime($data[$headers['created']]);
+        if ($before < $time) {
+          $machine_name = trim($data[$headers['project_machine_name']]);
+          $title = trim($data[$headers['project_name']]);
+          // A first array for projects.
+          $projects[$machine_name] = $title;
+          // A second array for releases.
+          $releases[] = array(
+            'created' => $time,
+            'machine_name' => $machine_name,
+            'title'        => $title,
+            'version'      => $data[$headers['version']],
+          );
+        }
+        else {
+          fclose($handle);
+          return TRUE;
+        }
+      }
+    }
+    return FALSE;
   }
 
 }
