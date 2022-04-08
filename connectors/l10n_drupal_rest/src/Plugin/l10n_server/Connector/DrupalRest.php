@@ -87,14 +87,14 @@ class DrupalRest extends ConnectorPluginBase {
     $filename = basename($release->download_link);
     $package_file = $this->fileSystem->getTempDirectory() . '/' . $filename;
 
-    \Drupal::logger('l10n_drupal_rest')->notice(
+    $this->logger->notice(
       'Retrieving @filename for parsing.',
       ['@filename' => $filename]
     );
 
     // Check filename for a limited set of allowed chars.
     if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
-      \Drupal::logger('l10n_drupal_rest')->error(
+      $this->logger->error(
         'Filename %file contains malicious characters.',
         ['%file' => $package_file]
       );
@@ -105,7 +105,7 @@ class DrupalRest extends ConnectorPluginBase {
     // so remove file.
     if (file_exists($package_file)) {
       unlink($package_file);
-      \Drupal::logger('l10n_drupal_rest')->warning(
+      $this->logger->warning(
         'File %file already exists, deleting.',
         ['%file' => $package_file]
       );
@@ -116,7 +116,7 @@ class DrupalRest extends ConnectorPluginBase {
       && ($contents->code === 200)
       && file_put_contents($package_file, $contents->data))) {
 
-      \Drupal::logger('l10n_drupal_rest')->error(
+      $this->logger->error(
         'Unable to download and save %download_link file (%error).',
         [
           '%download_link' => $release->download_link,
@@ -135,7 +135,7 @@ class DrupalRest extends ConnectorPluginBase {
 
     // Nothing to do if the file is not there.
     if (!file_exists($package_file)) {
-      \Drupal::logger('l10n_drupal_rest')->error(
+      $this->logger->error(
         'Package to parse (%file) does not exist.',
         ['%file' => $package_file]
       );
@@ -144,14 +144,14 @@ class DrupalRest extends ConnectorPluginBase {
 
     // Extract the local file to the temporary directory.
     if (!Drush::process(['tar', '-xvvzf', $package_file, '-C', $temp_path])) {
-      \Drupal::logger('l10n_drupal_rest')->error(
+      $this->logger->error(
         'Failed to extract %file.',
         ['%file' => $package_file]
       );
       return FALSE;
     }
 
-    \Drupal::logger('l10n_drupal_rest')->notice(
+    $this->logger->notice(
       'Parsing extracted @filename for strings.',
       ['@filename' => $filename]
     );
@@ -188,7 +188,7 @@ class DrupalRest extends ConnectorPluginBase {
     unlink($package_file);
 
     // Record changes of the scanned project in the database.
-    \Drupal::logger('l10n_drupal_rest')->notice(
+    $this->logger->notice(
       '@filename (@files files, @sids strings) scanned.',
       [
         '@filename' => $filename,
