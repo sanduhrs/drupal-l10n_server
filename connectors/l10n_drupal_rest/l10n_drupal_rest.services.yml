@@ -1,0 +1,4 @@
+services:
+  logger.channel.l10n_drupal_rest:
+    parent: logger.channel_base
+    arguments: [ 'l10n_drupal_rest.service' ]

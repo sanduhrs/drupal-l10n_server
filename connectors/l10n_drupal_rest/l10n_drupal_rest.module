@@ -33,8 +33,10 @@ function l10n_drupal_rest_menu() {
  * @todo queue API?
  */
 function l10n_drupal_rest_cron() {
+  /** @var \Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector\DrupalRest $connector */
   $connector = \Drupal::service('plugin.manager.l10n_server.connector')
-    ->createInstance('drupal_rest', []);
+    ->createInstance('drupal_rest:restapi', []);
+  /** @var Drupal\l10n_server\Plugin\l10n_server\Source\RestApi $source */
   $source = \Drupal::service('plugin.manager.l10n_server.source')
     ->createInstance('restapi', []);
 
@@ -146,6 +148,8 @@ function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(
  * Implementation of hook_l10n_packager_done().
  */
 function l10n_drupal_rest_l10n_packager_done($file) {
+  // @todo drupalorg_crosssite is currently ported, this might become a service
+  //   https://git.drupalcode.org/project/drupalorg_crosssite/-/tree/1.x
   if (function_exists('drupalorg_crosssite_fastly_purge_url')) {
     $download_base = variable_get('l10n_packager_update_url', file_create_url(l10n_packager_directory()));
     $file_path = preg_replace('%^' . preg_quote(l10n_packager_directory(), '%') . '%', '', $file->uri);

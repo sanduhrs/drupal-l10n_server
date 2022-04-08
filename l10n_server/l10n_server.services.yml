@@ -21,3 +21,6 @@ services:
     class: Drupal\l10n_server\SourceString
     arguments:
       - '@database'
+  logger.channel.l10n_server:
+    parent: logger.channel_base
+    arguments: [ 'l10n_server' ]

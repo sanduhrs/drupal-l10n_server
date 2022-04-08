@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector;
 
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\l10n_server\Annotation\Connector;
 use Drupal\l10n_server\ConnectorPluginBase;
 use Drush\Drush;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * A plugin to use source code of drupal.org package.
@@ -22,6 +25,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * )
  */
 class DrupalRest extends ConnectorPluginBase {
+
+  const LAST_SYNC =  'l10n_drupal_rest_last_sync';
+
+  const REFRESH_URL = 'l10n_drupal_rest_refresh_url';
 
   /**
    * @var \Drupal\Core\File\FileSystem
@@ -39,6 +46,16 @@ class DrupalRest extends ConnectorPluginBase {
   private $databaseConnection;
 
   /**
+   * @var \Drupal\Core\State\StateInterface
+   */
+  private $state;
+
+  /**
+   * @var \Drupal\Core\Logger\LoggerChannelInterface
+   */
+  private $logger;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
@@ -46,6 +63,8 @@ class DrupalRest extends ConnectorPluginBase {
     $instance->fileSystem = $container->get('file_system');
     $instance->httpClient = $container->get('http_client');
     $instance->databaseConnection = $container->get('database');
+    $instance->state = $container->get('state');
+    $instance->logger = $container->get('logger.factory')->get('l10n_drupal_rest');
     return $instance;
   }
 
@@ -162,6 +181,156 @@ class DrupalRest extends ConnectorPluginBase {
     //cache_clear_all('l10n:stats', 'cache');
 
     return TRUE;
+  }
+
+  /**
+   * Synchronizes the project list.
+   *
+   * // @todo source type
+   * @param $source
+   *
+   * @return void
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public function refreshProjectList($source) {
+    $connector_name = 'l10n_drupal_rest_restapi';
+    $projects = $releases = [];
+    $project_count = $release_count = 0;
+
+    // Only sync releases which are at most one day older then our last
+    // sync date. This ensures time zone issues and releases published while the
+    // previous cron run will not be a problem, but we only look at a relatively
+    // small list of releases at any given time. We only sync tagged releases,
+    // which will not get rebuilt later anytime.
+    $last_sync = $this->state->get(static::LAST_SYNC, 0);
+    $before = $last_sync - 86400;
+
+    // Fetch projects and releases since last sync.
+    $file_path = 'temporary://releases.tsv';
+    // @todo get from configuration
+    $url = $this->state->get(static::REFRESH_URL, L10N_DRUPAL_REST_REFRESH_URL);
+    // Add a timestamp GET parameter to prevent CDN caching.
+    $url = Url::fromUri($url, ['query' => ['time' => time()]])->toString();
+
+    // This will take some time, so we need to increase timeout.
+    // @todo check d7 options mapping.
+    //$response = drupal_http_request($url, array(), 'GET', NULL, 3, 300);
+    $response = $this->httpClient->get($url, ['timeout' => 300]);
+
+    if ($response->getStatusCode() === Response::HTTP_OK) {
+      // Save as temporary file and release the memory.
+      try {
+        /** @var \Drupal\file\FileRepositoryInterface $fileRepository */
+        $file_repository = \Drupal::service('file.repository');
+        $file = $file_repository->writeData($response->getBody(), $file_path, FileSystemInterface::EXISTS_RENAME);
+        unset($response);
+        _l10n_drupal_rest_read_tsv($file_path, $before, $projects, $releases);
+        // Remove file
+        file_delete($file);
+      }
+      catch (\Exception $exception) {
+        $this->logger->error($exception->getMessage());
+      }
+    }
+    else {
+      $this->logger->error('Releases URL %url is unreacheable.', [
+        '%url' => $url,
+      ]);
+      return;
+    }
+
+    //    // Record all non-existing projects in our local database.
+    //    foreach ($projects as $project_name => $project_title) {
+    //      if ($existing_project = db_select('l10n_server_project', 'p')
+    //        ->fields('p')
+    //        ->condition('uri', $project_name)
+    //        ->execute()
+    //        ->fetchAssoc()
+    //      ) {
+    //        // Check that the title is correct
+    //        if ($existing_project['title'] != $project_title) {
+    //          db_update('l10n_server_project')
+    //            ->fields(array('title' => $project_title))
+    //            ->condition('uri', $project_name)
+    //            ->execute();
+    //          watchdog($connector_name, 'Project %n renamed to %t.', array(
+    //            '%t' => $project_title,
+    //            '%n' => $project_name,
+    //          ));
+    //        }
+    //      }
+    //      else {
+    //        $project_count++;
+    //        db_insert('l10n_server_project')->fields(array(
+    //          'uri'              => $project_name,
+    //          'title'            => $project_title,
+    //          'last_parsed'      => REQUEST_TIME,
+    //          'home_link'        => 'http://drupal.org/project/' . $project_name,
+    //          'connector_module' => $connector_name,
+    //          'status'           => 1,
+    //        ))->execute();
+    //        watchdog($connector_name, 'Project %t (%n) added.', array(
+    //          '%t' => $project_title,
+    //          '%n' => $project_name,
+    //        ));
+    //      }
+    //    }
+    //
+    //    // Record all releases in our local database.
+    //    foreach ($releases as $release) {
+    //      $download_link = "http://ftp.drupal.org/files/projects/{$release['machine_name']}-{$release['version']}.tar.gz";
+    //      if ($existing_release = db_select('l10n_server_release', 'r')
+    //        ->fields('r')
+    //        ->condition('download_link', $download_link)
+    //        ->execute()
+    //        ->fetchAssoc()
+    //      ) {
+    //        // @TODO What happens to unpublished releases? drop data outright?
+    //      }
+    //      else {
+    //        $release_count++;
+    //        // Get the project pid
+    //        $pid = db_select('l10n_server_project', 'p')
+    //          ->fields('p', array('pid'))
+    //          ->condition('uri', $release['machine_name'])
+    //          ->execute()
+    //          ->fetchField();
+    //
+    //        // @TODO What about filehash?
+    //        $filehash = '';
+    //        // New published release, not recorded before.
+    //        db_insert('l10n_server_release')->fields(array(
+    //          'pid'           => $pid,
+    //          'title'         => $release['version'],
+    //          'download_link' => $download_link,
+    //          'file_date'     => $release['created'],
+    //          'file_hash'     => $filehash,
+    //          'last_parsed'   => 0,
+    //          'weight'        => 0,
+    //        ))->execute();
+    //        watchdog($connector_name, 'Release %t from project %n added.', array(
+    //          '%t' => $release['version'],
+    //          '%n' => $release['machine_name'],
+    //        ));
+    //        // Update last sync date with the date of this release if later.
+    //        $last_sync = max($last_sync, $release['created']);
+    //      }
+    //    }
+    //
+    //    // Report some informations.
+    //    if ($release_count || $project_count) {
+    //      watchdog($connector_name, 'Fetched info about %p projects and %r releases.',
+    //        array(
+    //          '%p' => $project_count,
+    //          '%r' => $release_count,
+    //        ));
+    //    }
+    //    else {
+    //      watchdog($connector_name, 'No new info about projects and releases.');
+    //    }
+    //
+    //    // Set last sync time to limit number of releases to look at next time.
+    //    $this->state->set(static::LAST_SYNC, $last_sync);
   }
 
 }
