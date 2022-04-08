@@ -1,0 +1,7 @@
+name: 'Localization packager'
+type: module
+description: 'Translation packaging tools for the localization server'
+package: 'Localization server'
+core_version_requirement: ^9
+#dependencies:
+#  -drupal:l10n_community
