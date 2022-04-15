@@ -1,0 +1,3 @@
+services:
+  l10n_packager.manager:
+    class: Drupal\l10n_packager\PackagerManager
