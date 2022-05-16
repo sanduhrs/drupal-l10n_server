@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_packager;
 
-use Drush\Drush;
-
 /**
  * Packager manager class.
  */
