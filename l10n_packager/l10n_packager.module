@@ -31,32 +31,6 @@ const L10N_PACKAGER_FILEPATH = '%core/%project/%project-%release.%language.po';
 const L10N_PACKAGER_API_VERSION = '1.1';
 
 /**
- * Packager cron setting default value.
- */
-const L10N_PACKAGER_CRON = 0;
-
-/**
- * Packager release limit setting default value.
- */
-const L10N_PACKAGER_RELEASE_LIMIT = 10;
-
-/**
- * Packager update setting default value.
- */
-const L10N_PACKAGER_UPDATE = 0;
-
-/**
- * Packager update url setting default value.
- */
-define("L10N_PACKAGER_UPDATE_URL", \Drupal::service('file_url_generator')
-  ->generateAbsoluteString(\Drupal::service('l10n_packager.manager')->directory()));
-
-/**
- * Packager file limit setting default value.
- */
-const L10N_PACKAGER_FILE_LIMIT = 1;
-
-/**
  * Implements hook_menu().
  */
 function l10n_packager_menu() {
