@@ -6,6 +6,7 @@ namespace Drupal\l10n_packager\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Path\CurrentPathStack;
+use Drupal\Core\Url;
 use Psr\Container\ContainerInterface;
 
 /**
@@ -20,22 +21,32 @@ use Psr\Container\ContainerInterface;
 final class DownloadBlock extends BlockBase {
 
   /**
+   * @var \Drupal\Core\Path\CurrentPathStack
+   */
+  private CurrentPathStack $currentPath;
+
+  /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, CurrentPathStack $currentPath) {
+  public function __construct(
+      array $configuration,
+      $plugin_id,
+      $plugin_definition,
+      CurrentPathStack $currentPath
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->currentPath = $currentPath;
   }
 
   /**
-   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
-   * @param array $configuration
-   * @param string $plugin_id
-   * @param mixed $plugin_definition
-   *
-   * @return static
+   * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container, array $configuration, string $plugin_id, $plugin_definition) {
+  public static function create(
+      ContainerInterface $container,
+      array $configuration,
+      string $plugin_id,
+      $plugin_definition
+  ) {
     return new static(
       $configuration,
       $plugin_id,
@@ -47,23 +58,11 @@ final class DownloadBlock extends BlockBase {
   /**
    * {@inheritdoc}
    */
-  public function build(): array {
-//    if (\Drupal::currentUser()->hasPermission('access localization community')) {
-//      $current_path = $this->currentPath->getPath();
-//      if (arg(0) == 'translate') {
-//        $arg1 = arg(1);
-//        $arg2 = arg(2);
-//        $arg3 = arg(3);
-//        if ($arg1 == 'projects' && !empty($arg2) && empty($arg3)) {
-//          return array(
-//            'content' => l('<span>' . t('Download translations') . '</span>', 'translate/downloads', array('html' => TRUE, 'query' => array('project' => $arg2), 'attributes' => array('class' => array('link-button')))),
-//          );
-//        }
-//      }
-//    }
-
+  public function build():array {
     return [
-      '#markup' => $this->t('Hello, World!'),
+      '#type' => 'link',
+      '#title' => 'Download translations',
+      '#url' => Url::fromUri('translate/downloads'),
     ];
   }
 
