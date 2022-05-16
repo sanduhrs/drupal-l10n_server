@@ -32,18 +32,18 @@ final class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state): array {
-    $config = $this->config('l10n_server.settings');
+    $config = $this->config('l10n_packager.settings');
     $form['l10n_packager_cron'] = [
       '#title' => t('Generate packages on every Drupal cron run'),
       '#type' => 'checkbox',
-      '#default_value' => $config->get('l10n_packager_cron'),
+      '#default_value' => $config->get('cron'),
     ];
     $form['l10n_packager_directory'] = [
       '#title' => t('Directory for generated packages'),
       '#description' => t('The directory on the local file system to use to store packages generated. Either relative to the Drupal installation directory or an absolute path on your file system. Drupal should have read and write access to the files and directories found there.'),
       '#type' => 'textfield',
       '#required' => TRUE,
-      '#default_value' => $config->get('l10n_packager_directory'),
+      '#default_value' => $config->get('directory'),
       // Create directory by default if possible.
       //@todo: port l10n_packager_admin_check_directory().
       /*'#after_build' => array('l10n_packager_admin_check_directory'),*/
@@ -51,14 +51,14 @@ final class SettingsForm extends ConfigFormBase {
     $form['l10n_packager_update_url'] = [
       '#title' => t('Root URL for translation downloads'),
       '#type' => 'textfield',
-      '#default_value' => $config->get('l10n_packager_update_url'),
+      '#default_value' => $config->get('update_url'),
       '#description' => t('Root URL for the client to build file URLs and fetch updates. The public facing URL for the package directory defined above. Leave blank for not providing any.'),
     ];
     $form['l10n_packager_filepath'] = [
       '#title' => t('Path structure for generated packages'),
       '#type' => 'textfield',
       '#required' => TRUE,
-      '#default_value' => $config->get('l10n_packager_filepath') ,
+      '#default_value' => $config->get('filepath') ,
       '#description' => t("Available tokens are: %project, %release, %core, %version, %extra, %language."),
     ];
     $limits = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -67,14 +67,14 @@ final class SettingsForm extends ConfigFormBase {
       '#description' => t('The number of releases to check on a manual or cron run.'),
       '#type' => 'select',
       '#options' => array_combine($limits, $limits),
-      '#default_value' => $config->get('l10n_packager_release_limit'),
+      '#default_value' => $config->get('release_limit'),
     ];
     $form['l10n_packager_file_limit'] = [
       '#title' => t('Maximum number of files to package at once'),
       '#description' => t('The number of files to package on a manual or cron run.'),
       '#type' => 'select',
       '#options' => array_combine($limits, $limits),
-      '#default_value' => $config->get('l10n_packager_file_limit'),
+      '#default_value' => $config->get('file_limit'),
     ];
     $interval = [3600, 10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200, 4838400, 9676800];
     $callback = function ($value) {
@@ -85,7 +85,7 @@ final class SettingsForm extends ConfigFormBase {
       '#title' => t('Repackaging interval'),
       '#type' => 'select',
       '#options' => $period,
-      '#default_value' => $config->get('l10n_packager_update'),
+      '#default_value' => $config->get('update'),
       '#description' => t('Time interval for the translations to be automatically repackaged.'),
     );
     return parent::buildForm($form, $form_state);
