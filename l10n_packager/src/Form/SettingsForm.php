@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_packager\Form;
 
+use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -44,9 +45,6 @@ final class SettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#required' => TRUE,
       '#default_value' => $config->get('directory'),
-      // Create directory by default if possible.
-      //@todo: port l10n_packager_admin_check_directory().
-      /*'#after_build' => array('l10n_packager_admin_check_directory'),*/
     ];
     $form['update_url'] = [
       '#title' => t('Root URL for translation downloads'),
@@ -88,6 +86,10 @@ final class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('update'),
       '#description' => t('Time interval for the translations to be automatically repackaged.'),
     ];
+
+    // Rebuild metafile after submission.
+    $form['#submit'][] = 'l10n_packager_export_metafile';
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -95,6 +97,10 @@ final class SettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+    /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+    $file_system = \Drupal::service('file_system');
+    $file_system->prepareDirectory($form_state->getValue('directory'), FileSystemInterface::CREATE_DIRECTORY);
+
     $this->config('l10n_packager.settings')
       ->set('cron', $form_state->getValue('cron'))
       ->set('directory', $form_state->getValue('directory'))
