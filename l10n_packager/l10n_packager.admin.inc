@@ -72,8 +72,9 @@ function l10n_packager_settings_form($form, &$form_state) {
  * Check/create directory if not there already.
  */
 function l10n_packager_admin_check_directory($form_element) {
-  file_prepare_directory($form_element['#value'], FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
-  return $form_element;
+  /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+  $file_system = \Drupal::service('file_system');
+  $file_system->prepareDirectory($form_element['#value'], FileSystemInterface::CREATE_DIRECTORY);
 }
 
 /**
