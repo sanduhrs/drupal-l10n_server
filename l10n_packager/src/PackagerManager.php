@@ -58,6 +58,6 @@ class PackagerManager {
    * Get directory for creating files
    */
   function directory() {
-    return \Drupal::config('l10n_server.settings')->get('l10n_packager_directory') ?? \Drupal::config('system.file')->get('default_scheme') . '://l10n_packager';
+    return \Drupal::config('l10n_server.settings')->get('directory');
   }
 }
