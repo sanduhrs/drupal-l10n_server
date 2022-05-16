@@ -73,7 +73,7 @@ function l10n_packager_menu() {
  * Implements hook_cron().
  */
 function l10n_packager_cron() {
-  if (variable_get('l10n_packager_cron', 0)) {
+  if (\Drupal::config('l10n_packager.settings')->get('cron')) {
     l10n_packager_check_updates();
   }
 }
