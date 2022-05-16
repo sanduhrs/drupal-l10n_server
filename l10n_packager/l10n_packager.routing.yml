@@ -16,8 +16,8 @@ l10n_packager.download_project_translations:
     _title: 'Download translation'
   requirements:
     _permission: 'access localization community'
-l10n_packager.configure:
-  path: 'admin/config/l10n_server/packager/configure'
+l10n_packager.settings:
+  path: 'admin/config/l10n_server/packager'
   defaults:
     _title: 'Configure'
     _form: '\Drupal\l10n_packager\Form\SettingsForm'
