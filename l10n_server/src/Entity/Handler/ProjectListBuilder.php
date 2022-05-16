@@ -5,10 +5,13 @@ namespace Drupal\l10n_server\Entity\Handler;
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Link;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\l10n_server\Entity\ProjectInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
 use function \assert;
 use function \array_merge;
 
@@ -16,6 +19,20 @@ use function \array_merge;
  * Provides the list builder handler for the Project entity.
  */
 class ProjectListBuilder extends EntityListBuilder {
+
+  /**
+   * @var \Drupal\Core\Datetime\DateFormatterInterface
+   */
+  protected $dateFormatter;
+
+  /**
+   * @inheritDoc
+   */
+  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type) {
+    $instance = parent::createInstance($container, $entity_type);
+    $instance->dateFormatter = $container->get('date.formatter');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -36,16 +53,16 @@ class ProjectListBuilder extends EntityListBuilder {
     assert($entity instanceof ProjectInterface);
     $row = [];
     $row['label']['data'] = $entity->label();
-    if ($entity->getHomepage()) {
+    if ($link = $entity->getHomepage()) {
       $row['homepage']['data'] = Link::fromTextAndUrl(
-        Url::fromUri($entity->getHomepage())->toString(),
-        Url::fromUri($entity->getHomepage())
+        Url::fromUri($link)->toString(),
+        Url::fromUri($link)
       );
     }
     else {
       $row['homepage']['data'] = $this->t('n/a');
     }
-    $row['last_parsed']['data'] = $entity->getLastTimeParsed() ?? '-';
+    $row['last_parsed']['data'] = $entity->getLastTimeParsed() ? $this->dateFormatter->format($entity->getLastTimeParsed()) : '-';
     $row['releases']['data'] = Link::createFromRoute(t('Releases'), 'entity.l10n_server_release.collection', ['l10n_server_project' => $entity->id()]);
     return array_merge($row, parent::buildRow($entity));
   }
