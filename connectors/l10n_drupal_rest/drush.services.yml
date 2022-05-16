@@ -1,0 +1,5 @@
+services:
+  l10n_drupal_rest.commands:
+    class: \Drupal\l10n_drupal_rest\Commands\L10nDrupalRestCommands
+    tags:
+      - { name: drush.command }
