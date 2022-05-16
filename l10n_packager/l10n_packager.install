@@ -9,79 +9,79 @@
  * Implements hook_schema().
  */
 function l10n_packager_schema() {
-  $schema['l10n_packager_release'] = array(
+  $schema['l10n_packager_release'] = [
     'description' => 'Information about packaging for each release.',
-    'fields' => array(
-      'rid' => array(
+    'fields' => [
+      'rid' => [
         'description' => 'Reference to {l10n_server_release}.rid',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,
-      ),
-      'status' => array(
+      ],
+      'status' => [
         'description' => 'Packaging status for this release. One of L10N_PACKAGER_DISABLED, L10N_PACKAGER_ACTIVE and L10N_PACKAGER_ERROR.',
         'type' => 'int',
         'not null' => TRUE,
         'default value' => 1,
-      ),
-      'checked' => array(
+      ],
+      'checked' => [
         'description' => 'Unix timestamp of last time this release was checked.',
         'type' => 'int',
         'not null' => FALSE,
-      ),
-      'updated' => array(
+      ],
+      'updated' => [
         'description' => 'Unix timestamp of last time files for this release were updated.',
         'type' => 'int',
         'not null' => FALSE,
-      ),
-    ),
-    'primary key' => array('rid'),
-  );
-  $schema['l10n_packager_file'] = array(
+      ],
+    ],
+    'primary key' => ['rid'],
+  ];
+  $schema['l10n_packager_file'] = [
     'description' => 'Links releases and languages to files.',
-    'fields' => array(
-      'drid' => array(
+    'fields' => [
+      'drid' => [
         'description' => 'Internal numeric identifier for a release file.',
         'type' => 'serial',
         'not null' => TRUE,
-      ),
-      'rid' => array(
+      ],
+      'rid' => [
         'description' => 'Reference to {l10n_server_release}.rid',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,
-      ),
-      'language' => array(
+      ],
+      'language' => [
         'description' => 'Reference to the {languages}.language for the translation package.',
         'type' => 'varchar',
         'length' => '12',
         'not null' => TRUE,
-      ),
-      'fid' => array(
+      ],
+      'fid' => [
         'description' => 'Reference to {file_managed}.fid.',
         'type' => 'int',
         'not null' => TRUE,
         'unsigned' => TRUE,
-      ),
-      'checked' => array(
+      ],
+      'checked' => [
         'description' => 'Unix timestamp of last time translation for this language was checked.',
         'type' => 'int',
         'not null' => FALSE,
-      ),
-      'sid_count' => array(
+      ],
+      'sid_count' => [
         'description' => 'Count of source strings exported in this file.',
         'type' => 'int',
         'not null' => TRUE,
         'default' => 0,
-      ),
-    ),
-    'indexes' => array(
-      'rid' => array('rid'),
-    ),
-    'primary key' => array('drid'),
-  );
-  $schema['cache_l10n_packager'] = drupal_get_schema_unprocessed('system', 'cache');
-  $schema['cache_l10n_packager']['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
+      ],
+    ],
+    'indexes' => [
+      'rid' => ['rid'],
+    ],
+    'primary key' => ['drid'],
+  ];
+//  $schema['cache_l10n_packager'] = drupal_get_schema_unprocessed('system', 'cache');
+//  $schema['cache_l10n_packager']['description'] = 'Cache table for localization packager containing processed status data keyed by project URI.';
   return $schema;
 }
 
@@ -90,33 +90,33 @@ function l10n_packager_schema() {
  */
 function l10n_packager_install() {
   // Set up blocks for this module.
-  $theme_key = variable_get('theme_default', 'bartik');
-  $blocks = array(-8 => 'download');
-  $module = 'l10n_packager';
-  foreach ($blocks as $weight => $delta) {
-    // Insert or update all instances of this block even if we just added it.
-    db_merge('block')
-      ->key(array(
-          'module' => $module,
-          'delta'  => $delta,
-        ))
-      ->insertFields(array(
-          'module' => $module,
-          'delta'  => $delta,
-          'cache'  => -1,
-          'status' => 1,
-          'weight' => $weight,
-          'region' => 'sidebar_second',
-          'theme'  => $theme_key,
-          'pages'  => '',
-        ))
-      ->updateFields(array(
-          'cache'  => -1,
-          'status' => 1,
-          'weight' => $weight,
-        ))
-      ->execute();
-  }
+//  $theme_key = variable_get('theme_default', 'bartik');
+//  $blocks = array(-8 => 'download');
+//  $module = 'l10n_packager';
+//  foreach ($blocks as $weight => $delta) {
+//    // Insert or update all instances of this block even if we just added it.
+//    db_merge('block')
+//      ->key(array(
+//          'module' => $module,
+//          'delta'  => $delta,
+//        ))
+//      ->insertFields(array(
+//          'module' => $module,
+//          'delta'  => $delta,
+//          'cache'  => -1,
+//          'status' => 1,
+//          'weight' => $weight,
+//          'region' => 'sidebar_second',
+//          'theme'  => $theme_key,
+//          'pages'  => '',
+//        ))
+//      ->updateFields(array(
+//          'cache'  => -1,
+//          'status' => 1,
+//          'weight' => $weight,
+//        ))
+//      ->execute();
+//  }
 }
 
 /**
