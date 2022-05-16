@@ -848,34 +848,15 @@ function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
   // l10n_packager_file table for the project requested, then get the
   // translation count of the release.
   if (empty($rid)) {
-    $query = \Drupal::database()
-      ->select('l10n_server_release', 'sr');
-    $query
-      ->innerJoin('l10n_packager_file', 'pf', 'sr.rid = pf.rid');
-    $query
-      ->fields('sr', ['rid'])
-      ->condition('pid', $pid)
-      ->orderBy('rid', 'DESC')
-      ->range(0, 1);
-    $rid = $query->execute()->fetchField();
+    $rid = db_query("SELECT pf.rid FROM {l10n_server_release} sr INNER JOIN {l10n_packager_file} pf ON sr.rid = pf.rid WHERE pid = :pid ORDER BY pf.rid DESC LIMIT 0, 1", array(':pid' => $pid))->fetchField();
   }
-  $results = \Drupal::database()
-    ->select('l10n_packager_file', 'pf')
-    ->fields('pf', ['language', 'sid_count'])
-    ->condition('rid', $rid)
-    ->execute()
-    ->fetchAllKeyed();
+  $results = db_query("SELECT language, sid_count FROM {l10n_packager_file} WHERE rid = :rid", array(':rid' => $rid))->fetchAllKeyed();
   foreach ($results as $language => $sid_count) {
     $sums[$language]['translations'] = $sid_count;
   }
   ksort($sums);
   // Finally, get the string count of the release
-  $query = \Drupal::database()
-    ->select('l10n_server_line', 'sl')
-    ->fields('sl', ['sid'])
-    ->condition('rid', $rid)
-    ->distinct();
-  $num_source = $query->countQuery()->execute()->fetchField();
+  $num_source = db_query("SELECT COUNT(DISTINCT l.sid) FROM {l10n_server_line} l WHERE l.rid = :rid", array(':rid' => $rid))->fetchField();
   return array($num_source, $sums);
 }
 

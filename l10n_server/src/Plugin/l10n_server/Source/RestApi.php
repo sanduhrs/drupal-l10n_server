@@ -18,17 +18,19 @@ use Drupal\l10n_server\ConfigurableSourcePluginBase;
  */
 final class RestApi extends ConfigurableSourcePluginBase {
 
-  const REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
-
   /**
    * {@inheritdoc}
    */
   public function defaultConfiguration(): array {
     $config = parent::defaultConfiguration();
+
     $config['scan_limit'] = 1;
     $config['cron_enabled'] = FALSE;
     $config['max_filesize'] = 50 * 1024 * 1024;
-    $config['refresh_url'] = RestApi::REFRESH_URL;
+    $config['refresh_url'] = L10N_DRUPAL_REST_REFRESH_URL;
+    // @todo use State API if still necessary.
+    //$config['last_sync'] = 0;
+
     return $config;
   }
 
@@ -65,6 +67,7 @@ final class RestApi extends ConfigurableSourcePluginBase {
       '#type' => 'textfield',
       '#default_value' => $this->getRefreshUrl(),
     ];
+
     return $form;
   }
 

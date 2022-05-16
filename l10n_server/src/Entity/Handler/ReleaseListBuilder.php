@@ -63,29 +63,4 @@ class ReleaseListBuilder extends EntityListBuilder {
     return $this->t('Releases');
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEntityIds() {
-    $query = $this->getStorage()->getQuery()
-      ->accessCheck(TRUE)
-      ->sort($this->entityType->getKey('id'));
-
-    // Add query condition with project from request.
-    $params = \Drupal::routeMatch()->getParameters()->all();
-    foreach ($params as $param) {
-      if ($param instanceof \Drupal\l10n_server\Entity\Project) {
-        /** \Drupal\l10n_server\Entity\Project $param */
-        $query->condition('rid', $param->id());
-        break;
-      }
-    }
-
-    // Only add the pager if a limit is specified.
-    if ($this->limit) {
-      $query->pager($this->limit);
-    }
-    return $query->execute();
-  }
-
 }

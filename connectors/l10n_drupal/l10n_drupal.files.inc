@@ -1,7 +1,6 @@
 <?php
 
 // = Project synchronization ===================================================
-use Drupal\Component\Utility\Unicode;
 
 /**
  * Scans files of a project and release picked.
@@ -39,12 +38,12 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
           // We have a slash, so this package is in a subfolder.
           // Eg. Drupal/drupal-4.6.7 or Ubercart/ubercart-5.x-1.0-alpha8.
           // Grab the directory name as project title.
-          [$project_title, $package] = explode('/', $path);
+          list($project_title, $package) = explode('/', $path);
         }
         if (strpos($package, '-')) {
           // Only remaining are the project uri and release,
           // eg. drupal-4.6.7 or ubercart-5.x-1.0-alpha8.
-          [$project_uri, $release_version] = explode('-', $package, 2);
+          list($project_uri, $release_version) = explode('-', $package, 2);
 
           l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path . '.tar.gz', filemtime($file->uri));
         }
@@ -338,7 +337,7 @@ function l10n_drupal_callback_save_version($value = NULL, $display_name = NULL) 
 
   if (!isset($display_name)) {
     // We get the release number for the files.
-    [$pid, $rid] = $value;
+    list($pid, $rid) = $value;
   }
   elseif (!isset($value)) {
     // We return data for a specific file.
@@ -422,7 +421,7 @@ function l10n_drupal_callback_save_string($value = NULL, $context = NULL, $displ
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$display_name])) {
     // Explode files array to pid, rid and fid.
-    [$pid, $rid, $fid] = $files[$display_name];
+    list($pid, $rid, $fid) = $files[$display_name];
 
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
@@ -500,7 +499,7 @@ function l10n_drupal_detect_major_version($path) {
   $filename = basename($path);
   // The project name could not contain hyphens, as the project name equals
   // function name prefixes, and hyphens are not allowed in function names.
-  [$project_name, $version] = explode('-', $filename);
+  list($project_name, $version) = explode('-', $filename);
   // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
   return (int) $version;
 }
@@ -542,42 +541,30 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
 
   if (!isset($file)) {
     // We get the release number for the files.
-    [$pid, $rid] = $revision;
+    list($pid, $rid) = $revision;
   }
   elseif (!isset($revision)) {
     // We return data for a specific file.
     return array($pid, $rid, $files[$file]);
   }
   else {
-    $existing_file = \Drupal::database()
-      ->select('l10n_server_file', 'l')
-      ->fields('l', ['fid', 'pid', 'rid', 'location', 'revision'])
-      ->condition('rid', $rid)
-      ->condition('location', $file)
-      ->execute()
-      ->fetchObject();
+    $existing_file = db_select('l10n_server_file', 'l')->fields('l')->condition('rid', $rid)
+      ->condition('location', $file)->execute()->fetchObject();
     if ($existing_file) {
       if ($existing_file->revision != $revision) {
         // Changed revision on a file.
-        \Drupal::database()
-          ->query("UPDATE {l10n_server_file} SET revision = :revision WHERE fid = :fid", [
-            ':revision' => $revision,
-            ':fid' => $existing_file->fid,
-          ])->execute();
+        db_query("UPDATE {l10n_server_file} SET revision = :revision WHERE fid = :fid", [':revision' => $revision, ':fid' => $existing_file->fid]);
       }
       $fid = $existing_file->fid;
     }
     else {
       // New file in this release.
-      $fid = \Drupal::database()
-        ->insert('l10n_server_file')
-        ->fields([
-          'pid' => $pid,
-          'rid' => $rid,
-          'location' => $file,
-          'revision' => $revision,
-        ])
-        ->execute();
+      $fid = db_insert('l10n_server_file')->fields(array(
+        'pid' => $pid,
+        'rid' => $rid,
+        'location' => $file,
+        'revision' => $revision,
+      ))->execute();
     }
     $files[$file] = $fid;
   }
@@ -625,7 +612,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
     return;
   }
 
-  if (!Unicode::validateUtf8($value)) {
+  if (!drupal_validate_utf8($value)) {
     potx_status('error', t('Invalid UTF-8 string attempted to be localized.'), $file, $line);
     return;
   }
@@ -633,52 +620,36 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
   // If we have the file entry now, we can process adding the string.
   if (isset($files[$file])) {
     // Explode files array to pid, rid and fid.
-    [$pid, $rid, $fid] = $files[$file];
+    list($pid, $rid, $fid) = $files[$file];
     // Context cannot be null
     $context= !is_null($context) ? $context : '';
 
     // A \0 separator in the string means we deal with a string with plural variants.
     // Unlike Drupal core, we store all in the same string, as it is easier
     // to handle later, and we don't need the individual string parts.
-    $sid = \Drupal::database()
-      ->select('l10n_server_string', 'l')
-      ->fields('l', array('sid'))
-      ->condition('hashkey', md5($value . $context))
-      ->execute()
-      ->fetchField();
+    $sid = db_select("l10n_server_string", 'l')->fields('l', array('sid'))
+      ->condition('hashkey', md5($value . $context))->execute()->fetchField();
     if (!$sid) {
       // String does not exist.
-      $sid = \Drupal::database()
-        ->insert('l10n_server_string')
-        ->fields(array(
-          'value' => $value,
-          'context' => $context,
-          'hashkey' => md5($value . $context),
-        ))
-        ->execute();
+      $sid = db_insert('l10n_server_string')->fields(array(
+        'value' => $value,
+        'context' => $context,
+        'hashkey' => md5($value . $context),
+      ))->execute();
     }
-    $existing_fid = \Drupal::database()
-      ->select('l10n_server_line', 'l')
-      ->fields('l', array('fid'))
-      ->condition('fid', $fid)
-      ->condition('sid', $sid)
-      ->condition('lineno', $line)
-      ->condition('type', $string_type)
-      ->execute()
-      ->fetchField();
+    $existing_fid = db_select('l10n_server_line', 'l')->fields('l', array('fid'))
+      ->condition('fid', $fid)->condition('sid', $sid)->condition('lineno', $line)
+      ->condition('type', $string_type)->execute()->fetchField();
     if (!$existing_fid) {
       // Location does not exist with this string.
-      \Drupal::database()
-        ->insert('l10n_server_line')
-        ->fields(array(
-          'pid' => $pid,
-          'rid' => $rid,
-          'fid' => $fid,
-          'sid' => $sid,
-          'lineno' => $line,
-          'type' => $string_type
-        ))
-        ->execute();
+      db_insert('l10n_server_line')->fields(array(
+        'pid' => $pid,
+        'rid' => $rid,
+        'fid' => $fid,
+        'sid' => $sid,
+        'lineno' => $line,
+        'type' => $string_type
+      ))->execute();
     }
     l10n_drupal_added_string_counter($sid);
   }
