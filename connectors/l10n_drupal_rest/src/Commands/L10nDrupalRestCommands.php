@@ -93,7 +93,6 @@ class L10nDrupalRestCommands extends DrushCommands {
 
         foreach ($result as $record) {
           $release = Release::load($record->rid);
-          echo "RELEASE::", $release->id(), PHP_EOL;
           if ($connector->drupalOrgParseRelease($release)) {
             $success++;
           }
@@ -104,7 +103,6 @@ class L10nDrupalRestCommands extends DrushCommands {
         }
       } while ($success < $goal && $query->countQuery()->execute()->fetchField() > 0);
 
-      echo $success, "::", $failed, PHP_EOL;
       $this->logger()->notice(
         'Parsed @success releases successfully, @failed failed parsing.', [
           '@success' => $success,
