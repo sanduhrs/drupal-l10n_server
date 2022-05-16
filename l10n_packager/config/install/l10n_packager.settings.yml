@@ -4,4 +4,4 @@ update_url: 'sites/default/files/l10n_packager'
 filepath: '%core/%project/%project-%release.%language.po'
 release_limit: 10
 file_limit: 1
-update: false
+update: 0
