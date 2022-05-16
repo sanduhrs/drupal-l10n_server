@@ -5,27 +5,7 @@
  *   Localization server for Drupal using REST API.
  */
 
-/**
- * Constants.
- *
- * @todo move to source plugin?
- */
-const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
-
-/**
- * Implements hook_menu().
- */
-function l10n_drupal_rest_menu() {
-  $items = array();
-
-  $items['translate/drupal_core'] = array(
-    'title' => 'Drupal core translation status',
-    'page callback' => 'l10n_drupal_rest_drupal_core_status',
-    'file' => 'l10n_drupal_rest.drupal_core.inc',
-    'access arguments' => array('access localization community'),
-  );
-  return $items;
-}
+use Drupal\l10n_server\Entity\Release;
 
 /**
  * Implements hook_cron().
@@ -40,28 +20,33 @@ function l10n_drupal_rest_cron() {
   $source = \Drupal::service('plugin.manager.l10n_server.source')
     ->createInstance('restapi', []);
 
-  if ($connector->isEnabled() && $source->isCronEnabled()) {
+  if ($connector->isEnabled()
+      // @todo Settings from REST API configuration form is not available here.
+      && $source->isCronEnabled()) {
+
     $success = $offset = $failed = 0;
     $goal = $source->getScanLimit();
-
     $connector->refreshProjectList($source);
 
     do {
       // Pick the oldest releases we did not parse yet.
-      $release_ids = \Drupal::entityQuery('l10n_server_release')
-        ->condition('pid.entity.connector_module', ['drupal', 'drupal_rest'])
-        ->condition('pid.entity.enabled', 1)
-        ->condition('download_link', '', '<>')
-        ->condition('last_parsed', 0)
-        ->sort('file_date')
-        ->range($offset, $goal - $success)
-        ->execute();
+      $query = \Drupal::database()
+        ->select('l10n_server_release', 'sr');
+      $query
+        ->join('l10n_server_project', 'sp');
+      $query
+        ->fields('sr', ['rid'])
+        ->condition('sp.connector_module', ['l10n_drupal_rest_restapi'], 'IN')
+        ->condition('sp.enabled', 1)
+        ->condition('sr.download_link', '', '<>')
+        ->condition('sr.last_parsed', 0)
+        // @todo Adding this forces mysql to create large temporary tables.
+        // ->orderBy('sr.file_date')
+        ->range($offset, $goal - $success);
+      $result = $query->execute();
 
-      $releases = \Drupal::entityTypeManager()
-        ->getStorage('l10n_server_release')
-        ->loadMultiple($release_ids);
-
-      foreach ($releases as $release) {
+      foreach ($result as $record) {
+        $release = Release::load($record->rid);
         if ($connector->drupalOrgParseRelease($release)) {
           $success++;
         }
@@ -70,77 +55,13 @@ function l10n_drupal_rest_cron() {
         }
         $offset++;
       }
-    } while ($success < $goal && count($releases) > 0);
+    } while ($success < $goal && $query->countQuery()->execute()->fetchField() > 0);
 
-    \Drupal::logger('l10n_drupal')->notice('Parsed @success releases successfully, @fails failed parsing.', [
-      '%success' => $success,
-      '%fails'   => $failed,
-    ]);
-  }
-
-}
-
-/**
- * Implementation of hook_l10n_server_connector_info().
- */
-function l10n_drupal_rest_l10n_server_connector_info() {
-  $connectors['l10n_drupal_rest'] = array(
-    'title'    => t('Drupal.org packages'),
-    'sources'  => array('restapi'),
-    'file'     => drupal_get_path('module', 'l10n_drupal_rest') . '/l10n_drupal_rest.connector.inc',
-    // Display warnings tab, because we are parsing source code here.
-    'warnings' => TRUE,
-  );
-
-  return $connectors;
-}
-
-/**
- * Implementation of hook_l10n_server_source_info().
- */
-function l10n_drupal_rest_l10n_server_source_info() {
-  return array(
-    'restapi' => array(
-      'title' => t('the drupal.org REST API'),
-      // Reuse file settings mostly (will be modified in form_alter()).
-      'form'  => 'l10n_server_connectors_files_settings_form',
-      'file'  => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
-    ),
-  );
-}
-
-// = Settings ==================================================================
-
-/**
- * Implementation of hook_form_FORM_ID_alter().
- */
-function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(&$form) {
-  if ($form['#connector_name'] == 'l10n_drupal_rest') {
-    // No file directory setting here.
-    $form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#access'] = FALSE;
-    unset($form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#after_build']);
-    // Setting for filesize limit
-    $form['l10n_server_connector_l10n_project_drupalorg_max_filesize'] = array(
-      '#type'          => 'textfield',
-      '#title'         => t('Release files max filesize'),
-      '#default_value' => variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024),
-      '#description'   => t('In bytes. Releases larger than this size will not be downloaded.'),
-      '#weight'        => 0,
-    );
-    $form['l10n_drupal_rest_refresh_url'] = array(
-      '#type'          => 'textfield',
-      '#title'         => t('Refresh URL'),
-      '#default_value' => variable_get('l10n_drupal_rest_refresh_url', L10N_DRUPAL_REST_REFRESH_URL),
-      '#description'   => t('URL to the releases.tsv file.'),
-      '#weight'        => 1,
-    );
-    $form['l10n_drupal_rest_last_sync'] = array(
-      '#type'          => 'textfield',
-      '#title'         => t('Sync releases after'),
-      '#default_value' => variable_get('l10n_drupal_rest_last_sync', 0),
-      '#description'   => t('UNIX timestamp to parse releases from.'),
-      '#weight'        => 2,
-    );
+    \Drupal::logger('l10n_drupal')
+      ->notice('Parsed @success releases successfully, @fails failed parsing.', [
+        '@success' => $success,
+        '@fails'   => $failed,
+      ]);
   }
 }
 

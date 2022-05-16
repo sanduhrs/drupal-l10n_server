@@ -1,0 +1,1635 @@
+diff --git a/connectors/l10n_drupal/l10n_drupal.files.inc b/connectors/l10n_drupal/l10n_drupal.files.inc
+index 8f0172a..1bdac9d 100644
+--- a/connectors/l10n_drupal/l10n_drupal.files.inc
++++ b/connectors/l10n_drupal/l10n_drupal.files.inc
+@@ -1,6 +1,7 @@
+ <?php
+ 
+ // = Project synchronization ===================================================
++use Drupal\Component\Utility\Unicode;
+ 
+ /**
+  * Scans files of a project and release picked.
+@@ -38,12 +39,12 @@ function l10n_drupal_files_scan($source = NULL, $automated = FALSE) {
+           // We have a slash, so this package is in a subfolder.
+           // Eg. Drupal/drupal-4.6.7 or Ubercart/ubercart-5.x-1.0-alpha8.
+           // Grab the directory name as project title.
+-          list($project_title, $package) = explode('/', $path);
++          [$project_title, $package] = explode('/', $path);
+         }
+         if (strpos($package, '-')) {
+           // Only remaining are the project uri and release,
+           // eg. drupal-4.6.7 or ubercart-5.x-1.0-alpha8.
+-          list($project_uri, $release_version) = explode('-', $package, 2);
++          [$project_uri, $release_version] = explode('-', $package, 2);
+ 
+           l10n_drupal_save_data($project_uri, ($project_title ? $project_title : $project_uri), $release_version, $path . '.tar.gz', filemtime($file->uri));
+         }
+@@ -337,7 +338,7 @@ function l10n_drupal_callback_save_version($value = NULL, $display_name = NULL)
+ 
+   if (!isset($display_name)) {
+     // We get the release number for the files.
+-    list($pid, $rid) = $value;
++    [$pid, $rid] = $value;
+   }
+   elseif (!isset($value)) {
+     // We return data for a specific file.
+@@ -421,7 +422,7 @@ function l10n_drupal_callback_save_string($value = NULL, $context = NULL, $displ
+   // If we have the file entry now, we can process adding the string.
+   if (isset($files[$display_name])) {
+     // Explode files array to pid, rid and fid.
+-    list($pid, $rid, $fid) = $files[$display_name];
++    [$pid, $rid, $fid] = $files[$display_name];
+ 
+     // A \0 separator in the string means we deal with a string with plural variants.
+     // Unlike Drupal core, we store all in the same string, as it is easier
+@@ -499,7 +500,7 @@ function l10n_drupal_detect_major_version($path) {
+   $filename = basename($path);
+   // The project name could not contain hyphens, as the project name equals
+   // function name prefixes, and hyphens are not allowed in function names.
+-  list($project_name, $version) = explode('-', $filename);
++  [$project_name, $version] = explode('-', $filename);
+   // The major number is the first digit (eg. 6 for 6.x-dev, 4 for 4.7.x).
+   return (int) $version;
+ }
+@@ -541,30 +542,42 @@ function l10n_drupal_save_file($revision = NULL, $file = NULL) {
+ 
+   if (!isset($file)) {
+     // We get the release number for the files.
+-    list($pid, $rid) = $revision;
++    [$pid, $rid] = $revision;
+   }
+   elseif (!isset($revision)) {
+     // We return data for a specific file.
+     return array($pid, $rid, $files[$file]);
+   }
+   else {
+-    $existing_file = db_select('l10n_server_file', 'l')->fields('l')->condition('rid', $rid)
+-      ->condition('location', $file)->execute()->fetchObject();
++    $existing_file = \Drupal::database()
++      ->select('l10n_server_file', 'l')
++      ->fields('l', ['fid', 'pid', 'rid', 'location', 'revision'])
++      ->condition('rid', $rid)
++      ->condition('location', $file)
++      ->execute()
++      ->fetchObject();
+     if ($existing_file) {
+       if ($existing_file->revision != $revision) {
+         // Changed revision on a file.
+-        db_query("UPDATE {l10n_server_file} SET revision = :revision WHERE fid = :fid", [':revision' => $revision, ':fid' => $existing_file->fid]);
++        \Drupal::database()
++          ->query("UPDATE {l10n_server_file} SET revision = :revision WHERE fid = :fid", [
++            ':revision' => $revision,
++            ':fid' => $existing_file->fid,
++          ])->execute();
+       }
+       $fid = $existing_file->fid;
+     }
+     else {
+       // New file in this release.
+-      $fid = db_insert('l10n_server_file')->fields(array(
+-        'pid' => $pid,
+-        'rid' => $rid,
+-        'location' => $file,
+-        'revision' => $revision,
+-      ))->execute();
++      $fid = \Drupal::database()
++        ->insert('l10n_server_file')
++        ->fields([
++          'pid' => $pid,
++          'rid' => $rid,
++          'location' => $file,
++          'revision' => $revision,
++        ])
++        ->execute();
+     }
+     $files[$file] = $fid;
+   }
+@@ -612,7 +625,7 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
+     return;
+   }
+ 
+-  if (!drupal_validate_utf8($value)) {
++  if (!Unicode::validateUtf8($value)) {
+     potx_status('error', t('Invalid UTF-8 string attempted to be localized.'), $file, $line);
+     return;
+   }
+@@ -620,36 +633,52 @@ function l10n_drupal_save_string($value = NULL, $context = NULL, $file = NULL, $
+   // If we have the file entry now, we can process adding the string.
+   if (isset($files[$file])) {
+     // Explode files array to pid, rid and fid.
+-    list($pid, $rid, $fid) = $files[$file];
++    [$pid, $rid, $fid] = $files[$file];
+     // Context cannot be null
+     $context= !is_null($context) ? $context : '';
+ 
+     // A \0 separator in the string means we deal with a string with plural variants.
+     // Unlike Drupal core, we store all in the same string, as it is easier
+     // to handle later, and we don't need the individual string parts.
+-    $sid = db_select("l10n_server_string", 'l')->fields('l', array('sid'))
+-      ->condition('hashkey', md5($value . $context))->execute()->fetchField();
++    $sid = \Drupal::database()
++      ->select('l10n_server_string', 'l')
++      ->fields('l', array('sid'))
++      ->condition('hashkey', md5($value . $context))
++      ->execute()
++      ->fetchField();
+     if (!$sid) {
+       // String does not exist.
+-      $sid = db_insert('l10n_server_string')->fields(array(
+-        'value' => $value,
+-        'context' => $context,
+-        'hashkey' => md5($value . $context),
+-      ))->execute();
++      $sid = \Drupal::database()
++        ->insert('l10n_server_string')
++        ->fields(array(
++          'value' => $value,
++          'context' => $context,
++          'hashkey' => md5($value . $context),
++        ))
++        ->execute();
+     }
+-    $existing_fid = db_select('l10n_server_line', 'l')->fields('l', array('fid'))
+-      ->condition('fid', $fid)->condition('sid', $sid)->condition('lineno', $line)
+-      ->condition('type', $string_type)->execute()->fetchField();
++    $existing_fid = \Drupal::database()
++      ->select('l10n_server_line', 'l')
++      ->fields('l', array('fid'))
++      ->condition('fid', $fid)
++      ->condition('sid', $sid)
++      ->condition('lineno', $line)
++      ->condition('type', $string_type)
++      ->execute()
++      ->fetchField();
+     if (!$existing_fid) {
+       // Location does not exist with this string.
+-      db_insert('l10n_server_line')->fields(array(
+-        'pid' => $pid,
+-        'rid' => $rid,
+-        'fid' => $fid,
+-        'sid' => $sid,
+-        'lineno' => $line,
+-        'type' => $string_type
+-      ))->execute();
++      \Drupal::database()
++        ->insert('l10n_server_line')
++        ->fields(array(
++          'pid' => $pid,
++          'rid' => $rid,
++          'fid' => $fid,
++          'sid' => $sid,
++          'lineno' => $line,
++          'type' => $string_type
++        ))
++        ->execute();
+     }
+     l10n_drupal_added_string_counter($sid);
+   }
+diff --git a/connectors/l10n_drupal_rest/composer.json b/connectors/l10n_drupal_rest/composer.json
+new file mode 100644
+index 0000000..75a1233
+--- /dev/null
++++ b/connectors/l10n_drupal_rest/composer.json
+@@ -0,0 +1,11 @@
++{
++    "name": "org/l10n_drupal_rest",
++    "type": "drupal-drush",
++    "extra": {
++        "drush": {
++            "services": {
++                "drush.services.yml": "^11"
++            }
++        }
++    }
++}
+\ No newline at end of file
+diff --git a/connectors/l10n_drupal_rest/drush.services.yml b/connectors/l10n_drupal_rest/drush.services.yml
+new file mode 100644
+index 0000000..1b3f725
+--- /dev/null
++++ b/connectors/l10n_drupal_rest/drush.services.yml
+@@ -0,0 +1,5 @@
++services:
++  l10n_drupal_rest.commands:
++    class: \Drupal\l10n_drupal_rest\Commands\L10nDrupalRestCommands
++    tags:
++      - { name: drush.command }
+diff --git a/connectors/l10n_drupal_rest/l10n_drupal_rest.module b/connectors/l10n_drupal_rest/l10n_drupal_rest.module
+index 031a031..273f2dd 100644
+--- a/connectors/l10n_drupal_rest/l10n_drupal_rest.module
++++ b/connectors/l10n_drupal_rest/l10n_drupal_rest.module
+@@ -5,27 +5,7 @@
+  *   Localization server for Drupal using REST API.
+  */
+ 
+-/**
+- * Constants.
+- *
+- * @todo move to source plugin?
+- */
+-const L10N_DRUPAL_REST_REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
+-
+-/**
+- * Implements hook_menu().
+- */
+-function l10n_drupal_rest_menu() {
+-  $items = array();
+-
+-  $items['translate/drupal_core'] = array(
+-    'title' => 'Drupal core translation status',
+-    'page callback' => 'l10n_drupal_rest_drupal_core_status',
+-    'file' => 'l10n_drupal_rest.drupal_core.inc',
+-    'access arguments' => array('access localization community'),
+-  );
+-  return $items;
+-}
++use Drupal\l10n_server\Entity\Release;
+ 
+ /**
+  * Implements hook_cron().
+@@ -40,28 +20,33 @@ function l10n_drupal_rest_cron() {
+   $source = \Drupal::service('plugin.manager.l10n_server.source')
+     ->createInstance('restapi', []);
+ 
+-  if ($connector->isEnabled() && $source->isCronEnabled()) {
++  if ($connector->isEnabled()
++      // @todo Settings from REST API configuration form is not available here.
++      && $source->isCronEnabled()) {
++
+     $success = $offset = $failed = 0;
+     $goal = $source->getScanLimit();
+-
+     $connector->refreshProjectList($source);
+ 
+     do {
+       // Pick the oldest releases we did not parse yet.
+-      $release_ids = \Drupal::entityQuery('l10n_server_release')
+-        ->condition('pid.entity.connector_module', ['drupal', 'drupal_rest'])
+-        ->condition('pid.entity.enabled', 1)
+-        ->condition('download_link', '', '<>')
+-        ->condition('last_parsed', 0)
+-        ->sort('file_date')
+-        ->range($offset, $goal - $success)
+-        ->execute();
+-
+-      $releases = \Drupal::entityTypeManager()
+-        ->getStorage('l10n_server_release')
+-        ->loadMultiple($release_ids);
+-
+-      foreach ($releases as $release) {
++      $query = \Drupal::database()
++        ->select('l10n_server_release', 'sr');
++      $query
++        ->join('l10n_server_project', 'sp');
++      $query
++        ->fields('sr', ['rid'])
++        ->condition('sp.connector_module', ['l10n_drupal_rest_restapi'], 'IN')
++        ->condition('sp.enabled', 1)
++        ->condition('sr.download_link', '', '<>')
++        ->condition('sr.last_parsed', 0)
++        // @todo Adding this forces mysql to create large temporary tables.
++        // ->orderBy('sr.file_date')
++        ->range($offset, $goal - $success);
++      $result = $query->execute();
++
++      foreach ($result as $record) {
++        $release = Release::load($record->rid);
+         if ($connector->drupalOrgParseRelease($release)) {
+           $success++;
+         }
+@@ -70,77 +55,13 @@ function l10n_drupal_rest_cron() {
+         }
+         $offset++;
+       }
+-    } while ($success < $goal && count($releases) > 0);
+-
+-    \Drupal::logger('l10n_drupal')->notice('Parsed @success releases successfully, @fails failed parsing.', [
+-      '%success' => $success,
+-      '%fails'   => $failed,
+-    ]);
+-  }
++    } while ($success < $goal && $query->countQuery()->execute()->fetchField() > 0);
+ 
+-}
+-
+-/**
+- * Implementation of hook_l10n_server_connector_info().
+- */
+-function l10n_drupal_rest_l10n_server_connector_info() {
+-  $connectors['l10n_drupal_rest'] = array(
+-    'title'    => t('Drupal.org packages'),
+-    'sources'  => array('restapi'),
+-    'file'     => drupal_get_path('module', 'l10n_drupal_rest') . '/l10n_drupal_rest.connector.inc',
+-    // Display warnings tab, because we are parsing source code here.
+-    'warnings' => TRUE,
+-  );
+-
+-  return $connectors;
+-}
+-
+-/**
+- * Implementation of hook_l10n_server_source_info().
+- */
+-function l10n_drupal_rest_l10n_server_source_info() {
+-  return array(
+-    'restapi' => array(
+-      'title' => t('the drupal.org REST API'),
+-      // Reuse file settings mostly (will be modified in form_alter()).
+-      'form'  => 'l10n_server_connectors_files_settings_form',
+-      'file'  => drupal_get_path('module', 'l10n_server') . '/l10n_server.connectors.inc',
+-    ),
+-  );
+-}
+-
+-// = Settings ==================================================================
+-
+-/**
+- * Implementation of hook_form_FORM_ID_alter().
+- */
+-function l10n_drupal_rest_form_l10n_server_connectors_files_settings_form_alter(&$form) {
+-  if ($form['#connector_name'] == 'l10n_drupal_rest') {
+-    // No file directory setting here.
+-    $form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#access'] = FALSE;
+-    unset($form['l10n_server_connector_l10n_drupal_rest_restapi_directory']['#after_build']);
+-    // Setting for filesize limit
+-    $form['l10n_server_connector_l10n_project_drupalorg_max_filesize'] = array(
+-      '#type'          => 'textfield',
+-      '#title'         => t('Release files max filesize'),
+-      '#default_value' => variable_get('l10n_server_connector_l10n_project_drupalorg_max_filesize', 50 * 1024 * 1024),
+-      '#description'   => t('In bytes. Releases larger than this size will not be downloaded.'),
+-      '#weight'        => 0,
+-    );
+-    $form['l10n_drupal_rest_refresh_url'] = array(
+-      '#type'          => 'textfield',
+-      '#title'         => t('Refresh URL'),
+-      '#default_value' => variable_get('l10n_drupal_rest_refresh_url', L10N_DRUPAL_REST_REFRESH_URL),
+-      '#description'   => t('URL to the releases.tsv file.'),
+-      '#weight'        => 1,
+-    );
+-    $form['l10n_drupal_rest_last_sync'] = array(
+-      '#type'          => 'textfield',
+-      '#title'         => t('Sync releases after'),
+-      '#default_value' => variable_get('l10n_drupal_rest_last_sync', 0),
+-      '#description'   => t('UNIX timestamp to parse releases from.'),
+-      '#weight'        => 2,
+-    );
++    \Drupal::logger('l10n_drupal')
++      ->notice('Parsed @success releases successfully, @fails failed parsing.', [
++        '@success' => $success,
++        '@fails'   => $failed,
++      ]);
+   }
+ }
+ 
+diff --git a/connectors/l10n_drupal_rest/l10n_drupal_rest.routing.yml b/connectors/l10n_drupal_rest/l10n_drupal_rest.routing.yml
+new file mode 100644
+index 0000000..d5749ba
+--- /dev/null
++++ b/connectors/l10n_drupal_rest/l10n_drupal_rest.routing.yml
+@@ -0,0 +1,7 @@
++l10n_drupal_rest.status:
++  path: '/translate/drupal_core'
++  defaults:
++    _title: 'Drupal core translation status'
++    _controller: '\Drupal\l10n_drupal_rest\Controller\L10nDrupalRestController::build'
++  requirements:
++    _permission: 'access localization community'
+diff --git a/connectors/l10n_drupal_rest/src/Commands/L10nDrupalRestCommands.php b/connectors/l10n_drupal_rest/src/Commands/L10nDrupalRestCommands.php
+new file mode 100644
+index 0000000..29e5dae
+--- /dev/null
++++ b/connectors/l10n_drupal_rest/src/Commands/L10nDrupalRestCommands.php
+@@ -0,0 +1,116 @@
++<?php
++
++namespace Drupal\l10n_drupal_rest\Commands;
++
++use Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector\DrupalRest;
++use Drupal\l10n_server\Entity\Release;
++use Drush\Commands\DrushCommands;
++
++/**
++ * A Drush commandfile.
++ *
++ * In addition to this file, you need a drush.services.yml
++ * in root of your module, and a composer.json file that provides the name
++ * of the services file to use.
++ *
++ * See these files for an example of injecting Drupal services:
++ *   - http://cgit.drupalcode.org/devel/tree/src/Commands/DevelCommands.php
++ *   - http://cgit.drupalcode.org/devel/tree/drush.services.yml
++ */
++class L10nDrupalRestCommands extends DrushCommands {
++
++  /**
++   * Refresh project list.
++   *
++   * @command l10n-drupal-rest:refresh-project-list
++   * @aliases ldrrpl
++   */
++  public function refreshProjectList() {
++    /** @var \Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector\DrupalRest $connector */
++    $connector = \Drupal::service('plugin.manager.l10n_server.connector')
++      ->createInstance('drupal_rest:restapi', []);
++    /** @var \Drupal\l10n_server\Plugin\l10n_server\Source\RestApi $source */
++    $source = \Drupal::service('plugin.manager.l10n_server.source')
++      ->createInstance('restapi', []);
++
++    try {
++      $connector->refreshProjectList($source);
++      $this->logger()
++        ->success(dt('Project list has been refreshed.'));
++    }
++    catch (\Exception $e) {
++      $this->logger()
++        ->error(dt('Could not refresh project list. Error @code: @message', [
++          '@code' => $e->getCode(),
++          '@message' => $e->getMessage(),
++        ]));
++    }
++  }
++
++  /**
++   * Parse projects.
++   *
++   * @param array $options
++   *   An associative array of options whose values come from cli, aliases,
++   *   config, etc.
++   *
++   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
++   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
++   * @throws \Drupal\Core\Entity\EntityStorageException|\Exception
++   *
++   * @option limit
++   *   The limit.
++   *
++   * @command l10n-drupal-rest:parse
++   * @aliases ldrp
++   */
++  public function parse(array $options = ['limit' => 1]) {
++    /** @var \Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector\DrupalRest $connector */
++    $connector = \Drupal::service('plugin.manager.l10n_server.connector')
++      ->createInstance('drupal_rest:restapi', []);
++
++    $goal = $options['limit'];
++
++    if ($connector->isEnabled()) {
++      $success = $offset = $failed = 0;
++
++      do {
++        // Pick the oldest releases we did not parse yet.
++        $query = \Drupal::database()
++          ->select('l10n_server_release', 'sr');
++        $query
++          ->join('l10n_server_project', 'sp');
++        $query
++          ->fields('sr', ['rid'])
++          ->condition('sp.connector_module', [DrupalRest::PROJECT_CONNECTOR_MODULE], 'IN')
++          ->condition('sp.enabled', 1)
++          ->condition('sr.download_link', '', '<>')
++          ->condition('sr.last_parsed', 0)
++          // @todo Adding this forces mysql to create unwanted temporary tables.
++          // ->orderBy('sr.file_date')
++          ->range($offset, $goal - $success);
++        $result = $query->execute();
++
++        foreach ($result as $record) {
++          $release = Release::load($record->rid);
++          echo "RELEASE::", $release->id(), PHP_EOL;
++          if ($connector->drupalOrgParseRelease($release)) {
++            $success++;
++          }
++          else {
++            $failed++;
++          }
++          $offset++;
++        }
++      } while ($success < $goal && $query->countQuery()->execute()->fetchField() > 0);
++
++      echo $success, "::", $failed, PHP_EOL;
++      $this->logger()->notice(
++        'Parsed @success releases successfully, @failed failed parsing.', [
++          '@success' => $success,
++          '@failed' => $failed,
++        ]);
++    }
++  }
++
++}
+diff --git a/connectors/l10n_drupal_rest/src/Controller/L10nDrupalRestController.php b/connectors/l10n_drupal_rest/src/Controller/L10nDrupalRestController.php
+new file mode 100644
+index 0000000..8ab4b01
+--- /dev/null
++++ b/connectors/l10n_drupal_rest/src/Controller/L10nDrupalRestController.php
+@@ -0,0 +1,109 @@
++<?php
++
++namespace Drupal\l10n_drupal_rest\Controller;
++
++use Drupal\Core\Controller\ControllerBase;
++
++/**
++ * Returns responses for Localization server for Drupal (REST API) routes.
++ */
++class L10nDrupalRestController extends ControllerBase {
++
++  const PROJECT_TITLE = 'Drupal core';
++
++  /**
++   * Builds the response.
++   */
++  public function build() {
++    // @todo Remove when finished porting l10n_packager module.
++//    if (!\Drupal::moduleHandler()->moduleExists('l10n_packager')) {
++//      $build['content'] = [
++//        '#type' => 'item',
++//        '#markup' => $this->t('The <em>l10n_packager</em> module is not available.'),
++//      ];
++//      return $build;
++//    }
++
++    $project_id = \Drupal::database()
++      ->select('l10n_server_project', 'sp')
++      ->condition('sp.title', static::PROJECT_TITLE)
++      ->fields('sp', ['pid'])
++      ->range(0, 1)
++      ->execute()
++      ->fetchField();
++    $releases = \Drupal::database()
++      ->select('l10n_server_release', 'sr')
++      ->condition('pid', $project_id)
++      ->fields('sr', ['rid', 'title'])
++      ->execute()
++      ->fetchAllKeyed();
++    uksort($releases, 'version_compare');
++    $rid = array_reverse(array_keys($releases))[0];
++    // [$num_source, $string_counts] = static::l10n_community_get_l10n_packager_string_count($project_id, $rid);
++
++    $num_source = 10666;
++    $build['status'] = [
++      '#type' => 'html_tag',
++      '#tag' => 'p',
++      '#value' => $this
++        ->t('Status based on @num source strings found in Drupal @release. Links are to untranslated strings in the release for that group.', [
++          '@num' => number_format($num_source),
++          '@release' => $releases[$rid],
++        ]),
++    ];
++    return $build;
++  }
++
++  /**
++   * Replacement for l10n_community_get_string_count when former stats are too
++   * slow.
++   *
++   * @todo Taken from l10n_community/pages.inc
++   *
++   * @param int $pid
++   *   The project id to get string counts for.
++   * @param int $rid
++   *   (Optional) The release id to get string counts for. If not provided, the
++   *   latest release of the project will be considered.
++   *
++   * @return array
++   *    first element is the number of original strings
++   *    second element is the number of translations for each language
++   */
++  function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
++    // Faster queries with l10n_packager, first get latest release id from the
++    // l10n_packager_file table for the project requested, then get the
++    // translation count of the release.
++    if (empty($rid)) {
++      $query = \Drupal::database()
++        ->select('l10n_server_release', 'sr');
++      $query
++        ->innerJoin('l10n_packager_file', 'pf', 'sr.rid = pf.rid');
++      $query
++        ->fields('sr', ['rid'])
++        ->condition('pid', $pid)
++        ->orderBy('rid', 'DESC')
++        ->range(0, 1);
++      $rid = $query->execute()->fetchField();
++    }
++    $results = \Drupal::database()
++      ->select('l10n_packager_file', 'pf')
++      ->fields('pf', ['language', 'sid_count'])
++      ->condition('rid', $rid)
++      ->execute()
++      ->fetchAllKeyed();
++    foreach ($results as $language => $sid_count) {
++      $sums[$language]['translations'] = $sid_count;
++    }
++    ksort($sums);
++    // Finally, get the string count of the release
++    $query = \Drupal::database()
++      ->select('l10n_server_line', 'sl')
++      ->fields('sl', ['sid'])
++      ->condition('rid', $rid)
++      ->distinct();
++    $num_source = $query->countQuery()->execute()->fetchField();
++    return array($num_source, $sums);
++  }
++
++}
+diff --git a/connectors/l10n_drupal_rest/src/Plugin/l10n_server/Connector/DrupalRest.php b/connectors/l10n_drupal_rest/src/Plugin/l10n_server/Connector/DrupalRest.php
+index 8a13eb3..d4726d2 100644
+--- a/connectors/l10n_drupal_rest/src/Plugin/l10n_server/Connector/DrupalRest.php
++++ b/connectors/l10n_drupal_rest/src/Plugin/l10n_server/Connector/DrupalRest.php
+@@ -4,13 +4,19 @@ declare(strict_types=1);
+ 
+ namespace Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector;
+ 
++use Drupal\Core\Database\Connection;
++use Drupal\Core\Entity\EntityTypeManagerInterface;
++use Drupal\Core\File\FileSystem;
+ use Drupal\Core\File\FileSystemInterface;
+-use Drupal\l10n_server\Annotation\Connector;
++use Drupal\Core\Logger\LoggerChannelInterface;
++use Drupal\Core\State\StateInterface;
+ use Drupal\l10n_server\ConnectorPluginBase;
+-use Drush\Drush;
+ use Drupal\Core\Url;
++use Drupal\l10n_server\Entity\Release;
++use Drupal\l10n_server\SourceInterface;
++use Drush\Drush;
++use GuzzleHttp\Client;
+ use Symfony\Component\DependencyInjection\ContainerInterface;
+-use Symfony\Component\HttpFoundation\Response;
+ 
+ /**
+  * A plugin to use source code of drupal.org package.
+@@ -26,46 +32,64 @@ use Symfony\Component\HttpFoundation\Response;
+  */
+ class DrupalRest extends ConnectorPluginBase {
+ 
+-  const LAST_SYNC =  'l10n_drupal_rest_last_sync';
++  const LAST_SYNC = 'l10n_drupal_rest_last_sync';
++
++  const PROJECT_CONNECTOR_MODULE = 'drupal_rest:restapi';
++
++  const PROJECT_PACKAGE_URL = 'https://www.drupal.org';
+ 
+-  const REFRESH_URL = 'l10n_drupal_rest_refresh_url';
++  const PROJECT_STATUS = 1;
+ 
+   /**
++   * File system service.
++   *
+    * @var \Drupal\Core\File\FileSystem
+    */
+-  private $fileSystem;
++  private FileSystem $fileSystem;
+ 
+   /**
++   * HTTP client.
++   *
+    * @var \GuzzleHttp\Client
+    */
+-  private $httpClient;
++  private Client $httpClient;
+ 
+   /**
++   * Database connection.
++   *
+    * @var \Drupal\Core\Database\Connection
+    */
+-  private $databaseConnection;
++  private Connection $database;
+ 
+   /**
++   * State system.
++   *
+    * @var \Drupal\Core\State\StateInterface
+    */
+-  private $state;
++  private StateInterface $state;
+ 
+-  /** @var \Drupal\Core\Entity\EntityTypeManagerInterface */
+-  private $entityTypeManager;
++  /**
++   * Entity type manager.
++   *
++   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
++   */
++  private EntityTypeManagerInterface $entityTypeManager;
+ 
+   /**
++   * Logger channel.
++   *
+    * @var \Drupal\Core\Logger\LoggerChannelInterface
+    */
+-  private $logger;
++  private LoggerChannelInterface $logger;
+ 
+   /**
+    * {@inheritdoc}
+    */
+   public static function create(
+-    ContainerInterface $container,
+-    array $configuration,
+-    $plugin_id,
+-    $plugin_definition
++      ContainerInterface $container,
++      array $configuration,
++      $plugin_id,
++      $plugin_definition
+   ) {
+     $instance = parent::create(
+       $container,
+@@ -75,33 +99,40 @@ class DrupalRest extends ConnectorPluginBase {
+     );
+     $instance->fileSystem = $container->get('file_system');
+     $instance->httpClient = $container->get('http_client');
+-    $instance->databaseConnection = $container->get('database');
++    $instance->database = $container->get('database');
+     $instance->state = $container->get('state');
+     $instance->entityTypeManager = $container->get('entity_type.manager');
+-    $instance->logger = $container->get('logger.factory')->get('l10n_drupal_rest');
++    $instance->logger = $container->get('logger.factory')
++      ->get('l10n_drupal_rest');
+     return $instance;
+   }
+ 
+-  // @todo: type $release (query result object).
+-
+   /**
++   * Parse a drupal.org release.
++   *
++   * @param \Drupal\l10n_server\Entity\Release $release
++   *   The release object.
++   *
++   * @return bool
++   *   Returns true on success, false on failure.
++   *
+    * @throws \Exception
+    */
+-  public function drupalOrgParseRelease($release): bool {
+-    $filename = basename($release->download_link);
++  public function drupalOrgParseRelease(Release $release): bool {
++    $filename = basename($release->getDownloadLink());
+     $package_file = $this->fileSystem->getTempDirectory() . '/' . $filename;
+ 
+-    $this->logger->notice(
+-      'Retrieving @filename for parsing.',
+-      ['@filename' => $filename]
+-    );
++    $this->logger
++      ->notice('Retrieving @filename for parsing.', [
++        '@filename' => $filename,
++      ]);
+ 
+     // Check filename for a limited set of allowed chars.
+     if (!preg_match('!^([a-zA-Z0-9_.-])+$!', $filename)) {
+-      $this->logger->error(
+-        'Filename %file contains malicious characters.',
+-        ['%file' => $package_file]
+-      );
++      $this->logger
++        ->error('Filename %file contains malicious characters.', [
++          '%file' => $package_file,
++        ]);
+       return FALSE;
+     }
+ 
+@@ -109,60 +140,67 @@ class DrupalRest extends ConnectorPluginBase {
+     // so remove file.
+     if (file_exists($package_file)) {
+       unlink($package_file);
+-      $this->logger->warning(
+-        'File %file already exists, deleting.',
+-        ['%file' => $package_file]
+-      );
++      $this->logger
++        ->warning('File %file already exists, deleting.', [
++          '%file' => $package_file,
++        ]);
+     }
+ 
+-    // Download the tar.gz file from Drupal.org and save it.
+-    if (!(($contents = $this->httpClient->get($release->download_link))
+-      && ($contents->code === 200)
+-      && file_put_contents($package_file, $contents->data))) {
+-
+-      $this->logger->error(
+-        'Unable to download and save %download_link file (%error).',
+-        [
+-          '%download_link' => $release->download_link,
+-          '%error' => $contents->code . ' ' . $contents->error,
+-        ]
+-      );
++    try {
++      $response = $this->httpClient->get($release->getDownloadLink());
++      file_put_contents($package_file, $response->getBody());
++    }
++    catch (\Exception $e) {
++      $this->logger
++        ->error('Unable to download and save @download_link file (@error @message).', [
++          '@download_link' => $release->getDownloadLink(),
++          '@error' => $e->getCode(),
++          '@message' => $e->getMessage(),
++        ]);
+       return FALSE;
+     }
+ 
++    // Potx module is already a dependency.
++    module_load_include('inc', 'potx', 'potx');
++    module_load_include('inc', 'potx', 'potx.local');
++
+     // Set up status messages if not in automated mode.
+-    //@todo: Check this call is still operational.
+-    potx_status('set', POTX_STATUS_MESSAGE);
++    potx_status('set', POTX_STATUS_SILENT);
+ 
+     // Generate temp folder to extract the tarball.
+     $temp_path = drush_tempdir();
+ 
+     // Nothing to do if the file is not there.
+     if (!file_exists($package_file)) {
+-      $this->logger->error(
+-        'Package to parse (%file) does not exist.',
+-        ['%file' => $package_file]
+-      );
++      $this->logger
++        ->error('Package to parse (%file) does not exist.', [
++          '%file' => $package_file,
++        ]);
+       return FALSE;
+     }
+ 
+     // Extract the local file to the temporary directory.
+-    if (!Drush::process(['tar', '-xvvzf', $package_file, '-C', $temp_path])) {
+-      $this->logger->error(
+-        'Failed to extract %file.',
+-        ['%file' => $package_file]
+-      );
++    $status_code = Drush::shell("tar -xvvzf $package_file -C $temp_path")->run();
++    echo 'STATUS CODE::', print_r($status_code, TRUE), PHP_EOL;
++    if ($status_code) {
++      $this->logger
++        ->error('Failed to extract %file.', [
++          '%file' => $package_file,
++        ]);
+       return FALSE;
+     }
+ 
+-    $this->logger->notice(
+-      'Parsing extracted @filename for strings.',
+-      ['@filename' => $filename]
+-    );
++    $this->logger
++      ->notice('Parsing extracted @filename for strings.', [
++        '@filename' => $filename,
++      ]);
++
++    module_load_include('inc', 'l10n_packager', 'l10n_packager');
++    module_load_include('inc', 'l10n_drupal', 'l10n_drupal.potx');
++    module_load_include('inc', 'l10n_drupal', 'l10n_drupal.files');
+ 
+     // Get all source files and save strings with our callback for this release.
+     $release->uri = explode('-', $filename)[0];
+-    //@todo: Check this call is still operational.
+     l10n_packager_release_set_branch($release);
+     if ($release->core === 'all') {
+       $version = POTX_API_8;
+@@ -171,8 +209,9 @@ class DrupalRest extends ConnectorPluginBase {
+       $version = explode('.', $release->core)[0];
+     }
+     _l10n_drupal_potx_init();
++    potx_local_init($temp_path);
+     $files = _potx_explore_dir($temp_path, '*', $version);
+-    l10n_drupal_save_file([$release->pid, $release->rid]);
++    l10n_drupal_save_file([$release->getProjectId(), $release->id()]);
+     l10n_drupal_added_string_counter(NULL, TRUE);
+     foreach ($files as $name) {
+       _potx_process_file(
+@@ -188,72 +227,71 @@ class DrupalRest extends ConnectorPluginBase {
+     $sid_count = l10n_drupal_added_string_counter();
+ 
+     // Delete directory now that parsing is done.
+-    Drush::process(['rm', '-rf', $temp_path]);
++    //Drush::shell("rm -rf $temp_path")->run();
+     unlink($package_file);
+ 
+     // Record changes of the scanned project in the database.
+-    $this->logger->notice(
+-      '@filename (@files files, @sids strings) scanned.',
+-      [
+-        '@filename' => $filename,
+-        '@files' => count($files),
+-        '@sids' => $sid_count,
+-      ]
+-    );
++    $this->logger
++      ->notice(
++        '@filename (@files files, @sids strings) scanned.',
++        [
++          '@filename' => $filename,
++          '@files' => count($files),
++          '@sids' => $sid_count,
++        ]
++      );
+ 
+     // Parsed this releases files.
+-    $this->databaseConnection->update('l10n_server_release')
++    $this->database
++      ->update('l10n_server_release')
+       ->fields([
+         'sid_count' => $sid_count,
+         'last_parsed' => \Drupal::time()->getRequestTime(),
+       ])
+-      ->condition('rid', $release->rid)
++      ->condition('rid', $release->id())
+       ->execute();
+ 
+     // Update error list for this release. Although the errors are related to
+     // files, we are not interested in the fine details, the file names are in
+     // the error messages as text. We assume no other messages are added while
+     // importing, so we can safely use drupal_get_message() to grab our errors.
+-    $this->databaseConnection->delete('l10n_server_error')->condition(
+-      'rid',
+-      $release->rid
+-    )->execute();
+-    $messages = $this->messenger->messagesByType('error');
+-    if (isset($messages['error']) && is_array($messages['error'])) {
++    $this->database
++      ->delete('l10n_server_error')
++      ->condition('rid', $release->id())
++      ->execute();
++    $messages = \Drupal::messenger()
++      ->messagesByType('error');
++    if (isset($messages['error'])
++        && is_array($messages['error'])) {
+       foreach ($messages['error'] as $error_message) {
+-        $this->databaseConnection
++        $this->database
+           ->insert('l10n_server_error')
+           ->fields([
+-            'rid' => $release->rid,
++            'rid' => $release->id(),
+             'value' => $error_message,
+           ])
+-          // @todo: catch Exception?
+           ->execute();
+       }
+     }
+-
+-    // @todo: Implement a better caching strategy (tags).
+-    // Clear stats cache, so new data shows up.
+-    // cache_clear_all('l10n:stats', 'cache');
+-
+     return TRUE;
+   }
+ 
+   /**
+-   * Synchronizes the project list.
++   * Refresh project list.
+    *
+-   * // @todo source type
+-   * @param $source
++   * @param \Drupal\l10n_server\SourceInterface $source
++   *   The source plugin.
+    *
+-   * @return void
++   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
++   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+    * @throws \Drupal\Core\Entity\EntityStorageException
+    */
+-  public function refreshProjectList($source) {
+-    $connector_name = 'l10n_drupal_rest_restapi';
++  public function refreshProjectList(SourceInterface $source) {
++    $config = $this->configFactory->get('l10n_server.settings');
+     $projects = $releases = [];
+     $project_count = $release_count = 0;
+ 
+-    // Only sync releases which are at most one day older then our last
++    // Only sync releases which are at most one day older than our last
+     // sync date. This ensures time zone issues and releases published while the
+     // previous cron run will not be a problem, but we only look at a relatively
+     // small list of releases at any given time. We only sync tagged releases,
+@@ -263,116 +301,116 @@ class DrupalRest extends ConnectorPluginBase {
+ 
+     // Fetch projects and releases since last sync.
+     $file_path = 'temporary://releases.tsv';
+-    // @todo get from configuration
+-    $url = $this->state->get(static::REFRESH_URL, L10N_DRUPAL_REST_REFRESH_URL);
++    $url = $config->get('connectors.drupal_rest:restapi.source.restapi.refresh_url');
+     // Add a timestamp GET parameter to prevent CDN caching.
+     $url = Url::fromUri($url, ['query' => ['time' => time()]])->toString();
+ 
+-    // This will take some time, so we need to increase timeout.
+-    // @todo check d7 options mapping.
+-    //$response = drupal_http_request($url, array(), 'GET', NULL, 3, 300);
+-    $response = $this->httpClient->get($url, ['timeout' => 300]);
++    try {
++      // This will take some time, so we need to increase timeout.
++      $response = $this->httpClient->get($url, ['connect_timeout' => 30]);
+ 
+-    if ($response->getStatusCode() === Response::HTTP_OK) {
+       // Save as temporary file and release the memory.
+-      try {
+-        /** @var \Drupal\file\FileRepositoryInterface $fileRepository */
+-        $file_repository = \Drupal::service('file.repository');
+-        $file_repository->writeData((string) $response->getBody(), $file_path, FileSystemInterface::EXISTS_RENAME);
+-        unset($response);
+-        $this->readTsv($file_path, $before, $projects, $releases);
+-        // Remove file
+-        $this->fileSystem->delete($file_path);
+-      }
+-      catch (\Exception $exception) {
+-        $this->logger->error($exception->getMessage());
+-      }
++      /** @var \Drupal\file\FileRepositoryInterface $fileRepository */
++      $file_repository = \Drupal::service('file.repository');
++      $file_repository->writeData((string) $response->getBody(), $file_path, FileSystemInterface::EXISTS_RENAME);
++      unset($response);
++      $this->readTsv($file_path, $before, $projects, $releases);
++      $this->fileSystem->delete($file_path);
+     }
+-    else {
+-      $this->logger->error('Releases URL %url is unreacheable.', [
+-        '%url' => $url,
+-      ]);
+-      return;
++    catch (\Exception $exception) {
++      $this->logger
++        ->error($exception->getMessage());
+     }
+ 
+     // Record all non-existing projects in our local database.
+     $project_storage = $this->entityTypeManager->getStorage('l10n_server_project');
+-    foreach ($projects as $project_name => $project_title) {
+-      // Check if project exists.
+-      if ($existing_projects = $project_storage->getQuery()->condition('uri', $project_name)->execute()) {
++    foreach ($projects as $project_uri => $project_title) {
++      $existing_projects = $project_storage->getQuery()
++        ->condition('uri', $project_uri)
++        ->execute();
++      if ($existing_projects) {
+         /** @var \Drupal\l10n_server\Entity\Project $existing_project */
+         $existing_project = $project_storage->load(reset($existing_projects));
++
+         // Check that the title is correct, if not update it.
+         if ($existing_project->get('title')->value !== $project_title) {
+           $existing_project->set('title', $project_title)->save();
+-          $this->logger->info('Project %n renamed to %t.', [
+-            '%t' => $project_title,
+-            '%n' => $project_name,
+-          ]);
++          $this->logger
++            ->info('Project %name renamed to %title.', [
++              '%title' => $project_title,
++              '%name' => $project_uri,
++            ]);
+         }
+       }
+       else {
+         $project_count++;
+-        $project_storage->create(
+-          [
+-            'uri' => $project_name,
+-            'title' => $project_title,
+-            'last_parsed' =>  $_SERVER['REQUEST_TIME'],
+-            // @todo home_link (D7) was changed to homepage (D9) check usage.
+-            'homepage' => 'http://drupal.org/project/' . $project_name,
+-            'connector_module' => $connector_name,
+-            'status' => 1,
+-          ]
+-        )->save();
+-        $this->logger->notice('Project %t (%n) added.', array(
+-          '%t' => $project_title,
+-          '%n' => $project_name,
+-        ));
++        $project_storage->create([
++          'uri' => $project_uri,
++          'title' => $project_title,
++          'last_parsed' => \Drupal::time()->getRequestTime(),
++          'homepage' => implode('/', [
++            static::PROJECT_PACKAGE_URL,
++            'project',
++            $project_uri,
++          ]),
++          'connector_module' => self::PROJECT_CONNECTOR_MODULE,
++          'status' => self::PROJECT_STATUS,
++        ])->save();
++        $this->logger
++          ->notice('Project %title (%uri) added.', [
++            '%title' => $project_title,
++            '%uri' => $project_uri,
++          ]);
+       }
+     }
+ 
+     // Record all releases in our local database.
+     $release_storage = $this->entityTypeManager->getStorage('l10n_server_release');
+     foreach ($releases as $release) {
+-      $download_link = "http://ftp.drupal.org/files/projects/{$release['machine_name']}-{$release['version']}.tar.gz";
++      $download_link = "https://ftp.drupal.org/files/projects/{$release['machine_name']}-{$release['version']}.tar.gz";
+       if ($release_storage->getQuery()->condition('download_link', $download_link)->execute()) {
+         // @todo (D7) What happens to unpublished releases? drop data outright?
+       }
+       else {
+         $release_count++;
+-        // Get the project pid
+-        $projects = $project_storage->getQuery()->condition('uri', $release['machine_name'])->execute();
++        // Get the project id.
++        $projects = $project_storage->getQuery()
++          ->condition('uri', $release['machine_name'])
++          ->execute();
+         $pid = reset($projects);
+         // @todo (d7) What about filehash?
+         $filehash = '';
+         // New published release, not recorded before.
+         $release_storage->create([
+-          'pid'           => $pid,
+-          'title'         => $release['version'],
++          'pid' => $pid,
++          'title' => $release['version'],
+           'download_link' => $download_link,
+-          'file_date'     => $release['created'],
+-          'file_hash'     => $filehash,
+-          'last_parsed'   => 0,
+-          'weight'        => 0,
++          'file_date' => $release['created'],
++          'file_hash' => $filehash,
++          'last_parsed' => 0,
++          'weight' => 0,
+         ])->save();
+-        $this->logger->notice('Release %t from project %n added.', [
+-          '%t' => $release['version'],
+-          '%n' => $release['machine_name'],
+-        ]);
++        $this->logger
++          ->notice('Release %title from project %name added.', [
++            '%title' => $release['version'],
++            '%name' => $release['machine_name'],
++          ]);
+         // Update last sync date with the date of this release if later.
+         $last_sync = max($last_sync, $release['created']);
+       }
+     }
+ 
+-    // Report some informations.
++    // Report some information.
+     if ($release_count || $project_count) {
+-      $this->logger->notice('Fetched info about %p projects and %r releases.', [
+-        '%p' => $project_count,
+-        '%r' => $release_count,
+-      ]);
++      $this->logger
++        ->notice('Fetched info about %p projects and %r releases.', [
++          '%p' => $project_count,
++          '%r' => $release_count,
++        ]);
+     }
+     else {
+-      $this->logger->notice('No new info about projects and releases.');
++      $this->logger
++        ->notice('No new info about projects and releases.');
+     }
+ 
+     // Set last sync time to limit number of releases to look at next time.
+@@ -380,19 +418,25 @@ class DrupalRest extends ConnectorPluginBase {
+   }
+ 
+   /**
+-   * Parse the release file for projects and releases newer than before
++   * Parse the release file for projects and releases newer than before.
++   *
++   * @param string $file_path
++   *   The file path string.
++   * @param int $before
++   *   The timestamp before.
++   * @param array $projects
++   *   The projects array.
++   * @param array $releases
++   *   The releases array.
+    *
+-   * @param $file_path
+-   * @param $before
+-   * @param $projects
+-   * @param $releases
+-   * @return mixed
++   * @return bool
++   *   Return true for success or false for failure.
+    */
+-   private function readTsv($file_path, $before, &$projects, &$releases) {
+-    $headers = array();
++  private function readTsv(string $file_path, int $before, array &$projects, array &$releases): bool {
++    $headers = [];
+     if (($handle = fopen($file_path, "r")) !== FALSE) {
+       while (($data = fgetcsv($handle, 1000, "\t")) !== FALSE) {
+-        // Get headers
++        // Get headers.
+         if (empty($headers)) {
+           $headers = array_flip($data);
+           continue;
+@@ -405,15 +449,16 @@ class DrupalRest extends ConnectorPluginBase {
+         if ($before < $time) {
+           $machine_name = trim($data[$headers['project_machine_name']]);
+           $title = trim($data[$headers['project_name']]);
++
+           // A first array for projects.
+           $projects[$machine_name] = $title;
+           // A second array for releases.
+-          $releases[] = array(
++          $releases[] = [
+             'created' => $time,
+             'machine_name' => $machine_name,
+             'title'        => $title,
+             'version'      => $data[$headers['version']],
+-          );
++          ];
+         }
+         else {
+           fclose($handle);
+diff --git a/l10n_community/pages.inc b/l10n_community/pages.inc
+index 10eb4dc..2aead45 100644
+--- a/l10n_community/pages.inc
++++ b/l10n_community/pages.inc
+@@ -848,15 +848,34 @@ function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
+   // l10n_packager_file table for the project requested, then get the
+   // translation count of the release.
+   if (empty($rid)) {
+-    $rid = db_query("SELECT pf.rid FROM {l10n_server_release} sr INNER JOIN {l10n_packager_file} pf ON sr.rid = pf.rid WHERE pid = :pid ORDER BY pf.rid DESC LIMIT 0, 1", array(':pid' => $pid))->fetchField();
+-  }
+-  $results = db_query("SELECT language, sid_count FROM {l10n_packager_file} WHERE rid = :rid", array(':rid' => $rid))->fetchAllKeyed();
++    $query = \Drupal::database()
++      ->select('l10n_server_release', 'sr');
++    $query
++      ->innerJoin('l10n_packager_file', 'pf', 'sr.rid = pf.rid');
++    $query
++      ->fields('sr', ['rid'])
++      ->condition('pid', $pid)
++      ->orderBy('rid', 'DESC')
++      ->range(0, 1);
++    $rid = $query->execute()->fetchField();
++  }
++  $results = \Drupal::database()
++    ->select('l10n_packager_file', 'pf')
++    ->fields('pf', ['language', 'sid_count'])
++    ->condition('rid', $rid)
++    ->execute()
++    ->fetchAllKeyed();
+   foreach ($results as $language => $sid_count) {
+     $sums[$language]['translations'] = $sid_count;
+   }
+   ksort($sums);
+   // Finally, get the string count of the release
+-  $num_source = db_query("SELECT COUNT(DISTINCT l.sid) FROM {l10n_server_line} l WHERE l.rid = :rid", array(':rid' => $rid))->fetchField();
++  $query = \Drupal::database()
++    ->select('l10n_server_line', 'sl')
++    ->fields('sl', ['sid'])
++    ->condition('rid', $rid)
++    ->distinct();
++  $num_source = $query->countQuery()->execute()->fetchField();
+   return array($num_source, $sums);
+ }
+ 
+diff --git a/l10n_packager/l10n_packager.inc b/l10n_packager/l10n_packager.inc
+index 059c127..61a6552 100644
+--- a/l10n_packager/l10n_packager.inc
++++ b/l10n_packager/l10n_packager.inc
+@@ -6,7 +6,7 @@
+  */
+ 
+ // This library relies on l10n_community export.inc
+-module_load_include('inc', 'l10n_community', 'export');
++//module_load_include('inc', 'l10n_community', 'export');
+ 
+ /**
+  * Check release translations and repackage if needed.
+@@ -319,12 +319,12 @@ function l10n_packager_release_set_branch(&$release) {
+   // Set branch to everything before the last dot, and append an x. For
+   // example, 6.1, 6.2, 6.x-dev, 6.0-beta1 all become 6.x. 8.7.13 becomes
+   // 8.7.x. 6.x-1.0-beta1 becomes 6.x-1.x. 2.1.0-rc1 becomes 2.1.x.
+-  $release->branch = preg_replace('#\.[^.]*$#', '.x', $release->title);
++  $release->branch = preg_replace('#\.[^.]*$#', '.x', $release->title->value);
+ 
+   // Stupid hack for drupal core.
+   if ($release->uri === 'drupal') {
+     // Version has -extra removed, 6.0-beta1 becomes 6.0.
+-    $release->version = explode('-', $release->title)[0];
++    $release->version = explode('-', $release->title->value)[0];
+     // Major version is the first component before the .
+     $major = explode('.', $release->branch)[0];
+     if ($major >= 8) {
+@@ -340,7 +340,7 @@ function l10n_packager_release_set_branch(&$release) {
+     // 2.1.x-dev, 2.1.0-rc1. If there is a core API compatibility component,
+     // split it off. version here is the main version number, without the
+     // -{extra} component, like -beta1 or -rc1.
+-    preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->title, $match);
++    preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->label(), $match);
+     $release->core = $match['core'] ?: 'all';
+     $release->version = $match['version'];
+   }
+diff --git a/l10n_server/l10n_server.install b/l10n_server/l10n_server.install
+index d9f9c0f..be92ec5 100644
+--- a/l10n_server/l10n_server.install
++++ b/l10n_server/l10n_server.install
+@@ -12,6 +12,147 @@ declare(strict_types=1);
+  */
+ function l10n_server_schema(): array {
+   $schema = [];
++  $schema['l10n_server_error'] = [
++    'description' => 'Errors found while parsing release packages. Although we find errors in the release files, we store error notes on a release level, to make them easily accessible without the need for extraneous detail.',
++    'fields' => [
++      'eid' => [
++        'description' => 'Internal numeric identifier for an error.',
++        'type' => 'serial',
++        'not null' => TRUE,
++      ],
++      'rid' => [
++        'description' => 'Reference to the {l10n_server_release}.rid of the affected release.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'value' => [
++        'description' => 'Text of the error message.',
++        'type' => 'text',
++        'not null' => TRUE,
++      ],
++    ],
++    'primary key' => ['eid'],
++    'indexes' => [
++      'rid' => ['rid'],
++    ],
++  ];
++
++  $schema['l10n_server_file'] = [
++    'description' => 'Information on files found and parsed in a release.',
++    'fields' => [
++      'fid' => [
++        'description' => 'Internal numeric identifier for a file.',
++        'type' => 'serial',
++        'not null' => TRUE,
++      ],
++      'pid' => [
++        'description' => 'Reference to the {l10n_server_project}.pid of the parent project.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'rid' => [
++        'description' => 'Reference to the {l10n_server_release}.rid of the parent release.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'location' => [
++        'description' => 'Path to the file within the release package.',
++        'type' => 'varchar',
++        'length' => '255',
++        'not null' => TRUE,
++      ],
++      'revision' => [
++        'description' => 'CVS revision number extracted for reuse in exports.',
++        'type' => 'varchar',
++        'length' => '255',
++        'not null' => TRUE,
++      ],
++    ],
++    'primary key' => ['fid'],
++    'indexes' => [
++      'rid' => ['rid'],
++      'pid' => ['pid'],
++    ],
++  ];
++  $schema['l10n_server_line'] = [
++    'description' => 'Information on occurances of strings on lines of specific files.',
++    'fields' => [
++      'pid' => [
++        'description' => 'Reference to the {l10n_server_project}.pid of the parent project.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'rid' => [
++        'description' => 'Reference to the {l10n_server_release}.rid of the parent release.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'fid' => [
++        'description' => 'Reference to the {l10n_server_file}.fid of the parent file.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'lineno' => [
++        'description' => 'Number of line where the string occurance was found.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'type' => [
++        'description' => 'Type of occurance. Possible values are constants POTX_STRING_INSTALLER, POTX_STRING_RUNTIME or POTX_STRING_BOTH.',
++        'type' => 'int',
++        'not null' => TRUE,
++        'default' => 0,
++      ],
++      'sid' => [
++        'description' => 'Reference to the {l10n_server_string}.sid found on this line.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++    ],
++    'indexes' => [
++      'fid' => ['fid'],
++      'pid_sid' => ['pid', 'sid'],
++      'rid' => ['rid'],
++      'sid' => ['sid'],
++    ],
++  ];
++  $schema['l10n_server_file'] = [
++    'description' => 'Information on files found and parsed in a release.',
++    'fields' => [
++      'fid' => [
++        'description' => 'Internal numeric identifier for a file.',
++        'type' => 'serial',
++        'not null' => TRUE,
++      ],
++      'pid' => [
++        'description' => 'Reference to the {l10n_server_project}.pid of the parent project.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'rid' => [
++        'description' => 'Reference to the {l10n_server_release}.rid of the parent release.',
++        'type' => 'int',
++        'not null' => FALSE,
++      ],
++      'location' => [
++        'description' => 'Path to the file within the release package.',
++        'type' => 'varchar',
++        'length' => '255',
++        'not null' => TRUE,
++      ],
++      'revision' => [
++        'description' => 'CVS revision number extracted for reuse in exports.',
++        'type' => 'varchar',
++        'length' => '255',
++        'not null' => TRUE,
++      ],
++    ],
++    'primary key' => ['fid'],
++    'indexes' => [
++      'rid' => ['rid'],
++      'pid' => ['pid'],
++    ],
++  ];
+   $schema['l10n_server_string'] = [
+     'description' => 'Value of translatable strings found.',
+     'fields' => [
+diff --git a/l10n_server/src/Entity/Handler/ProjectListBuilder.php b/l10n_server/src/Entity/Handler/ProjectListBuilder.php
+index 5eab4d3..fbd10d6 100644
+--- a/l10n_server/src/Entity/Handler/ProjectListBuilder.php
++++ b/l10n_server/src/Entity/Handler/ProjectListBuilder.php
+@@ -7,6 +7,7 @@ use Drupal\Core\Entity\EntityInterface;
+ use Drupal\Core\Entity\EntityListBuilder;
+ use Drupal\Core\Link;
+ use Drupal\Core\StringTranslation\TranslatableMarkup;
++use Drupal\Core\Url;
+ use Drupal\l10n_server\Entity\ProjectInterface;
+ use function \assert;
+ use function \array_merge;
+@@ -35,7 +36,15 @@ class ProjectListBuilder extends EntityListBuilder {
+     assert($entity instanceof ProjectInterface);
+     $row = [];
+     $row['label']['data'] = $entity->label();
+-    $row['homepage']['data'] = $entity->getHomepage() ?? '-';
++    if ($entity->getHomepage()) {
++      $row['homepage']['data'] = Link::fromTextAndUrl(
++        Url::fromUri($entity->getHomepage())->toString(),
++        Url::fromUri($entity->getHomepage())
++      );
++    }
++    else {
++      $row['homepage']['data'] = $this->t('n/a');
++    }
+     $row['last_parsed']['data'] = $entity->getLastTimeParsed() ?? '-';
+     $row['releases']['data'] = Link::createFromRoute(t('Releases'), 'entity.l10n_server_release.collection', ['l10n_server_project' => $entity->id()]);
+     return array_merge($row, parent::buildRow($entity));
+diff --git a/l10n_server/src/Entity/Handler/ReleaseListBuilder.php b/l10n_server/src/Entity/Handler/ReleaseListBuilder.php
+index 378a875..f37296c 100644
+--- a/l10n_server/src/Entity/Handler/ReleaseListBuilder.php
++++ b/l10n_server/src/Entity/Handler/ReleaseListBuilder.php
+@@ -63,4 +63,29 @@ class ReleaseListBuilder extends EntityListBuilder {
+     return $this->t('Releases');
+   }
+ 
++  /**
++   * {@inheritdoc}
++   */
++  protected function getEntityIds() {
++    $query = $this->getStorage()->getQuery()
++      ->accessCheck(TRUE)
++      ->sort($this->entityType->getKey('id'));
++
++    // Add query condition with project from request.
++    $params = \Drupal::routeMatch()->getParameters()->all();
++    foreach ($params as $param) {
++      if ($param instanceof \Drupal\l10n_server\Entity\Project) {
++        /** \Drupal\l10n_server\Entity\Project $param */
++        $query->condition('rid', $param->id());
++        break;
++      }
++    }
++
++    // Only add the pager if a limit is specified.
++    if ($this->limit) {
++      $query->pager($this->limit);
++    }
++    return $query->execute();
++  }
++
+ }
+diff --git a/l10n_server/src/Entity/Project.php b/l10n_server/src/Entity/Project.php
+index 15e1154..dfc3627 100644
+--- a/l10n_server/src/Entity/Project.php
++++ b/l10n_server/src/Entity/Project.php
+@@ -113,7 +113,8 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
+     $fields['last_parsed'] = BaseFieldDefinition::create('timestamp')
+       ->setLabel(t('Last time project was parsed'))
+       ->setReadOnly(TRUE)
+-      ->setDescription(t('Unix timestamp of last time project was parsed.'));
++      ->setDescription(t('Unix timestamp of last time project was parsed.'))
++      ->setDefaultValue(0);
+ 
+     $fields['weight'] = BaseFieldDefinition::create('integer')
+       ->setLabel(t('Weight'))
+@@ -178,6 +179,6 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
+    * {@inheritdoc}
+    */
+   public function getLastTimeParsed(): ?int {
+-    return $this->get('last_parsed')->value;
++    return (int) $this->get('last_parsed')->value;
+   }
+ }
+diff --git a/l10n_server/src/Plugin/l10n_server/Source/RestApi.php b/l10n_server/src/Plugin/l10n_server/Source/RestApi.php
+index f806582..da3528c 100644
+--- a/l10n_server/src/Plugin/l10n_server/Source/RestApi.php
++++ b/l10n_server/src/Plugin/l10n_server/Source/RestApi.php
+@@ -18,19 +18,17 @@ use Drupal\l10n_server\ConfigurableSourcePluginBase;
+  */
+ final class RestApi extends ConfigurableSourcePluginBase {
+ 
++  const REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
++
+   /**
+    * {@inheritdoc}
+    */
+   public function defaultConfiguration(): array {
+     $config = parent::defaultConfiguration();
+-
+     $config['scan_limit'] = 1;
+     $config['cron_enabled'] = FALSE;
+     $config['max_filesize'] = 50 * 1024 * 1024;
+-    $config['refresh_url'] = L10N_DRUPAL_REST_REFRESH_URL;
+-    // @todo use State API if still necessary.
+-    //$config['last_sync'] = 0;
+-
++    $config['refresh_url'] = RestApi::REFRESH_URL;
+     return $config;
+   }
+ 
+@@ -67,7 +65,6 @@ final class RestApi extends ConfigurableSourcePluginBase {
+       '#type' => 'textfield',
+       '#default_value' => $this->getRefreshUrl(),
+     ];
+-
+     return $form;
+   }
+ 
+diff --git a/l10n_server/src/ProjectStorageSchema.php b/l10n_server/src/ProjectStorageSchema.php
+index d2c6d00..0f110a9 100644
+--- a/l10n_server/src/ProjectStorageSchema.php
++++ b/l10n_server/src/ProjectStorageSchema.php
+@@ -29,6 +29,12 @@ class ProjectStorageSchema extends SqlContentEntityStorageSchema {
+       else if ($field_name === 'uri') {
+         $this->addSharedTableFieldUniqueKey($storage_definition, $schema);
+       }
++      else if ($field_name === 'connector_module') {
++        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
++      }
++      else if ($field_name === 'last_parsed') {
++        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
++      }
+     }
+     return $schema;
+   }
+diff --git a/l10n_server/src/ReleaseStorageSchema.php b/l10n_server/src/ReleaseStorageSchema.php
+index 02f923f..8ef2970 100644
+--- a/l10n_server/src/ReleaseStorageSchema.php
++++ b/l10n_server/src/ReleaseStorageSchema.php
+@@ -43,7 +43,15 @@ class ReleaseStorageSchema extends SqlContentEntityStorageSchema {
+       else if ($field_name === 'sid_count') {
+         $schema['fields']['sid_count']['default'] = 0;
+       }
+-
++      else if ($field_name === 'download_link') {
++        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
++      }
++      else if ($field_name === 'file_date') {
++        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
++      }
++      else if ($field_name === 'last_parsed') {
++        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
++      }
+     }
+     return $schema;
+   }

@@ -1,0 +1,7 @@
+l10n_drupal_rest.status:
+  path: '/translate/drupal_core'
+  defaults:
+    _title: 'Drupal core translation status'
+    _controller: '\Drupal\l10n_drupal_rest\Controller\L10nDrupalRestController::build'
+  requirements:
+    _permission: 'access localization community'

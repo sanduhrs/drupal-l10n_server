@@ -29,6 +29,12 @@ class ProjectStorageSchema extends SqlContentEntityStorageSchema {
       else if ($field_name === 'uri') {
         $this->addSharedTableFieldUniqueKey($storage_definition, $schema);
       }
+      else if ($field_name === 'connector_module') {
+        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
+      }
+      else if ($field_name === 'last_parsed') {
+        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
+      }
     }
     return $schema;
   }
