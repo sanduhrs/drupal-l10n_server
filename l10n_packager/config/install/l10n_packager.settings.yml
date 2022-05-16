@@ -1,0 +1,7 @@
+cron: false
+directory: 'public://l10n_packager'
+update_url: 'sites/default/files/l10n_packager'
+filepath: '%core/%project/%project-%release.%language.po'
+release_limit: 10
+file_limit: 1
+update: false

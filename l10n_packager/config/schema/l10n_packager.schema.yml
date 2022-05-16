@@ -1,0 +1,25 @@
+l10n_packager.settings:
+  type: config_object
+  label: 'Packager settings'
+  mapping:
+    cron:
+      type: boolean
+      label: 'Cron'
+    directory:
+      type: string
+      label: 'Directory'
+    update_url:
+      type: string
+      label: 'Update URL'
+    filepath:
+      type: string
+      label: 'Filepath'
+    release_limit:
+      type: integer
+      label: 'Release limit'
+    file_limit:
+      type: integer
+      label: 'File limit'
+    update:
+      type: boolean
+      label: 'Update'
