@@ -93,7 +93,6 @@ class L10nDrupalRestCommands extends DrushCommands {
 
         foreach ($result as $record) {
           $release = Release::load($record->rid);
-          echo "RELEASE::", $release->id(), PHP_EOL;
           if ($connector->drupalOrgParseRelease($release)) {
             $success++;
           }

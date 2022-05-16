@@ -181,7 +181,6 @@ class DrupalRest extends ConnectorPluginBase {
 
     // Extract the local file to the temporary directory.
     $status_code = Drush::shell("tar -xvvzf $package_file -C $temp_path")->run();
-    echo 'STATUS CODE::', print_r($status_code, TRUE), PHP_EOL;
     if ($status_code) {
       $this->logger
         ->error('Failed to extract %file.', [
