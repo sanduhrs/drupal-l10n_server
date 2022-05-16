@@ -8,6 +8,11 @@
 /**
  * Release packager status: do not repackage anymore.
  */
+
+use Drupal\Core\File\FileSystemInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Url;
+
 const L10N_PACKAGER_DISABLED = 0;
 
 /**
@@ -100,6 +105,7 @@ function l10n_packager_form_alter(&$form, $form_state, $form_id) {
  * Export meta information in a simple XML format for remote use.
  */
 function l10n_packager_export_metafile() {
+  $config = \Drupal::config('l10n_packager');
 
   // Start off with a root element of l10nserver.
   $xml = new SimpleXMLElement("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<l10n_server></l10n_server>");
@@ -108,40 +114,44 @@ function l10n_packager_export_metafile() {
   $xml->addChild('version', L10N_PACKAGER_API_VERSION);
 
   // Add server meta information.
-  $server_url = url('', array('absolute' => TRUE));
-  $xml->addChild('name', variable_get('site_name', 'Drupal'));
+  $xml->addChild('name', \Drupal::config('site.settings')->get('name'));
+  $server_url = Url::fromUri('internal:/')->setAbsolute()->toString();
   $xml->addChild('link', $server_url);
-  if ($url = variable_get('l10n_packager_update_url', 0)) {
-    $xml->addChild('update_url', $url . '/' . variable_get('l10n_packager_filepath', L10N_PACKAGER_FILEPATH));
+  if ($url = $config->get('update_url')) {
+    $xml->addChild('update_url', $url . '/' . $config->get('filepath'));
   }
 
   // We also inform the client whether this server accepts remote string
   // submissions so the client can auto-configure itself.
-  if (module_exists('l10n_remote')) {
+  if (\Drupal::moduleHandler()->moduleExists('l10n_remote')) {
     $xml->addChild('l10n_remote', $server_url);
   }
 
   // Add language list.
   $languages = $xml->addChild('languages');
-  foreach (language_list('language', TRUE) as $language) {
+  $language_list = \Drupal::languageManager()->getLanguages(LanguageInterface::STATE_ALL);
+  foreach ($language_list as $language) {
     $item = $languages->addChild('language');
-    foreach (array('name', 'native', 'language') as $key) {
-      // Rename 'language' to 'code' to avoid tags with same names
-      // used on different levels for different reasons.
-      $item->addChild($key == 'language' ? 'code' : $key, $language->$key);
-    }
+    $item->addChild('name', $language->getName());
+    $item->addChild('code', $language->getId());
+    // @todo Fix native value.
+    // $item->addChild('native', $language->getNative());
   }
 
   // Export to static file.
-  $xml_path = l10n_packager_directory();
-  file_prepare_directory($xml_path, FILE_CREATE_DIRECTORY);
-  $t_args = array('%file' => $xml_path . '/l10n_server.xml');
-
+  $xml_path = \Drupal::config('l10n_packager.settings')->get('directory');
+  /** @var \Drupal\Core\File\FileSystemInterface $file_system */
+  $file_system = \Drupal::service('file_system');
+  $file_system->prepareDirectory($xml_path, FileSystemInterface::CREATE_DIRECTORY);
   if ($xml->asXML($xml_path . '/l10n_server.xml')) {
-    drupal_set_message(t('Server information XML exported to %file.', $t_args));
+    \Drupal::messenger()->addMessage(t('Server information XML exported to %file.', [
+      '%file' => $xml_path . '/l10n_server.xml',
+    ]));
   }
   else {
-    drupal_set_message(t('Error when trying to export server info XML to %file.', $t_args), 'error');
+    \Drupal::messenger()->addError(t('Error when trying to export server info XML to %file.', [
+      '%file' => $xml_path . '/l10n_server.xml',
+    ]));
   }
 }
 
