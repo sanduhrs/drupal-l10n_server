@@ -1,6 +1,6 @@
 services:
-  ardennes_api.commands:
-    class: \Drupal\l10n_packager\Commands\packagerCommands
+  l10n_packager.commands:
+    class: \Drupal\l10n_packager\Commands\PackagerCommands
     tags:
       - { name: drush.command }
     arguments: ['@entity_type.manager', '@logger.factory']
