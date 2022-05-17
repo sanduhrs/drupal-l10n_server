@@ -6,6 +6,7 @@ namespace Drupal\l10n_packager\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\l10n_server\Entity\Project;
 
 /**
  * Form allowing user to pick projects to show available translation downloads for.
@@ -24,35 +25,45 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(
-    array $form,
-    FormStateInterface $form_state,
-    string $project = self::DEFAULT_PROJECT
-  ): array {
-    $defaultValues = $form_state->cleanValues()->getValues();
-
+  public function buildForm(array $form, FormStateInterface $form_state, Project $project = NULL): array {
     $form['project'] = [
-      '#default_value' => $defaultValues['project'] ?? $project,
       '#title' => t('Pick a project'),
       '#type' => 'textfield',
-      '#autocomplete_path' => 'translate/project-autocomplete',
+      '#default_value' => $project?->id(),
     ];
+    $projects = l10n_server_get_projects();
+    if (($count = count($projects)) <= 30) {
+      // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
+      $form['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
+      $form['project']['#options'] = [];
+      foreach ($projects as $project) {
+        // Title used to conform to the autocomplete behavior.
+        $form['project']['#options'][$project->pid] = $project->title;
+      }
+    }
+    else {
+      // Autocomplete field for more than 30 projects.
+      $form['project'] = [
+        '#type' => 'entity_autocomplete',
+        '#target_type' => 'l10n_server_project',
+        '#default_value' => $project,
+        '#selection_handler' => 'default',
+      ];
+    }
 
-    $form['submit'] = [
+    $form['actions']['#type'] = 'actions';
+    $form['actions']['submit'] = [
       '#type' => 'submit',
-      '#value' => t('Show downloads'),
+      '#value' => $this->t('Show downloads'),
+      '#button_type' => 'primary',
     ];
-
     return $form;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function validateForm(
-    array &$form,
-    FormStateInterface $form_state
-  ): void {
+  public function validateForm(array &$form, FormStateInterface $form_state): void {
     parent::validateForm($form, $form_state);
     $defaultValues = $form_state->cleanValues()->getValues();
 
@@ -72,10 +83,7 @@ final class DownloadTranslationForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(
-    array &$form,
-    FormStateInterface $form_state
-  ): void {
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
     $form_state->setRedirect(
       'l10n_packager.download_project_translations',
       ['project' => $form_state->getValue('project') ?? self::DEFAULT_PROJECT]

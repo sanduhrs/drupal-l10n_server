@@ -524,13 +524,15 @@ function l10n_server_release_file_upload_submit($form, &$form_state) {
  *   An associative array keyed with project uris.
  */
 function l10n_server_get_projects($options = array()) {
-  static $projects = array();
+  static $projects = [];
 
-  $select = db_select('l10n_server_project', 'p')->fields('p');
+  $query = \Drupal::database()
+    ->select('l10n_server_project', 'p')
+    ->fields('p');
 
   // Consider returning all projects or just published ones.
   if (empty($options['all'])) {
-    $select->condition('status', 1);
+    $query->condition('enabled', 1);
   }
 
   if (isset($options['initial'])) {
@@ -541,15 +543,15 @@ function l10n_server_get_projects($options = array()) {
         $arguments[':p_' . $i] = $args[$i];
       }
       $placeholders = implode(',', array_keys($arguments));
-      $select->where("SUBSTRING(title, 1, 1) IN ($placeholders)", $arguments);
+      $query->where("SUBSTRING(title, 1, 1) IN ($placeholders)", $arguments);
     }
   }
   if (isset($options['pager'])) {
     // If a pager view was asked for, collect data independently.
-    $select->orderBy('title');
-    $result = $select->extend('PagerDefault')
-                     ->limit($options['pager'])
-                     ->execute();
+    $query->orderBy('title');
+    $result = $query->extend('PagerDefault')
+      ->limit($options['pager'])
+      ->execute();
     $pager_results = $result->fetchAllAssoc('uri');
 
     // Save project information for later, if someone asks for it by uri.
@@ -564,7 +566,10 @@ function l10n_server_get_projects($options = array()) {
       return $projects[$options['uri']];
     }
     // Not found in cache, so query and cache before returning.
-    $result = db_query("SELECT * FROM {l10n_server_project} WHERE uri = :uri", array(':uri' => $options['uri']));
+    $result = \Drupal::database()
+      ->select('l10n_server_project', 'p')
+      ->fields('p')
+      ->condition('uri', $options['uri']);
     if ($project = $result->fetchObject()) {
       $projects[$options['uri']] = $project;
       return $project;
@@ -572,7 +577,7 @@ function l10n_server_get_projects($options = array()) {
   }
   else {
     // A list of *all* projects was asked for.
-    $results = $select->orderBy('uri')->execute();
+    $results = $query->orderBy('uri')->execute();
     foreach ($results as $project) {
       $projects[$project->uri] = $project;
     }
