@@ -226,7 +226,7 @@ class DrupalRest extends ConnectorPluginBase {
     $sid_count = l10n_drupal_added_string_counter();
 
     // Delete directory now that parsing is done.
-    //Drush::shell("rm -rf $temp_path")->run();
+    Drush::shell("rm -rf $temp_path")->run();
     unlink($package_file);
 
     // Record changes of the scanned project in the database.

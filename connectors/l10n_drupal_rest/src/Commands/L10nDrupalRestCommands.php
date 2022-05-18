@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\l10n_drupal_rest\Commands;
 
 use Drupal\l10n_drupal_rest\Plugin\l10n_server\Connector\DrupalRest;

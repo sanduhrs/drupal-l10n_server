@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Drupal\l10n_drupal_rest\Controller;
 
 use Drupal\Component\Render\FormattableMarkup;
@@ -51,36 +53,54 @@ class L10nDrupalRestController extends ControllerBase {
     foreach ($languages as $langcode => $language) {
       // @todo Fix by porting l10n_packager module.
       // $query = \Drupal::database()->select('l10n_server_translation')
-      //   ->condition('is_suggestion', 0)
-      //   ->condition('is_active', 1)
-      //   ->condition('language', $langcode);
+      // ->condition('is_suggestion', 0)
+      // ->condition('is_active', 1)
+      // ->condition('language', $langcode);
       // $user_count = $query->countQuery()->execute()->fetchObject();
       $table_rows[] = [
         [
-          'data' => new FormattableMarkup('<a href=":link">' . t('@language_name', ['@language_name' => $language->getName()]) . '</a>', [':link' => '/translate/languages/' . $langcode]),
-          // 'sortdata' => t('@language_name', ['@language_name' => $language->getName()]),
+          'data' => new FormattableMarkup('<a href=":link">' . t('@language_name', ['@language_name' => $language->getName()]) . '</a>', [
+            ':link' => '/translate/languages/' . $langcode,
+          ]),
         ],
         [
-          'data' => ['#theme' => 'progress_bar', '#percent' => 35, '#message' => $this->t('@percent% translated (@num strings to go)', ['@percent' => 35, '@num' => 0])],
-          // 'sortdata' => ($num_source == 0 ? 0 : round(($string_counts[$langcode]['translations'] ?? 0) / $num_source * 100, 2)),
+          'data' => [
+            '#theme' => 'progress_bar',
+            '#percent' => 35,
+            '#message' => $this->t('@percent% translated (@num strings to go)', [
+              '@percent' => 35,
+              '@num' => 0,
+            ]),
+          ],
         ],
         [
           'data' => $contributors ?? $this->t('n/a'),
-          // 'sortdata' => $contributors ?? $this->t('n/a'),
         ],
       ];
     }
 
     $header = [
-      ['data' => t('Language'), 'field' => 'language', 'class' => ['rowhead']],
-      ['data' => t('Drupal @release core progress', ['@release' => $releases[$rid]]), 'field' => 'progress'],
-      ['data' => t('Contributors'), 'field' => 'contributors'],
+      [
+        'data' => t('Language'),
+        'field' => 'language',
+        'class' => ['rowhead'],
+      ],
+      [
+        'data' => t('Drupal @release core progress', [
+          '@release' => $releases[$rid],
+        ]),
+        'field' => 'progress',
+      ],
+      [
+        'data' => t('Contributors'),
+        'field' => 'contributors',
+      ],
     ];
     $build['progress'] = [
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $table_rows,
-      '#empty' =>t('No files found'),
+      '#empty' => t('No files found'),
       '#sticky' => TRUE,
     ];
     return $build;
