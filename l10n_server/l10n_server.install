@@ -45,6 +45,68 @@ function l10n_server_schema(): array {
       'hashkey' => ['hashkey'],
     ],
   ];
+  $schema['l10n_server_translation'] = array(
+    'fields' => array(
+      'tid' => array(
+        'description' => 'Internal numeric identifier for a translation.',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'sid' => array(
+        'description' => 'Reference to the {l10n_server_string}.sid which is being translated.',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'language' => array(
+        'description' => 'Reference to the {languages}.language to which the string is being translated.',
+        'type' => 'varchar',
+        'length' => '12',
+        'not null' => TRUE,
+      ),
+      'translation' => array(
+        'description' => 'The actual translation or suggestion.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'binary' => TRUE,
+      ),
+      'uid_entered' => array(
+        'description' => 'Reference to the {users}.uid who entered this translation or suggestion.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'time_entered' => array(
+        'description' => 'Unix timestamp of when the string was entered into the database.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'time_changed' => array(
+        'description' => 'Unix timestamp of last action (cached version of MAX({l10n_server_translation_history}.time_action) for this tid).',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'is_suggestion' => array(
+        'description' => 'Flag of whether this is a suggestion (1) or not (0). If 0, *_approved fields should also be 0.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'is_active' => array(
+        'description' => 'Flag of whether this is an active (1) suggestion or translation. Older suggestions and translations are kept (0). Unprocessed suggestions and active translations have this as 1.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'indexes' => array(
+      'uid_entered' => array('uid_entered'),
+      'is_suggestion_is_active_language' => array('is_suggestion', 'is_active', 'language'),
+      'sid_language_is_suggestion_is_active' => array('sid', 'language', 'is_suggestion', 'is_active'),
+    ),
+  );
   return $schema;
 }
 
