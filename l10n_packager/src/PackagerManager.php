@@ -19,15 +19,20 @@ class PackagerManager {
     if ($interval) {
       $time_pre = microtime(true);
 
-      module_load_include('inc', 'l10n_packager');
       $timestamp = \Drupal::time()->getRequestTime() - $interval;
 
       $query = \Drupal::database()
         ->select('l10n_server_release', 'r');
       $query
-        ->innerJoin('l10n_server_project', 'p');
+        ->innerJoin('l10n_server_project', 'p', 'r.pid = p.pid');
       $query
-        ->leftJoin('l10n_packager_release', 'pr');
+        ->leftJoin('l10n_packager_release', 'pr', 'r.rid = pr.rid');
+      $query
+        ->fields('r', ['rid', 'pid','title']);
+      $query
+        ->fields('p', ['uri']);
+      $query
+        ->fields('pr', ['checked', 'updated','status']);
       $orGroup1 = $query->orConditionGroup()
         ->condition('pr.checked', $timestamp, '<')
         ->condition('pr.updated', $timestamp, '<');
