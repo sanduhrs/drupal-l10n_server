@@ -129,7 +129,7 @@ function l10n_packager_export_metafile() {
 
   // Add language list.
   $languages = $xml->addChild('languages');
-  $language_list = \Drupal::languageManager()->getLanguages(LanguageInterface::STATE_ALL);
+  $language_list = \Drupal::languageManager()->getLanguages();
   foreach ($language_list as $language) {
     $item = $languages->addChild('language');
     $item->addChild('name', $language->getName());

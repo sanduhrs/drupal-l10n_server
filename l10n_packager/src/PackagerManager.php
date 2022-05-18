@@ -26,25 +26,24 @@ class PackagerManager {
       $query
         ->innerJoin('l10n_server_project', 'p', 'r.pid = p.pid');
       $query
-        ->leftJoin('l10n_packager_release', 'pr', 'r.rid = pr.rid');
+        ->leftJoin('l10n_packager_release', 'pr', 'pr.rid = r.rid');
       $query
         ->fields('r', ['rid', 'pid','title']);
       $query
         ->fields('p', ['uri']);
       $query
         ->fields('pr', ['checked', 'updated','status']);
-      $orGroup1 = $query->orConditionGroup()
+      $orGroup2 = $query->orConditionGroup()
         ->condition('pr.checked', $timestamp, '<')
         ->condition('pr.updated', $timestamp, '<');
       $andGroup = $query->andConditionGroup()
         ->condition('pr.status', 1)
-        ->condition($orGroup1);
-      $orGroup2 = $query->orConditionGroup()
+        ->condition($orGroup2);
+      $orGroup1 = $query->orConditionGroup()
         ->condition('pr.status', NULL, 'IS NULL')
         ->condition($andGroup);
       $query->condition($orGroup1);
-      $query->condition($andGroup);
-      $query->condition($orGroup2);
+      $query->orderBy('pr.checked');
       if ($release_limit) {
         $query->range(0, $release_limit);
       }
@@ -53,7 +52,10 @@ class PackagerManager {
       while ((!$file_limit || $file_limit > $count_files)
           && ($release = $result->fetchObject())) {
         // Set the release branch
+//        echo print_r($release, TRUE), PHP_EOL;
+        module_load_include('inc', 'l10n_packager');
         l10n_packager_release_set_branch($release);
+//        echo print_r($release, TRUE), PHP_EOL;
         $updates = l10n_packager_release_check($release, FALSE, $file_limit - $count_files, NULL, TRUE);
         $count_files += count($updates);
         $count_check++;

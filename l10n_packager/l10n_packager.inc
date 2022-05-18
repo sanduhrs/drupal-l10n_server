@@ -6,7 +6,7 @@
  */
 
 // This library relies on l10n_community export.inc
-module_load_include('inc', 'l10n_community', 'export');
+//module_load_include('inc', 'l10n_community', 'export');
 
 /**
  * Check release translations and repackage if needed.
@@ -31,7 +31,7 @@ module_load_include('inc', 'l10n_community', 'export');
  *   In a cron run, a release may be packaged partially, for some languages.
  */
 function l10n_packager_release_check($release, $force = FALSE, $limit = 0, $language = NULL, $cron = FALSE) {
-  $check_languages = isset($language) ? array($language->language => $language) : l10n_community_get_languages();
+  $check_languages = isset($language) ? array($language->language => $language) : \Drupal::languageManager()->getLanguages();
   $updated = array();
   // We get update time before creating files so the release checked time
   // is <= file timestamp.
@@ -297,8 +297,27 @@ function l10n_packager_release_name($rid) {
  * Get timestamp of the last updated string for a release, for each language.
  */
 function l10n_packager_translation_last_updated($rid) {
-  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time FROM {l10n_server_translation} t INNER JOIN {l10n_server_line} l ON t.sid = l.sid WHERE t.is_active = 1 AND t.is_suggestion = 0 AND l.rid = :rid GROUP BY t.language",
-            array(':rid' => $rid));
+//  $result = db_query("SELECT t.language, MAX(t.time_changed) AS latest_time
+//                      FROM {l10n_server_translation} t
+//                      INNER JOIN {l10n_server_line} l ON t.sid = l.sid
+//                        WHERE t.is_active = 1
+//                            AND t.is_suggestion = 0
+//                            AND l.rid = :rid
+//                        GROUP BY t.language",
+//            array(':rid' => $rid));
+  $query = \Drupal::database()
+    ->select('l10n_server_translation', 'r');
+  $query
+    ->innerJoin('l10n_server_line', 'l', 't.sid = l.sid');
+  $query
+    ->condition('t.is_active', 1)
+    ->condition('t.is_suggestion', 0)
+    ->condition('t.rid', $rid)
+    ->groupBy('t.language');
+  $query
+    ->fields('t', ['language'])
+    ->addExpression('MAX("t.time_changed")', 'time_changed');
+  $result = $query->execute();
   return $result->fetchAllKeyed();
 }
 
@@ -306,8 +325,14 @@ function l10n_packager_translation_last_updated($rid) {
  * Get files for a release, indexed by language.
  */
 function l10n_packager_release_get_files($rid) {
-  $result = db_query('SELECT * FROM {l10n_packager_file} r LEFT JOIN {file_managed} f ON r.fid = f.fid WHERE r.rid = :rid',
-            array(':rid' => $rid));
+  $query = \Drupal::database()
+    ->select('l10n_packager_file', 'r');
+  $query
+    ->leftJoin('file_managed', 'f', 'r.fid = f.fid');
+  $query
+    ->condition('r.rid', $rid);
+  $query->fields('r')->fields('f');
+  $result = $query->execute();
   return $result->fetchAllAssoc('language');
 }
 
