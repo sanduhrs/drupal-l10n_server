@@ -42,7 +42,7 @@ class L10nDrupalRestController extends ControllerBase {
       '#tag' => 'p',
       '#value' => $this
         ->t('Status based on @num source strings found in Drupal @release. Links are to untranslated strings in the release for that group.', [
-          '@num' => number_format($num_source),
+          '@num' => number_format((int) $num_source),
           '@release' => $releases[$rid],
         ]),
     ];
