@@ -12,18 +12,15 @@ class PackagerManager {
   /**
    * Check releases that need repackaging.
    */
-  public function checkUpdates() {
-    $config = \Drupal::config('l10n_server.settings');
-
+  public function checkUpdates(int $interval = 1, int $release_limit = 10, int $file_limit = 1) {
     $count_check = $count_files = $time = 0;
     $updates = [];
 
-    if ($interval = $config->get('update')) {
+    if ($interval) {
       $time_pre = microtime(true);
 
       module_load_include('inc', 'l10n_packager');
       $timestamp = \Drupal::time()->getRequestTime() - $interval;
-      $file_limit = $config->get('file_limit');
 
       $query = \Drupal::database()
         ->select('l10n_server_release', 'r');
@@ -43,8 +40,10 @@ class PackagerManager {
       $query->condition($orGroup1);
       $query->condition($andGroup);
       $query->condition($orGroup2);
-      $result = $query->range(0, $config->get('release_limit'))
-        ->execute();
+      if ($release_limit) {
+        $query->range(0, $release_limit);
+      }
+      $result = $query->execute();
 
       while ((!$file_limit || $file_limit > $count_files)
           && ($release = $result->fetchObject())) {
