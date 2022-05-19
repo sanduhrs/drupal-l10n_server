@@ -865,6 +865,7 @@ function l10n_community_get_l10n_packager_string_count($pid, $rid = NULL) {
     ->condition('rid', $rid)
     ->execute()
     ->fetchAllKeyed();
+  $sums = [];
   foreach ($results as $language => $sid_count) {
     $sums[$language]['translations'] = $sid_count;
   }
