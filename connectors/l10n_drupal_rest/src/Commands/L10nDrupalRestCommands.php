@@ -88,6 +88,7 @@ class L10nDrupalRestCommands extends DrushCommands {
           ->condition('sp.enabled', 1)
           ->condition('sr.download_link', '', '<>')
           ->condition('sr.last_parsed', 0)
+          ->distinct()
           // @todo Adding this forces mysql to create unwanted temporary tables.
           // ->orderBy('sr.file_date')
           ->range($offset, $goal - $success);
