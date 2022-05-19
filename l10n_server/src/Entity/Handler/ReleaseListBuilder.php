@@ -86,7 +86,7 @@ class ReleaseListBuilder extends EntityListBuilder {
     foreach ($params as $param) {
       if ($param instanceof \Drupal\l10n_server\Entity\Project) {
         /** \Drupal\l10n_server\Entity\Project $param */
-        $query->condition('rid', $param->id());
+        $query->condition('pid', $param->id());
         break;
       }
     }
