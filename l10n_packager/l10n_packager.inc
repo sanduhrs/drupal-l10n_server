@@ -344,12 +344,12 @@ function l10n_packager_release_set_branch(&$release) {
   // Set branch to everything before the last dot, and append an x. For
   // example, 6.1, 6.2, 6.x-dev, 6.0-beta1 all become 6.x. 8.7.13 becomes
   // 8.7.x. 6.x-1.0-beta1 becomes 6.x-1.x. 2.1.0-rc1 becomes 2.1.x.
-  $release->branch = preg_replace('#\.[^.]*$#', '.x', $release->title);
+  $release->branch = preg_replace('#\.[^.]*$#', '.x', $release->title->value);
 
   // Stupid hack for drupal core.
   if ($release->uri === 'drupal') {
     // Version has -extra removed, 6.0-beta1 becomes 6.0.
-    $release->version = explode('-', $release->title)[0];
+    $release->version = explode('-', $release->title->value)[0];
     // Major version is the first component before the .
     $major = explode('.', $release->branch)[0];
     if ($major >= 8) {
@@ -365,7 +365,7 @@ function l10n_packager_release_set_branch(&$release) {
     // 2.1.x-dev, 2.1.0-rc1. If there is a core API compatibility component,
     // split it off. version here is the main version number, without the
     // -{extra} component, like -beta1 or -rc1.
-    preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->title, $match);
+    preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->label(), $match);
     $release->core = $match['core'] ?: 'all';
     $release->version = $match['version'];
   }

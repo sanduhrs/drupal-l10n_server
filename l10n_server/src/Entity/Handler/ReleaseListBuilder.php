@@ -6,7 +6,9 @@ namespace Drupal\l10n_server\Entity\Handler;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Link;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Url;
 use Drupal\l10n_server\Entity\ReleaseInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use function \assert;
@@ -50,7 +52,15 @@ class ReleaseListBuilder extends EntityListBuilder {
     assert($entity instanceof ReleaseInterface);
     $row = [];
     $row['label']['data'] = $entity->label();
-    $row['download_link']['data'] = $entity->getDownloadLink() ?? '-';
+    if ($link = $entity->getDownloadLink()) {
+      $row['download_link']['data'] = Link::fromTextAndUrl(
+        Url::fromUri($link)->toString(),
+        Url::fromUri($link)
+      );
+    }
+    else {
+      $row['homepage']['data'] = $this->t('n/a');
+    }
     $row['file_date'] = ['data' => $entity->getFileDate() ? $this->dateFormatter->format($entity->getFileDate()) : '-'];
     $row['last_parsed']['data'] = $entity->getLastTimeParsed() ? $this->dateFormatter->format($entity->getLastTimeParsed()) : '-';
     return array_merge($row, parent::buildRow($entity));
@@ -61,6 +71,31 @@ class ReleaseListBuilder extends EntityListBuilder {
    */
   protected function getTitle(): TranslatableMarkup {
     return $this->t('Releases');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEntityIds() {
+    $query = $this->getStorage()->getQuery()
+      ->accessCheck(TRUE)
+      ->sort($this->entityType->getKey('id'));
+
+    // Add query condition with project from request.
+    $params = \Drupal::routeMatch()->getParameters()->all();
+    foreach ($params as $param) {
+      if ($param instanceof \Drupal\l10n_server\Entity\Project) {
+        /** \Drupal\l10n_server\Entity\Project $param */
+        $query->condition('rid', $param->id());
+        break;
+      }
+    }
+
+    // Only add the pager if a limit is specified.
+    if ($this->limit) {
+      $query->pager($this->limit);
+    }
+    return $query->execute();
   }
 
 }

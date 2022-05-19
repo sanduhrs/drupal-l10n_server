@@ -113,7 +113,8 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
     $fields['last_parsed'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Last time project was parsed'))
       ->setReadOnly(TRUE)
-      ->setDescription(t('Unix timestamp of last time project was parsed.'));
+      ->setDescription(t('Unix timestamp of last time project was parsed.'))
+      ->setDefaultValue(0);
 
     $fields['weight'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Weight'))
@@ -178,6 +179,6 @@ class Project extends ContentEntityBase implements ProjectInterface, EntityPubli
    * {@inheritdoc}
    */
   public function getLastTimeParsed(): ?int {
-    return $this->get('last_parsed')->value;
+    return (int) $this->get('last_parsed')->value;
   }
 }

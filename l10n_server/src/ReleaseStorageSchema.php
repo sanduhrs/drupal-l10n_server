@@ -43,7 +43,15 @@ class ReleaseStorageSchema extends SqlContentEntityStorageSchema {
       else if ($field_name === 'sid_count') {
         $schema['fields']['sid_count']['default'] = 0;
       }
-
+      else if ($field_name === 'download_link') {
+        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
+      }
+      else if ($field_name === 'file_date') {
+        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
+      }
+      else if ($field_name === 'last_parsed') {
+        $this->addSharedTableFieldIndex($storage_definition, $schema, TRUE);
+      }
     }
     return $schema;
   }
