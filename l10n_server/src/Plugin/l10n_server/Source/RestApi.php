@@ -18,8 +18,6 @@ use Drupal\l10n_server\ConfigurableSourcePluginBase;
  */
 final class RestApi extends ConfigurableSourcePluginBase {
 
-  const REFRESH_URL = 'https://www.drupal.org/files/releases.tsv';
-
   /**
    * {@inheritdoc}
    */
@@ -28,7 +26,7 @@ final class RestApi extends ConfigurableSourcePluginBase {
     $config['scan_limit'] = 1;
     $config['cron_enabled'] = FALSE;
     $config['max_filesize'] = 50 * 1024 * 1024;
-    $config['refresh_url'] = RestApi::REFRESH_URL;
+    $config['refresh_url'] = 'https://www.drupal.org/files/releases.tsv';
     return $config;
   }
 
@@ -112,7 +110,7 @@ final class RestApi extends ConfigurableSourcePluginBase {
    *   Refresh URL.
    */
   public function getRefreshUrl(): string {
-    return $this->configuration['refresh_url'];
+    return (string) $this->configuration['refresh_url'];
   }
 
 }
