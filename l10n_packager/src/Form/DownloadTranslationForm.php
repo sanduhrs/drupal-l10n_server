@@ -39,22 +39,27 @@ final class DownloadTranslationForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, Project $project = NULL): array {
+    $query = \Drupal::database()->select('l10n_server_project', 'p')->fields('p', ['pid']);
+    $count = $query->countQuery()->execute()->fetchField();
+
     if (empty($project)) {
       $project = DownloadTranslationForm::getDefaultProject();
     }
     $form['project'] = [
-      '#title' => t('Pick a project'),
+      '#title' => t('Project'),
       '#type' => 'textfield',
       '#default_value' => $project?->id(),
     ];
-    $projects = l10n_server_get_projects();
-    if (($count = count($projects)) <= 30) {
+
+    if ($count <= 30) {
       // Radio box widget for as much as 5 projects, select widget for 5-30 projects.
       $form['project']['#type'] = ($count <= 5 ? 'radios' : 'select');
       $form['project']['#options'] = [];
+
+      $projects = Project::loadMultiple();
       foreach ($projects as $project) {
         // Title used to conform to the autocomplete behavior.
-        $form['project']['#options'][$project->pid] = $project->title;
+        $form['project']['#options'][$project->id()] = $project->label();
       }
     }
     else {
@@ -62,7 +67,7 @@ final class DownloadTranslationForm extends FormBase {
       $form['project'] = [
         '#type' => 'entity_autocomplete',
         '#target_type' => 'l10n_server_project',
-        '#default_value' => $project,
+        //'#default_value' => $project->id(),
         '#selection_handler' => 'default',
       ];
     }
@@ -91,7 +96,10 @@ final class DownloadTranslationForm extends FormBase {
    * Generate list of file downloads for given project.
    */
   private function l10n_packager_show_downloads($project) {
+    /** @var \Drupal\l10n_packager\PackagerManager $packagerManager */
+    $packagerManager = \Drupal::service('l10n_packager.manager');
     $date_formatter = \Drupal::service('date.formatter');
+
     $files = $branches = [];
 
     $query = \Drupal::database()->select('l10n_server_release', 'r');
@@ -139,7 +147,7 @@ final class DownloadTranslationForm extends FormBase {
           krsort($files[$langcode][$branch]);
           $latest_item = array_shift($files[$langcode][$branch]);
           // @todo Fix l().
-          $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')'/*, l10n_packager_get_download_url($project, $branch, $latest_item)*/) . '</p>';
+          $cell = '<p>' . l($latest_item->title . ' (' . format_size($latest_item->filesize) . ')', $packagerManager->getDownloadUrl($project, $branch, $latest_item)) . '</p>';
           $cell .= '<p class="l10n-packager-meta">' . t('Generated: @generated', ['@generated' => $date_formatter->format($latest_item->timestamp, 'custom', 'Y-M-d H:i')]) . '</p>';
           $up_to_date = max($latest_item->checked, $latest_item->release_checked);
           if ($up_to_date > $latest_item->timestamp) {

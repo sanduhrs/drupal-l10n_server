@@ -89,6 +89,7 @@ final class SettingsForm extends ConfigFormBase {
 
     // Rebuild metafile after submission.
     $form['#submit'][] = 'l10n_packager_export_metafile';
+    $form['#submit'][] = 'l10n_packager_export_metafile';
 
     return parent::buildForm($form, $form_state);
   }
@@ -99,7 +100,14 @@ final class SettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     /** @var \Drupal\Core\File\FileSystemInterface $file_system */
     $file_system = \Drupal::service('file_system');
-    $file_system->prepareDirectory($form_state->getValue('directory'), FileSystemInterface::CREATE_DIRECTORY);
+    $file_system->prepareDirectory(
+      $form_state->getValue('directory'),
+      FileSystemInterface::CREATE_DIRECTORY
+    );
+
+    /** @var \Drupal\l10n_packager\PackagerManager $packagerManager */
+    $packagerManager = \Drupal::service('l10n_packager.manager');
+    $packagerManager->exportMetafile();
 
     $this->config('l10n_packager.settings')
       ->set('cron', $form_state->getValue('cron'))

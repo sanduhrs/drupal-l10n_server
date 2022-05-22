@@ -1,5 +1,5 @@
-l10n_packager.settings:
+l10n_packager.packager:
   title: Packager
-  route_name: l10n_packager.settings
+  route_name: l10n_packager.packager
   parent: l10n_server.settings_overview
-  description: 'Enable and configure different data source and data format handlers..'
+  description: 'Enable and configure different data source and data format handlers.'

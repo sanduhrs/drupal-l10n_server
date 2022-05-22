@@ -1,0 +1,8 @@
+l10n_packager.packager:
+  title: 'Packager'
+  route_name: l10n_packager.packager
+  base_route: l10n_packager.packager
+l10n_packager.import:
+  route_name: l10n_packager.settings
+  title: 'Configure'
+  base_route: l10n_packager.packager

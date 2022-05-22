@@ -36,7 +36,9 @@ class L10nPackagerCommands extends DrushCommands {
    * @aliases lnpp
    */
   public function package(array $options = ['interval' => 1, 'release-limit' => 10, 'file-limit' => 1]) {
-    [$checked, $updated, $time] = \Drupal::service('l10n_packager.manager')
+    /** @var \Drupal\l10n_packager\PackagerManager $l10n_packager_manager */
+    $l10n_packager_manager = \Drupal::service('l10n_packager.manager');
+    [$checked, $updated, $time] = $l10n_packager_manager
       ->checkUpdates($options['interval'], $options['release-limit'], $options['file-limit']);
     $this->logger()->success(dt('!ms ms for !checked releases/!updated files.', [
       '!checked' => $checked,
