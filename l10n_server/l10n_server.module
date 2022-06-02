@@ -1,0 +1,211 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * @file
+ * The localization server module.
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Render\Element;
+use Drupal\l10n_server\Entity\L10nServerRelease;
+
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function l10n_server_entity_extra_field_info(): array {
+  $extra = [];
+  $extra['l10n_server_project']['l10n_server_project']['display']['releases'] = [
+    'label' => t('Releases'),
+    'description' => t('The list of releases'),
+    'weight' => 100,
+    'visible' => TRUE,
+  ];
+  $extra['l10n_server_release']['l10n_server_release']['display']['files'] = [
+    'label' => t('Files'),
+    'description' => t('The list of files'),
+    'weight' => 100,
+    'visible' => TRUE,
+  ];
+  $extra['l10n_server_release']['l10n_server_release']['display']['warnings'] = [
+    'label' => t('Warnings'),
+    'description' => t('The list of warning'),
+    'weight' => 110,
+    'visible' => TRUE,
+  ];
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function l10n_server_l10n_server_project_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode): void {
+  if ($display->getComponent('releases')) {
+    $build['releases'] = [
+      '#type' => 'markup',
+      '#markup' => 'This is my custom content displaying releases',
+    ];
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ */
+function l10n_server_l10n_server_release_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode): void {
+  if ($display->getComponent('files')) {
+    $build['files'] = [
+      '#type' => 'markup',
+      '#markup' => 'This is my custom content displaying files',
+    ];
+  }
+  if ($display->getComponent('warnings')) {
+    $build['warnings'] = [
+      '#type' => 'markup',
+      '#markup' => 'This is my custom content displaying warnings',
+    ];
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function l10n_server_cron(): void {
+  // Queue releases to be parsed.
+  $queue = \Drupal::queue('l10n_server_parser_queue');
+  $ids = \Drupal::entityTypeManager()
+    ->getStorage('l10n_server_release')
+    ->getIdsToQueue();
+  foreach (L10nServerRelease::loadMultiple($ids) as $release) {
+    if ($queue->createItem($release)) {
+      // Add timestamp to avoid queueing item more than once.
+      $release->setQueuedTime(\Drupal::time()->getRequestTime());
+      $release->save();
+    }
+  }
+
+  /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
+  $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
+  $connectors = \Drupal::config('l10n_server.settings')
+    ->get('enabled_connectors');
+
+  \Drupal::messenger()->addStatus('Start scanning l10n_server connectors...');
+
+  $connector_count = $project_count = $release_count = 0;
+  foreach ($connectors as $connector_id) {
+    /** @var \Drupal\l10n_server\ConnectorInterface $connector */
+    $connector = $connectorManager->createInstance($connector_id);
+
+    if ($connector->isScannable()
+        && $connector->getSourceInstance()->getConfiguration()['cron_scanning_enabled']) {
+      $connector_count++;
+      \Drupal::messenger()->addStatus(dt('Scanning @connector_label @source_label...', [
+        '@connector_label' => $connector->getLabel(),
+        '@source_label' => $connector->getSourceInstance()->getLabel(),
+      ]));
+
+      /** @var \Drupal\l10n_server\ConnectorScanHandlerResultInterface $result */
+      $result = $connector->scanHandler();
+      $project_count = $project_count + $result->getProjectCount();
+      $release_count = $release_count + $result->getReleaseCount();
+    }
+  }
+
+  \Drupal::messenger()->addStatus('Done scanning l10n_server connectors...');
+  \Drupal::logger('cron')->info(dt('Scanned @projects project(s) and @releases release(s) in @connectors connector(s).', [
+    '@connectors' => $connector_count,
+    '@projects' => $project_count,
+    '@releases' => $release_count,
+  ]));
+
+  /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
+  $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
+  $connectors = \Drupal::config('l10n_server.settings')
+    ->get('enabled_connectors');
+
+  \Drupal::messenger()->addStatus('Start parsing l10n_server connectors.');
+
+  $connector_count = $release_count = 0;
+  foreach ($connectors as $connector_id) {
+    /** @var \Drupal\l10n_server\ConnectorInterface $connector */
+    $connector = $connectorManager->createInstance($connector_id);
+
+    if ($connector->isParsable()
+      && $connector->getSourceInstance()->getConfiguration()['cron_parsing_enabled']) {
+      $connector_count++;
+      \Drupal::messenger()->addStatus(dt('Parsing @connector_label @source_label...', [
+        '@connector_label' => $connector->getLabel(),
+        '@source_label' => $connector->getSourceInstance()->getLabel(),
+      ]));
+
+      /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
+      $result = $connector->parseHandler();
+      $release_count = $result->getFileCount() ?: $release_count++;
+    }
+  }
+
+  \Drupal::messenger()->addStatus('Done parsing l10n_server connectors.');
+  \Drupal::logger('cron')->info(dt('Parsed @releases release(s) in @connectors connector(s).', [
+    '@connectors' => $connector_count,
+    '@releases' => $release_count,
+  ]));
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function l10n_server_element_info_alter(array &$types): void {
+  if (isset($types['toolbar'])) {
+    $types['toolbar']['#attached']['library'][] = 'l10n_server/toolbar';
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function l10n_server_theme(): array {
+  return [
+    'l10n_server_project' => [
+      'render element' => 'elements',
+    ],
+    'l10n_server_release' => [
+      'render element' => 'elements',
+    ],
+  ];
+}
+
+/**
+ * Prepares variables for project templates.
+ *
+ * Default template: l10n-server-project.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - elements: An associative array containing the project information and any
+ *     fields attached to the entity.
+ *   - attributes: HTML attributes for the containing element.
+ */
+function template_preprocess_l10n_server_project(array &$variables): void {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  foreach (Element::children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+}
+
+/**
+ * Prepares variables for release templates.
+ *
+ * Default template: l10n-server-release.html.twig.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - elements: An associative array containing the release information and any
+ *     fields attached to the entity.
+ *   - attributes: HTML attributes for the containing element.
+ */
+function template_preprocess_l10n_server_release(array &$variables): void {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  foreach (Element::children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+}

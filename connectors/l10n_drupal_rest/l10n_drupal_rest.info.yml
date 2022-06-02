@@ -1,0 +1,8 @@
+name: Localization server for Drupal (REST API)
+type: module
+description: Fetch Drupal projects from drupal.org.
+package: Localization Server Connectors
+core_version_requirement: ^9 || ^10
+dependencies:
+  - l10n_server:l10n_server
+  - potx:potx

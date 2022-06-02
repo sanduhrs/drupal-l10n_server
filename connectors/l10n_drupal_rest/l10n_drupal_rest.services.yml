@@ -1,0 +1,7 @@
+services:
+  l10n_drupal_rest.scanner:
+    class: Drupal\l10n_drupal_rest\ScannerService
+    arguments: ['@config.factory', '@state', '@http_client', '@file.repository', '@file_system', '@logger.factory', '@entity_type.manager']
+  l10n_drupal_rest.parser:
+    class: Drupal\l10n_drupal_rest\ParserService
+    arguments: ['@config.factory', '@state', '@http_client', '@file.repository', '@file_system', '@logger.factory', '@entity_type.manager']

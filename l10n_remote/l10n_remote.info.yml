@@ -1,0 +1,5 @@
+name: Localization remote API
+type: module
+description: Provides an XML-RPC server interface to handle remote translation submissions.
+package: Localization server
+core_version_requirement: ^9 || ^10

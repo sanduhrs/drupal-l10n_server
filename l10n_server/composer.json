@@ -1,0 +1,11 @@
+{
+    "name": "drupal/l10n_server",
+    "type": "drupal-module",
+    "extra": {
+        "drush": {
+            "services": {
+                "drush.services.yml": "^11"
+            }
+        }
+    }
+}

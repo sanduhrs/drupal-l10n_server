@@ -1,0 +1,96 @@
+l10n_server.overview:
+  path: '/admin/localization'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Localization'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.admin_projects_releases:
+  path: '/admin/localization/projects-releases'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Projects and Releases'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.admin_parsed_data:
+  path: '/admin/localization/parsed-data'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Parsed data'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.admin_translations_messages:
+  path: '/admin/localization/translations-messages'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Translations & Messages'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.admin_configuration:
+  path: '/admin/localization/configuration'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Configuration'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.settings_overview:
+  path: '/admin/config/l10n-server'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Localization server'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.connectors:
+  path: '/admin/config/l10n-server/connectors'
+  defaults:
+    _title: 'Connectors'
+    _form: 'Drupal\l10n_server\Form\L10nServerSettingsForm'
+  requirements:
+    _permission: 'administer localization server'
+l10n_server.connector.configure:
+  path: '/admin/config/l10n-server/connectors/config/{connector}'
+  defaults:
+    _form: 'Drupal\l10n_server\Form\ConnectorConfiguration'
+    _title: 'Configure'
+  requirements:
+    _permission: 'administer localization server'
+    l10n_server_connector_plugin: '[a-z]'
+  options:
+    parameters:
+      connector:
+        type: l10n_server_connector_plugin
+l10n_server.connector.batch_scan:
+  path: '/admin/config/l10n-server/connectors/scan/{connector}'
+  defaults:
+    _title: 'Scan for new releases'
+    _form: 'Drupal\l10n_server\Form\ConnectorBatchConfirmScanForm'
+  requirements:
+    _permission: 'administer localization server'
+    l10n_server_connector_plugin: '[a-z]'
+  options:
+    parameters:
+      connector:
+        type: l10n_server_connector_plugin
+l10n_server.connector.batch_parse:
+  path: '/admin/config/l10n-server/connectors/parse/{connector}'
+  defaults:
+    _title: 'Parse new releases'
+    _form: 'Drupal\l10n_server\Form\ConnectorBatchConfirmParseForm'
+  requirements:
+    _permission: 'administer localization server'
+    l10n_server_connector_plugin: '[a-z]'
+  options:
+    parameters:
+      connector:
+        type: l10n_server_connector_plugin
+entity.l10n_server_project.releases:
+  path: '/admin/localization/l10n-server-project/{l10n_server_project}/releases'
+  defaults:
+    _title: 'Project releases'
+    _entity_list: 'l10n_server_release'
+  requirements:
+    _permission: 'administer localization server'
+  options:
+    parameters:
+      l10n_server_project:
+        type: entity:l10n_server_project

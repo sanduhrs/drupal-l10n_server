@@ -1,0 +1,121 @@
+l10n_server.overview:
+  title: 'Localization'
+  route_name: l10n_server.overview
+  parent: system.admin
+  description: The localization server overview.
+  weight: -50
+
+l10n_server.admin_projects_releases:
+  title: 'Projects & Releases'
+  description: 'Find and manage projects and releases.'
+  route_name: l10n_server.admin_projects_releases
+  parent: l10n_server.overview
+  weight: 0
+l10n_server.admin_parsed_data:
+  title: 'Parsed data'
+  description: 'Find and manage projects and releases.'
+  route_name: l10n_server.admin_parsed_data
+  parent: l10n_server.overview
+  weight: 10
+l10n_server.admin_translations_messages:
+  title: 'Translations & Messages'
+  description: 'Find and manage projects and releases.'
+  route_name: l10n_server.admin_translations_messages
+  parent: l10n_server.overview
+  weight: 20
+l10n_server.admin_configuration:
+  title: 'Configuration'
+  description: 'Find and manage projects and releases.'
+  route_name: l10n_server.admin_configuration
+  parent: l10n_server.overview
+  weight: 30
+
+l10n_server.admin_projects:
+  title: 'Projects'
+  description: 'Find and manage projects.'
+  route_name: entity.l10n_server_project.collection
+  parent: l10n_server.admin_projects_releases
+  weight: 0
+l10n_server.admin_releases:
+  title: 'Releases'
+  description: 'Find and manage releases.'
+  route_name: entity.l10n_server_release.collection
+  parent: l10n_server.admin_projects_releases
+  weight: 10
+
+l10n_server.admin_files:
+  title: 'Files'
+  description: 'Find and manage files.'
+  route_name: entity.l10n_server_file.collection
+  parent: l10n_server.admin_parsed_data
+  weight: 20
+l10n_server.admin_lines:
+  title: 'Lines'
+  description: 'Find and manage lines.'
+  route_name: entity.l10n_server_line.collection
+  parent: l10n_server.admin_parsed_data
+  weight: 30
+l10n_server.admin_strings:
+  title: 'Strings'
+  description: 'Find and manage strings.'
+  route_name: entity.l10n_server_string.collection
+  parent: l10n_server.admin_parsed_data
+  weight: 40
+
+l10n_server.admin_translations:
+  title: 'Translations'
+  description: 'Find and manage translations.'
+  route_name: entity.l10n_server_translation.collection
+  parent: l10n_server.admin_translations_messages
+  weight: 50
+l10n_server.admin_changes:
+  title: 'Changes'
+  description: 'Find and manage change history.'
+  route_name: entity.l10n_server_translation_history.collection
+  parent: l10n_server.admin_translations_messages
+  weight: 60
+l10n_server.admin_flags:
+  title: 'Flags'
+  description: 'Find and manage flags.'
+  route_name: entity.l10n_server_status_flag.collection
+  parent: l10n_server.admin_translations_messages
+  weight: 70
+l10n_server.admin_errors:
+  title: 'Errors'
+  description: 'Find and manage errors.'
+  route_name: entity.l10n_server_error.collection
+  parent: l10n_server.admin_translations_messages
+  weight: 80
+
+l10n_server.admin_languages:
+  title: 'Languages'
+  description: 'Find and manage languages.'
+  route_name: entity.configurable_language.collection
+  parent: l10n_server.admin_configuration
+  weight: 90
+l10n_server.admin_connectors:
+  title: 'Connectors'
+  description: 'Find and manage connectors.'
+  route_name: l10n_server.connectors
+  parent: l10n_server.admin_configuration
+  weight: 100
+l10n_server.admin_queue:
+  title: 'Queue manager'
+  description: 'Find and manage queues.'
+  route_name: queue_ui.overview_form
+  parent: l10n_server.admin_configuration
+  weight: 100
+
+l10n_server.settings_overview:
+  title: 'Localization server'
+  route_name: l10n_server.settings_overview
+  parent: system.admin_config
+  description: Configuration options for the localization server.
+  position: right
+  weight: 0
+l10n_server.connectors:
+  title: 'Connectors'
+  description: 'Enable and configure different data source and data format handlers.'
+  parent: l10n_server.settings_overview
+  route_name: l10n_server.connectors
+  weight: 10

@@ -1,0 +1,5 @@
+name: Localization groups
+type: module
+description: Organic groups mapping for localization server.
+package: Localization server
+core_version_requirement: ^9 || ^10

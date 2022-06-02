@@ -1,0 +1,9 @@
+name: L10n Server
+type: module
+description: Provides additional functionality for the site.
+package: Localization server
+core_version_requirement: ^9 || ^10
+dependencies:
+  - drupal:file
+  - drupal:locale
+  - drupal:language

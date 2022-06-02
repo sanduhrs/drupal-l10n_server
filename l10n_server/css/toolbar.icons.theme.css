@@ -1,0 +1,10 @@
+/**
+ * Main menu icons.
+ */
+.toolbar-icon-l10n-server-overview:before {
+  background-image: url(../images/icons/787878/toolbar.svg);
+}
+.toolbar-icon-l10n-server-overview:active:before,
+.toolbar-icon-l10n-server-overview.is-active:before {
+  background-image: url(../images/icons/000000/toolbar.svg);
+}

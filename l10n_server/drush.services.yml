@@ -1,0 +1,6 @@
+services:
+  l10n_server.commands:
+    class: \Drupal\l10n_server\Commands\L10nServerCommands
+    arguments: ['@config.factory', '@plugin.manager.l10n_server.connector']
+    tags:
+      - { name: drush.command }

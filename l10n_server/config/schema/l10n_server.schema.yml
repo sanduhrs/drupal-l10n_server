@@ -1,0 +1,9 @@
+l10n_server.settings:
+  type: config_object
+  label: 'L10n server settings'
+  mapping:
+    enabled_connectors:
+      type: sequence
+      label: 'L10n server enabled connectors'
+      sequence:
+        type: string

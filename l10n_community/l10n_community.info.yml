@@ -1,0 +1,5 @@
+name: Localization community UI
+type: module
+description: Community interface for string translation.
+package: Localization server
+core_version_requirement: ^9 || ^10

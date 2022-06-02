@@ -1,0 +1,18 @@
+entity.l10n_server_project.edit_form:
+  route_name: entity.l10n_server_project.edit_form
+  group: l10n_server_project
+  title: Edit
+entity.l10n_server_project.delete_form:
+  route_name: entity.l10n_server_project.delete_form
+  group: l10n_server_project
+  title: Delete
+  weight: 10
+entity.l10n_server_release.edit_form:
+  route_name: entity.l10n_server_release.edit_form
+  group: l10n_server_release
+  title: Edit
+entity.l10n_server_release.delete_form:
+  route_name: entity.l10n_server_release.delete_form
+  group: l10n_server_release
+  title: Delete
+  weight: 10

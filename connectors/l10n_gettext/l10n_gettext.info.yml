@@ -1,0 +1,7 @@
+name: Localization server for Gettext files
+type: module
+description: Manages translatable strings with Gettext standard input/output.
+package: Localization Server Connectors
+core_version_requirement: ^9 || ^10
+dependencies:
+  - l10n_server

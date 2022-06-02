@@ -1,0 +1,71 @@
+entity.l10n_server_project.view:
+  title: 'View'
+  route_name: entity.l10n_server_project.canonical
+  base_route: entity.l10n_server_project.canonical
+entity.l10n_server_project.edit_form:
+  title: 'Edit'
+  route_name: entity.l10n_server_project.edit_form
+  base_route: entity.l10n_server_project.canonical
+entity.l10n_server_project.delete_form:
+  title: 'Delete'
+  route_name: entity.l10n_server_project.delete_form
+  base_route: entity.l10n_server_project.canonical
+  weight: 10
+entity.l10n_server_project.collection:
+  title: 'Projects'
+  route_name: entity.l10n_server_project.collection
+  base_route: l10n_server.overview
+  weight: 10
+entity.l10n_server_release.view:
+  title: 'View'
+  route_name: entity.l10n_server_release.canonical
+  base_route: entity.l10n_server_release.canonical
+entity.l10n_server_release.edit_form:
+  title: 'Edit'
+  route_name: entity.l10n_server_release.edit_form
+  base_route: entity.l10n_server_release.canonical
+entity.l10n_server_release.delete_form:
+  title: 'Delete'
+  route_name: entity.l10n_server_release.delete_form
+  base_route: entity.l10n_server_release.canonical
+  weight: 10
+entity.l10n_server_release.collection:
+  title: 'Releases'
+  route_name: entity.l10n_server_release.collection
+  base_route: l10n_server.overview
+  weight: 20
+entity.l10n_server_file.collection:
+  title: 'Files'
+  route_name: entity.l10n_server_file.collection
+  base_route: l10n_server.overview
+  weight: 30
+entity.l10n_server_line.collection:
+  title: 'Lines'
+  route_name: entity.l10n_server_line.collection
+  base_route: l10n_server.overview
+  weight: 40
+entity.l10n_server_string.collection:
+  title: 'Strings'
+  route_name: entity.l10n_server_string.collection
+  base_route: l10n_server.overview
+  weight: 50
+entity.l10n_server_translation.collection:
+  title: 'Translations'
+  route_name: entity.l10n_server_translation.collection
+  base_route: l10n_server.overview
+  weight: 60
+entity.l10n_server_translation_history.collection:
+  title: 'Changes'
+  route_name: entity.l10n_server_translation_history.collection
+  base_route: l10n_server.overview
+  weight: 70
+entity.l10n_server_status_flag.collection:
+  title: 'Flags'
+  route_name: entity.l10n_server_status_flag.collection
+  base_route: l10n_server.overview
+  weight: 80
+entity.l10n_server_error.collection:
+  title: 'Errors'
+  route_name: entity.l10n_server_error.collection
+  base_route: l10n_server.overview
+  weight: 90

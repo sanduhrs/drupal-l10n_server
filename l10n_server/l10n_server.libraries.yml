@@ -1,0 +1,6 @@
+toolbar:
+  css:
+    theme:
+      css/toolbar.icons.theme.css: {}
+  dependencies:
+    - 'toolbar/toolbar'
