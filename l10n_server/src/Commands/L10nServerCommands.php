@@ -200,8 +200,19 @@ class L10nServerCommands extends DrushCommands {
           '@source_label' => $source->getLabel(),
         ]));
 
+        /** @var \Drupal\l10n_server\ConnectorParseHandlerInterface $connector */
+        $connector->setRelease($release);
         /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
-        $result = $connector->parseHandler($release);
+        $result = $connector->parseHandler();
+        $release
+          ->setSourceStringCount($result->getStringCount())
+          ->setLineCount($result->getLineCount())
+          ->setFileCount($result->getFileCount())
+          ->setErrorCount($result->getErrorCount())
+          ->setLastParsed(time())
+          ->setQueuedTime(0)
+          ->save();
+
         $results[$connector->getPluginId()][] = $result;
         $files_count = $files_count + $result->getFileCount();
         $strings_count = $strings_count + $result->getStringCount();

@@ -43,7 +43,9 @@ class ParserQueue extends QueueWorkerBase {
         && $connector->isParsable()) {
 
         // Parse the release.
-        $connector->parseHandler($release);
+        /** @var \Drupal\l10n_server\ConnectorParseHandlerInterface $connector */
+        $connector->setRelease($release);
+        $connector->parseHandler();
       }
     }
   }

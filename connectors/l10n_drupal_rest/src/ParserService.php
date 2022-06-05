@@ -206,6 +206,16 @@ class ParserService {
   }
 
   /**
+   * Gets release.
+   *
+   * @return \Drupal\l10n_server\Entity\L10nServerReleaseInterface
+   *   The release object.
+   */
+  public function getRelease(): L10nServerReleaseInterface {
+    return $this->release;
+  }
+
+  /**
    * Sets release.
    *
    * @param \Drupal\l10n_server\Entity\L10nServerReleaseInterface $release
@@ -396,6 +406,12 @@ class ParserService {
     potx_finish_processing('Drupal\l10n_server\L10nHelper::saveFile', $version);
 
     $this->stringsCount = L10nHelper::addedStringCounter();
+    $this->linesCount = (int) \Drupal::database()
+      ->select('l10n_server_line', 'l')
+      ->condition('l.rid', $this->release->id())
+      ->countQuery()
+      ->execute()
+      ->fetchField();
 
     // Record changes of the scanned project in the database.
     $this->logger->notice('@filename (@files files, @sids strings) scanned.', [
@@ -404,16 +420,10 @@ class ParserService {
       '@sids' => $this->stringsCount,
     ]);
 
-    // Update release to reflect current data.
-    $this->release
-      ->set('sid_count', $this->stringsCount)
-      ->set('fid_count', $this->filesCount)
-      ->set('eid_count', $this->errorsCount)
-      ->set('last_parsed', \Drupal::time()->getRequestTime())
-      ->save();
-
-    // Get all messages recorded while parsing and clear the static cache.
+    // Get and store all messages recorded while parsing and clear the static
+    // cache.
     $messages = potx_status('get', TRUE);
+    $this->errorsCount = count($messages);
     foreach ($messages as $message) {
       L10nServerError::create([
         'rid' => $this->release->id(),

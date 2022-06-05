@@ -79,7 +79,8 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
     $header['version'] = $this->t('Version');
     $header['download_link'] = $this->t('Download link');
     $header['sid_count'] = $this->t('Strings');
-    $header['fid_count'] = $this->t('files');
+    $header['lid_count'] = $this->t('Lines');
+    $header['fid_count'] = $this->t('Files');
     $header['eid_count'] = $this->t('Warnings');
     $header['queued'] = $this->t('Queued');
     $header['last_parsed'] = $this->t('Last parsed');
@@ -106,6 +107,7 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
       $row['homepage'] = $this->t('n/a');
     }
     $row['sid_count'] = $entity->get('sid_count')->first()->getValue()['value'];
+    $row['lid_count'] = $entity->get('lid_count')->first()->getValue()['value'];
     $row['fid_count'] = $entity->get('fid_count')->first()->getValue()['value'];
     $row['eid_count'] = $entity->get('eid_count')->first()->getValue()['value'];
     $row['queued'] = $entity->getQueuedTime() ? $this->dateFormatter->format($entity->getQueuedTime()) : '-';

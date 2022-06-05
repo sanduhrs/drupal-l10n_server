@@ -140,6 +140,14 @@ function l10n_server_cron(): void {
 
       /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
       $result = $connector->parseHandler();
+      $connector->getRelease()
+        ->setSourceStringCount($result->getStringCount())
+        ->setLineCount($result->getLineCount())
+        ->setFileCount($result->getFileCount())
+        ->setErrorCount($result->getErrorCount())
+        ->setLastParsed(time())
+        ->setQueuedTime(0)
+        ->save();
       $release_count = $result->getFileCount() ?: $release_count++;
     }
   }

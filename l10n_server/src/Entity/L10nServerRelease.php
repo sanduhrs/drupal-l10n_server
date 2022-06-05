@@ -209,6 +209,19 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
         'type' => 'number',
         'weight' => 10,
       ]);
+    $fields['lid_count'] = BaseFieldDefinition::create('integer')
+      ->setLabel(t('Lines'))
+      ->setDescription(t('Count of lines in this project release.'))
+      ->setDefaultValue(0)
+      ->setDisplayOptions('view', [
+        'label' => 'above',
+        'type' => 'number_integer',
+        'weight' => 0,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'number',
+        'weight' => 10,
+      ]);
     $fields['fid_count'] = BaseFieldDefinition::create('integer')
       ->setLabel(t('Files'))
       ->setDescription(t('Count of files in this project release.'))
@@ -336,6 +349,21 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
    */
   public function setLineCount(int $count): self {
     $this->set('lid_count', $count);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFileCount(): int {
+    return (int) $this->get('fid_count')->getValue();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFileCount(int $count): self {
+    $this->set('fid_count', $count);
     return $this;
   }
 

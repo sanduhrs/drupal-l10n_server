@@ -13,7 +13,7 @@ use Drupal\l10n_server\ConnectorScanHandlerResult;
 use Drupal\l10n_server\ConnectorScanHandlerResultInterface;
 use Drupal\l10n_server\ConnectorParseHandlerInterface;
 use Drupal\l10n_server\ConnectorScanHandlerInterface;
-use Drupal\l10n_server\Entity\L10nServerReleaseInterface;
+use Drupal\l10n_server\Entity\L10nServerRelease;
 use GuzzleHttp\ClientInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -60,6 +60,13 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
   protected ParserService $parser;
 
   /**
+   * The release.
+   *
+   * @var \Drupal\l10n_server\Entity\L10nServerRelease
+   */
+  protected L10nServerRelease $release;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): self {
@@ -74,13 +81,13 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
   /**
    * {@inheritdoc}
    */
-  public function parseHandler(L10nServerReleaseInterface $release = NULL): ConnectorParseHandlerResultInterface {
-    if (!$release) {
-      /** @var \Drupal\l10n_server\Entity\L10nServerReleaseStorage $release_storage */
+  public function parseHandler(): ConnectorParseHandlerResultInterface {
+    if (!$this->release) {
+      /** @var \Drupal\l10n_server\Entity\Storage\L10nServerReleaseStorage $release_storage */
       $release_storage = \Drupal::entityTypeManager()->getStorage('l10n_server_release');
       $release_ids = $release_storage->getIdsToRefresh();
       if ($release_ids) {
-        $release = $release_storage->load(reset($release_ids));
+        $this->release = $release_storage->load(reset($release_ids));
       }
       else {
         return new ConnectorParseHandlerResult();
@@ -88,12 +95,13 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
     }
 
     $this->parser->setConnector($this);
-    $this->parser->setRelease($release);
+    $this->parser->setRelease($this->release);
     if ($this->parser->parse()) {
       return new ConnectorParseHandlerResult([
         'files' => $this->parser->getFilesCount(),
         'lines' => $this->parser->getLinesCount(),
         'strings' => $this->parser->getStringsCount(),
+        'errors' => $this->parser->getErrorsCount(),
       ]);
     }
     return new ConnectorParseHandlerResult();
@@ -111,6 +119,21 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
       ]);
     }
     return new ConnectorScanHandlerResult();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRelease(L10nServerRelease $release): ConnectorParseHandlerInterface {
+    $this->release = $release;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRelease(): L10nServerRelease {
+    return $this->release;
   }
 
 }
