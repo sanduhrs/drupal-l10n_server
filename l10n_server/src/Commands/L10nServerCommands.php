@@ -159,7 +159,7 @@ class L10nServerCommands extends DrushCommands {
     }
 
     if ($release = $options['release']) {
-      $query->condition('r.title', $release);
+      $query->condition('r.version', $release);
     }
 
     if ($options['only-unparsed']) {
@@ -203,20 +203,21 @@ class L10nServerCommands extends DrushCommands {
         /** @var \Drupal\l10n_server\ConnectorParseHandlerInterface $connector */
         $connector->setRelease($release);
         /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
-        $result = $connector->parseHandler();
-        $release
-          ->setSourceStringCount($result->getStringCount())
-          ->setLineCount($result->getLineCount())
-          ->setFileCount($result->getFileCount())
-          ->setErrorCount($result->getErrorCount())
-          ->setLastParsed(time())
-          ->setQueuedTime(0)
-          ->save();
-
-        $results[$connector->getPluginId()][] = $result;
-        $files_count = $files_count + $result->getFileCount();
-        $strings_count = $strings_count + $result->getStringCount();
-        $errors_count = $errors_count + $result->getErrorCount();
+        if ($result = $connector->parseHandler()) {
+          $release = $connector->getRelease();
+          $release
+            ->setSourceStringCount($result->getStringCount())
+            ->setLineCount($result->getLineCount())
+            ->setFileCount($result->getFileCount())
+            ->setErrorCount($result->getErrorCount())
+            ->setLastParsed(time())
+            ->setQueuedTime(0)
+            ->save();
+          $results[$connector->getPluginId()][] = $result;
+          $files_count = $files_count + $result->getFileCount();
+          $strings_count = $strings_count + $result->getStringCount();
+          $errors_count = $errors_count + $result->getErrorCount();
+        }
       }
       else {
         $this->logger()->error(dt('The connector @connector_label with source @source_label is not scannable.', [

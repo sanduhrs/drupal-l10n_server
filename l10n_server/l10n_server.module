@@ -89,7 +89,7 @@ function l10n_server_cron(): void {
   $connectors = \Drupal::config('l10n_server.settings')
     ->get('enabled_connectors');
 
-  \Drupal::messenger()->addStatus('Start scanning l10n_server connectors...');
+  \Drupal::logger('cron')->info('Start scanning l10n_server connectors...');
 
   $connector_count = $project_count = $release_count = 0;
   foreach ($connectors as $connector_id) {
@@ -99,10 +99,10 @@ function l10n_server_cron(): void {
     if ($connector->isScannable()
         && $connector->getSourceInstance()->getConfiguration()['cron_scanning_enabled']) {
       $connector_count++;
-      \Drupal::messenger()->addStatus(dt('Scanning @connector_label @source_label...', [
+      \Drupal::logger('cron')->info('Scanning @connector_label @source_label...', [
         '@connector_label' => $connector->getLabel(),
         '@source_label' => $connector->getSourceInstance()->getLabel(),
-      ]));
+      ]);
 
       /** @var \Drupal\l10n_server\ConnectorScanHandlerResultInterface $result */
       $result = $connector->scanHandler();
@@ -111,19 +111,25 @@ function l10n_server_cron(): void {
     }
   }
 
-  \Drupal::messenger()->addStatus('Done scanning l10n_server connectors...');
-  \Drupal::logger('cron')->info(dt('Scanned @projects project(s) and @releases release(s) in @connectors connector(s).', [
+  \Drupal::logger('cron')->info('Done scanning l10n_server connectors.', [
+    '@connector_label' => $connector->getLabel(),
+    '@source_label' => $connector->getSourceInstance()->getLabel(),
+  ]);
+  \Drupal::logger('cron')->info('Scanned @projects project(s) and @releases release(s) in @connectors connector(s).', [
     '@connectors' => $connector_count,
     '@projects' => $project_count,
     '@releases' => $release_count,
-  ]));
+  ]);
 
   /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
   $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
   $connectors = \Drupal::config('l10n_server.settings')
     ->get('enabled_connectors');
 
-  \Drupal::messenger()->addStatus('Start parsing l10n_server connectors.');
+  \Drupal::logger('cron')->info('Start parsing l10n_server connectors...', [
+    '@connector_label' => $connector->getLabel(),
+    '@source_label' => $connector->getSourceInstance()->getLabel(),
+  ]);
 
   $connector_count = $release_count = 0;
   foreach ($connectors as $connector_id) {
@@ -133,26 +139,28 @@ function l10n_server_cron(): void {
     if ($connector->isParsable()
       && $connector->getSourceInstance()->getConfiguration()['cron_parsing_enabled']) {
       $connector_count++;
-      \Drupal::messenger()->addStatus(dt('Parsing @connector_label @source_label...', [
+      \Drupal::logger('cron')->info('Parsing @connector_label @source_label...', [
         '@connector_label' => $connector->getLabel(),
         '@source_label' => $connector->getSourceInstance()->getLabel(),
-      ]));
+      ]);
 
       /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
-      $result = $connector->parseHandler();
-      $connector->getRelease()
-        ->setSourceStringCount($result->getStringCount())
-        ->setLineCount($result->getLineCount())
-        ->setFileCount($result->getFileCount())
-        ->setErrorCount($result->getErrorCount())
-        ->setLastParsed(time())
-        ->setQueuedTime(0)
-        ->save();
-      $release_count = $result->getFileCount() ?: $release_count++;
+      echo 'START PARSING RELEASE... ', PHP_EOL;
+      if ($result = $connector->parseHandler()) {
+        $connector->getRelease()
+          ->setSourceStringCount($result->getStringCount())
+          ->setLineCount($result->getLineCount())
+          ->setFileCount($result->getFileCount())
+          ->setErrorCount($result->getErrorCount())
+          ->setLastParsed(time())
+          ->setQueuedTime(0)
+          ->save();
+        $release_count = $result->getFileCount() ?: $release_count++;
+      }
     }
   }
 
-  \Drupal::messenger()->addStatus('Done parsing l10n_server connectors.');
+  \Drupal::logger('cron')->info('Done parsing l10n_server connectors.');
   \Drupal::logger('cron')->info(dt('Parsed @releases release(s) in @connectors connector(s).', [
     '@connectors' => $connector_count,
     '@releases' => $release_count,

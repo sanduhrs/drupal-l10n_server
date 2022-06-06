@@ -45,7 +45,17 @@ class ParserQueue extends QueueWorkerBase {
         // Parse the release.
         /** @var \Drupal\l10n_server\ConnectorParseHandlerInterface $connector */
         $connector->setRelease($release);
-        $connector->parseHandler();
+        if ($result = $connector->parseHandler()) {
+          $release = $connector->getRelease();
+          $release
+            ->setSourceStringCount($result->getStringCount())
+            ->setLineCount($result->getLineCount())
+            ->setFileCount($result->getFileCount())
+            ->setErrorCount($result->getErrorCount())
+            ->setLastParsed(time())
+            ->setQueuedTime(0)
+            ->save();
+        }
       }
     }
   }

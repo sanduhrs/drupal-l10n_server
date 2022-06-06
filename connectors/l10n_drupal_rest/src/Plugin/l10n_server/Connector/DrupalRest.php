@@ -81,7 +81,7 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
   /**
    * {@inheritdoc}
    */
-  public function parseHandler(): ConnectorParseHandlerResultInterface {
+  public function parseHandler(): ConnectorParseHandlerResultInterface|FALSE {
     if (!$this->release) {
       /** @var \Drupal\l10n_server\Entity\Storage\L10nServerReleaseStorage $release_storage */
       $release_storage = \Drupal::entityTypeManager()->getStorage('l10n_server_release');
@@ -90,7 +90,7 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
         $this->release = $release_storage->load(reset($release_ids));
       }
       else {
-        return new ConnectorParseHandlerResult();
+        return FALSE;
       }
     }
 
@@ -104,7 +104,7 @@ class DrupalRest extends ConnectorPluginBase implements ConnectorScanHandlerInte
         'errors' => $this->parser->getErrorsCount(),
       ]);
     }
-    return new ConnectorParseHandlerResult();
+    return FALSE;
   }
 
   /**

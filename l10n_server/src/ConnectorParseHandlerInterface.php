@@ -31,9 +31,9 @@ interface ConnectorParseHandlerInterface {
   /**
    * Parse handler.
    *
-   * @return \Drupal\l10n_server\ConnectorParseHandlerResultInterface
-   *   The parsing results object.
+   * @return \Drupal\l10n_server\ConnectorParseHandlerResultInterface|false
+   *   The parsing results object or false in case of error.
    */
-  public function parseHandler(): ConnectorParseHandlerResultInterface;
+  public function parseHandler(): ConnectorParseHandlerResultInterface|FALSE;
 
 }
