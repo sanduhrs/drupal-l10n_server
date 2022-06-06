@@ -180,3 +180,10 @@ function template_preprocess_l10n_server_release(array &$variables): void {
     $variables['content'][$key] = $variables['elements'][$key];
   }
 }
+
+/**
+ * Implements hook_page_attachments().
+ */
+function l10n_server_page_attachments(array &$page): void {
+  $page['#attached']['library'][] = 'l10n_server/table';
+}

@@ -4,3 +4,6 @@ toolbar:
       css/toolbar.icons.theme.css: {}
   dependencies:
     - 'toolbar/toolbar'
+table:
+  js:
+    js/table.js: {}
