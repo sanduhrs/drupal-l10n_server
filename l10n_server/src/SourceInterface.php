@@ -47,20 +47,4 @@ interface SourceInterface extends PluginInspectionInterface, ContainerFactoryPlu
    */
   public function isCronScanningEnabled(): bool;
 
-  /**
-   * Gets parse limit.
-   *
-   * @return int
-   *   The scan limit integer.
-   */
-  public function getParseLimit(): int;
-
-  /**
-   * Is parsing on cron enabled?
-   *
-   * @return bool
-   *   Whether this source should be executed during cron.
-   */
-  public function isCronParsingEnabled(): bool;
-
 }

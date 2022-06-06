@@ -46,8 +46,6 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
     return [
       'scan_limit' => 1,
       'cron_scanning_enabled' => FALSE,
-      'parse_limit' => 1,
-      'cron_parsing_enabled' => FALSE,
     ];
   }
 
@@ -67,19 +65,6 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
       '#type' => 'checkbox',
       '#default_value' => $this->isCronScanningEnabled(),
       '#description' => $this->t('It is advised to set up a regular cron run to scan for new files, instead of hitting the Scan tab manually.'),
-    ];
-    $form['parse_limit'] = [
-      '#title' => $this->t('Number of releases to parse once'),
-      '#description' => $this->t('The number of a releases to parse on a manual or cron run. Parsing is synchronous, so you need to wait while extraction and parsing of file content is underway.'),
-      '#type' => 'number',
-      '#default_value' => $this->getParseLimit(),
-      '#min' => 1,
-    ];
-    $form['cron_parsing_enabled'] = [
-      '#title' => t('Run parsing on cron'),
-      '#type' => 'checkbox',
-      '#default_value' => $this->isCronParsingEnabled(),
-      '#description' => $this->t('It is advised to set up a regular cron run to parse new files, instead of hitting the Parse tab manually.'),
     ];
     return $form;
   }
@@ -113,20 +98,6 @@ abstract class ConfigurableSourcePluginBase extends SourcePluginBase implements 
    */
   public function isCronScanningEnabled(): bool {
     return (bool) $this->configuration['cron_scanning_enabled'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getParseLimit(): int {
-    return (int) $this->configuration['parse_limit'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isCronParsingEnabled(): bool {
-    return (bool) $this->configuration['cron_parsing_enabled'];
   }
 
 }

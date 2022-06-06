@@ -120,51 +120,6 @@ function l10n_server_cron(): void {
     '@projects' => $project_count,
     '@releases' => $release_count,
   ]);
-
-  /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
-  $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
-  $connectors = \Drupal::config('l10n_server.settings')
-    ->get('enabled_connectors');
-
-  \Drupal::logger('cron')->info('Start parsing l10n_server connectors...', [
-    '@connector_label' => $connector->getLabel(),
-    '@source_label' => $connector->getSourceInstance()->getLabel(),
-  ]);
-
-  $connector_count = $release_count = 0;
-  foreach ($connectors as $connector_id) {
-    /** @var \Drupal\l10n_server\ConnectorInterface $connector */
-    $connector = $connectorManager->createInstance($connector_id);
-
-    if ($connector->isParsable()
-      && $connector->getSourceInstance()->getConfiguration()['cron_parsing_enabled']) {
-      $connector_count++;
-      \Drupal::logger('cron')->info('Parsing @connector_label @source_label...', [
-        '@connector_label' => $connector->getLabel(),
-        '@source_label' => $connector->getSourceInstance()->getLabel(),
-      ]);
-
-      /** @var \Drupal\l10n_server\ConnectorParseHandlerResultInterface $result */
-      echo 'START PARSING RELEASE... ', PHP_EOL;
-      if ($result = $connector->parseHandler()) {
-        $connector->getRelease()
-          ->setSourceStringCount($result->getStringCount())
-          ->setLineCount($result->getLineCount())
-          ->setFileCount($result->getFileCount())
-          ->setErrorCount($result->getErrorCount())
-          ->setLastParsed(time())
-          ->setQueuedTime(0)
-          ->save();
-        $release_count = $result->getFileCount() ?: $release_count++;
-      }
-    }
-  }
-
-  \Drupal::logger('cron')->info('Done parsing l10n_server connectors.');
-  \Drupal::logger('cron')->info(dt('Parsed @releases release(s) in @connectors connector(s).', [
-    '@connectors' => $connector_count,
-    '@releases' => $release_count,
-  ]));
 }
 
 /**

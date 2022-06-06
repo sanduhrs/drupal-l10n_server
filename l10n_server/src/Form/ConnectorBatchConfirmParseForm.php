@@ -40,8 +40,11 @@ class ConnectorBatchConfirmParseForm extends ConnectorBatchConfirmFormBase {
       'finished' => static::class . '::batchFinished',
     ];
 
-    $source_config = $connector->getSourceInstance()->getConfiguration();
-    for ($i = 0; $i < $source_config['parse_limit']; $i++) {
+    $queued = \Drupal::database()
+      ->select('l10n_server_release', 'r')
+      ->condition('r.queued', 0, '>')
+      ->countQuery()->execute()->fetchField();
+    for ($i = 0; $i < $queued; $i++) {
       $batch['operations'][] = [
         static::class . '::batchOperation',
         [
