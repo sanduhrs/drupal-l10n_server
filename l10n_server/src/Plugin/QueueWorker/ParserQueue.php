@@ -12,7 +12,7 @@ use Drupal\l10n_server\Entity\L10nServerReleaseInterface;
  *
  * @QueueWorker(
  *   id = "l10n_server_parser_queue",
- *   title = @Translation("L10n Server Parser Queue"),
+ *   title = @Translation("Parse releases"),
  *   cron = {"time" = 60}
  * )
  */
