@@ -124,6 +124,59 @@ class L10nServerCommands extends DrushCommands {
   }
 
   /**
+   * Queue releases for parsing.
+   *
+   * @param array $options
+   *   An associative array of options whose values come from cli, aliases,
+   *   config, etc.
+   *
+   * @option force
+   *
+   * @usage l10n_server-queue
+   *   Queue releases for parsing.
+   *
+   * @command l10n_server:queue
+   *
+   * @aliases lsq
+   *
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
+   * @throws \Drupal\Core\Entity\EntityStorageException
+   */
+  public function queue(array $options = ['force' => NULL]): void {
+
+    if ($options['force']) {
+      \Drupal::database()
+        ->update('l10n_server_release')
+        ->fields(['queued' => 0])
+        ->execute();
+    }
+
+    // Queue releases to be parsed.
+    $queue = \Drupal::queue('l10n_server_parser_queue');
+    $ids = \Drupal::entityTypeManager()
+      ->getStorage('l10n_server_release')
+      ->getIdsToQueue();
+    $this->logger()->notice(dt('Queuing releases to be parsed...'));
+
+    $i = 0;
+    $releases = L10nServerRelease::loadMultiple($ids);
+    foreach ($releases as $release) {
+      if ($queue->createItem($release)) {
+        // Add timestamp to avoid queueing item more than once.
+        $release->setQueuedTime(\Drupal::time()->getRequestTime());
+        $release->save();
+        $i++;
+      }
+    }
+
+    $this->logger()->notice(dt('Found @count releases, @queued queued for parsing.', [
+      '@count' => count($releases),
+      '@queued' => $i,
+    ]));
+  }
+
+  /**
    * Parses releases.
    *
    * @param string $project
@@ -135,11 +188,14 @@ class L10nServerCommands extends DrushCommands {
    * @option all
    *
    * @usage l10n_server-parse 'Drupal core'
-   *   Scans releases the 'Drupal core' project.
+   *   Scan releases of the 'Drupal core' project.
    *
    * @command l10n_server:parse
    *
    * @aliases lsp
+   *
+   * @throws \Drupal\Component\Plugin\Exception\PluginException
+   * @throws \Drupal\Core\Entity\EntityStorageException
    */
   // phpcs:ignore
   public function parse(string $project = '', array $options = ['release' => NULL, 'limit' => 1, 'only-unparsed' => FALSE, 'only-unqueued' => FALSE]): void {
