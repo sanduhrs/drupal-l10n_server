@@ -79,7 +79,7 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
     $fields['title'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Title'))
       ->setRequired(TRUE)
-      ->setSetting('max_length', 128)
+      ->setSetting('max_length', 288)
       ->setDisplayOptions('form', [
         'type' => 'string_textfield',
         'weight' => 0,

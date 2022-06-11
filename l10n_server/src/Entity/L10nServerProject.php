@@ -62,7 +62,7 @@ class L10nServerProject extends ContentEntityBase implements L10nServerProjectIn
       ->setLabel(t('Title'))
       ->setDescription(t('Human readable name for project used on the interface.'))
       ->setRequired(TRUE)
-      ->setSetting('max_length', 128)
+      ->setSetting('max_length', 256)
       ->setDisplayOptions('form', [
         'type' => 'string_textfield',
         'weight' => 0,
