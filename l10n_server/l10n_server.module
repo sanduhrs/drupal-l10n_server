@@ -30,7 +30,7 @@ function l10n_server_entity_extra_field_info(): array {
   ];
   $extra['l10n_server_release']['l10n_server_release']['display']['warnings'] = [
     'label' => t('Warnings'),
-    'description' => t('The list of warning'),
+    'description' => t('The list of warnings'),
     'weight' => 110,
     'visible' => TRUE,
   ];
@@ -42,10 +42,11 @@ function l10n_server_entity_extra_field_info(): array {
  */
 function l10n_server_l10n_server_project_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode): void {
   if ($display->getComponent('releases')) {
-    $build['releases'] = [
-      '#type' => 'markup',
-      '#markup' => 'This is my custom content displaying releases',
+    $build['details'] = [
+      '#type' => 'details',
+      '#title' => t('Releases'),
     ];
+    $build['details']['releases'] = views_embed_view('l10n_server_releases', 'embed_1');
   }
 }
 
@@ -54,16 +55,18 @@ function l10n_server_l10n_server_project_view(array &$build, EntityInterface $en
  */
 function l10n_server_l10n_server_release_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode): void {
   if ($display->getComponent('files')) {
-    $build['files'] = [
-      '#type' => 'markup',
-      '#markup' => 'This is my custom content displaying files',
+    $build['details'] = [
+      '#type' => 'details',
+      '#title' => t('Files'),
     ];
+    $build['details']['files'] = views_embed_view('l10n_server_files', 'embed_1');
   }
   if ($display->getComponent('warnings')) {
-    $build['warnings'] = [
-      '#type' => 'markup',
-      '#markup' => 'This is my custom content displaying warnings',
+    $build['details'] = [
+      '#type' => 'details',
+      '#title' => t('Warnings'),
     ];
+    $build['details']['warnings'] = views_embed_view('l10n_server_warnings', 'embed_1');
   }
 }
 
