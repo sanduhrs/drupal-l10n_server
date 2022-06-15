@@ -28,7 +28,10 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
   /**
    * {@inheritdoc}
    */
-  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type): self {
+  public static function createInstance(
+      ContainerInterface $container,
+      EntityTypeInterface $entity_type
+  ): self {
     $instance = parent::createInstance($container, $entity_type);
     $instance->dateFormatter = $container->get('date.formatter');
     return $instance;
@@ -128,8 +131,8 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
    */
   protected function getEntityIds(): array|int {
     $query = $this->getStorage()->getQuery()
-      ->accessCheck(TRUE)
-      ->sort($this->entityType->getKey('id'));
+      ->accessCheck(FALSE)
+      ->sort('file_date', 'DESC');
 
     // Add query condition with project from request.
     $params = \Drupal::routeMatch()->getParameters()->all();
