@@ -1,0 +1,7 @@
+l10n_packager.packager:
+  path: '/admin/config/l10n-server/packager'
+  defaults:
+    _title: 'Packager'
+    _form: 'Drupal\l10n_packager\Form\L10nPackagerSettingsForm'
+  requirements:
+    _permission: 'administer localization server'

@@ -1,0 +1,12 @@
+l10n_packager.admin_packager:
+  title: 'Packager'
+  description: 'Find and manage packaging settings.'
+  route_name: l10n_packager.packager
+  parent: l10n_server.admin_configuration
+  weight: 100
+l10n_packager.packager:
+  title: 'Packager'
+  description: 'Find and manage packaging settings.'
+  parent: l10n_server.settings_overview
+  route_name: l10n_packager.packager
+  weight: 10

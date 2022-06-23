@@ -1,0 +1,5 @@
+services:
+  l10n_packager.commands:
+    class: \Drupal\l10n_packager\Commands\L10nPackagerCommands
+    tags:
+      - { name: drush.command }

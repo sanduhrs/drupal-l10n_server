@@ -1,0 +1,11 @@
+entity.l10n_packager_release.collection:
+  title: 'Packager Releases'
+  route_name: entity.l10n_packager_release.collection
+  base_route: system.admin_content
+  weight: 10
+
+entity.l10n_packager_file.collection:
+  title: 'Packager Files'
+  route_name: entity.l10n_packager_file.collection
+  base_route: system.admin_content
+  weight: 10

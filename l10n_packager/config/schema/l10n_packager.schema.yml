@@ -1,0 +1,7 @@
+l10n_packager.settings:
+  type: config_object
+  label: 'Localization packager settings'
+  mapping:
+    filepath:
+      type: string
+      label: 'Filepath'

@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Primary module hooks for Localization packager module.
+ */
+
+use Drupal\l10n_server\Entity\L10nServerRelease;
+
+/**
+ * Implements hook_cron().
+ */
+function l10n_packager_cron(): void {
+  // Queue releases to be parsed.
+  $queue = \Drupal::queue('l10n_packager_queue');
+  $ids = \Drupal::entityTypeManager()
+    ->getStorage('l10n_packager_release')
+    ->getIdsToQueue();
+  foreach (L10nServerRelease::loadMultiple($ids) as $release) {
+    if ($queue->createItem($release)) {
+      \Drupal::logger('cron')->info('Queued a packager release.');
+    }
+  }
+}

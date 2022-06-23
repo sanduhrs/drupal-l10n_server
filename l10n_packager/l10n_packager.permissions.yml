@@ -1,0 +1,7 @@
+administer packager release:
+  title: 'Administer packager release settings'
+  restrict access: true
+
+administer packager file:
+  title: 'Administer packager file settings'
+  restrict access: true

@@ -1,0 +1,11 @@
+l10n_packager_release.add_form:
+  title: 'Add packager release'
+  route_name: entity.l10n_packager_release.add_form
+  appears_on:
+    - entity.l10n_packager_release.collection
+
+l10n_packager_file.add_form:
+  title: 'Add packager file'
+  route_name: entity.l10n_packager_file.add_form
+  appears_on:
+    - entity.l10n_packager_file.collection

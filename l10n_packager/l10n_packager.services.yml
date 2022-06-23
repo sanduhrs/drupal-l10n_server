@@ -1,0 +1,7 @@
+services:
+  l10n_packager.packager:
+    class: Drupal\l10n_packager\L10nPackager
+    arguments: ['@database', '@config.manager', '@file_system']
+  l10n_packager.exporter:
+    class: Drupal\l10n_packager\L10nExporter
+    arguments: ['@config.factory']
