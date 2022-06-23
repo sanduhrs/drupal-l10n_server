@@ -45,6 +45,7 @@ function l10n_server_l10n_server_project_view(array &$build, EntityInterface $en
     $build['details'] = [
       '#type' => 'details',
       '#title' => t('Releases'),
+      '#open' => TRUE,
     ];
     $build['details']['releases'] = views_embed_view('l10n_server_releases', 'embed_1');
   }
@@ -55,18 +56,20 @@ function l10n_server_l10n_server_project_view(array &$build, EntityInterface $en
  */
 function l10n_server_l10n_server_release_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode): void {
   if ($display->getComponent('files')) {
-    $build['details'] = [
+    $build['files'] = [
       '#type' => 'details',
       '#title' => t('Files'),
+      '#open' => TRUE,
     ];
-    $build['details']['files'] = views_embed_view('l10n_server_files', 'embed_1');
+    $build['files']['view'] = views_embed_view('l10n_server_files', 'embed_1');
   }
   if ($display->getComponent('warnings')) {
-    $build['details'] = [
+    $build['warnings'] = [
       '#type' => 'details',
       '#title' => t('Warnings'),
+      '#open' => TRUE,
     ];
-    $build['details']['warnings'] = views_embed_view('l10n_server_warnings', 'embed_1');
+    $build['warnings']['view'] = views_embed_view('l10n_server_warnings', 'embed_1');
   }
 }
 
