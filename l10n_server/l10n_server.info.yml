@@ -7,3 +7,4 @@ dependencies:
   - drupal:file
   - drupal:locale
   - drupal:language
+  - queue_ui:queue_ui
