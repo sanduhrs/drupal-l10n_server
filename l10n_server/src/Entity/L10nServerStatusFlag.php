@@ -83,4 +83,33 @@ class L10nServerStatusFlag extends ContentEntityBase implements L10nServerStatus
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getLanguage(): string {
+    return $this->get('language')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLanguage(string $language): L10nServerStatusFlagInterface {
+    $this->set('language', $language);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasTranslationString(): bool {
+    return (bool) $this->get('has_translation')->first()->getValue();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasSuggestionString(): bool {
+    return (bool) $this->get('has_suggestion')->first()->getValue();
+  }
+
 }

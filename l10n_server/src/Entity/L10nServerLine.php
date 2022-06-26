@@ -152,4 +152,94 @@ class L10nServerLine extends ContentEntityBase implements L10nServerLineInterfac
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getProjectId(): int {
+    return (int) $this->get('pid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProjectId(int $pid): L10nServerLineInterface {
+    $this->set('pid', $pid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getReleaseId(): int {
+    return (int) $this->get('rid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setReleaseId(int $rid): self {
+    $this->set('rid', $rid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFileId(): int {
+    return (int) $this->get('fid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFileId(int $fid): self {
+    $this->set('fid', $fid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLineNumber(): int {
+    return (int) $this->get('lineno')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLineNumber(int $lineno): self {
+    $this->set('lineno', $lineno);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getStringId(): int {
+    return (int) $this->get('sid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setStringId(int $sid): self {
+    $this->set('sid', $sid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getType(): string {
+    return (string) $this->get('type')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setType(string $type): self {
+    $this->set('type', $type);
+    return $this;
+  }
+
 }

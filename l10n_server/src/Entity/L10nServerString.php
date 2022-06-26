@@ -106,4 +106,52 @@ class L10nServerString extends ContentEntityBase implements L10nServerStringInte
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getContext(): string {
+    if ($item = $this->get('context')->first()) {
+      return (string) $item->getValue()['value'];
+    }
+    return '';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setContext(string $context): self {
+    $this->set('context', $context);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getHashkey(): string {
+    return (string) $this->get('hashkey')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setHashkey(string $hashkey): self {
+    $this->set('hashkey', $hashkey);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getValue(): string {
+    return (string) $this->get('value')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValue(string $value): self {
+    $this->set('value', $value);
+    return $this;
+  }
+
 }

@@ -69,8 +69,8 @@ class L10nServerProjectListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerProjectInterface $entity */
     $row['label'] = $entity->toLink();
-    $row['uri'] = $entity->get('uri')->first()->getValue()['value'];
-    $row['connector'] = $entity->get('connector_module')->first()->getValue()['value'];
+    $row['uri'] = $entity->getUri();
+    $row['connector'] = $entity->getConnectorModule();
     if ($link = $entity->getHomepage()) {
       $row['homepage'] = Link::fromTextAndUrl(
         Url::fromUri($link)->toString(),
@@ -83,7 +83,7 @@ class L10nServerProjectListBuilder extends EntityListBuilder {
     $row['releases'] = Link::createFromRoute(t('Releases'), 'entity.l10n_server_project.releases', [
       'l10n_server_project' => $entity->id(),
     ]);
-    $row['status'] = $entity->get('status')->first()->getValue()['value'];
+    $row['status'] = $entity->getStatus();
     $row['last_parsed'] = $entity->getLastParsed() ? $this->dateFormatter->format($entity->getLastParsed()) : '-';
     return $row + parent::buildRow($entity);
   }

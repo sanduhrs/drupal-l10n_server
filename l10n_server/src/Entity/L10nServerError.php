@@ -88,4 +88,34 @@ class L10nServerError extends ContentEntityBase implements L10nServerErrorInterf
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getReleaseId(): int {
+    return (int) $this->get('rid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setReleaseId(int $rid): self {
+    $this->set('rid', $rid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getValue(): string {
+    return $this->get('value')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setValue(string $value): self {
+    $this->set('value', $value);
+    return $this;
+  }
+
 }

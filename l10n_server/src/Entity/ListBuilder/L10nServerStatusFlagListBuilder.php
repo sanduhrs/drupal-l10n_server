@@ -44,9 +44,9 @@ class L10nServerStatusFlagListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerStatusFlagInterface $entity */
     $row['id'] = $entity->id();
-    $row['language'] = $entity->get('language')->first()->getValue()['value'];
-    $row['has_suggestion'] = $entity->get('has_suggestion')->first()->getValue()['value'];
-    $row['has_translation'] = $entity->get('has_suggestion')->first()->getValue()['value'];
+    $row['language'] = $entity->getLanguage();
+    $row['has_suggestion'] = $entity->hasSuggestionString();
+    $row['has_translation'] = $entity->hasTranslationString();
     return $row + parent::buildRow($entity);
   }
 

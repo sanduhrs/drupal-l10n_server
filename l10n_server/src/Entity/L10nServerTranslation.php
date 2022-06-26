@@ -202,4 +202,139 @@ class L10nServerTranslation extends ContentEntityBase implements L10nServerTrans
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getStringId(): int {
+    return (int) $this->get('sid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setStringId(int $sid): self {
+    $this->set('sid', $sid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getString(): L10nServerString {
+    return L10nServerString::load($this->getStringId());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setString(L10nServerString $string): self {
+    $this->setStringId($string->id());
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLanguage(): string {
+    return (string) $this->get('language')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLanguage(string $language): self {
+    $this->set('language', $language);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTranslationString(): string {
+    return (string) $this->get('translation')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTranslationString(string $translation): L10nServerTranslationInterface {
+    $this->set('translation', $translation);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getUid(): int {
+    return (int) $this->get('uid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUid(int $uid): self {
+    $this->set('uid', $uid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCreated(): int {
+    return (int) $this->get('created')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setCreated(int $created): L10nServerTranslationInterface {
+    $this->set('created', $created);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getChanged(): int {
+    return (int) $this->get('changed')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setChanged(int $changed): L10nServerTranslationInterface {
+    $this->set('changed', $changed);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isSuggestion(): bool {
+    return (bool) $this->get('suggestion')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setSuggestion(bool $suggestion): L10nServerTranslationInterface {
+    $this->set('suggestion', $suggestion);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getStatus(): int {
+    return (int) $this->get('status')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setStatus(int $status): L10nServerTranslationInterface {
+    $this->set('status', $status);
+    return $this;
+  }
+
 }

@@ -20,6 +20,52 @@ interface L10nServerProjectInterface extends ContentEntityInterface {
   public function isEnabled(): bool;
 
   /**
+   * Get connector.
+   *
+   * @return \Drupal\l10n_server\ConnectorInterface|null
+   *   A connector or null.
+   */
+  public function getConnector(): ?ConnectorInterface;
+
+  /**
+   * Gets title.
+   *
+   * @return string
+   *   The title string.
+   */
+  public function getTitle(): string;
+
+  /**
+   * Sets title.
+   *
+   * @param string $title
+   *   The title string.
+   *
+   * @return $this
+   *   The entity.
+   */
+  public function setTitle(string $title): self;
+
+  /**
+   * Gets URI.
+   *
+   * @return string
+   *   The URI string.
+   */
+  public function getUri(): string;
+
+  /**
+   * Sets URI.
+   *
+   * @param string $uri
+   *   The URI string.
+   *
+   * @return $this
+   *   The entity.
+   */
+  public function setUri(string $uri): self;
+
+  /**
    * Get connector module.
    *
    * @return string
@@ -34,16 +80,9 @@ interface L10nServerProjectInterface extends ContentEntityInterface {
    *   The connector module identifier.
    *
    * @return $this
+   *   The entity.
    */
   public function setConnectorModule(string $module): self;
-
-  /**
-   * Get connector.
-   *
-   * @return \Drupal\l10n_server\ConnectorInterface|null
-   *   A connector or null.
-   */
-  public function getConnector(): ?ConnectorInterface;
 
   /**
    * Get homepage.
@@ -56,12 +95,13 @@ interface L10nServerProjectInterface extends ContentEntityInterface {
   /**
    * Set homepage.
    *
-   * @param string $link
-   *   A link string.
+   * @param string $homepage
+   *   A homepage URL string.
    *
    * @return $this
+   *   The entity.
    */
-  public function setHomepage(string $link): self;
+  public function setHomepage(string $homepage): self;
 
   /**
    * Get last parsed.
@@ -78,7 +118,46 @@ interface L10nServerProjectInterface extends ContentEntityInterface {
    *   A timestamp integer.
    *
    * @return $this
+   *   The entity.
    */
   public function setLastParsed(int $timestamp): self;
+
+  /**
+   * Gets status.
+   *
+   * @return int
+   *   The status integer.
+   */
+  public function getStatus(): int;
+
+  /**
+   * Sets status.
+   *
+   * @param int $status
+   *   The status integer.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setStatus(int $status): self;
+
+  /**
+   * Gets weight.
+   *
+   * @return int
+   *   The weight integer.
+   */
+  public function getWeight(): int;
+
+  /**
+   * Sets weight.
+   *
+   * @param int $weight
+   *   The weight integer.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setWeight(int $weight): self;
 
 }

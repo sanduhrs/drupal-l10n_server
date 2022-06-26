@@ -69,10 +69,14 @@ class L10nServerTranslationListBuilder extends EntityListBuilder {
    */
   public function buildHeader(): array {
     $header['id'] = $this->t('ID');
-    $header['label'] = $this->t('Label');
-    $header['uid'] = $this->t('Author');
+    $header['sid'] = $this->t('String ID');
+    $header['language'] = $this->t('Language');
+    $header['translation'] = $this->t('Translation');
+    $header['uid'] = $this->t('User ID');
     $header['created'] = $this->t('Created');
-    $header['changed'] = $this->t('Updated');
+    $header['changed'] = $this->t('Changed');
+    $header['suggestion'] = $this->t('Is suggestion');
+    $header['status'] = $this->t('Status');
     return $header + parent::buildHeader();
   }
 
@@ -82,13 +86,17 @@ class L10nServerTranslationListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerTranslationInterface $entity */
     $row['id'] = $entity->id();
-    $row['label'] = $entity->label();
+    $row['sid'] = $entity->getStringId();
+    $row['language'] = $entity->getLanguage();
+    $row['translation'] = $entity->getTranslationString();
     $row['uid']['data'] = [
       '#theme' => 'username',
       '#account' => $entity->getOwner(),
     ];
-    $row['created'] = $this->dateFormatter->format($entity->get('created')->value);
-    $row['changed'] = $this->dateFormatter->format($entity->getChangedTime());
+    $row['created'] = $this->dateFormatter->format($entity->getCreated());
+    $row['changed'] = $this->dateFormatter->format($entity->getChanged());
+    $row['suggestion'] = $entity->isSuggestion();
+    $row['status'] = $entity->getStatus();
     return $row + parent::buildRow($entity);
   }
 

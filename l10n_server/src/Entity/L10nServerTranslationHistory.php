@@ -162,4 +162,64 @@ class L10nServerTranslationHistory extends ContentEntityBase implements L10nServ
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getActionUid(): int {
+    return $this->get('uid_action')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setActionUid(int $uid): self {
+    $this->set('uid_action', $uid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getActionTime(): int {
+    return $this->get('time_action')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setActionTime(int $time): self {
+    $this->set('time_action', $time);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getActionType(): string {
+    return $this->get('type_action')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setActionType(string $type): self {
+    $this->set('type_action', $type);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getActionMedium(): string {
+    return $this->get('medium_action')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setActionMedium(string $medium): self {
+    $this->set('medium_action', $medium);
+    return $this;
+  }
+
 }

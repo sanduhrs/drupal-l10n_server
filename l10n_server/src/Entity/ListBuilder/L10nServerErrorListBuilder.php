@@ -32,7 +32,7 @@ class L10nServerErrorListBuilder extends EntityListBuilder {
    */
   public function buildHeader(): array {
     $header['id'] = $this->t('ID');
-    $header['rid'] = $this->t('RID');
+    $header['rid'] = $this->t('Release ID');
     $header['value'] = $this->t('Value');
     return $header + parent::buildHeader();
   }
@@ -43,8 +43,8 @@ class L10nServerErrorListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerErrorInterface $entity */
     $row['id'] = $entity->id();
-    $row['rid'] = $entity->get('rid')->first()->getValue()['target_id'];
-    $row['value'] = $entity->get('value')->first()->getValue()['value'];
+    $row['rid'] = $entity->getReleaseId();
+    $row['value'] = $entity->getValue();
     return $row + parent::buildRow($entity);
   }
 

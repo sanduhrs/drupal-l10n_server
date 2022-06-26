@@ -32,8 +32,8 @@ class L10nServerFileListBuilder extends EntityListBuilder {
    */
   public function buildHeader(): array {
     $header['id'] = $this->t('ID');
-    $header['pid'] = $this->t('PID');
-    $header['rid'] = $this->t('RID');
+    $header['pid'] = $this->t('Prpject ID');
+    $header['rid'] = $this->t('Release ID');
     $header['location'] = $this->t('Location');
     $header['revision'] = $this->t('Revision');
     return $header + parent::buildHeader();
@@ -45,10 +45,10 @@ class L10nServerFileListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerFileInterface $entity */
     $row['id'] = $entity->id();
-    $row['pid'] = $entity->get('pid')->first()->getValue()['target_id'];
-    $row['rid'] = $entity->get('rid')->first()->getValue()['target_id'];
-    $row['location'] = $entity->get('location')->first()->getValue()['value'];
-    $row['revision'] = $entity->get('revision')->first()->getValue()['value'];
+    $row['pid'] = $entity->getProjectId();
+    $row['rid'] = $entity->getReleaseId();
+    $row['location'] = $entity->getLocation();
+    $row['revision'] = $entity->getRevision();
     return $row + parent::buildRow($entity);
   }
 

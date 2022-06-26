@@ -32,11 +32,11 @@ class L10nServerLineListBuilder extends EntityListBuilder {
    */
   public function buildHeader(): array {
     $header['id'] = $this->t('ID');
-    $header['pid'] = $this->t('PID');
-    $header['rid'] = $this->t('RID');
-    $header['fid'] = $this->t('FID');
+    $header['pid'] = $this->t('Project ID');
+    $header['rid'] = $this->t('Release ID');
+    $header['fid'] = $this->t('File ID');
     $header['lineno'] = $this->t('Line no.');
-    $header['sid'] = $this->t('SID');
+    $header['sid'] = $this->t('String ID');
     $header['type'] = $this->t('Type');
     return $header + parent::buildHeader();
   }
@@ -47,12 +47,12 @@ class L10nServerLineListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerLineInterface $entity */
     $row['id'] = $entity->id();
-    $row['pid'] = $entity->get('pid')->first()->getValue()['target_id'];
-    $row['rid'] = $entity->get('rid')->first()->getValue()['target_id'];
-    $row['fid'] = $entity->get('fid')->first()->getValue()['target_id'];
-    $row['lineno'] = $entity->get('lineno')->first()->getValue()['value'];
-    $row['sid'] = $entity->get('sid')->first()->getValue()['target_id'];
-    $row['type'] = $entity->get('type')->first()->getValue()['value'];
+    $row['pid'] = $entity->getProjectId();
+    $row['rid'] = $entity->getReleaseId();
+    $row['fid'] = $entity->getFileId();
+    $row['lineno'] = $entity->getLineNumber();
+    $row['sid'] = $entity->getStringId();
+    $row['type'] = $entity->getType();
     return $row + parent::buildRow($entity);
   }
 

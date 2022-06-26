@@ -33,7 +33,7 @@ class L10nServerStringListBuilder extends EntityListBuilder {
   public function buildHeader(): array {
     $header['id'] = $this->t('ID');
     $header['value'] = $this->t('Value');
-    // $header['context'] = $this->t('Context');
+    $header['context'] = $this->t('Context');
     $header['hashkey'] = $this->t('Hashkey');
     return $header + parent::buildHeader();
   }
@@ -44,9 +44,9 @@ class L10nServerStringListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerStringInterface $entity */
     $row['id'] = $entity->id();
-    $row['value'] = $entity->get('value')->first()->getValue()['value'];
-    // $row['context'] = $entity->get('context')->first()->getValue()['value'];
-    $row['hashkey'] = $entity->get('hashkey')->first()->getValue()['value'];
+    $row['value'] = $entity->getValue();
+    $row['context'] = $entity->getContext();
+    $row['hashkey'] = $entity->getHashkey();
     return $row + parent::buildRow($entity);
   }
 

@@ -97,9 +97,9 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity): array {
     /** @var \Drupal\l10n_server\Entity\L10nServerReleaseInterface $entity */
     $row = [];
-    $row['pid'] = $entity->get('pid')->first()->getValue()['target_id'];
+    $row['pid'] = $entity->getProjectId();
     $row['label'] = $entity->toLink();
-    $row['version'] = $entity->get('version')->first()->getValue()['value'];
+    $row['version'] = $entity->getVersion();
     if ($link = $entity->getDownloadLink()) {
       $row['download_link'] = Link::fromTextAndUrl(
         Url::fromUri($link)->toString(),
@@ -109,10 +109,10 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
     else {
       $row['homepage'] = $this->t('n/a');
     }
-    $row['sid_count'] = $entity->get('sid_count')->first()->getValue()['value'];
-    $row['lid_count'] = $entity->get('lid_count')->first()->getValue()['value'];
-    $row['fid_count'] = $entity->get('fid_count')->first()->getValue()['value'];
-    $row['eid_count'] = $entity->get('eid_count')->first()->getValue()['value'];
+    $row['sid_count'] = $entity->getSourceStringCount();
+    $row['lid_count'] = $entity->getLineCount();
+    $row['fid_count'] = $entity->getFileCount();
+    $row['eid_count'] = $entity->getErrorCount();
     $row['queued'] = $entity->getQueuedTime() ? $this->dateFormatter->format($entity->getQueuedTime()) : '-';
     $row['last_parsed'] = $entity->getLastParsed() ? $this->dateFormatter->format($entity->getLastParsed()) : '-';
     $row['file_date'] = $entity->getFileDate() ? $this->dateFormatter->format($entity->getFileDate()) : '-';

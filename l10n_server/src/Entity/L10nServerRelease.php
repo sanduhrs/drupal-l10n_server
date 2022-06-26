@@ -258,8 +258,31 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
   /**
    * {@inheritdoc}
    */
+  public function getTtitle(): string {
+    return (string) $this->get('title')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTitle(string $title): self {
+    $this->set('title', $title);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getProjectId(): int {
-    return (int) $this->get('pid')->getValue();
+    return (int) $this->get('pid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProjectId(int $pid): self {
+    $this->set('pid', $pid);
+    return $this;
   }
 
   /**
@@ -295,15 +318,45 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
   /**
    * {@inheritdoc}
    */
-  public function getQueuedTime(): int {
-    return (int) $this->get('queued')->first()->getValue()['value'];
+  public function getDownloadLink(): ?string {
+    return (string) $this->get('download_link')->first()->getValue()['value'];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setQueuedTime(int $timestamp): self {
-    $this->set('queued', $timestamp);
+  public function setDownloadLink(string $link): self {
+    $this->set('download_link', $link);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFileHash(): ?string {
+    return (string) $this->get('file_hash')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFileHash(string $hash): L10nServerReleaseInterface {
+    $this->set('file_hash', $hash);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getFileDate(): ?int {
+    return (int) $this->get('file_date')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setFileDate(int $timestamp): self {
+    $this->set('file_date', $timestamp);
     return $this;
   }
 
@@ -325,8 +378,23 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
   /**
    * {@inheritdoc}
    */
+  public function getQueuedTime(): int {
+    return (int) $this->get('queued')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setQueuedTime(int $timestamp): self {
+    $this->set('queued', $timestamp);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getSourceStringCount(): int {
-    return (int) $this->get('sid_count')->getValue();
+    return (int) $this->get('sid_count')->first()->getValue()['value'];
   }
 
   /**
@@ -341,7 +409,7 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
    * {@inheritdoc}
    */
   public function getLineCount(): int {
-    return (int) $this->get('lid_count')->getValue();
+    return (int) $this->get('lid_count')->first()->getValue()['value'];
   }
 
   /**
@@ -356,7 +424,7 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
    * {@inheritdoc}
    */
   public function getFileCount(): int {
-    return (int) $this->get('fid_count')->getValue();
+    return (int) $this->get('fid_count')->first()->getValue()['value'];
   }
 
   /**
@@ -371,7 +439,7 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
    * {@inheritdoc}
    */
   public function getErrorCount(): int {
-    return (int) $this->get('eid_count')->getValue();
+    return (int) $this->get('eid_count')->first()->getValue()['value'];
   }
 
   /**
@@ -385,30 +453,15 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
   /**
    * {@inheritdoc}
    */
-  public function getDownloadLink(): ?string {
-    return (string) $this->get('download_link')->first()->getValue()['value'];
+  public function getWeight(): int {
+    return (int) $this->get('weight')->first()->getValue()['value'];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setDownloadLink(string $link): self {
-    $this->set('download_link', $link);
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getFileDate(): ?int {
-    return (int) $this->get('file_date')->first()->getValue()['value'];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setFileDate(int $timestamp): self {
-    $this->set('file_date', $timestamp);
+  public function setWeight(int $weight): L10nServerReleaseInterface {
+    $this->set('weight', $weight);
     return $this;
   }
 

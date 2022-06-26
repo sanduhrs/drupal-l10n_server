@@ -122,4 +122,64 @@ class L10nServerFile extends ContentEntityBase implements L10nServerFileInterfac
     return $fields;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getProjectId(): int {
+    return (int) $this->get('pid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setProjectId(int $pid): self {
+    $this->set('pid', $pid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getReleaseId(): int {
+    return (int) $this->get('rid')->first()->getValue()['target_id'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setReleaseId(int $rid): self {
+    $this->set('rid', $rid);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLocation(): string {
+    return $this->get('location')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setLocation(string $location): self {
+    $this->set('location', $location);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getRevision(): string {
+    return $this->get('revision')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRevision(string $revision): self {
+    $this->set('revision', $revision);
+    return $this;
+  }
+
 }

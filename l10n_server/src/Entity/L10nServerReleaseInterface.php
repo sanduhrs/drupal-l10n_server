@@ -11,33 +11,64 @@ use Drupal\Core\Entity\ContentEntityInterface;
 interface L10nServerReleaseInterface extends ContentEntityInterface {
 
   /**
-   * Get ID of the referenced project.
+   * Gets title.
+   *
+   * @return string
+   *   The title string.
+   */
+  public function getTtitle(): string;
+
+  /**
+   * Sets title.
+   *
+   * @param string $title
+   *   The title string.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setTitle(string $title): self;
+
+  /**
+   * Gets project ID.
    *
    * @return int
-   *   An project identifier integer.
+   *   The project ID integer.
    */
   public function getProjectId(): int;
 
   /**
-   * Get referenced project.
+   * Sets project ID.
+   *
+   * @param int $pid
+   *   The project ID integer.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setProjectId(int $pid): self;
+
+  /**
+   * Gets project object.
    *
    * @return \Drupal\l10n_server\Entity\L10nServerProjectInterface
-   *   A project entity.
+   *   The project object.
    */
   public function getProject(): L10nServerProjectInterface;
 
   /**
-   * Set referenced project.
+   * Sets project object.
    *
    * @param \Drupal\l10n_server\Entity\L10nServerProjectInterface $project
-   *   A project entity.
+   *   A project object.
    *
    * @return $this
+   *   The entity object.
    */
   public function setProject(L10nServerProjectInterface $project): self;
 
   /**
-   * Get version string.
+   * Gets version string.
    *
    * @return string
    *   The version string.
@@ -45,32 +76,72 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
   public function getVersion(): string;
 
   /**
-   * Set version string.
+   * Sets version string.
    *
    * @param string $version
    *   The version string.
    *
    * @return $this
+   *   The entity object.
    */
   public function setVersion(string $version): self;
 
   /**
-   * Get queued time.
+   * Gets download link.
    *
-   * @return int
-   *   A timestamp integer.
+   * @return string|null
+   *   A link string or null.
    */
-  public function getQueuedTime(): int;
+  public function getDownloadLink(): ?string;
 
   /**
-   * Set queued time.
+   * Sets download link.
+   *
+   * @param string $link
+   *   A link string.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setDownloadLink(string $link): self;
+
+  /**
+   * Gets file hash.
+   *
+   * @return string|null
+   *   The file hash string.
+   */
+  public function getFileHash(): ?string;
+
+  /**
+   * Sets file hash.
+   *
+   * @param string $hash
+   *   The file hash string.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setFileHash(string $hash): self;
+
+  /**
+   * Get file date.
+   *
+   * @return int|null
+   *   A timestamp integer or null.
+   */
+  public function getFileDate(): ?int;
+
+  /**
+   * Set file date.
    *
    * @param int $timestamp
    *   A timestamp integer.
    *
    * @return $this
+   *   The entity object.
    */
-  public function setQueuedTime(int $timestamp): self;
+  public function setFileDate(int $timestamp): self;
 
   /**
    * Get last parsed.
@@ -87,8 +158,28 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
    *   A timestamp integer.
    *
    * @return $this
+   *   The entity object.
    */
   public function setLastParsed(int $timestamp): self;
+
+  /**
+   * Get queued time.
+   *
+   * @return int
+   *   A timestamp integer.
+   */
+  public function getQueuedTime(): int;
+
+  /**
+   * Set queued time.
+   *
+   * @param int $timestamp
+   *   A timestamp integer.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setQueuedTime(int $timestamp): self;
 
   /**
    * Get source string count.
@@ -105,6 +196,7 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
    *   A count integer.
    *
    * @return $this
+   *   The entity object.
    */
   public function setSourceStringCount(int $count): self;
 
@@ -123,8 +215,28 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
    *   A count integer.
    *
    * @return $this
+   *   The entity object.
    */
   public function setLineCount(int $count): self;
+
+  /**
+   * Get file count.
+   *
+   * @return int
+   *   The file count integer.
+   */
+  public function getFileCount(): int;
+
+  /**
+   * Set file count.
+   *
+   * @param int $count
+   *   The file count integer.
+   *
+   * @return $this
+   *   The entity object.
+   */
+  public function setFileCount(int $count): self;
 
   /**
    * Get error string count.
@@ -141,43 +253,27 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
    *   A count integer.
    *
    * @return $this
+   *   The entity object.
    */
   public function setErrorCount(int $count): self;
 
   /**
-   * Get download link.
+   * Gets weight.
    *
-   * @return string|null
-   *   A link string or null.
+   * @return int
+   *   The weight integer.
    */
-  public function getDownloadLink(): ?string;
+  public function getWeight(): int;
 
   /**
-   * Set download link.
+   * Sets weight.
    *
-   * @param string $link
-   *   A link string.
+   * @param int $weight
+   *   The weight integer.
    *
    * @return $this
+   *   The entity object.
    */
-  public function setDownloadLink(string $link): self;
-
-  /**
-   * Get file date.
-   *
-   * @return int|null
-   *   A timestamp integer or null.
-   */
-  public function getFileDate(): ?int;
-
-  /**
-   * Set file date.
-   *
-   * @param int $timestamp
-   *   A timestamp integer.
-   *
-   * @return $this
-   */
-  public function setFileDate(int $timestamp): self;
+  public function setWeight(int $weight): self;
 
 }

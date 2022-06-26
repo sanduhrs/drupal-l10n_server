@@ -168,7 +168,7 @@ class L10nServerProject extends ContentEntityBase implements L10nServerProjectIn
    * {@inheritdoc}
    */
   public function isEnabled(): bool {
-    return (bool) $this->get('status')->getValue();
+    return (bool) $this->get('status')->first()->getValue()['value'];
   }
 
   /**
@@ -207,8 +207,8 @@ class L10nServerProject extends ContentEntityBase implements L10nServerProjectIn
   /**
    * {@inheritdoc}
    */
-  public function setHomepage(string $link): self {
-    $this->set('homepage', $link);
+  public function setHomepage(string $homepage): self {
+    $this->set('homepage', $homepage);
     return $this;
   }
 
@@ -224,6 +224,66 @@ class L10nServerProject extends ContentEntityBase implements L10nServerProjectIn
    */
   public function setLastParsed(int $timestamp): self {
     $this->set('last_parsed', $timestamp);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getTitle(): string {
+    return (string) $this->get('title')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTitle(string $title): self {
+    $this->set('title', $title);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getUri(): string {
+    return (string) $this->get('uri')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUri(string $uri): self {
+    $this->set('uri', $uri);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getStatus(): int {
+    return (int) $this->get('status')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setStatus(int $status): self {
+    $this->set('status', $status);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getWeight(): int {
+    return $this->get('weight')->first()->getValue()['value'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setWeight(int $weight): L10nServerProjectInterface {
+    $this->set('weight', $weight);
     return $this;
   }
 

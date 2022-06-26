@@ -21,7 +21,7 @@ class L10nServerTranslationHistoryListBuilder extends EntityListBuilder {
       ->accessCheck(FALSE)
       ->count()
       ->execute();
-    $build['summary']['#markup'] = $this->t('Total histories: @total', [
+    $build['summary']['#markup'] = $this->t('Total changes: @total', [
       '@total' => $total,
     ]);
     return $build;
@@ -32,7 +32,10 @@ class L10nServerTranslationHistoryListBuilder extends EntityListBuilder {
    */
   public function buildHeader() {
     $header['id'] = $this->t('ID');
-    $header['label'] = $this->t('Label');
+    $header['uid_action'] = $this->t('User ID');
+    $header['time_action'] = $this->t('Time');
+    $header['type_action'] = $this->t('Type');
+    $header['medium_action'] = $this->t('Medium');
     return $header + parent::buildHeader();
   }
 
@@ -42,7 +45,10 @@ class L10nServerTranslationHistoryListBuilder extends EntityListBuilder {
   public function buildRow(EntityInterface $entity) {
     /** @var \Drupal\l10n_server\Entity\L10nServerTranslationHistoryInterface $entity */
     $row['id'] = $entity->id();
-    $row['label'] = $entity->label();
+    $row['uid_action'] = $entity->getActionUid();
+    $row['time_action'] = $entity->getActionTime();
+    $row['type_action'] = $entity->getActionTime();
+    $row['medium_action'] = $entity->getActionMedium();
     return $row + parent::buildRow($entity);
   }
 
