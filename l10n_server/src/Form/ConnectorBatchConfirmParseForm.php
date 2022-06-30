@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Drupal\l10n_server\Form;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
@@ -13,6 +14,27 @@ use Drupal\l10n_server\ConnectorInterface;
  * Provides a confirmation form before clearing out the examples.
  */
 class ConnectorBatchConfirmParseForm extends ConnectorBatchConfirmFormBase {
+
+  /**
+   * Database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $database;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create($container) {
+    $form = new static();
+    $form->setStringTranslation($container->get('string_translation'));
+    $form->setLoggerFactory($container->get('logger.factory'));
+    $form->setMessenger($container->get('messenger'));
+    $form->setRedirectDestination($container->get('redirect.destination'));
+    $form->setStringTranslation($container->get('string_translation'));
+    $form->database = $container->get('database');
+    return $form;
+  }
 
   /**
    * {@inheritdoc}
@@ -40,7 +62,7 @@ class ConnectorBatchConfirmParseForm extends ConnectorBatchConfirmFormBase {
       'finished' => static::class . '::batchFinished',
     ];
 
-    $queued = \Drupal::database()
+    $queued = $this->database
       ->select('l10n_server_release', 'r')
       ->condition('r.queued', 0, '>')
       ->countQuery()->execute()->fetchField();

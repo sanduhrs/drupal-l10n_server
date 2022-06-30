@@ -465,4 +465,41 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
     return $this;
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function getBranchFromVersion(): string {
+    // Set branch to everything before the last dot, and append an x. For
+    // example, 6.1, 6.2, 6.x-dev, 6.0-beta1 all become 6.x. 8.7.13 becomes
+    // 8.7.x. 6.x-1.0-beta1 becomes 6.x-1.x. 2.1.0-rc1 becomes 2.1.x.
+    return preg_replace('#\.[^.]*$#', '.x', $this->getTtitle());
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCoreFromVersion(): string {
+    // Stupid hack for drupal core.
+    if ($this->getProject()->getUri() === 'drupal') {
+
+      // Major version is the first component before the .
+      $major = explode('.', $this->getBranchFromVersion())[0];
+      if ($major >= 8) {
+        // In D8 & later, start removing “API compatibility” part of the path.
+        return 'all';
+      }
+      else {
+        return $major . '.x';
+      }
+    }
+    else {
+      // Modules are like: 6.x-1.0, 6.x-1.x-dev, 6.x-1.0-beta1, 2.0.0, 5.x-dev,
+      // 2.1.x-dev, 2.1.0-rc1. If there is a core API compatibility component,
+      // split it off. version here is the main version number, without the
+      // -{extra} component, like -beta1 or -rc1.
+      preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->title, $match);
+      return $match['core'] ?: 'all';
+    }
+  }
+
 }

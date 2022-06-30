@@ -3,8 +3,12 @@ declare(strict_types=1);
 
 namespace Drupal\l10n_server\Commands;
 
+use Drupal\Component\Datetime\Time;
 use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Config\ImmutableConfig;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Queue\QueueFactory;
 use Drupal\l10n_server\ConnectorManagerInterface;
 use Drupal\l10n_server\Entity\L10nServerProject;
 use Drupal\l10n_server\Entity\L10nServerRelease;
@@ -30,14 +34,50 @@ class L10nServerCommands extends DrushCommands {
   protected ConnectorManagerInterface $connectorManager;
 
   /**
+   * Database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected Connection $database;
+
+  /**
+   * Queue factory.
+   *
+   * @var \Drupal\Core\Queue\QueueFactory
+   */
+  protected QueueFactory $queueFactory;
+
+  /**
+   * Entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManager
+   */
+  protected EntityTypeManager $entityTypeManager;
+
+  /**
+   * Time service.
+   *
+   * @var \Drupal\Component\Datetime\Time
+   */
+  private Time $time;
+
+  /**
    * Class constructor.
    */
   public function __construct(
       ConfigFactory $config_factory,
+      Connection $database,
+      QueueFactory $queue_factory,
+      EntityTypeManager $entity_type_manager,
+      Time $time,
       ConnectorManagerInterface $connector_manager
   ) {
     parent::__construct();
     $this->configuration = $config_factory->get('l10n_server.settings');
+    $this->database = $database;
+    $this->queueFactory = $queue_factory;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->time = $time;
     $this->connectorManager = $connector_manager;
   }
 
@@ -66,9 +106,6 @@ class L10nServerCommands extends DrushCommands {
    */
   // phpcs:ignore
   public function scan(string $connector = 'drupal_rest:restapi', array $options = ['all' => FALSE]): void {
-    /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
-    $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
-
     $connectors = [$connector];
 
     if ($options['all']) {
@@ -79,7 +116,7 @@ class L10nServerCommands extends DrushCommands {
     $project_count = $release_count = $connector_count = 0;
     foreach ($connectors as $connector_id) {
       /** @var \Drupal\l10n_server\ConnectorInterface $connector */
-      $connector = $connectorManager->createInstance($connector_id);
+      $connector = $this->connectorManager->createInstance($connector_id);
       $source = $connector->getSourceInstance();
 
       if (!$connector->isEnabled()) {
@@ -146,25 +183,26 @@ class L10nServerCommands extends DrushCommands {
   public function queue(array $options = ['force' => NULL]): void {
 
     if ($options['force']) {
-      \Drupal::database()
+      $this->database
         ->update('l10n_server_release')
         ->fields(['queued' => 0])
         ->execute();
     }
 
     // Queue releases to be parsed.
-    $queue = \Drupal::queue('l10n_server_parser_queue');
-    $ids = \Drupal::entityTypeManager()
-      ->getStorage('l10n_server_release')
-      ->getIdsToQueue();
+    $queue = $this->queueFactory->get('l10n_server_parser_queue');
+    $storage = $this
+      ->entityTypeManager
+      ->getStorage('l10n_server_release');
+    $ids = $storage->getIdsToQueue();
     $this->logger()->notice(dt('Queuing releases to be parsed...'));
 
     $i = 0;
-    $releases = L10nServerRelease::loadMultiple($ids);
+    $releases = $storage->loadMultiple($ids);
     foreach ($releases as $release) {
       if ($queue->createItem($release)) {
         // Add timestamp to avoid queueing item more than once.
-        $release->setQueuedTime(\Drupal::time()->getRequestTime());
+        $release->setQueuedTime($this->time->getRequestTime());
         $release->save();
         $i++;
       }
@@ -199,10 +237,7 @@ class L10nServerCommands extends DrushCommands {
    */
   // phpcs:ignore
   public function parse(string $project = '', array $options = ['release' => NULL, 'limit' => 1, 'only-unparsed' => FALSE, 'only-unqueued' => FALSE]): void {
-    /** @var \Drupal\l10n_server\ConnectorManager $connectorManager */
-    $connectorManager = \Drupal::service('plugin.manager.l10n_server.connector');
-
-    $query = \Drupal::database()
+    $query = $this->database
       ->select('l10n_server_release', 'r');
     $query
       ->join('l10n_server_project', 'p', 'r.pid = p.pid');
@@ -238,7 +273,7 @@ class L10nServerCommands extends DrushCommands {
       $release = L10nServerRelease::load($row->rid);
 
       /** @var \Drupal\l10n_server\ConnectorInterface $connector */
-      $connector = $connectorManager->createInstance($project->getConnectorModule());
+      $connector = $this->connectorManager->createInstance($project->getConnectorModule());
       $source = $connector->getSourceInstance();
 
       if (!$connector->isEnabled()) {

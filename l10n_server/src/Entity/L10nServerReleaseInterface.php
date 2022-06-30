@@ -276,4 +276,20 @@ interface L10nServerReleaseInterface extends ContentEntityInterface {
    */
   public function setWeight(int $weight): self;
 
+  /**
+   * Gets branch from version string.
+   *
+   * @return string
+   *   The branch string.
+   */
+  public function getBranchFromVersion(): string;
+
+  /**
+   * Gets core from version string.
+   *
+   * @return string
+   *   The core string.
+   */
+  public function getCoreFromVersion(): string;
+
 }

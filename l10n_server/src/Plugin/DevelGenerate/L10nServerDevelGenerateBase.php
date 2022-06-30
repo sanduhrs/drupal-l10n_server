@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManager;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\devel_generate\DevelGenerateBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,6 +28,13 @@ abstract class L10nServerDevelGenerateBase extends DevelGenerateBase implements 
   protected EntityStorageInterface $entityStorage;
 
   /**
+   * Language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManager
+   */
+  protected LanguageManager $languageManager;
+
+  /**
    * Class constructor.
    *
    * @param array $configuration
@@ -41,15 +49,17 @@ abstract class L10nServerDevelGenerateBase extends DevelGenerateBase implements 
    *   The entity storage.
    */
   public function __construct(
-    array $configuration,
-    $plugin_id,
-    array $plugin_definition,
-    EntityTypeManagerInterface $entity_type_manager,
-    EntityStorageInterface $entity_storage
+      array $configuration,
+      $plugin_id,
+      array $plugin_definition,
+      EntityTypeManagerInterface $entity_type_manager,
+      EntityStorageInterface $entity_storage,
+      LanguageManager $language_manager
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityTypeManager = $entity_type_manager;
     $this->entityStorage = $entity_storage;
+    $this->languageManager = $language_manager;
   }
 
   /**
@@ -61,7 +71,8 @@ abstract class L10nServerDevelGenerateBase extends DevelGenerateBase implements 
       $plugin_id,
       $plugin_definition,
       $container->get('entity_type.manager'),
-      $container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE)
+      $container->get('entity_type.manager')->getStorage(static::ENTITY_TYPE),
+      $container->get('language_manager')
     );
   }
 
@@ -173,8 +184,8 @@ abstract class L10nServerDevelGenerateBase extends DevelGenerateBase implements 
    *   A language object.
    */
   protected function getRandomLanguage(): LanguageInterface {
-    $languages = \Drupal::languageManager()->getLanguages();
-    $default_language = \Drupal::languageManager()->getDefaultLanguage();
+    $languages = $this->languageManager->getLanguages();
+    $default_language = $this->languageManager->getDefaultLanguage();
     unset($languages[$default_language->getId()]);
     return $languages[array_rand($languages)];
   }

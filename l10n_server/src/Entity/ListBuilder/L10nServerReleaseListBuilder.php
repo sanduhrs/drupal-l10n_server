@@ -8,6 +8,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Routing\CurrentRouteMatch;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\l10n_server\Entity\L10nServerProject;
@@ -26,6 +27,13 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
   protected DateFormatterInterface $dateFormatter;
 
   /**
+   * Current route match.
+   *
+   * @var \Drupal\Core\Routing\CurrentRouteMatch
+   */
+  protected CurrentRouteMatch $routeMatch;
+
+  /**
    * {@inheritdoc}
    */
   public static function createInstance(
@@ -34,6 +42,7 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
   ): self {
     $instance = parent::createInstance($container, $entity_type);
     $instance->dateFormatter = $container->get('date.formatter');
+    $instance->routeMatch = $container->get('current_route_match');
     return $instance;
   }
 
@@ -47,7 +56,7 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
       ->count();
 
     // Add query condition with project from request.
-    $params = \Drupal::routeMatch()->getParameters()->all();
+    $params = $this->routeMatch->getParameters()->all();
     foreach ($params as $param) {
       if ($param instanceof L10nServerProject) {
         $query->condition('pid', $param->id());
@@ -135,7 +144,7 @@ class L10nServerReleaseListBuilder extends EntityListBuilder {
       ->sort('file_date', 'DESC');
 
     // Add query condition with project from request.
-    $params = \Drupal::routeMatch()->getParameters()->all();
+    $params = $this->routeMatch->getParameters()->all();
     foreach ($params as $param) {
       if ($param instanceof L10nServerProject) {
         $query->condition('pid', $param->id());

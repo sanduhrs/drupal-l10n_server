@@ -1,13 +1,14 @@
 services:
   plugin.manager.l10n_server.connector:
     class: Drupal\l10n_server\ConnectorManager
+    arguments: ['@config.factory']
     parent: default_plugin_manager
   plugin.manager.l10n_server.source:
     class: Drupal\l10n_server\SourceManager
+    arguments: ['@container.namespaces', '@cache.discovery', '@module_handler']
     parent: default_plugin_manager
   param_converter.l10n_connector:
     class: Drupal\l10n_server\ParamConverter\L10nServerConnectorParamConverter
-    arguments:
-      - '@plugin.manager.l10n_server.connector'
+    arguments: ['@plugin.manager.l10n_server.connector']
     tags:
       - { name: paramconverter }

@@ -5,6 +5,7 @@ namespace Drupal\l10n_server;
 
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\Config;
+use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Plugin\DefaultPluginManager;
 use function array_search;
@@ -28,7 +29,8 @@ final class ConnectorManager extends DefaultPluginManager implements ConnectorMa
   public function __construct(
       \Traversable $namespaces,
       CacheBackendInterface $cache_backend,
-      ModuleHandlerInterface $module_handler
+      ModuleHandlerInterface $module_handler,
+      ConfigFactory $config_factory
   ) {
     parent::__construct(
       'Plugin/l10n_server/Connector',
@@ -39,7 +41,7 @@ final class ConnectorManager extends DefaultPluginManager implements ConnectorMa
     );
     $this->alterInfo('l10n_server_connector_info');
     $this->setCacheBackend($cache_backend, 'l10n_server_connector_info_plugins');
-    $this->editableConfig = \Drupal::configFactory()->getEditable('l10n_server.settings');
+    $this->editableConfig = $config_factory->getEditable('l10n_server.settings');
   }
 
   /**
