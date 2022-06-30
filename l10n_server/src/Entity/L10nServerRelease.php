@@ -497,7 +497,7 @@ class L10nServerRelease extends ContentEntityBase implements L10nServerReleaseIn
       // 2.1.x-dev, 2.1.0-rc1. If there is a core API compatibility component,
       // split it off. version here is the main version number, without the
       // -{extra} component, like -beta1 or -rc1.
-      preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $release->title, $match);
+      preg_match('#^(?:(?<core>(?:4\.0|4\.1|4\.2|4\.3|4\.4|4\.5|4\.6|4\.7|5|6|7|8|9)\.x)-)?(?<version>[0-9.x]*)(?:-.*)?$#', $this->label(), $match);
       return $match['core'] ?: 'all';
     }
   }
