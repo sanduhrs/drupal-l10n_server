@@ -8,6 +8,7 @@ use Drupal\Core\Config\ConfigFactory;
 use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManager;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Queue\QueueFactory;
 use Drupal\l10n_server\ConnectorManagerInterface;
 use Drupal\l10n_server\Entity\L10nServerProject;
@@ -50,9 +51,9 @@ class L10nServerCommands extends DrushCommands {
   /**
    * Entity type manager.
    *
-   * @var \Drupal\Core\Entity\EntityTypeManager
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  protected EntityTypeManager $entityTypeManager;
+  protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
    * Time service.
@@ -68,7 +69,7 @@ class L10nServerCommands extends DrushCommands {
       ConfigFactory $config_factory,
       Connection $database,
       QueueFactory $queue_factory,
-      EntityTypeManager $entity_type_manager,
+      EntityTypeManagerInterface $entity_type_manager,
       Time $time,
       ConnectorManagerInterface $connector_manager
   ) {
